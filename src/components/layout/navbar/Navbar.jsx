@@ -92,8 +92,8 @@ const Navbar = ({ onMenuClick }) => {
             </Avatar>
 
             <div className="hidden md:block">
-              <p className="text-sm font-semibold text-slate-900 leading-none">
-                {user?.name ?? "Rohit Solanki"}
+              <p className="text-sm font-semibold text-slate-900 leading-none capitalize">
+                {user?.name || "User"}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 {user?.company ?? "HireQuest HR"}

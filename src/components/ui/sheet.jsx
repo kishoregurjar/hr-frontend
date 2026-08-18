@@ -13,10 +13,25 @@ function Sheet({
   return <SheetPrimitive.Root data-slot="sheet" {...props} />;
 }
 
-function SheetTrigger({
-  ...props
-}) {
-  return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />;
+function SheetTrigger({ children, asChild, render, ...props }) {
+  if (asChild && React.isValidElement(children)) {
+    return (
+      <SheetPrimitive.Trigger
+        data-slot="sheet-trigger"
+        render={children}
+        {...props}
+      />
+    );
+  }
+  return (
+    <SheetPrimitive.Trigger
+      data-slot="sheet-trigger"
+      render={render}
+      {...props}
+    >
+      {children}
+    </SheetPrimitive.Trigger>
+  );
 }
 
 function SheetClose({

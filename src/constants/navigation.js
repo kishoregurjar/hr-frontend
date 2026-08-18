@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   ClipboardList,
+  FileQuestion,
   Gamepad2,
   Users,
   BarChart3,
@@ -22,6 +23,11 @@ export const NAVIGATION = [
         label: "Assessments",
         href: ROUTES.ASSESSMENTS,
         icon: ClipboardList,
+      },
+      {
+        label: "Question Bank",
+        href: ROUTES.QUESTION_BANK,
+        icon: FileQuestion,
       },
       {
         label: "Games",

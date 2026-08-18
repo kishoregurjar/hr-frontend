@@ -9,6 +9,7 @@ const axiosClient = axios.create({
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true",
   },
 });
 
@@ -31,10 +32,13 @@ axiosClient.interceptors.response.use(
   (response) => response.data,
   (error) => {
     const status = error.response?.status;
+    const rawError = error.response?.data?.message || error.response?.data?.error;
     const message =
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      "An error occurred while connecting to the server.";
+      typeof rawError === "string"
+        ? rawError
+        : rawError?.message ||
+          error.response?.data?.error?.message ||
+          "An error occurred while connecting to the server.";
 
     if (status === 401 && typeof window !== "undefined") {
       localStorage.removeItem(AUTH_STORAGE_KEYS.TOKEN);

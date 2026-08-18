@@ -33,18 +33,28 @@ const normalizeUser = (resData, fallbackEmail = "") => {
     return null;
   }
 
-  const firstName = rawUser.firstName || "";
-  const lastName = rawUser.lastName || "";
-  const fullName =
+  const firstName = rawUser.firstName || rawUser.first_name || "";
+  const lastName = rawUser.lastName || rawUser.last_name || "";
+
+  let fullName =
     rawUser.fullName ||
-    `${firstName} ${lastName}`.trim() ||
+    rawUser.full_name ||
     rawUser.name ||
-    fallbackEmail.split("@")[0] ||
-    "HR Recruiter";
+    (firstName || lastName ? `${firstName} ${lastName}`.trim() : "") ||
+    rawUser.username ||
+    (rawUser.email ? rawUser.email.split("@")[0] : "") ||
+    (fallbackEmail ? fallbackEmail.split("@")[0] : "") ||
+    "User";
+
+  const formattedName = fullName
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
 
   return {
     id: rawUser.id || rawUser._id || `hr-${Date.now()}`,
-    name: fullName,
+    name: formattedName || "User",
     email: rawUser.email || fallbackEmail,
     company: rawUser.company || "HireQuest HR",
     role: rawUser.role || "HR",
