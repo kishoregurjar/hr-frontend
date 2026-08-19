@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 const DialogContext = React.createContext(null);
 
-export function Dialog({ children, open: controlledOpen, onOpenChange }) {
+export function Dialog({ children, open: controlledOpen, onOpenChange, preventCloseOnClickOutside = false }) {
   const [localOpen, setLocalOpen] = React.useState(false);
   const PinControlled = controlledOpen !== undefined;
   const open = PinControlled ? controlledOpen : localOpen;
@@ -24,7 +24,7 @@ export function Dialog({ children, open: controlledOpen, onOpenChange }) {
   );
 
   return (
-    <DialogContext.Provider value={{ open, setOpen }}>
+    <DialogContext.Provider value={{ open, setOpen, preventCloseOnClickOutside }}>
       {children}
     </DialogContext.Provider>
   );
@@ -54,7 +54,7 @@ export function DialogPortal({ children }) {
 }
 
 export function DialogOverlay({ className, ...props }) {
-  const { open, setOpen } = React.useContext(DialogContext);
+  const { open, setOpen, preventCloseOnClickOutside } = React.useContext(DialogContext);
   if (!open) return null;
   return (
     <div
@@ -62,7 +62,11 @@ export function DialogOverlay({ className, ...props }) {
         "fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-300",
         className
       )}
-      onClick={() => setOpen(false)}
+      onClick={() => {
+        if (!preventCloseOnClickOutside) {
+          setOpen(false);
+        }
+      }}
       {...props}
     />
   );

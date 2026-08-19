@@ -108,8 +108,8 @@ export const normalizeQuestion = (item) => {
  */
 export const formatQuestionPayload = (payload) => {
   const title = payload.question || payload.title || "";
-  const description = payload.description || "";
-  const explanation = payload.explanation || "";
+  const description = payload.description || title || "Question description";
+  const explanation = payload.explanation || title || "Question explanation";
 
   let type = "SINGLE_CHOICE";
   if (payload.type) {
@@ -136,8 +136,11 @@ export const formatQuestionPayload = (payload) => {
     options = payload.options.map((opt, index) => {
       const text = opt.text || opt.optionText || "";
       const isCorrect =
-        payload.correctAnswer === opt.id || Boolean(opt.isCorrect);
+        payload.correctAnswer === opt.id ||
+        payload.correctAnswer === `option${String.fromCharCode(65 + index)}` ||
+        Boolean(opt.isCorrect);
       return {
+        text,
         optionText: text,
         isCorrect,
         sequence: index + 1,
@@ -145,27 +148,31 @@ export const formatQuestionPayload = (payload) => {
     });
   }
 
+  const categoryId =
+    payload.categoryId ||
+    (typeof payload.category === "string" && payload.category.trim()
+      ? payload.category
+      : "general");
+
+  const tagIds = Array.isArray(payload.tagIds) ? payload.tagIds : [];
+  const marks = payload.marks ? Number(payload.marks) : 5;
+
   const resultPayload = {
     title,
+    question: title,
     description,
     explanation,
     type,
     difficulty,
     status,
-    marks: payload.marks ? Number(payload.marks) : 5,
+    marks,
     negativeMarks: payload.negativeMarks ? Number(payload.negativeMarks) : 0,
     estimatedTime: payload.estimatedTime ? Number(payload.estimatedTime) : 60,
     shuffleOptions: payload.shuffleOptions ?? true,
+    categoryId,
+    tagIds,
     options,
   };
-
-  if (payload.categoryId) {
-    resultPayload.categoryId = payload.categoryId;
-  }
-
-  if (Array.isArray(payload.tagIds) && payload.tagIds.length > 0) {
-    resultPayload.tagIds = payload.tagIds;
-  }
 
   return resultPayload;
 };
