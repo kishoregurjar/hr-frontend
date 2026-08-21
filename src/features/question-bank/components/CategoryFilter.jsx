@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -5,9 +8,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { QUESTION_CATEGORY_OPTIONS } from "@/constants";
+import { getQuestionCategories } from "@/lib/api/questions";
 
 const CategoryFilter = ({ value, onChange }) => {
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    getQuestionCategories()
+      .then((res) => {
+        // getQuestionCategories already returns { success, data: [...] }
+        const list = Array.isArray(res?.data) ? res.data : [];
+        setCategories(list);
+      })
+      .catch(() => setCategories([]));
+  }, []);
+
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="w-[180px]">
@@ -15,9 +30,10 @@ const CategoryFilter = ({ value, onChange }) => {
       </SelectTrigger>
 
       <SelectContent>
-        {QUESTION_CATEGORY_OPTIONS.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            {option.label}
+        <SelectItem value="all">Category: All</SelectItem>
+        {categories.map((cat) => (
+          <SelectItem key={cat.id} value={cat.id}>
+            {cat.name}
           </SelectItem>
         ))}
       </SelectContent>

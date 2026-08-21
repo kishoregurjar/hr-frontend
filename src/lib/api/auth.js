@@ -169,3 +169,55 @@ export const logoutApi = async () => {
 
   return { success: true };
 };
+
+/**
+ * Forgot Password API — Live Backend Call
+ * Endpoint: POST /api/v1/auth/forgot-password
+ */
+export const forgotPasswordApi = async (email) => {
+  const res = await axiosClient.post("/auth/forgot-password", { email });
+  return res?.data?.data || res?.data || res;
+};
+
+/**
+ * Reset Password API — Live Backend Call
+ * Endpoint: POST /api/v1/auth/reset-password
+ */
+export const resetPasswordApi = async ({ token, newPassword, password }) => {
+  const res = await axiosClient.post("/auth/reset-password", {
+    token,
+    newPassword: newPassword || password,
+    password: newPassword || password,
+  });
+  return res?.data?.data || res?.data || res;
+};
+
+/**
+ * Change Password API — Live Backend Call
+ * Endpoint: POST /api/v1/auth/change-password
+ */
+export const changePasswordApi = async ({ currentPassword, newPassword }) => {
+  const res = await axiosClient.post("/auth/change-password", {
+    currentPassword,
+    newPassword,
+  });
+  return res?.data?.data || res?.data || res;
+};
+
+/**
+ * Logout All Devices API — Live Backend Call
+ * Endpoint: POST /api/v1/auth/logout-all
+ */
+export const logoutAllApi = async () => {
+  try {
+    await axiosClient.post("/auth/logout-all");
+  } catch {
+    // Ignore error
+  } finally {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(AUTH_STORAGE_KEYS.TOKEN);
+      localStorage.removeItem(AUTH_STORAGE_KEYS.USER);
+    }
+  }
+  return { success: true };
+};

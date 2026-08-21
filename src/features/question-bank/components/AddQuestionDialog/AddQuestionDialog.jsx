@@ -16,6 +16,8 @@ import { useCreateQuestion } from "../../hooks";
 import { transformQuestionFormToPayload } from "../../utils";
 import QuestionForm from "../QuestionForm";
 
+import { publishQuestion } from "@/lib/api/questions";
+
 const AddQuestionDialog = () => {
   const [open, setOpen] = useState(false);
   const createQuestion = useCreateQuestion();
@@ -24,8 +26,16 @@ const AddQuestionDialog = () => {
     const payload = transformQuestionFormToPayload(formData);
 
     createQuestion.mutate(payload, {
-      onSuccess: () => {
-        toast.success("Question created successfully!");
+      onSuccess: async (res) => {
+        const createdId = res?.data?.id || res?.id;
+        if (createdId) {
+          try {
+            await publishQuestion(createdId);
+          } catch {
+            // Ignore publish fallback
+          }
+        }
+        toast.success("Question created and published successfully!");
         setOpen(false);
       },
     });

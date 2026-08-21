@@ -6,7 +6,7 @@ export const QUESTION_STATUS = {
 
 export const QUESTION_STATUS_OPTIONS = [
   {
-    label: "All",
+    label: "Status",
     value: "all",
   },
   {

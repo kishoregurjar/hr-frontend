@@ -17,7 +17,11 @@ const axiosClient = axios.create({
 axiosClient.interceptors.request.use(
   (config) => {
     if (typeof window !== "undefined") {
-      const token = localStorage.getItem(AUTH_STORAGE_KEYS.TOKEN);
+      const token =
+        localStorage.getItem(AUTH_STORAGE_KEYS.TOKEN) ||
+        localStorage.getItem("token") ||
+        localStorage.getItem("accessToken") ||
+        localStorage.getItem("jwt");
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -32,12 +36,15 @@ axiosClient.interceptors.response.use(
   (response) => response.data,
   (error) => {
     const status = error.response?.status;
-    const rawError = error.response?.data?.message || error.response?.data?.error;
+    const responseData = error.response?.data;
     const message =
-      typeof rawError === "string"
-        ? rawError
-        : rawError?.message ||
-          error.response?.data?.error?.message ||
+      typeof responseData?.message === "string"
+        ? responseData.message
+        : typeof responseData?.error === "string"
+        ? responseData.error
+        : responseData?.error?.message ||
+          responseData?.message?.message ||
+          error.message ||
           "An error occurred while connecting to the server.";
 
     if (status === 401 && typeof window !== "undefined") {

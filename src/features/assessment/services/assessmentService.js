@@ -3,22 +3,29 @@ import {
   getAssessmentById,
   getAssessments,
   updateAssessment,
+  deleteAssessment,
+  publishAssessment,
+  unpublishAssessment,
+  activateAssessment,
+  archiveAssessment,
+  restoreAssessment,
+  duplicateAssessment,
+  assignAssessmentQuestions,
+  reorderAssessmentQuestions,
 } from "@/lib/api/assessments";
 
 export const assessmentService = {
-  getAll: async () => {
-    return getAssessments();
-  },
-
-  getById: async (id) => {
-    return getAssessmentById(id);
-  },
-
-  create: async (payload) => {
-    return createAssessment(payload);
-  },
-
-  update: async (id, payload) => {
-    return updateAssessment(id, payload);
-  },
+  getAll: async (params) => getAssessments(params),
+  getById: async (id) => getAssessmentById(id),
+  create: async (payload) => createAssessment(payload),
+  update: async (id, payload) => updateAssessment(id, payload),
+  remove: async (id) => deleteAssessment(id),
+  publish: async (id) => publishAssessment(id),
+  unpublish: async (id) => unpublishAssessment(id),
+  activate: async (id) => activateAssessment(id),
+  archive: async (id) => archiveAssessment(id),
+  restore: async (id) => restoreAssessment(id),
+  duplicate: async (id, payload) => duplicateAssessment(id, payload),
+  assignQuestions: async (id, questionIds) => assignAssessmentQuestions(id, questionIds),
+  reorderQuestions: async (id, orders) => reorderAssessmentQuestions(id, orders),
 };

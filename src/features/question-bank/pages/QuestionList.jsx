@@ -17,6 +17,7 @@ import {
   QuestionGrid,
   QuestionStats,
   AddQuestionDialog,
+  ManageCategoriesDialog,
   QuestionGridSkeleton,
 } from "../components";
 import { useQuestions } from "../hooks";
@@ -80,7 +81,10 @@ const QuestionList = () => {
         title="Question Bank"
         description="Manage all MCQ questions used in assessments."
       >
-        <AddQuestionDialog />
+        <div className="flex items-center gap-3">
+          <ManageCategoriesDialog />
+          <AddQuestionDialog />
+        </div>
       </PageHeader>
 
       <QuestionStats questions={allQuestions} />

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "../../context";
+import ForgotPasswordDialog from "../ForgotPasswordDialog";
 
 const LoginForm = () => {
   const router = useRouter();
@@ -71,9 +72,7 @@ const LoginForm = () => {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label htmlFor="password">Password</Label>
-          <span className="text-xs text-primary cursor-pointer hover:underline">
-            Forgot password?
-          </span>
+          <ForgotPasswordDialog initialEmail={email} />
         </div>
         <div className="relative">
           <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />

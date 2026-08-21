@@ -4,7 +4,8 @@ import { QUESTION_STATUS, QUESTION_TYPE } from "../constants";
 export const transformQuestionFormToPayload = (data) => {
   return {
     question: data.question.trim(),
-    category: data.category.trim(),
+    category: data.category?.trim() || "",
+    categoryId: data.categoryId || data.category,
     difficulty: data.difficulty,
     type: data.type,
     status: data.status,

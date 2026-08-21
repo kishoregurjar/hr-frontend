@@ -74,7 +74,8 @@ const AssessmentList = () => {
         description.includes(query);
 
       const matchesStatus =
-        status === "all" || assessment.status === status;
+        status === "all" ||
+        (assessment.status && assessment.status.toLowerCase() === status.toLowerCase());
 
       return matchesSearch && matchesStatus;
     });

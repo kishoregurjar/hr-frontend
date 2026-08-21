@@ -6,7 +6,7 @@ export const DIFFICULTY = {
 
 export const DIFFICULTY_OPTIONS = [
   {
-    label: "All",
+    label: "Difficulty",
     value: "all",
   },
   {

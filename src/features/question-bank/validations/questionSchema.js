@@ -10,10 +10,9 @@ export const questionSchema = z
         "Question must be at least 10 characters"
       ),
 
-    category: z
-      .string()
-      .trim()
-      .min(1, "Category is required"),
+    category: z.string().trim().optional().default(""),
+
+    categoryId: z.string().optional(),
 
     difficulty: z.string().min(1),
 

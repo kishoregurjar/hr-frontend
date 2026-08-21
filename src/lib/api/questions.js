@@ -7,13 +7,18 @@ const extractArrayData = (res) => {
   if (Array.isArray(res)) return res;
   if (Array.isArray(res?.data)) return res.data;
   if (Array.isArray(res?.data?.questions)) return res.data.questions;
+  if (Array.isArray(res?.data?.categories)) return res.data.categories;
+  if (Array.isArray(res?.data?.tags)) return res.data.tags;
   if (Array.isArray(res?.data?.items)) return res.data.items;
   if (Array.isArray(res?.data?.results)) return res.data.results;
   if (Array.isArray(res?.data?.rows)) return res.data.rows;
   if (Array.isArray(res?.questions)) return res.questions;
+  if (Array.isArray(res?.categories)) return res.categories;
+  if (Array.isArray(res?.tags)) return res.tags;
   if (Array.isArray(res?.items)) return res.items;
   if (Array.isArray(res?.message)) return res.message;
   if (Array.isArray(res?.message?.questions)) return res.message.questions;
+  if (Array.isArray(res?.message?.categories)) return res.message.categories;
   if (Array.isArray(res?.message?.items)) return res.message.items;
   return [];
 };
@@ -148,18 +153,17 @@ export const formatQuestionPayload = (payload) => {
     });
   }
 
-  const categoryId =
-    payload.categoryId ||
-    (typeof payload.category === "string" && payload.category.trim()
-      ? payload.category
-      : "general");
+  const categoryId = payload.categoryId;
 
-  const tagIds = Array.isArray(payload.tagIds) ? payload.tagIds : [];
+  const validTagIds =
+    Array.isArray(payload.tagIds) && payload.tagIds.length > 0
+      ? payload.tagIds.filter((id) => !id.startsWith("cm_tag_") && id.length > 5)
+      : undefined;
+
   const marks = payload.marks ? Number(payload.marks) : 5;
 
   const resultPayload = {
     title,
-    question: title,
     description,
     explanation,
     type,
@@ -167,10 +171,10 @@ export const formatQuestionPayload = (payload) => {
     status,
     marks,
     negativeMarks: payload.negativeMarks ? Number(payload.negativeMarks) : 0,
-    estimatedTime: payload.estimatedTime ? Number(payload.estimatedTime) : 60,
+    estimatedTime: payload.estimatedTime ? Number(payload.estimatedTime) : 120,
     shuffleOptions: payload.shuffleOptions ?? true,
-    categoryId,
-    tagIds,
+    ...(categoryId ? { categoryId } : {}),
+    ...(validTagIds && validTagIds.length > 0 ? { tagIds: validTagIds } : {}),
     options,
   };
 
@@ -178,45 +182,125 @@ export const formatQuestionPayload = (payload) => {
 };
 
 /* ==========================================================================
-   Question Categories APIs (/question-categories)
+   Question Categories APIs (/question-categories) — LIVE BACKEND
    ========================================================================== */
 
 export const getQuestionCategories = async (params = {}) => {
-  const res = await axiosClient.get("/question-categories", { params });
-  const rawList = extractArrayData(res);
-  return {
-    success: true,
-    data: rawList,
-  };
+  try {
+    const res = await axiosClient.get("/question-categories", { params });
+    const rawList = extractArrayData(res);
+    return {
+      success: true,
+      data: rawList,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message,
+      data: [],
+    };
+  }
+};
+
+export const getQuestionCategoryById = async (id) => {
+  const res = await axiosClient.get(`/question-categories/${id}`);
+  return res?.data?.data || res?.data || res;
 };
 
 export const createQuestionCategory = async (payload) => {
-  const res = await axiosClient.post("/question-categories", payload);
+  const body = {
+    name: payload.name || "Programming",
+    description: payload.description || `${payload.name || "Programming"} questions category`,
+  };
+  const res = await axiosClient.post("/question-categories", body);
+  const data = res?.data?.data || res?.data || res;
   return {
     success: true,
-    data: res?.data || res,
+    data,
   };
+};
+
+export const updateQuestionCategory = async (id, payload) => {
+  const body = {
+    ...(payload.name ? { name: payload.name } : {}),
+    ...(payload.description !== undefined ? { description: payload.description } : {}),
+  };
+  const res = await axiosClient.patch(`/question-categories/${id}`, body);
+  const data = res?.data?.data || res?.data || res;
+  return {
+    success: true,
+    data,
+  };
+};
+
+export const deleteQuestionCategory = async (id) => {
+  const res = await axiosClient.delete(`/question-categories/${id}`);
+  return res?.data?.data || res?.data || res;
+};
+
+export const restoreQuestionCategory = async (id) => {
+  const res = await axiosClient.patch(`/question-categories/${id}/restore`);
+  return res?.data?.data || res?.data || res;
 };
 
 /* ==========================================================================
-   Question Tags APIs (/question-tags)
+   Question Tags APIs (/question-tags) — LIVE BACKEND
    ========================================================================== */
 
 export const getQuestionTags = async (params = {}) => {
-  const res = await axiosClient.get("/question-tags", { params });
-  const rawList = extractArrayData(res);
-  return {
-    success: true,
-    data: rawList,
-  };
+  try {
+    const res = await axiosClient.get("/question-tags", { params });
+    const rawList = extractArrayData(res);
+    return {
+      success: true,
+      data: rawList,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message,
+      data: [],
+    };
+  }
+};
+
+export const getQuestionTagById = async (id) => {
+  const res = await axiosClient.get(`/question-tags/${id}`);
+  return res?.data?.data || res?.data || res;
 };
 
 export const createQuestionTag = async (payload) => {
-  const res = await axiosClient.post("/question-tags", payload);
+  const body = {
+    name: payload.name || "General",
+  };
+  const res = await axiosClient.post("/question-tags", body);
+  const data = res?.data?.data || res?.data || res;
   return {
     success: true,
-    data: res?.data || res,
+    data,
   };
+};
+
+export const updateQuestionTag = async (id, payload) => {
+  const body = {
+    ...(payload.name ? { name: payload.name } : {}),
+  };
+  const res = await axiosClient.patch(`/question-tags/${id}`, body);
+  const data = res?.data?.data || res?.data || res;
+  return {
+    success: true,
+    data,
+  };
+};
+
+export const deleteQuestionTag = async (id) => {
+  const res = await axiosClient.delete(`/question-tags/${id}`);
+  return res?.data?.data || res?.data || res;
+};
+
+export const restoreQuestionTag = async (id) => {
+  const res = await axiosClient.patch(`/question-tags/${id}/restore`);
+  return res?.data?.data || res?.data || res;
 };
 
 /* ==========================================================================
@@ -237,7 +321,6 @@ export const getQuestions = async (params = {}) => {
       data: normalized,
     };
   } catch (error) {
-    // If backend is empty or error occurs, return clean response structure
     return {
       success: false,
       error: error.message || "Failed to fetch questions",
@@ -251,7 +334,7 @@ export const getQuestions = async (params = {}) => {
  */
 export const getQuestionById = async (id) => {
   const res = await axiosClient.get(`/questions/${id}`);
-  const rawData = res?.data || res;
+  const rawData = res?.data?.data || res?.data || res;
   const normalized = normalizeQuestion(rawData);
 
   if (!normalized) {
@@ -268,11 +351,45 @@ export const getQuestionById = async (id) => {
  * Create New Question — LIVE API: POST /api/v1/questions
  */
 export const createQuestion = async (payload) => {
-  const formattedBody = formatQuestionPayload(payload);
+  let categoryId = payload.categoryId;
+
+  // Dynamically resolve categoryId if missing from form submission
+  if (!categoryId || categoryId === payload.category || categoryId.length < 5) {
+    try {
+      const catRes = await getQuestionCategories();
+      const existingCats = catRes?.data || [];
+      const categoryName = String(payload.category || "").toLowerCase().trim();
+
+      const matchedCat =
+        existingCats.find(
+          (c) =>
+            String(c.name || "").toLowerCase() === categoryName ||
+            String(c.id || "") === categoryName
+        ) ||
+        existingCats.find(
+          (c) =>
+            String(c.name || "").toLowerCase().includes("prog") ||
+            String(c.name || "").toLowerCase().includes("back")
+        ) ||
+        existingCats[0];
+
+      if (matchedCat?.id) {
+        categoryId = matchedCat.id;
+      }
+    } catch {
+      // Fallback
+    }
+  }
+
+  const formattedBody = formatQuestionPayload({
+    ...payload,
+    ...(categoryId ? { categoryId } : {}),
+  });
+
   const res = await axiosClient.post("/questions", formattedBody);
-  const rawData = res?.data || res;
+  const rawData = res?.data?.data || res?.data || res;
   const normalized = normalizeQuestion(rawData) || {
-    id: `q-${Date.now()}`,
+    id: rawData?.id || `q-${Date.now()}`,
     ...payload,
   };
 

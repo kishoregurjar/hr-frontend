@@ -19,6 +19,12 @@ import { Switch } from "@/components/ui/switch";
 
 import { assessmentSettingsSchema } from "../../validations";
 
+// NaN-Safe Submit Transformer
+const safeNumber = (val, fallback) => {
+  const n = Number(val);
+  return isNaN(n) ? fallback : n;
+};
+
 const AssessmentSettingsForm = ({
   defaultValues,
   onChange,
@@ -59,7 +65,13 @@ const AssessmentSettingsForm = ({
   }, [form, onChange]);
 
   const handleSubmit = (data) => {
-    onContinue(data);
+    // NaN-safe coercion before passing to wizard
+    onContinue({
+      ...data,
+      duration: safeNumber(data.duration, 60),
+      passingScore: safeNumber(data.passingScore, 70),
+      attemptsAllowed: safeNumber(data.attemptsAllowed, 1),
+    });
   };
 
   return (
