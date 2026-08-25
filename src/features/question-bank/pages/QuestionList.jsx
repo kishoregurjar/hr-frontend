@@ -65,29 +65,18 @@ const QuestionList = () => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
       {/* ── 1. SINGLE, CLEAN UNIFIED HEADER ── */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Question Bank
-            </h1>
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-[11px] font-bold">
-              {companyName}
-            </span>
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Question Bank
+          </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
             Manage all MCQ questions, coding items, and problem-solving puzzles used in assessments.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Demo Badge */}
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/60 text-blue-700 text-xs font-semibold">
-            <span className="h-2 w-2 rounded-full bg-blue-500" />
-            <span>Demo Environment</span>
-          </div>
-
-          {/* Admin Chip */}
+          {/* User HR Chip */}
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs font-semibold shadow-2xs">
             <Sparkles className="h-3.5 w-3.5 text-amber-500" />
             <span className="font-bold text-slate-900">{userName}</span>

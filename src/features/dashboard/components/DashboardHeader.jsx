@@ -15,21 +15,13 @@ const DashboardHeader = () => {
         <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
           Recruitment Analytics & Screening
         </h1>
-        <p className="text-xs text-muted-foreground font-medium mt-0.5 flex items-center gap-1.5">
-          <span>{companyName} Workspace</span>
-          <span>•</span>
-          <span className="text-slate-500">Data Isolated</span>
+        <p className="text-xs text-muted-foreground font-medium mt-0.5">
+          Monitor candidate assessments, pipeline throughput, and score distributions in real time.
         </p>
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Soft Blue Demo Environment Badge */}
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/60 text-blue-700 text-xs font-semibold shadow-2xs">
-          <span className="h-2 w-2 rounded-full bg-blue-500" />
-          <span>Demo Environment</span>
-        </div>
-
-        {/* Company Admin Chip */}
+        {/* User HR Chip */}
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs font-semibold shadow-2xs">
           <Sparkles className="h-3.5 w-3.5 text-amber-500" />
           <span className="font-bold text-slate-900">{userName}</span>
