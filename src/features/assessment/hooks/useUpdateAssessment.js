@@ -16,11 +16,9 @@ const useUpdateAssessment = () => {
       queryClient.invalidateQueries({
         queryKey: ASSESSMENT_QUERY_KEYS.all,
       });
-
-      queryClient.setQueryData(
-        ASSESSMENT_QUERY_KEYS.detail(assessment.id),
-        assessment
-      );
+      queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === "assessments",
+      });
     },
   });
 };

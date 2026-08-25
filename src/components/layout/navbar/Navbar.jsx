@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, LogOut, Menu, ShieldAlert } from "lucide-react";
+import Link from "next/link";
+import { Bell, LogOut, Menu, Shield, ShieldAlert } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { PAGE_TITLES } from "@/constants";
@@ -41,12 +42,41 @@ const Navbar = ({ onMenuClick }) => {
     }
   };
 
+  const displayName = (user?.name || "").replace(/\s+user$/i, "").trim() || "HR";
+
   const getInitials = (name) => {
     if (!name) return "HR";
-    const parts = name.trim().split(" ");
+    const clean = name.replace(/\s+user$/i, "").trim();
+    const parts = clean.split(" ").filter(Boolean);
     if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
     return (parts[0][0] + parts[1][0]).toUpperCase();
   };
+
+  if (
+    pathname === "/dashboard" ||
+    pathname.startsWith("/candidates") ||
+    pathname.startsWith("/assessments") ||
+    pathname.startsWith("/invitations") ||
+    pathname.startsWith("/question-bank") ||
+    pathname.startsWith("/results") ||
+    pathname.startsWith("/games")
+  ) {
+    return (
+      <header className="lg:hidden sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-background px-4">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onMenuClick}
+            aria-label="Open Sidebar"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <span className="font-bold text-sm text-slate-900">AssessFlow</span>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <>
@@ -76,6 +106,20 @@ const Navbar = ({ onMenuClick }) => {
             className="hidden w-64 md:block"
           />
 
+          {/* Super Admin Switcher (Strictly only visible to SUPER_ADMIN role) */}
+          {(user?.role === "SUPER_ADMIN" || user?.role === "PLATFORM_ADMIN") && (
+            <Link href="/admin">
+              <Button
+                variant="outline"
+                size="sm"
+                className="hidden sm:flex items-center gap-1.5 text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800 hover:text-white border-slate-900 shadow-sm"
+              >
+                <Shield className="h-3.5 w-3.5 text-blue-400" />
+                Admin Console
+              </Button>
+            </Link>
+          )}
+
           <Button
             variant="ghost"
             size="icon"
@@ -87,13 +131,13 @@ const Navbar = ({ onMenuClick }) => {
           <div className="flex items-center gap-3">
             <Avatar className="h-9 w-9">
               <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                {getInitials(user?.name)}
+                {getInitials(displayName)}
               </AvatarFallback>
             </Avatar>
 
             <div className="hidden md:block">
               <p className="text-sm font-semibold text-slate-900 leading-none capitalize">
-                {user?.name || "User"}
+                {displayName}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 {user?.company ?? "HireQuest HR"}

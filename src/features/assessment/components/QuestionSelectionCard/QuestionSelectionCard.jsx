@@ -11,18 +11,22 @@ const QuestionSelectionCard = ({
   selected,
   onToggle,
 }) => {
+  const qId = question.id || question._id;
+  const qTitle = question.title || question.question || question.text || "Untitled Question";
+  const qCategory = question.category?.name || question.category || question.categoryName || "General";
+
   return (
     <Card
       role="button"
       tabIndex={0}
-      onClick={() => onToggle(question.id)}
+      onClick={() => onToggle(qId)}
       onKeyDown={(event) => {
         if (
           event.key === "Enter" ||
           event.key === " "
         ) {
           event.preventDefault();
-          onToggle(question.id);
+          onToggle(qId);
         }
       }}
       className={`cursor-pointer transition ${
@@ -46,20 +50,20 @@ const QuestionSelectionCard = ({
 
         <div className="min-w-0 flex-1">
           <p className="font-medium leading-relaxed">
-            {question.question}
+            {qTitle}
           </p>
 
           <div className="mt-3 flex flex-wrap gap-2">
             <Badge variant="secondary">
-              {question.category}
+              {qCategory}
             </Badge>
 
             <Badge variant="outline">
-              {question.difficulty}
+              {question.difficulty || "Easy"}
             </Badge>
 
             <Badge variant="outline">
-              {question.type}
+              {question.type || "MCQ"}
             </Badge>
           </div>
         </div>

@@ -29,31 +29,57 @@ export const toAssessmentPayload = (assessment, status) => {
     shuffleQuestions: Boolean(assessment.shuffleQuestions ?? true),
     showResultToCandidate: Boolean(assessment.showResultToCandidate ?? false),
 
-    gameIds: [...(assessment.selectedGameIds || assessment.gameIds || [])],
-    questionIds: [...(assessment.selectedQuestionIds || assessment.questionIds || [])],
+    gameIds: [...(assessment.selectedGameIds || assessment.gameIds || assessment.games || [])].filter(Boolean),
+    games: [...(assessment.selectedGameIds || assessment.gameIds || assessment.games || [])].filter(Boolean),
+    questionIds: [...(assessment.selectedQuestionIds || assessment.questionIds || assessment.questions || [])].filter(Boolean),
+    questions: [...(assessment.selectedQuestionIds || assessment.questionIds || assessment.questions || [])].filter(Boolean),
   };
 };
 
 export const toAssessmentBuilder = (assessment) => {
   if (!assessment) return {};
 
+  const extractedQuestionIds =
+    (Array.isArray(assessment.questionIds) && assessment.questionIds.length > 0
+      ? assessment.questionIds
+      : null) ||
+    (Array.isArray(assessment.questions)
+      ? assessment.questions
+          .map((q) => q?.questionId || q?.id || q?._id)
+          .filter(Boolean)
+      : null) ||
+    (Array.isArray(assessment.AssessmentQuestions)
+      ? assessment.AssessmentQuestions
+          .map((q) => q?.questionId || q?.id)
+          .filter(Boolean)
+      : null) ||
+    [];
+
+  const extractedGameIds =
+    (Array.isArray(assessment.gameIds) && assessment.gameIds.length > 0
+      ? assessment.gameIds
+      : null) ||
+    (Array.isArray(assessment.games)
+      ? assessment.games
+          .map((g) => g?.gameId || g?.id || g?._id)
+          .filter(Boolean)
+      : null) ||
+    (Array.isArray(assessment.AssessmentGames)
+      ? assessment.AssessmentGames
+          .map((g) => g?.gameId || g?.id)
+          .filter(Boolean)
+      : null) ||
+    [];
+
   return {
     title: assessment.title ?? "",
-
     description: assessment.description ?? "",
-
-    selectedGameIds: assessment.gameIds ?? [],
-
-    selectedQuestionIds: assessment.questionIds ?? [],
-
-    duration: assessment.duration ?? 60,
-
+    selectedGameIds: extractedGameIds,
+    selectedQuestionIds: extractedQuestionIds,
+    duration: assessment.duration ?? assessment.durationMinutes ?? 60,
     passingScore: assessment.passingScore ?? 70,
-
     attemptsAllowed: assessment.attemptsAllowed ?? 1,
-
     shuffleQuestions: assessment.shuffleQuestions ?? true,
-
     showResultToCandidate: assessment.showResultToCandidate ?? false,
   };
 };

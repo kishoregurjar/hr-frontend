@@ -13,20 +13,23 @@ const AssessmentStatusActions = ({
   onRestore,
   isPending = false,
 }) => {
-  if (status === ASSESSMENT_STATUS.DRAFT) {
+  const normalized = String(status || "").toUpperCase();
+
+  if (normalized === "DRAFT") {
     return (
       <Button
         type="button"
         onClick={onPublish}
         disabled={isPending}
+        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold gap-1.5 shadow-sm"
       >
         <Send className="mr-2 h-4 w-4" />
-        {isPending ? "Publishing..." : "Publish"}
+        {isPending ? "Publishing..." : "Publish Assessment"}
       </Button>
     );
   }
 
-  if (status === ASSESSMENT_STATUS.PUBLISHED) {
+  if (normalized === "PUBLISHED") {
     return (
       <Button
         type="button"
@@ -40,7 +43,7 @@ const AssessmentStatusActions = ({
     );
   }
 
-  if (status === ASSESSMENT_STATUS.ARCHIVED) {
+  if (normalized === "ARCHIVED") {
     return (
       <Button
         type="button"

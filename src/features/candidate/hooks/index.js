@@ -9,3 +9,6 @@ export { default as useSendInvitation } from "./useSendInvitation";
 export { default as useSendBulkInvitations } from "./useSendBulkInvitations";
 export { default as useCandidateAssignments } from "./useCandidateAssignments";
 export { default as useInvitationQuery } from "./useInvitationQuery";
+export { default as useSyncEmails } from "./useSyncEmails";
+export { default as useExtractCandidate } from "./useExtractCandidate";
+export { default as useUpdateCandidateStatus } from "./useUpdateCandidateStatus";

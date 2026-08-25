@@ -32,7 +32,7 @@ const QuestionSelectionStep = ({
     return [
       ...new Set(
         questions
-          .map((question) => question.category)
+          .map((q) => q?.category?.name || q?.category || q?.categoryName)
           .filter(Boolean)
       ),
     ].sort();
@@ -41,22 +41,18 @@ const QuestionSelectionStep = ({
   const filteredQuestions = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    return questions.filter((question) => {
-      const matchesSearch =
-        !query ||
-        question.question?.toLowerCase().includes(query);
+    return questions.filter((q) => {
+      const qText = (q.title || q.question || q.text || "").toLowerCase();
+      const qCategory = (q.category?.name || q.category || q.categoryName || "").toLowerCase();
+      const qDiff = (q.difficulty || "").toLowerCase();
 
+      const matchesSearch = !query || qText.includes(query);
       const matchesCategory =
-        category === "all" || question.category === category;
-
+        category === "all" || qCategory === category.toLowerCase();
       const matchesDifficulty =
-        difficulty === "all" || question.difficulty === difficulty;
+        difficulty === "all" || qDiff === difficulty.toLowerCase();
 
-      return (
-        matchesSearch &&
-        matchesCategory &&
-        matchesDifficulty
-      );
+      return matchesSearch && matchesCategory && matchesDifficulty;
     });
   }, [questions, search, category, difficulty]);
 
@@ -70,6 +66,7 @@ const QuestionSelectionStep = ({
   };
 
   const handleContinue = () => {
+    onSelectionChange?.(selectedIds);
     onContinue(selectedIds);
   };
 

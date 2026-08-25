@@ -71,17 +71,13 @@ const AssessmentCardActions = ({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          disabled={isBusy}
-          aria-label="Assessment actions"
-          className="h-8 w-8 text-slate-500 hover:text-slate-900"
-        >
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
+      <DropdownMenuTrigger
+        type="button"
+        disabled={isBusy}
+        aria-label="Assessment actions"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors focus-visible:outline-none"
+      >
+        <MoreHorizontal className="h-4 w-4" />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-44">

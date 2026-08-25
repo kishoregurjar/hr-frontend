@@ -105,8 +105,11 @@ const ManageCategoriesDialog = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          <FolderPlus className="h-4 w-4 text-slate-600" />
+        <Button
+          variant="outline"
+          className="gap-1.5 border-slate-300 text-slate-700 bg-white hover:bg-slate-50 font-semibold text-xs h-9 px-3.5 rounded-xl shadow-2xs"
+        >
+          <FolderPlus className="h-4 w-4 text-slate-500" />
           Manage Categories
         </Button>
       </DialogTrigger>

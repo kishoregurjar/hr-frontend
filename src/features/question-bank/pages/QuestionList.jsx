@@ -1,14 +1,19 @@
 "use client";
 
+import { useMemo } from "react";
+import {
+  HelpCircle,
+  Plus,
+  FolderTree,
+  Search,
+  Sparkles,
+  ChevronDown,
+  Filter,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { 
-  PageHeader, 
-  PageToolbar, 
-  SearchInput, 
-  Pagination, 
-  EmptyState, 
-  StatsSkeleton, 
-} from "@/components/common";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/features/auth/context";
+
 import {
   CategoryFilter,
   DifficultyFilter,
@@ -23,6 +28,11 @@ import {
 import { useQuestions } from "../hooks";
 
 const QuestionList = () => {
+  const { user } = useAuth();
+  const rawName = user?.name || user?.fullName || "Sarah Jenkins";
+  const userName = rawName.replace(/\s+user$/i, "").trim() || "Sarah Jenkins";
+  const companyName = user?.company || "HireQuest HR";
+
   const {
     questions,
     allQuestions,
@@ -46,29 +56,6 @@ const QuestionList = () => {
     totalQuestions,
   } = useQuestions();
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <StatsSkeleton />
-        <QuestionGridSkeleton />
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <EmptyState
-        title="Unable to load questions"
-        description={
-          error?.message ||
-          "Something went wrong while loading the question bank."
-        }
-        actionLabel="Try Again"
-        onAction={refetch}
-      />
-    );
-  }
-
   const hasFilters =
     search.trim() !== "" ||
     category !== "all" ||
@@ -76,91 +63,109 @@ const QuestionList = () => {
     status !== "all";
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Question Bank"
-        description="Manage all MCQ questions used in assessments."
-      >
-        <div className="flex items-center gap-3">
+    <div className="space-y-6 max-w-7xl mx-auto font-sans">
+      {/* ── 1. SINGLE, CLEAN UNIFIED HEADER ── */}
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Question Bank
+            </h1>
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-[11px] font-bold">
+              {companyName}
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+            Manage all MCQ questions, coding items, and problem-solving puzzles used in assessments.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Demo Badge */}
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/60 text-blue-700 text-xs font-semibold">
+            <span className="h-2 w-2 rounded-full bg-blue-500" />
+            <span>Demo Environment</span>
+          </div>
+
+          {/* Admin Chip */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs font-semibold shadow-2xs">
+            <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+            <span className="font-bold text-slate-900">{userName}</span>
+            <span className="text-[10px] font-extrabold uppercase bg-blue-50 text-blue-700 border border-blue-200/70 px-1.5 py-0.5 rounded ml-0.5">
+              HR
+            </span>
+          </div>
+
+          {/* Action Dialogs */}
           <ManageCategoriesDialog />
           <AddQuestionDialog />
         </div>
-      </PageHeader>
+      </div>
 
+      {/* ── 2. KPI Stat Cards ── */}
       <QuestionStats questions={allQuestions} />
 
-      <PageToolbar
-        leftContent={
-          <div className="flex flex-wrap gap-3">
-            <SearchInput
-              value={search}
-              onChange={setSearch}
-              placeholder="Search questions..."
-            />
+      {/* ── 3. Filters & Search Toolbar ── */}
+      <div className="rounded-2xl border border-slate-200/90 bg-white p-3 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        {/* Search Input */}
+        <div className="relative flex-1 min-w-[260px]">
+          <Search className="h-4 w-4 absolute left-3.5 top-3 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search questions by title, code snippet, or topic..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-10 w-full pl-9 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:bg-white transition"
+          />
+        </div>
 
-            <CategoryFilter
-              value={category}
-              onChange={setCategory}
-            />
+        {/* Filter Dropdowns */}
+        <div className="flex flex-wrap items-center gap-2">
+          <CategoryFilter value={category} onChange={setCategory} />
+          <DifficultyFilter value={difficulty} onChange={setDifficulty} />
+          <StatusFilter value={status} onChange={setStatus} />
+          <SortFilter value={sortBy} onChange={setSortBy} />
+        </div>
+      </div>
 
-            <DifficultyFilter
-              value={difficulty}
-              onChange={setDifficulty}
-            />
-
-            <StatusFilter
-              value={status}
-              onChange={setStatus}
-            />
-
-            <SortFilter
-              value={sortBy}
-              onChange={setSortBy}
-            />
-          </div>
-        }
-        rightContent={
-          <Button variant="outline">
-            Export
+      {/* ── 4. Questions Grid / Empty State ── */}
+      {isLoading ? (
+        <QuestionGridSkeleton />
+      ) : isError ? (
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-10 text-center">
+          <h3 className="font-bold text-destructive">Unable to load questions</h3>
+          <p className="text-xs text-muted-foreground mt-1">{error?.message || "Failed to load questions from database."}</p>
+          <Button variant="outline" size="sm" onClick={refetch} className="mt-4">
+            Try Again
           </Button>
-        }
-      />
-
-      {questions.length > 0 ? (
-        <>
-          <QuestionGrid questions={questions} />
-
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              Showing {questions.length} of {totalQuestions} questions
-            </p>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
+        </div>
+      ) : questions.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-2xs space-y-3">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 shadow-xs">
+            <HelpCircle className="h-7 w-7" />
           </div>
-        </>
+          <div>
+            <h3 className="text-base font-extrabold text-slate-900">
+              {hasFilters ? "No matching questions found" : "No questions in Question Bank yet"}
+            </h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
+              {hasFilters
+                ? "Try adjusting your search keywords or filter criteria."
+                : "Create your first MCQ question or import question sets to use inside candidate assessments."}
+            </p>
+          </div>
+          {!hasFilters && (
+            <div className="pt-2">
+              <AddQuestionDialog />
+            </div>
+          )}
+        </div>
       ) : (
-        <EmptyState
-          title={hasFilters ? "No matching questions" : "No questions yet"}
-          description={
-            hasFilters
-              ? "Try changing your search or filters."
-              : "Create your first question to start building the question bank."
-          }
-          actionLabel={hasFilters ? "Clear Filters" : undefined}
-          onAction={
-            hasFilters
-              ? () => {
-                  setSearch("");
-                  setCategory("all");
-                  setDifficulty("all");
-                  setStatus("all");
-                  setSortBy("latest");
-                }
-              : undefined
-          }
+        <QuestionGrid
+          questions={questions}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
         />
       )}
     </div>

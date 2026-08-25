@@ -32,12 +32,20 @@ const AssessmentInvitation = ({ token }) => {
 
   const startAssessmentMutation = useStartAssessment(token);
 
-  const handleStart = async () => {
+  const candidate =
+    data?.candidate ||
+    data?.assignment?.candidate || {
+      name: assignment?.candidateName || data?.candidateName || "",
+      email: assignment?.candidateEmail || data?.email || data?.candidateEmail || "",
+      phone: assignment?.candidatePhone || data?.phone || "",
+    };
+
+  const handleStart = async (candidateInfo = {}) => {
     await enterFullscreen().catch(() => {});
 
-    startAssessmentMutation.mutate(undefined, {
+    startAssessmentMutation.mutate(candidateInfo, {
       onSuccess: ({ attempt }) => {
-        router.push(`/assessment/attempt/${attempt.id}`);
+        router.push(`/assessment/attempt/${attempt?.id || attempt?._id}`);
       },
     });
   };
@@ -46,7 +54,7 @@ const AssessmentInvitation = ({ token }) => {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-sm text-muted-foreground font-medium">
+        <p className="text-sm text-muted-foreground font-medium animate-pulse">
           Loading assessment details...
         </p>
       </div>
@@ -104,6 +112,7 @@ const AssessmentInvitation = ({ token }) => {
       <>
         <AssessmentPreStart
           assessment={assessment}
+          candidate={candidate}
           isStarting={startAssessmentMutation.isPending}
           onStart={handleStart}
         />
@@ -130,6 +139,7 @@ const AssessmentInvitation = ({ token }) => {
   return (
     <AssessmentPreStart
       assessment={assessment}
+      candidate={candidate}
       isStarting={startAssessmentMutation.isPending}
       onStart={handleStart}
     />

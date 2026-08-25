@@ -44,8 +44,8 @@ const AddQuestionDialog = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen} preventCloseOnClickOutside={true}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20">
+          <Plus className="h-4 w-4" />
           Add Question
         </Button>
       </DialogTrigger>

@@ -25,13 +25,52 @@ const AssessmentDetails = ({
   questions = [],
   actions = null,
 }) => {
-  const selectedGames = games.filter((game) =>
-    assessment.gameIds?.includes(game.id)
-  );
+  if (!assessment) return null;
 
-  const selectedQuestions = questions.filter((question) =>
-    assessment.questionIds?.includes(question.id)
-  );
+  const duration =
+    assessment.duration ??
+    assessment.durationMinutes ??
+    60;
+
+  const selectedGames =
+    (Array.isArray(assessment.games) && assessment.games.length > 0
+      ? assessment.games.map((g) => g?.game || g).filter(Boolean)
+      : null) ||
+    (Array.isArray(assessment.AssessmentGames) && assessment.AssessmentGames.length > 0
+      ? assessment.AssessmentGames.map((g) => g?.game || g).filter(Boolean)
+      : null) ||
+    (Array.isArray(assessment.gameIds) && assessment.gameIds.length > 0
+      ? games.filter((game) => assessment.gameIds.includes(game.id || game._id))
+      : []) ||
+    [];
+
+  const selectedQuestions =
+    (Array.isArray(assessment.questions) && assessment.questions.length > 0
+      ? assessment.questions.map((q) => q?.question || q).filter(Boolean)
+      : null) ||
+    (Array.isArray(assessment.AssessmentQuestions) && assessment.AssessmentQuestions.length > 0
+      ? assessment.AssessmentQuestions.map((q) => q?.question || q).filter(Boolean)
+      : null) ||
+    (Array.isArray(assessment.questionIds) && assessment.questionIds.length > 0
+      ? questions.filter((question) => assessment.questionIds.includes(question.id || question._id))
+      : []) ||
+    [];
+
+  const questionsCount =
+    selectedQuestions.length ||
+    assessment.questionCount ||
+    assessment.totalQuestions ||
+    assessment._count?.questions ||
+    assessment._count?.AssessmentQuestions ||
+    0;
+
+  const gamesCount =
+    selectedGames.length ||
+    assessment.gameCount ||
+    assessment.totalGames ||
+    assessment._count?.games ||
+    assessment._count?.AssessmentGames ||
+    0;
 
   return (
     <div className="space-y-6">
@@ -65,31 +104,31 @@ const AssessmentDetails = ({
         <OverviewCard
           icon={Clock}
           label="Duration"
-          value={`${assessment.duration} min`}
+          value={`${duration} min`}
         />
 
         <OverviewCard
           icon={Target}
           label="Passing Score"
-          value={`${assessment.passingScore}%`}
+          value={`${assessment.passingScore ?? 70}%`}
         />
 
         <OverviewCard
           icon={RotateCcw}
           label="Attempts"
-          value={assessment.attemptsAllowed}
+          value={assessment.attemptsAllowed ?? assessment.maxAttempts ?? 1}
         />
 
         <OverviewCard
           icon={Gamepad2}
           label="Games"
-          value={selectedGames.length}
+          value={gamesCount}
         />
 
         <OverviewCard
           icon={HelpCircle}
           label="Questions"
-          value={selectedQuestions.length}
+          value={questionsCount}
         />
       </div>
 
@@ -149,36 +188,46 @@ const AssessmentDetails = ({
         <CardContent>
           {selectedQuestions.length > 0 ? (
             <div className="space-y-3">
-              {selectedQuestions.map((question, index) => (
-                <div
-                  key={question.id}
-                  className="flex gap-3 rounded-lg border p-4"
-                >
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                    {index + 1}
-                  </div>
+              {selectedQuestions.map((question, index) => {
+                const qId = question.id || question._id || index;
+                const qTitle = question.title || question.question || question.text || `Question ${index + 1}`;
+                const qCategory = question.category?.name || question.category || question.categoryName;
+                const qDiff = question.difficulty || "Easy";
+                const qType = question.type || "MCQ";
 
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium">
-                      {question.question}
-                    </p>
+                return (
+                  <div
+                    key={qId}
+                    className="flex gap-3 rounded-lg border p-4"
+                  >
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                      {index + 1}
+                    </div>
 
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <Badge variant="secondary">
-                        {question.category}
-                      </Badge>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium">
+                        {qTitle}
+                      </p>
 
-                      <Badge variant="outline">
-                        {question.difficulty}
-                      </Badge>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {qCategory && (
+                          <Badge variant="secondary">
+                            {qCategory}
+                          </Badge>
+                        )}
 
-                      <Badge variant="outline">
-                        {question.type}
-                      </Badge>
+                        <Badge variant="outline">
+                          {qDiff}
+                        </Badge>
+
+                        <Badge variant="outline">
+                          {qType}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">

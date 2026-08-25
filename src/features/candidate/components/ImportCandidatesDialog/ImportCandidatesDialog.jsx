@@ -105,8 +105,11 @@ const ImportCandidatesDialog = ({ existingCandidates = [] }) => {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline">
-          <Upload className="mr-2 h-4 w-4" />
+        <Button
+          variant="outline"
+          className="gap-2 border-slate-300 text-slate-700 bg-white hover:bg-slate-50 font-semibold text-xs h-10 px-4 rounded-xl shadow-2xs"
+        >
+          <Upload className="h-4 w-4 text-slate-500" />
           Import CSV
         </Button>
       </DialogTrigger>

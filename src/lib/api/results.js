@@ -184,7 +184,34 @@ const results = [
 const delay = (ms = 500) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-export const getAssessmentResults = async (assessmentId) => {
+export const getAssessmentResults = async (assessmentId, params = {}) => {
+  try {
+    const res = await axiosClient.get(
+      `/attempts/assessments/${assessmentId}/results`,
+      { params: { page: 1, limit: 50, sortBy: "score", sortOrder: "desc", ...params } }
+    );
+    const dataList = res?.data?.data || res?.data || res;
+    if (Array.isArray(dataList)) {
+      return dataList.map((item) => ({
+        id: item.attemptId || item.id,
+        attemptId: item.attemptId || item.id,
+        assessmentId,
+        candidate: item.candidate || {
+          name: `${item.candidate?.firstName || ""} ${item.candidate?.lastName || ""}`.trim() || "Candidate",
+          email: item.candidate?.email || "",
+        },
+        score: item.score ?? item.percentage ?? 0,
+        percentage: item.percentage ?? item.score ?? 0,
+        passed: item.passed ?? true,
+        status: item.status || "Completed",
+        decision: item.decision || (item.passed ? "Shortlisted" : "Pending"),
+        submittedAt: item.submittedAt || new Date().toISOString(),
+      }));
+    }
+  } catch (err) {
+    console.warn("Live assessment results API fallback:", err.message);
+  }
+
   await delay(500);
 
   const matched = results.filter(
@@ -195,6 +222,29 @@ export const getAssessmentResults = async (assessmentId) => {
 };
 
 export const getAssessmentResultSummary = async (assessmentId) => {
+  try {
+    const res = await axiosClient.get(
+      `/attempts/assessments/${assessmentId}/analytics`
+    );
+    const analytics = res?.data?.data || res?.data;
+    if (analytics && analytics.attempts) {
+      return {
+        candidates: analytics.attempts.total ?? 0,
+        invited: analytics.attempts.total ?? 0,
+        started: analytics.attempts.total ?? 0,
+        completed: analytics.attempts.submitted ?? 0,
+        inProgress: analytics.attempts.inProgress ?? 0,
+        shortlisted: analytics.passRate?.passedCount ?? 0,
+        averageScore: analytics.scores?.averageScore ?? 75,
+        highestScore: analytics.scores?.highestScore ?? 100,
+        lowestScore: analytics.scores?.lowestScore ?? 0,
+        passPercentage: analytics.passRate?.passPercentage ?? 80,
+      };
+    }
+  } catch (err) {
+    console.warn("Live assessment analytics API fallback:", err.message);
+  }
+
   await delay(400);
 
   const assessmentResults = await getAssessmentResults(assessmentId);
@@ -220,6 +270,29 @@ export const getAssessmentResultSummary = async (assessmentId) => {
 };
 
 export const getResultById = async ({ assessmentId, resultId }) => {
+  try {
+    const res = await axiosClient.get(
+      `/attempts/assessments/${assessmentId}/results/${resultId}`
+    );
+    const item = res?.data?.data || res?.data;
+    if (item && (item.attemptId || item.id)) {
+      return {
+        id: item.attemptId || item.id,
+        attemptId: item.attemptId || item.id,
+        assessmentId,
+        candidate: item.candidate || {
+          name: `${item.candidate?.firstName || ""} ${item.candidate?.lastName || ""}`.trim() || "Candidate",
+        },
+        score: item.score ?? 0,
+        answers: item.answers ?? [],
+        sections: item.answers ?? [],
+        status: "Completed",
+      };
+    }
+  } catch (err) {
+    console.warn("Live getResultById API fallback:", err.message);
+  }
+
   await delay(500);
 
   const result = results.find(
@@ -230,10 +303,6 @@ export const getResultById = async ({ assessmentId, resultId }) => {
 
   if (!result) {
     throw new Error("Candidate result not found.");
-  }
-
-  if (result.status !== "Completed") {
-    throw new Error("Candidate result is not available yet.");
   }
 
   return { ...result };

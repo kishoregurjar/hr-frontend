@@ -1,3 +1,4 @@
+import axiosClient from "./axiosClient";
 import { calculateAssessmentScore } from "@/lib/scoring";
 
 let attempts = [];
@@ -322,4 +323,184 @@ export const completeAttempt = async ({ attemptId, assessment, responses }) => {
 
 export const submitAttempt = async ({ attemptId, assessment }) => {
   return completeAttempt({ attemptId, assessment });
+};
+
+/**
+ * Step 3: Send Candidate Email OTP — POST /api/v1/attempts/candidate/send-otp
+ */
+export const sendCandidateOtp = async ({ email, invitationToken }) => {
+  try {
+    const res = await axiosClient.post("/attempts/candidate/send-otp", {
+      email,
+      invitationToken,
+    });
+    return res?.data || res;
+  } catch (err) {
+    console.warn("Live sendCandidateOtp API:", err.message);
+    throw err;
+  }
+};
+
+/**
+ * Step 4: Verify Candidate OTP & Get Session Access Token — POST /api/v1/attempts/candidate/verify-otp
+ */
+export const verifyCandidateOtp = async ({ email, otp, invitationToken }) => {
+  try {
+    const res = await axiosClient.post("/attempts/candidate/verify-otp", {
+      email,
+      otp,
+      invitationToken,
+    });
+    return res?.data?.data || res?.data || res;
+  } catch (err) {
+    console.warn("Live verifyCandidateOtp API:", err.message);
+    throw err;
+  }
+};
+
+/**
+ * Step 5: Start Attempt by Token / Session — POST /api/v1/attempts/start-by-token
+ */
+export const startAttemptByToken = async (token, candidateAccessToken = null) => {
+  try {
+    const headers = candidateAccessToken
+      ? { Authorization: `Bearer ${candidateAccessToken}` }
+      : {};
+    const res = await axiosClient.post(
+      "/attempts/start-by-token",
+      token ? { token } : {},
+      { headers }
+    );
+    return res?.data?.data || res?.data || res;
+  } catch (err) {
+    console.warn("Live startAttemptByToken API:", err.message);
+    throw err;
+  }
+};
+
+/**
+ * Step 6: Get Current Active Attempt State — GET /api/v1/attempts/current
+ */
+export const getCurrentAttempt = async (token, candidateAccessToken = null) => {
+  try {
+    const headers = candidateAccessToken
+      ? { Authorization: `Bearer ${candidateAccessToken}` }
+      : {};
+    const res = await axiosClient.get("/attempts/current", {
+      params: token ? { token } : {},
+      headers,
+    });
+    return res?.data?.data || res?.data || res;
+  } catch (err) {
+    console.warn("Live getCurrentAttempt API:", err.message);
+    return null;
+  }
+};
+
+/**
+ * Step 7: Real-Time Answer Autosave (Objective / Subjective) — POST /api/v1/attempts/save-answer
+ */
+export const saveAttemptAnswer = async ({
+  token,
+  attemptId,
+  questionId,
+  attemptQuestionId,
+  selectedOptionIds,
+  answerText,
+  candidateAccessToken = null,
+}) => {
+  try {
+    const headers = candidateAccessToken
+      ? { Authorization: `Bearer ${candidateAccessToken}` }
+      : {};
+    const payload = {
+      attemptQuestionId: attemptQuestionId || questionId,
+      ...(selectedOptionIds ? { selectedOptionIds } : {}),
+      ...(answerText !== undefined ? { answerText } : {}),
+      ...(token ? { token } : {}),
+    };
+
+    const res = await axiosClient.post("/attempts/save-answer", payload, {
+      headers,
+    });
+    return res?.data?.data || res?.data || res;
+  } catch (err1) {
+    try {
+      const res = await axiosClient.put(
+        `/assessment-attempts/${attemptId}/answers/${questionId}`,
+        { selectedOptionIds, answerText }
+      );
+      return res?.data?.data || res?.data || res;
+    } catch (err2) {
+      console.warn("Live saveAttemptAnswer fallback:", err2.message);
+      return null;
+    }
+  }
+};
+
+/**
+ * Step 8: Final Assessment Submission — POST /api/v1/attempts/submit
+ */
+export const submitAssessmentAttempt = async ({
+  token,
+  attemptId,
+  candidateAccessToken = null,
+}) => {
+  try {
+    const headers = candidateAccessToken
+      ? { Authorization: `Bearer ${candidateAccessToken}` }
+      : {};
+    const res = await axiosClient.post(
+      "/attempts/submit",
+      token ? { token } : {},
+      { headers }
+    );
+    return res?.data?.data || res?.data || res;
+  } catch (err1) {
+    try {
+      const res = await axiosClient.post(`/assessment-attempts/${attemptId}/submit`);
+      return res?.data?.data || res?.data || res;
+    } catch (err2) {
+      console.warn("Live submitAttempt fallback:", err2.message);
+      return null;
+    }
+  }
+};
+
+/**
+ * Step 9: Manual Evaluation of Subjective Answers by HR — POST /api/v1/attempts/:attemptId/evaluate-answer
+ */
+export const evaluateSubjectiveAnswer = async ({
+  attemptId,
+  attemptAnswerId,
+  evaluationStatus,
+  marksAwarded,
+}) => {
+  try {
+    const res = await axiosClient.post(
+      `/attempts/${attemptId}/evaluate-answer`,
+      {
+        attemptAnswerId,
+        evaluationStatus,
+        marksAwarded,
+      }
+    );
+    return res?.data?.data || res?.data || res;
+  } catch (err) {
+    console.warn("Live evaluateSubjectiveAnswer API:", err.message);
+    throw err;
+  }
+};
+
+/**
+ * Step 11: HR Paginated Results List — GET /api/v1/attempts?page=1&limit=10&status=SUBMITTED
+ */
+export const getPaginatedAttempts = async (params = {}) => {
+  try {
+    const res = await axiosClient.get("/attempts", { params });
+    return res?.data?.data || res?.data || res;
+  } catch (err) {
+    console.warn("Live getPaginatedAttempts API:", err.message);
+    return [];
+  }
 };

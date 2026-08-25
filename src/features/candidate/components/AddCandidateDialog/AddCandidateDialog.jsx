@@ -39,8 +39,11 @@ const AddCandidateDialog = ({ trigger }) => {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button type="button">
-            <Plus className="mr-2 h-4 w-4" />
+          <Button
+            type="button"
+            className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs h-10 px-4 rounded-xl shadow-xs shadow-blue-500/20"
+          >
+            <Plus className="h-4 w-4" />
             Add Candidate
           </Button>
         )}

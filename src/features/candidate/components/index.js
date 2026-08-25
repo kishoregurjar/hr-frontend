@@ -10,3 +10,6 @@ export { default as ImportCandidatesDialog } from "./ImportCandidatesDialog";
 export { default as CandidateBulkActions } from "./CandidateBulkActions";
 export { default as AssignAssessmentDialog } from "./AssignAssessmentDialog";
 export { default as CandidateAssessments } from "./CandidateAssessments";
+export { default as EmailExtractorDialog } from "./EmailExtractorDialog";
+export { default as CandidateStatsCards } from "./CandidateStatsCards";
+export { default as CandidateExtractorDrawer } from "./CandidateExtractorDrawer";

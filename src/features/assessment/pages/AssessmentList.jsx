@@ -2,16 +2,16 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Sparkles, ChevronDown, Clock, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/common";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/features/auth/context";
 
 import { ASSESSMENT_STATUS } from "../constants";
 import {
   AssessmentCard,
   AssessmentCardSkeleton,
-  AssessmentFilters,
 } from "../components";
 import {
   useAssessmentsQuery,
@@ -19,8 +19,12 @@ import {
 } from "../hooks";
 
 const AssessmentList = () => {
+  const { user } = useAuth();
+  const rawName = user?.name || user?.fullName || "Sarah Jenkins";
+  const userName = rawName.replace(/\s+user$/i, "").trim() || "Sarah Jenkins";
+  const companyName = user?.company || "TechCorp Solutions";
+
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("all");
   const [actionAssessmentId, setActionAssessmentId] = useState(null);
 
   const {
@@ -35,173 +39,85 @@ const AssessmentList = () => {
 
   const updateStatus = (id, newStatus) => {
     setActionAssessmentId(id);
-
     statusMutation.mutate(
-      {
-        id,
-        status: newStatus,
-      },
-      {
-        onSettled: () => {
-          setActionAssessmentId(null);
-        },
-      }
+      { id, status: newStatus },
+      { onSettled: () => setActionAssessmentId(null) }
     );
   };
 
-  const handlePublish = (id) => {
-    updateStatus(id, ASSESSMENT_STATUS.PUBLISHED);
-  };
-
-  const handleArchive = (id) => {
-    updateStatus(id, ASSESSMENT_STATUS.ARCHIVED);
-  };
-
-  const handleRestore = (id) => {
-    updateStatus(id, ASSESSMENT_STATUS.PUBLISHED);
-  };
+  const handlePublish = (id) => updateStatus(id, ASSESSMENT_STATUS.PUBLISHED);
+  const handleArchive = (id) => updateStatus(id, ASSESSMENT_STATUS.ARCHIVED);
+  const handleRestore = (id) => updateStatus(id, ASSESSMENT_STATUS.PUBLISHED);
 
   const filteredAssessments = useMemo(() => {
     const query = search.trim().toLowerCase();
-
     return assessments.filter((assessment) => {
       const title = assessment.title?.toLowerCase() ?? "";
       const description = assessment.description?.toLowerCase() ?? "";
-
-      const matchesSearch =
-        !query ||
-        title.includes(query) ||
-        description.includes(query);
-
-      const matchesStatus =
-        status === "all" ||
-        (assessment.status && assessment.status.toLowerCase() === status.toLowerCase());
-
-      return matchesSearch && matchesStatus;
+      return !query || title.includes(query) || description.includes(query);
     });
-  }, [assessments, search, status]);
-
-  const handleClearFilters = () => {
-    setSearch("");
-    setStatus("all");
-  };
+  }, [assessments, search]);
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Assessments"
-        description="Create and manage hiring assessments for your candidates."
-      >
-        <Link href="/assessments/create">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Assessment
-          </Button>
-        </Link>
-      </PageHeader>
-
-      <AssessmentFilters
-        search={search}
-        status={status}
-        onSearchChange={setSearch}
-        onStatusChange={setStatus}
-        onClear={handleClearFilters}
-      />
-
-      {/* Top Error Alert for status action failures */}
-      {statusMutation.isError && (
-        <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4">
-          <p className="text-sm text-destructive">
-            {statusMutation.error?.message ||
-              "Unable to update assessment."}
+    <div className="space-y-6 max-w-7xl mx-auto font-sans">
+      {/* ── 1. SINGLE, CLEAN HEADER ── */}
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Assessments & Modules
+            </h1>
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-[11px] font-bold">
+              {companyName}
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+            Configure multi-module candidate tests combining cognitive games, problem-solving puzzles, and technical MCQs.
           </p>
         </div>
-      )}
 
-      {/* Result counter */}
-      {!isLoading && !isError && assessments.length > 0 && (
-        <p className="text-sm text-muted-foreground">
-          Showing{" "}
-          <span className="font-medium text-foreground">
-            {filteredAssessments.length}
-          </span>{" "}
-          of {assessments.length} assessments
-        </p>
-      )}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Demo Badge */}
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/60 text-blue-700 text-xs font-semibold">
+            <span className="h-2 w-2 rounded-full bg-blue-500" />
+            <span>Demo Environment</span>
+          </div>
 
-      {/* Loading state: Card skeletons */}
-      {isLoading && (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, index) => (
+          {/* Admin Chip */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs font-semibold shadow-2xs">
+            <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+            <span className="font-bold text-slate-900">{userName}</span>
+            <span className="text-[10px] font-extrabold uppercase bg-blue-50 text-blue-700 border border-blue-200/70 px-1.5 py-0.5 rounded ml-0.5">
+              HR
+            </span>
+          </div>
+
+          {/* Build CTA */}
+          <Link href="/assessments/create">
+            <Button className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20">
+              <Plus className="h-3.5 w-3.5" />
+              Build Assessment
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* ── 3. Cards Grid (2-Columns matching screenshot) ── */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {Array.from({ length: 4 }).map((_, index) => (
             <AssessmentCardSkeleton key={index} />
           ))}
         </div>
-      )}
-
-      {/* Error state */}
-      {isError && (
-        <div className="rounded-xl border border-destructive/50 p-12 text-center">
-          <h2 className="text-lg font-semibold">
-            Unable to load assessments
-          </h2>
-
-          <p className="mt-2 text-sm text-muted-foreground">
-            {error?.message ||
-              "Something went wrong while loading assessments."}
-          </p>
-
-          <Button
-            type="button"
-            variant="outline"
-            className="mt-4"
-            onClick={() => refetch()}
-          >
-            Try Again
-          </Button>
-        </div>
-      )}
-
-      {/* Case A: Empty state — No assessments exist */}
-      {!isLoading && !isError && assessments.length === 0 && (
-        <div className="rounded-xl border border-dashed p-12 text-center">
-          <h2 className="text-lg font-semibold">
-            No assessments yet
-          </h2>
-
-          <p className="mt-2 text-sm text-muted-foreground">
-            Create your first assessment to get started.
+      ) : filteredAssessments.length === 0 ? (
+        <div className="rounded-2xl border border-dashed p-12 text-center bg-card">
+          <h3 className="text-base font-bold text-slate-900">No assessments found</h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            Click &quot;+ Build New Assessment&quot; above to create your first multi-module test!
           </p>
         </div>
-      )}
-
-      {/* Case B: Empty state — Assessments exist but filter returned 0 results */}
-      {!isLoading &&
-        !isError &&
-        assessments.length > 0 &&
-        filteredAssessments.length === 0 && (
-          <div className="rounded-xl border border-dashed p-12 text-center">
-            <h2 className="text-lg font-semibold">
-              No matching assessments
-            </h2>
-
-            <p className="mt-2 text-sm text-muted-foreground">
-              Try changing your search or status filter.
-            </p>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="mt-4"
-              onClick={handleClearFilters}
-            >
-              Clear Filters
-            </Button>
-          </div>
-        )}
-
-      {/* Assessment Grid */}
-      {!isLoading && !isError && filteredAssessments.length > 0 && (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredAssessments.map((assessment) => (
             <AssessmentCard
               key={assessment.id}
@@ -209,10 +125,7 @@ const AssessmentList = () => {
               onPublish={handlePublish}
               onArchive={handleArchive}
               onRestore={handleRestore}
-              isPending={
-                statusMutation.isPending &&
-                actionAssessmentId === assessment.id
-              }
+              isPending={actionAssessmentId === assessment.id}
             />
           ))}
         </div>

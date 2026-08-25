@@ -272,12 +272,12 @@ const AssessmentBuilder = ({
     const errors = { ...validation.errors };
 
     const hasInvalidGameSelection = assessment.selectedGameIds.some(
-      (id) => !games.some((game) => String(game.id) === String(id))
+      (id) => !games.some((game) => String(game.id || game._id) === String(id))
     );
 
     const hasInvalidQuestionSelection = assessment.selectedQuestionIds.some(
       (id) =>
-        !questions.some((question) => String(question.id) === String(id))
+        !questions.some((question) => String(question.id || question._id) === String(id))
     );
 
     if (hasInvalidGameSelection) {

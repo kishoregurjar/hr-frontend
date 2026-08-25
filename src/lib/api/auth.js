@@ -33,8 +33,13 @@ const normalizeUser = (resData, fallbackEmail = "") => {
     return null;
   }
 
-  const firstName = rawUser.firstName || rawUser.first_name || "";
-  const lastName = rawUser.lastName || rawUser.last_name || "";
+  const firstName = (rawUser.firstName || rawUser.first_name || "").trim();
+  let lastName = (rawUser.lastName || rawUser.last_name || "").trim();
+
+  // If lastName is just the placeholder "User" or "Recruiter", don't append it
+  if (lastName.toLowerCase() === "user" || lastName.toLowerCase() === "recruiter") {
+    lastName = "";
+  }
 
   let fullName =
     rawUser.fullName ||
@@ -44,7 +49,12 @@ const normalizeUser = (resData, fallbackEmail = "") => {
     rawUser.username ||
     (rawUser.email ? rawUser.email.split("@")[0] : "") ||
     (fallbackEmail ? fallbackEmail.split("@")[0] : "") ||
-    "User";
+    "HR";
+
+  // Remove any trailing " User" or " user" if candidate/user typed single name
+  if (/\s+user$/i.test(fullName)) {
+    fullName = fullName.replace(/\s+user$/i, "").trim();
+  }
 
   const formattedName = fullName
     .split(" ")
@@ -54,7 +64,7 @@ const normalizeUser = (resData, fallbackEmail = "") => {
 
   return {
     id: rawUser.id || rawUser._id || `hr-${Date.now()}`,
-    name: formattedName || "User",
+    name: formattedName || "HR",
     email: rawUser.email || fallbackEmail,
     company: rawUser.company || "HireQuest HR",
     role: rawUser.role || "HR",
@@ -98,12 +108,12 @@ export const loginApi = async ({ email, password }) => {
  */
 export const registerApi = async ({ name, email, company, password }) => {
   const parts = (name || "").trim().split(" ");
-  const firstName = parts[0] || "Recruiter";
-  const lastName = parts.slice(1).join(" ") || "User";
+  const firstName = parts[0] || "HR";
+  const lastName = parts.slice(1).join(" ").trim();
 
   const res = await axiosClient.post("/auth/register", {
     firstName,
-    lastName,
+    lastName: lastName || "",
     email,
     password,
     company,
@@ -134,6 +144,10 @@ export const getCurrentUserApi = async () => {
   let parsedUser = null;
   try {
     parsedUser = JSON.parse(storedUser);
+    if (parsedUser?.name && /\s+user$/i.test(parsedUser.name)) {
+      parsedUser.name = parsedUser.name.replace(/\s+user$/i, "").trim();
+      localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(parsedUser));
+    }
   } catch {
     parsedUser = null;
   }

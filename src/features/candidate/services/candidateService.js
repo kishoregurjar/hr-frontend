@@ -1,14 +1,18 @@
 import {
   createCandidate,
+  extractCandidateFromEmail,
   getCandidateById,
   getCandidates,
   importCandidates,
+  inviteCandidateToAssessment,
+  syncEmailApplications,
   updateCandidate,
+  updateCandidateStatus,
 } from "@/lib/api/candidates";
 
 export const candidateService = {
-  getAll: async () => {
-    return getCandidates();
+  getAll: async (params) => {
+    return getCandidates(params);
   },
 
   getById: async (id) => {
@@ -21,6 +25,22 @@ export const candidateService = {
 
   update: async ({ id, data }) => {
     return updateCandidate(id, data);
+  },
+
+  updateStatus: async ({ id, status }) => {
+    return updateCandidateStatus(id, status);
+  },
+
+  syncEmails: async () => {
+    return syncEmailApplications();
+  },
+
+  extractFromEmail: async (rawEmailText) => {
+    return extractCandidateFromEmail(rawEmailText);
+  },
+
+  invite: async ({ candidateId, assessmentId }) => {
+    return inviteCandidateToAssessment(candidateId, assessmentId);
   },
 
   importMany: async (candidates) => {

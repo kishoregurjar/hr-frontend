@@ -1,3 +1,4 @@
+import axiosClient from "./axiosClient";
 import { generateInvitationToken } from "@/features/candidate/utils";
 
 let assignments = [];
@@ -216,8 +217,40 @@ export const getRoundAssignments = async ({ hiringProcessId, roundId }) => {
     .map((item) => ({ ...item }));
 };
 
-export const assignAssessment = async ({ assessmentId, candidateIds }) => {
-  await delay(700);
+export const assignAssessment = async ({ assessmentId, candidateIds, email, firstName, lastName, candidates = [] }) => {
+  try {
+    if (Array.isArray(candidateIds) && candidateIds.length === 1) {
+      const res = await axiosClient.post(
+        `/attempts/assessments/${assessmentId}/invitations`,
+        {
+          candidateId: candidateIds[0],
+          email: email || undefined,
+          firstName: firstName || undefined,
+          lastName: lastName || undefined,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        }
+      );
+      if (res?.data) return [res?.data?.data || res.data];
+    } else if ((Array.isArray(candidateIds) && candidateIds.length > 1) || (Array.isArray(candidates) && candidates.length > 0)) {
+      const bulkCandidates = candidates.length > 0
+        ? candidates
+        : candidateIds.map((cId) => ({ candidateId: cId, email, firstName, lastName }));
+
+      const res = await axiosClient.post(
+        `/attempts/assessments/${assessmentId}/invitations/bulk`,
+        {
+          candidates: bulkCandidates,
+          candidateIds,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        }
+      );
+      if (res?.data) return res?.data?.data || res?.data?.results || [res.data];
+    }
+  } catch (err) {
+    console.warn("Live invitation API fallback:", err.message);
+  }
+
+  await delay(500);
 
   if (!assessmentId) {
     throw new Error("Assessment is required.");
@@ -228,10 +261,10 @@ export const assignAssessment = async ({ assessmentId, candidateIds }) => {
   }
 
   const now = new Date();
-  const expiresAt = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const createdAssignments = [];
 
-  candidateIds.forEach((candidateId, index) => {
+  candidateIds.forEach((candidateId) => {
     const alreadyAssigned = assignments.some(
       (assignment) =>
         String(assignment.candidateId) === String(candidateId) &&
@@ -245,11 +278,11 @@ export const assignAssessment = async ({ assessmentId, candidateIds }) => {
       id: crypto.randomUUID(),
       candidateId,
       assessmentId,
-      status: "Assigned",
+      status: "Invited",
       assignedAt: now.toISOString(),
       token,
       invitationToken: token,
-      invitedAt: null,
+      invitedAt: now.toISOString(),
       expiresAt: expiresAt.toISOString(),
       startedAt: null,
       completedAt: null,
