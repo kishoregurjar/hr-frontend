@@ -13,12 +13,15 @@ import {
   FileCheck,
   TrendingUp,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { getAdminCompanies, toggleCompanyStatus } from "@/lib/api/admin";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 export default function AdminCompaniesPage() {
+  const router = useRouter();
   const [companies, setCompanies] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -35,6 +38,16 @@ export default function AdminCompaniesPage() {
     };
     fetchCompanies();
   }, []);
+
+  const handleImpersonate = (company) => {
+    try {
+      localStorage.setItem("hq_impersonated_company", JSON.stringify(company));
+      toast.success(`Entering ${company.name} Workspace as Super Admin...`);
+      router.push("/dashboard");
+    } catch (err) {
+      toast.error("Failed to enter company workspace.");
+    }
+  };
 
   const handleToggle = async (companyId, currentStatus) => {
     const nextStatus = currentStatus === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
@@ -64,10 +77,10 @@ export default function AdminCompaniesPage() {
         subtitle="Manage B2B Client Organizations & Assessment Usage Limits"
       />
 
-      <main className="flex-1 p-6 sm:p-8 space-y-6 max-w-7xl">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl">
         {/* ── Top Action Bar ── */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
             {/* Search Input */}
             <div className="relative flex-1 sm:w-80">
               <Search className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
@@ -92,7 +105,7 @@ export default function AdminCompaniesPage() {
             </select>
           </div>
 
-          <Button className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-md shadow-blue-500/20">
+          <Button className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-md shadow-blue-500/20 shrink-0">
             <Plus className="h-4 w-4" />
             Onboard New Company
           </Button>
@@ -101,7 +114,7 @@ export default function AdminCompaniesPage() {
         {/* ── Companies Data Table ── */}
         <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[760px]">
               <thead className="bg-slate-50/80 border-b text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="py-3.5 px-6">Company & Domain</th>
@@ -177,16 +190,27 @@ export default function AdminCompaniesPage() {
                       </Badge>
                     </td>
 
-                    {/* Column 6: Toggle Action */}
+                    {/* Column 6: Master Actions */}
                     <td className="py-4 px-6 text-right">
-                      <Button
-                        size="sm"
-                        variant={company.status === "ACTIVE" ? "destructive" : "outline"}
-                        onClick={() => handleToggle(company.id, company.status)}
-                        className="text-xs font-semibold h-8 px-3"
-                      >
-                        {company.status === "ACTIVE" ? "Suspend Tenant" : "Activate Tenant"}
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleImpersonate(company)}
+                          className="text-xs font-bold h-8 px-3 text-blue-700 bg-blue-50/80 hover:bg-blue-100/90 border-blue-200 gap-1.5 shadow-2xs cursor-pointer transition"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5 text-blue-600" />
+                          <span>View Dashboard</span>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={company.status === "ACTIVE" ? "destructive" : "outline"}
+                          onClick={() => handleToggle(company.id, company.status)}
+                          className="text-xs font-semibold h-8 px-3 cursor-pointer"
+                        >
+                          {company.status === "ACTIVE" ? "Suspend Tenant" : "Activate Tenant"}
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}

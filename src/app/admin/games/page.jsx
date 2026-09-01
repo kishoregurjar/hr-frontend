@@ -49,7 +49,7 @@ export default function AdminGamesPage() {
         subtitle="Minders World Game Catalog & Cognitive Skill Competency Matrix (PRD Section 15)"
       />
 
-      <main className="flex-1 p-6 sm:p-8 space-y-6 max-w-7xl">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl">
         {/* ── Overview Banner ── */}
         <div className="rounded-2xl border bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 p-6 text-white shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">

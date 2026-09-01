@@ -41,7 +41,7 @@ export default function AdminAnalyticsPage() {
         subtitle="Global Recruitment & Candidate Assessment Telemetry (PRD Section 16)"
       />
 
-      <main className="flex-1 p-6 sm:p-8 space-y-8 max-w-7xl">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 max-w-7xl">
         {/* ── 1. Key Performance Indicators (Section 16 PRD) ── */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div className="rounded-2xl border bg-card p-4 shadow-sm space-y-1">

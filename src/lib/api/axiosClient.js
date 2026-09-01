@@ -7,9 +7,10 @@ const baseURL =
 const axiosClient = axios.create({
   baseURL,
   timeout: 15000,
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
-    "ngrok-skip-browser-warning": "true",
+    //"ngrok-skip-browser-warning": "true"
   },
 });
 
