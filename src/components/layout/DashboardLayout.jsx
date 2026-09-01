@@ -74,8 +74,8 @@ const DashboardLayout = ({ children }) => {
           />
         )}
 
-        {/* Dedicated Scrollable Content Viewport */}
-        <div className="flex flex-1 flex-col h-full overflow-y-auto overflow-x-hidden min-w-0">
+        {/* Dedicated Scrollable Content Viewport (Invisible Scrollbar with fluid scroll) */}
+        <div className="flex flex-1 flex-col h-full overflow-y-auto overflow-x-hidden min-w-0 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <Navbar onMenuClick={() => setSidebarOpen(true)} />
 
           <main className="flex-1 p-4 md:p-6 min-w-0">

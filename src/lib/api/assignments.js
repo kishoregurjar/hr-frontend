@@ -16,7 +16,35 @@ export const getAssignments = async () => {
 };
 
 export const getAssignmentByToken = async (token) => {
-  await delay(300);
+  try {
+    const res = await axiosClient.get(`/invitations/verify/${token}`);
+    const inv = res?.data?.data || res?.data || res;
+    if (inv && (inv.token === token || inv.id || inv.assessmentId)) {
+      const assessment = inv.assessment || {};
+      return {
+        id: inv.id,
+        assignmentId: inv.id,
+        assessmentId: inv.assessmentId,
+        candidateId: inv.candidateId || inv.id,
+        email: inv.email,
+        candidateName: inv.candidateName || (inv.email ? inv.email.split("@")[0] : "Candidate"),
+        candidateEmail: inv.email,
+        status: "Invited",
+        token: inv.token,
+        invitationToken: inv.token,
+        expiresAt: inv.expiresAt,
+        isExpired: inv.expiresAt ? new Date(inv.expiresAt).getTime() <= Date.now() : false,
+        assessment,
+        candidate: {
+          id: inv.candidateId || inv.id,
+          name: inv.candidateName || (inv.email ? inv.email.split("@")[0] : "Candidate"),
+          email: inv.email,
+        },
+      };
+    }
+  } catch (err) {
+    console.warn("Verify invitation API fallback:", err.message);
+  }
 
   const assignment = assignments.find(
     (item) => item.token === token || item.invitationToken === token
@@ -109,40 +137,32 @@ export const createAssignments = async ({
 };
 
 export const startAssignment = async (token) => {
-  await delay(300);
-
-  const index = assignments.findIndex(
-    (item) => item.token === token || item.invitationToken === token
-  );
-
-  if (index === -1) {
-    throw new Error("Assessment invitation not found.");
-  }
-
-  const assignment = assignments[index];
+  const assignment = await getAssignmentByToken(token);
 
   if (assignment.status === "Completed") {
     throw new Error("This assessment has already been completed.");
   }
 
-  const expired =
-    assignment.status === "Invited" &&
-    assignment.expiresAt &&
-    new Date(assignment.expiresAt).getTime() <= Date.now();
-
-  if (expired) {
+  if (assignment.isExpired) {
     throw new Error("This assessment invitation has expired.");
   }
 
-  if (assignment.status === "Invited" || assignment.status === "Assigned") {
-    assignments[index] = {
-      ...assignment,
-      status: "In Progress",
-      startedAt: assignment.startedAt || new Date().toISOString(),
-    };
+  const updated = {
+    ...assignment,
+    status: "In Progress",
+    startedAt: assignment.startedAt || new Date().toISOString(),
+  };
+
+  const index = assignments.findIndex(
+    (item) => item.token === token || item.invitationToken === token
+  );
+  if (index >= 0) {
+    assignments[index] = updated;
+  } else {
+    assignments.push(updated);
   }
 
-  return { ...assignments[index] };
+  return updated;
 };
 
 export const completeAssignment = async ({ assignmentId }) => {
@@ -219,33 +239,15 @@ export const getRoundAssignments = async ({ hiringProcessId, roundId }) => {
 
 export const assignAssessment = async ({ assessmentId, candidateIds, email, firstName, lastName, candidates = [] }) => {
   try {
-    if (Array.isArray(candidateIds) && candidateIds.length === 1) {
-      const res = await axiosClient.post(
-        `/attempts/assessments/${assessmentId}/invitations`,
-        {
-          candidateId: candidateIds[0],
-          email: email || undefined,
-          firstName: firstName || undefined,
-          lastName: lastName || undefined,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        }
-      );
-      if (res?.data) return [res?.data?.data || res.data];
-    } else if ((Array.isArray(candidateIds) && candidateIds.length > 1) || (Array.isArray(candidates) && candidates.length > 0)) {
-      const bulkCandidates = candidates.length > 0
-        ? candidates
-        : candidateIds.map((cId) => ({ candidateId: cId, email, firstName, lastName }));
-
-      const res = await axiosClient.post(
-        `/attempts/assessments/${assessmentId}/invitations/bulk`,
-        {
-          candidates: bulkCandidates,
-          candidateIds,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        }
-      );
-      if (res?.data) return res?.data?.data || res?.data?.results || [res.data];
-    }
+    const res = await axiosClient.post("/invitations", {
+      assessmentId,
+      candidateId: candidateIds?.[0],
+      email: email || candidates?.[0]?.email,
+      firstName: firstName || candidates?.[0]?.name?.split(" ")?.[0] || candidates?.[0]?.firstName,
+      lastName: lastName || candidates?.[0]?.name?.split(" ")?.slice(1)?.join(" ") || candidates?.[0]?.lastName,
+      candidates: candidates.length > 0 ? candidates : undefined,
+    });
+    if (res?.data) return Array.isArray(res.data) ? res.data : [res.data];
   } catch (err) {
     console.warn("Live invitation API fallback:", err.message);
   }

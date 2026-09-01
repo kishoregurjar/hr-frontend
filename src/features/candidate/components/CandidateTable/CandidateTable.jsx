@@ -285,9 +285,9 @@ const CandidateTable = ({
                       <Button
                         size="sm"
                         onClick={() => onAssignAssessment && onAssignAssessment(candidate)}
-                        className="h-7 px-2.5 text-[11px] font-bold rounded-lg gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-none"
+                        className="h-8 px-3 text-xs font-bold rounded-xl gap-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 shadow-2xs cursor-pointer"
                       >
-                        <Send className="h-3 w-3 text-indigo-600" />
+                        <Send className="h-3 w-3 text-blue-600" />
                         Invite
                       </Button>
 
@@ -295,10 +295,10 @@ const CandidateTable = ({
                         variant="outline"
                         size="sm"
                         onClick={() => onViewDetails && onViewDetails(candidate)}
-                        className="h-7 px-2 text-[11px] font-semibold rounded-lg gap-1 border-slate-200 text-slate-700 bg-white hover:bg-slate-50"
+                        className="h-8 px-2.5 text-xs font-bold rounded-xl gap-1.5 border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs cursor-pointer"
                         title="View Profile"
                       >
-                        <Eye className="h-3 w-3 text-slate-500" />
+                        <Eye className="h-3.5 w-3.5 text-slate-500" />
                         Profile
                       </Button>
                     </div>

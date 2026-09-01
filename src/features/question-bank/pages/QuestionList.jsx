@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   HelpCircle,
   Plus,
@@ -9,6 +9,8 @@ import {
   Sparkles,
   ChevronDown,
   Filter,
+  LayoutList,
+  LayoutGrid,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +22,7 @@ import {
   StatusFilter,
   SortFilter,
   QuestionGrid,
+  QuestionTableView,
   QuestionStats,
   AddQuestionDialog,
   ManageCategoriesDialog,
@@ -32,6 +35,8 @@ const QuestionList = () => {
   const rawName = user?.name || user?.fullName || "Sarah Jenkins";
   const userName = rawName.replace(/\s+user$/i, "").trim() || "Sarah Jenkins";
   const companyName = user?.company || "HireQuest HR";
+
+  const [viewMode, setViewMode] = useState("table");
 
   const {
     questions,
@@ -94,10 +99,10 @@ const QuestionList = () => {
       {/* ── 2. KPI Stat Cards ── */}
       <QuestionStats questions={allQuestions} />
 
-      {/* ── 3. Filters & Search Toolbar ── */}
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-3 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+      {/* ── 3. Filters & Search Toolbar + View Switcher ── */}
+      <div className="rounded-2xl border border-slate-200/90 bg-white p-3 shadow-2xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
         {/* Search Input */}
-        <div className="relative flex-1 min-w-[260px]">
+        <div className="relative flex-1 min-w-[240px]">
           <Search className="h-4 w-4 absolute left-3.5 top-3 text-slate-400" />
           <input
             type="text"
@@ -108,16 +113,47 @@ const QuestionList = () => {
           />
         </div>
 
-        {/* Filter Dropdowns */}
+        {/* Filter Dropdowns & View Mode Toggle */}
         <div className="flex flex-wrap items-center gap-2">
           <CategoryFilter value={category} onChange={setCategory} />
           <DifficultyFilter value={difficulty} onChange={setDifficulty} />
           <StatusFilter value={status} onChange={setStatus} />
           <SortFilter value={sortBy} onChange={setSortBy} />
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center rounded-xl bg-slate-100 p-1 border border-slate-200 shrink-0 ml-1">
+            <button
+              type="button"
+              onClick={() => setViewMode("table")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === "table"
+                  ? "bg-white text-blue-600 shadow-xs"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+              title="Table Row View"
+            >
+              <LayoutList className="h-3.5 w-3.5" />
+              <span>Table</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === "grid"
+                  ? "bg-white text-blue-600 shadow-xs"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+              title="Card Grid View"
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+              <span>Cards</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* ── 4. Questions Grid / Empty State ── */}
+      {/* ── 4. Questions Content (Table or Grid) / Empty State ── */}
       {isLoading ? (
         <QuestionGridSkeleton />
       ) : isError ? (
@@ -149,6 +185,8 @@ const QuestionList = () => {
             </div>
           )}
         </div>
+      ) : viewMode === "table" ? (
+        <QuestionTableView questions={questions} />
       ) : (
         <QuestionGrid
           questions={questions}

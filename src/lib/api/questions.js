@@ -78,15 +78,17 @@ export const normalizeQuestion = (item) => {
       }
       return {
         id: optionKey,
+        rawId: opt.id,
         text: opt.optionText || opt.text || "",
+        isCorrect,
       };
     });
   } else {
     options = [
-      { id: "optionA", text: "Option A" },
-      { id: "optionB", text: "Option B" },
-      { id: "optionC", text: "Option C" },
-      { id: "optionD", text: "Option D" },
+      { id: "optionA", text: "Option A", isCorrect: true },
+      { id: "optionB", text: "Option B", isCorrect: false },
+      { id: "optionC", text: "Option C", isCorrect: false },
+      { id: "optionD", text: "Option D", isCorrect: false },
     ];
   }
 
@@ -312,7 +314,12 @@ export const restoreQuestionTag = async (id) => {
  */
 export const getQuestions = async (params = {}) => {
   try {
-    const res = await axiosClient.get("/questions", { params });
+    const res = await axiosClient.get("/questions", {
+      params: {
+        ...params,
+        _t: Date.now(),
+      },
+    });
     const rawList = extractArrayData(res);
     const normalized = rawList.map(normalizeQuestion).filter(Boolean);
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, Check, X, Tag as TagIcon, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,7 +52,7 @@ const QuestionForm = ({
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isCreatingCategoryLoading, setIsCreatingCategoryLoading] = useState(false);
 
-  // Tag Management States (Pure Live DB Tags — Zero Static Data)
+  // Tag Management States
   const [tags, setTags] = useState([]);
   const [selectedTagIds, setSelectedTagIds] = useState([]);
   const [isCreatingTag, setIsCreatingTag] = useState(false);
@@ -73,10 +73,8 @@ const QuestionForm = ({
     getQuestionCategories()
       .then((res) => {
         if (!isMounted) return;
-        // getQuestionCategories returns { success, data: [...] } — res.data is already the array
         const categoryData = Array.isArray(res?.data) ? res.data : [];
         setCategories(categoryData);
-        // Do NOT auto-select first category — let user choose explicitly
       })
       .catch((err) => {
         console.error("Failed to load categories:", err);
@@ -89,7 +87,6 @@ const QuestionForm = ({
     getQuestionTags()
       .then((res) => {
         if (!isMounted) return;
-        // getQuestionTags returns { success, data: [...] } — res.data is already the array
         const tagData = Array.isArray(res?.data) ? res.data : [];
         setTags(tagData);
       })
@@ -100,7 +97,7 @@ const QuestionForm = ({
     };
   }, [form]);
 
-  // Handler for Inline Category Creation (POST /api/v1/question-categories)
+  // Handler for Inline Category Creation
   const handleCreateInlineCategory = async () => {
     const name = newCategoryName.trim();
     if (!name) return;
@@ -124,7 +121,7 @@ const QuestionForm = ({
     }
   };
 
-  // Handler for Inline Tag Creation (POST /api/v1/question-tags)
+  // Handler for Inline Tag Creation
   const handleCreateInlineTag = async () => {
     const name = newTagName.trim();
     if (!name) return;
@@ -163,61 +160,60 @@ const QuestionForm = ({
     });
   };
 
-  const errorHandler = (errors) => {
-    console.log("🔴 FRONTEND ZOD VALIDATION ERRORS:", errors);
-  };
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(submitHandler, errorHandler)} className="space-y-6">
-        {/* Question Input */}
+      <form onSubmit={form.handleSubmit(submitHandler)} className="space-y-5 font-sans">
+        {/* Question Prompt Textarea */}
         <FormField
           control={form.control}
           name="question"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Question</FormLabel>
+            <FormItem className="space-y-1.5">
+              <FormLabel className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Question Prompt
+              </FormLabel>
               <FormControl>
                 <Textarea
-                  rows={4}
-                  placeholder="Enter question text..."
+                  rows={3}
+                  placeholder="Type the question prompt or problem statement..."
                   {...field}
+                  className="rounded-xl border-slate-200 bg-slate-50/50 text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition shadow-2xs resize-none"
                 />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-xs" />
             </FormItem>
           )}
         />
 
-        {/* Category & Difficulty Grid */}
-        <div className="grid gap-4 md:grid-cols-2 items-start">
-          {/* CATEGORY SELECT WITH INLINE CREATION */}
+        {/* Category & Difficulty Row */}
+        <div className="grid gap-4 sm:grid-cols-2 items-start">
+          {/* Category Selector */}
           <FormField
             control={form.control}
             name="categoryId"
             render={({ field }) => (
-              <FormItem>
-                <div className="flex items-center justify-between h-6 mb-1">
-                  <FormLabel className="my-0">Category</FormLabel>
-                  <Button
+              <FormItem className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <FormLabel className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Category
+                  </FormLabel>
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-xs text-primary hover:text-primary/80 px-1 font-medium"
                     onClick={() => setIsCreatingCategory(!isCreatingCategory)}
+                    className="text-[11px] font-bold text-blue-600 hover:text-blue-700 transition flex items-center gap-1 cursor-pointer"
                   >
-                    <Plus className="h-3 w-3 mr-1" />
-                    {isCreatingCategory ? "Cancel" : "Add New Category"}
-                  </Button>
+                    <Plus className="h-3 w-3" />
+                    {isCreatingCategory ? "Cancel" : "New"}
+                  </button>
                 </div>
 
                 {isCreatingCategory && (
-                  <div className="flex items-center gap-2 mb-2 p-2 border rounded-md bg-muted/30">
+                  <div className="flex items-center gap-2 p-2 rounded-xl bg-blue-50/60 border border-blue-200">
                     <Input
-                      placeholder="Category name (e.g. DevOps)"
+                      placeholder="e.g. DevOps"
                       value={newCategoryName}
                       onChange={(e) => setNewCategoryName(e.target.value)}
-                      className="h-8 text-xs"
+                      className="h-8 text-xs bg-white rounded-lg border-blue-300"
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
@@ -228,15 +224,11 @@ const QuestionForm = ({
                     <Button
                       type="button"
                       size="sm"
-                      className="h-8 text-xs px-3"
                       disabled={!newCategoryName.trim() || isCreatingCategoryLoading}
                       onClick={handleCreateInlineCategory}
+                      className="h-8 px-3 rounded-lg text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold"
                     >
-                      {isCreatingCategoryLoading ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        "Save"
-                      )}
+                      {isCreatingCategoryLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
                     </Button>
                   </div>
                 )}
@@ -245,94 +237,87 @@ const QuestionForm = ({
                   value={field.value || ""}
                   onValueChange={(selectedId) => {
                     field.onChange(selectedId);
-                    // Also set category name so Zod validation never blocks
                     const catName = categories.find((c) => c.id === selectedId)?.name || "";
                     form.setValue("category", catName, { shouldValidate: true });
                   }}
                 >
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-800">
                       {isLoadingCategories ? (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>Loading categories...</span>
+                        <div className="flex items-center gap-2 text-slate-400">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <span>Loading...</span>
                         </div>
                       ) : (
-                        <span className="truncate text-foreground font-normal">
+                        <span className="truncate">
                           {categories.find((c) => String(c.id) === String(field.value))?.name || "Select Category"}
                         </span>
                       )}
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
-                    {categories.length > 0 ? (
-                      categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="" disabled>
-                        No categories found
+                  <SelectContent className="rounded-xl">
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id} className="text-xs font-medium">
+                        {cat.name}
                       </SelectItem>
-                    )}
+                    ))}
                   </SelectContent>
                 </Select>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
 
-          {/* Difficulty Select */}
+          {/* Difficulty Selector */}
           <FormField
             control={form.control}
             name="difficulty"
             render={({ field }) => (
-              <FormItem>
-                <div className="flex items-center justify-between h-6 mb-1">
-                  <FormLabel className="my-0">Difficulty</FormLabel>
-                </div>
+              <FormItem className="space-y-1.5">
+                <FormLabel className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Difficulty
+                </FormLabel>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-800">
                       <SelectValue placeholder="Select Difficulty" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Easy">Easy</SelectItem>
-                    <SelectItem value="Medium">Medium</SelectItem>
-                    <SelectItem value="Hard">Hard</SelectItem>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="Easy" className="text-xs font-medium">🟢 Easy</SelectItem>
+                    <SelectItem value="Medium" className="text-xs font-medium">🟡 Medium</SelectItem>
+                    <SelectItem value="Hard" className="text-xs font-medium">🔴 Hard</SelectItem>
                   </SelectContent>
                 </Select>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
         </div>
 
-        {/* Skill Tags Section with Inline "+ Add New Tag" */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between h-6">
-            <label className="text-sm font-medium">Tags (Skill Chips)</label>
-            <Button
+        {/* Tags (Skill Chips) */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+              Skill Tags
+            </label>
+            <button
               type="button"
-              variant="ghost"
-              size="sm"
-              className="h-6 text-xs text-primary hover:text-primary/80 px-1 font-medium"
               onClick={() => setIsCreatingTag(!isCreatingTag)}
+              className="text-[11px] font-bold text-blue-600 hover:text-blue-700 transition flex items-center gap-1 cursor-pointer"
             >
-              <Plus className="h-3 w-3 mr-1" />
-              {isCreatingTag ? "Cancel" : "Add New Tag"}
-            </Button>
+              <Plus className="h-3 w-3" />
+              {isCreatingTag ? "Cancel" : "Add Tag"}
+            </button>
           </div>
 
           {isCreatingTag && (
-            <div className="flex items-center gap-2 mb-2 p-2 border rounded-md bg-muted/30">
+            <div className="flex items-center gap-2 p-2 rounded-xl bg-blue-50/60 border border-blue-200">
               <Input
-                placeholder="Tag name (e.g. GraphQL)"
+                placeholder="e.g. Docker"
                 value={newTagName}
                 onChange={(e) => setNewTagName(e.target.value)}
-                className="h-8 text-xs"
+                className="h-8 text-xs bg-white rounded-lg border-blue-300"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
@@ -343,137 +328,136 @@ const QuestionForm = ({
               <Button
                 type="button"
                 size="sm"
-                className="h-8 text-xs px-3"
                 disabled={!newTagName.trim() || isCreatingTagLoading}
                 onClick={handleCreateInlineTag}
+                className="h-8 px-3 rounded-lg text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold"
               >
-                {isCreatingTagLoading ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  "Save"
-                )}
+                {isCreatingTagLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
               </Button>
             </div>
           )}
 
-          <div className="flex flex-wrap gap-1.5 p-2.5 border rounded-md min-h-[42px] bg-background">
-            {tags.map((tag) => {
-              const isSelected = selectedTagIds.includes(tag.id);
-              return (
-                <Badge
-                  key={tag.id}
-                  variant={isSelected ? "default" : "outline"}
-                  className="cursor-pointer text-xs select-none transition-all hover:opacity-80 py-1 px-2.5"
-                  onClick={() => toggleTagSelection(tag.id)}
-                >
-                  {tag.name}
-                  {isSelected && <span className="ml-1 text-xs">✕</span>}
-                </Badge>
-              );
-            })}
+          <div className="flex flex-wrap gap-1.5 p-3 rounded-xl border border-slate-200 bg-slate-50/40 min-h-[44px]">
+            {tags.length === 0 ? (
+              <span className="text-[11px] text-slate-400 font-medium self-center">
+                No tags added yet. Click &apos;Add Tag&apos; to create one.
+              </span>
+            ) : (
+              tags.map((tag) => {
+                const isSelected = selectedTagIds.includes(tag.id);
+                return (
+                  <Badge
+                    key={tag.id}
+                    variant={isSelected ? "default" : "outline"}
+                    className={`cursor-pointer text-[11px] font-bold transition-all py-1 px-2.5 rounded-lg select-none ${
+                      isSelected
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                    }`}
+                    onClick={() => toggleTagSelection(tag.id)}
+                  >
+                    {tag.name}
+                    {isSelected && <span className="ml-1 text-[10px]">✕</span>}
+                  </Badge>
+                );
+              })
+            )}
           </div>
         </div>
 
-        {/* Type & Status Grid */}
-        <div className="grid gap-4 md:grid-cols-2">
+        {/* Type & Correct Answer Row */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          {/* Question Type */}
           <FormField
             control={form.control}
             name="type"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Type</FormLabel>
+              <FormItem className="space-y-1.5">
+                <FormLabel className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Question Type
+                </FormLabel>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-800">
                       <SelectValue placeholder="Select Type" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl">
                     {QUESTION_TYPE_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
+                      <SelectItem key={option.value} value={option.value} className="text-xs font-medium">
                         {option.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {QUESTION_STATUS_OPTIONS.filter(
-                      (option) => option.value !== "all"
-                    ).map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        {/* Correct Answer */}
-        <div className="grid gap-4 md:grid-cols-2">
+          {/* Correct Answer Target */}
           <FormField
             control={form.control}
             name="correctAnswer"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Correct Answer</FormLabel>
+              <FormItem className="space-y-1.5">
+                <FormLabel className="text-xs font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1">
+                  <Check className="h-3.5 w-3.5 text-emerald-600" />
+                  Correct Option
+                </FormLabel>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select correct option" />
+                    <SelectTrigger className="h-10 rounded-xl border-emerald-300 bg-emerald-50/50 text-xs font-bold text-emerald-900">
+                      <SelectValue placeholder="Select correct answer" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
-                    <SelectItem value="optionA">Option A</SelectItem>
-                    <SelectItem value="optionB">Option B</SelectItem>
-                    <SelectItem value="optionC">Option C</SelectItem>
-                    <SelectItem value="optionD">Option D</SelectItem>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="optionA" className="text-xs font-bold text-emerald-800">Option A</SelectItem>
+                    <SelectItem value="optionB" className="text-xs font-bold text-emerald-800">Option B</SelectItem>
+                    <SelectItem value="optionC" className="text-xs font-bold text-emerald-800">Option C</SelectItem>
+                    <SelectItem value="optionD" className="text-xs font-bold text-emerald-800">Option D</SelectItem>
                   </SelectContent>
                 </Select>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
         </div>
 
         {/* Options Grid */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Options</label>
+        <div className="space-y-1.5 pt-1">
+          <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+            Answer Choices (A, B, C, D)
+          </label>
           <QuestionOptionFields form={form} />
         </div>
 
-        {/* Buttons */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        {/* Dialog Actions */}
+        <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
           <Button
             type="button"
             variant="outline"
+            size="sm"
             onClick={onCancel}
             disabled={isSubmitting}
+            className="h-10 px-4 rounded-xl border-slate-200 text-xs font-bold"
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : submitLabel}
+
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="h-10 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 cursor-pointer"
+          >
+            {isSubmitting ? (
+              <span className="flex items-center gap-1.5">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Saving...
+              </span>
+            ) : (
+              submitLabel
+            )}
           </Button>
         </div>
       </form>

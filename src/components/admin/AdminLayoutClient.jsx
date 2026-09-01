@@ -37,8 +37,8 @@ export default function AdminLayoutClient({ children }) {
           />
         )}
 
-        {/* Dedicated Scrollable Admin Viewport */}
-        <div className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden min-w-0">
+        {/* Dedicated Scrollable Admin Viewport (Hidden scrollbar, 100% smooth mouse-wheel scrollable) */}
+        <div className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden min-w-0 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {children}
         </div>
       </div>

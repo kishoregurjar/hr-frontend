@@ -24,6 +24,7 @@ import {
   CandidateBulkActions,
   CandidateExtractorDrawer,
   CandidateTable,
+  CandidateStatsCards,
   EmailExtractorDialog,
   ImportCandidatesDialog,
 } from "../components";
@@ -71,13 +72,19 @@ const CandidateList = () => {
         role.includes(query) ||
         skills.includes(query);
 
+      const candStatus = String(candidate.status || "").toUpperCase();
+      const upperStatusFilter = String(statusFilter || "ALL").toUpperCase();
       const matchesStatus =
-        statusFilter === "ALL" ||
-        String(candidate.status || "").toUpperCase() === statusFilter;
+        upperStatusFilter === "ALL" ||
+        candStatus === upperStatusFilter ||
+        candStatus.includes(upperStatusFilter);
 
+      const candSource = String(candidate.source || "MANUAL").toUpperCase();
+      const upperSourceFilter = String(sourceFilter || "ALL").toUpperCase();
       const matchesSource =
-        sourceFilter === "ALL" ||
-        String(candidate.source || "").toUpperCase().includes(sourceFilter);
+        upperSourceFilter === "ALL" ||
+        candSource === upperSourceFilter ||
+        candSource.includes(upperSourceFilter);
 
       return matchesSearch && matchesStatus && matchesSource;
     });
@@ -170,11 +177,14 @@ const CandidateList = () => {
         </div>
       </div>
 
+      {/* ── 2. KPI Stat Cards ── */}
+      <CandidateStatsCards candidates={candidates} />
+
       {/* ── 3. Filters & Search Toolbar ── */}
-      <div className="rounded-2xl border bg-card p-3 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+      <div className="rounded-2xl border border-slate-200/90 bg-white p-3 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         {/* Search Input */}
         <div className="relative flex-1 min-w-[260px]">
-          <Search className="h-4 w-4 absolute left-3.5 top-3 text-muted-foreground" />
+          <Search className="h-4 w-4 absolute left-3.5 top-3 text-slate-400" />
           <input
             type="text"
             placeholder="Search by name, email, or skill..."
@@ -187,14 +197,15 @@ const CandidateList = () => {
         {/* Dropdowns */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5">
-            <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+            <Filter className="h-3.5 w-3.5 text-slate-400" />
             <span className="text-xs font-bold text-slate-600">Status:</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-9 px-2.5 rounded-xl border bg-card text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              className="h-9 px-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:bg-white transition cursor-pointer"
             >
               <option value="ALL">All Statuses</option>
+              <option value="NEW">New Applicant</option>
               <option value="SHORTLISTED">Shortlisted</option>
               <option value="STARTED">Started</option>
               <option value="INVITED">Invited</option>
@@ -207,7 +218,7 @@ const CandidateList = () => {
             <select
               value={sourceFilter}
               onChange={(e) => setSourceFilter(e.target.value)}
-              className="h-9 px-2.5 rounded-xl border bg-card text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              className="h-9 px-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:bg-white transition cursor-pointer"
             >
               <option value="ALL">All Sources</option>
               <option value="EMAIL">Email Extraction</option>
@@ -269,6 +280,10 @@ const CandidateList = () => {
         open={Boolean(drawerCandidate)}
         onOpenChange={(open) => {
           if (!open) setDrawerCandidate(null);
+        }}
+        onAssignAssessment={(cand) => {
+          setDrawerCandidate(null);
+          handleSingleAssign(cand);
         }}
       />
     </div>

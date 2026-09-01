@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, Users, Send, CheckCircle2, Loader2, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { useAssessmentsQuery } from "@/features/assessment/hooks";
 import { useAssignAssessment } from "../../hooks";
 
@@ -98,36 +99,56 @@ const AssignAssessmentDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-xl font-sans">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-bold text-slate-900">
-            Assign Assessment
-          </DialogTitle>
-          <DialogDescription className="text-xs text-slate-500">
-            Choose a multi-module screening assessment for the selected candidates.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-lg p-0 overflow-hidden rounded-2xl border border-slate-200/90 shadow-2xl font-sans bg-white">
+        {/* ── 1. SIGNATURE EXECUTIVE HEADER ── */}
+        <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 p-6 text-white relative overflow-hidden">
+          <div className="absolute right-0 top-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="space-y-5">
-          {/* Candidates count badge */}
-          <div className="rounded-xl border border-slate-200/90 bg-slate-50 p-3.5 flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-700">Selected Candidates:</span>
-            <span className="text-xs font-extrabold bg-blue-50 text-blue-700 border border-blue-200/80 px-2.5 py-0.5 rounded-full">
-              {candidates.length} {candidates.length === 1 ? "Candidate" : "Candidates"}
-            </span>
+          <div className="relative z-10 flex items-start gap-3.5">
+            <div className="h-10 w-10 rounded-xl bg-blue-600/30 border border-blue-400/30 flex items-center justify-center font-bold text-white shadow-sm shrink-0">
+              <ClipboardList className="h-5 w-5 text-blue-300" />
+            </div>
+
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <DialogTitle className="text-lg font-black tracking-tight text-white">
+                  Assign Assessment
+                </DialogTitle>
+                <span className="text-[10px] font-extrabold uppercase bg-blue-500/20 text-blue-300 border border-blue-400/30 px-2 py-0.5 rounded">
+                  Dispatch
+                </span>
+              </div>
+              <DialogDescription className="text-xs text-slate-300 font-medium leading-relaxed">
+                Select a screening test to generate unique assessment tokens for candidates.
+              </DialogDescription>
+            </div>
+          </div>
+        </div>
+
+        {/* ── 2. BODY CONTENT ── */}
+        <div className="p-6 space-y-5">
+          {/* Candidates Summary Pill */}
+          <div className="rounded-xl border border-slate-200/90 bg-slate-50/80 p-3.5 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+              <Users className="h-4 w-4 text-blue-600" />
+              <span>Target Recipients:</span>
+            </div>
+            <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-xs font-extrabold px-2.5 py-0.5">
+              {candidates.length} {candidates.length === 1 ? "Candidate" : "Candidates"} Selected
+            </Badge>
           </div>
 
           {/* Assessment Dropdown */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Select Assessment
+            <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+              Select Assessment Module <span className="text-rose-500">*</span>
             </Label>
 
             <select
               value={assessmentId}
               onChange={(e) => setAssessmentId(e.target.value)}
               disabled={assignAssessment.isPending}
-              className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 shadow-2xs cursor-pointer"
+              className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 shadow-2xs transition cursor-pointer"
             >
               {availableAssessments.map((assessment) => (
                 <option
@@ -141,13 +162,13 @@ const AssignAssessmentDialog = ({
             </select>
           </div>
 
-          {/* Candidate List preview */}
+          {/* Recipients List Preview */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Recipients
+            <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+              Recipients Breakdown
             </Label>
 
-            <div className="max-h-40 space-y-1.5 overflow-y-auto rounded-xl border border-slate-200/90 bg-slate-50/40 p-2.5 divide-y divide-slate-100">
+            <div className="max-h-36 space-y-1.5 overflow-y-auto rounded-xl border border-slate-200/90 bg-slate-50/50 p-2.5 divide-y divide-slate-100">
               {candidates.map((candidate) => (
                 <div
                   key={candidate.id}
@@ -161,7 +182,7 @@ const AssignAssessmentDialog = ({
                       {candidate.email}
                     </p>
                   </div>
-                  <span className="text-[10px] font-semibold text-slate-400 bg-white border border-slate-200 px-2 py-0.5 rounded">
+                  <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
                     Ready
                   </span>
                 </div>
@@ -170,20 +191,21 @@ const AssignAssessmentDialog = ({
           </div>
 
           {assignAssessment.error && (
-            <div className="rounded-xl border border-destructive/50 bg-destructive/5 p-3">
-              <p className="text-xs text-destructive font-medium">
+            <div className="rounded-xl border border-rose-200 bg-rose-50 p-3">
+              <p className="text-xs text-rose-700 font-semibold">
                 {assignAssessment.error.message || "Unable to assign assessment."}
               </p>
             </div>
           )}
 
-          <div className="flex justify-end gap-2.5 border-t border-slate-100 pt-4">
+          {/* Footer Actions */}
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
             <Button
               type="button"
               variant="outline"
               onClick={() => handleOpenChange(false)}
               disabled={assignAssessment.isPending}
-              className="h-10 px-5 rounded-xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50"
+              className="h-9 px-4 rounded-xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
             >
               Cancel
             </Button>
@@ -196,12 +218,19 @@ const AssignAssessmentDialog = ({
                 candidates.length === 0 ||
                 assignAssessment.isPending
               }
-              className="h-10 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 gap-1.5"
+              className="h-9 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-blue-500/25 cursor-pointer"
             >
-              <ClipboardList className="h-4 w-4" />
-              {assignAssessment.isPending
-                ? "Assigning..."
-                : "Assign Assessment"}
+              {assignAssessment.isPending ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Assigning...
+                </>
+              ) : (
+                <>
+                  <Send className="h-3.5 w-3.5" />
+                  Assign Assessment
+                </>
+              )}
             </Button>
           </div>
         </div>

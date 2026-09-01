@@ -77,15 +77,17 @@ export const parseRawEmailContent = (rawText = "") => {
  * 1. Fetch Candidates List — GET /api/v1/candidates
  */
 export const getCandidates = async (params = {}) => {
+  const cleanParams = { _t: Date.now(), ...params };
   try {
-    const res = await axiosClient.get("/candidates", { params });
-    const list = res?.data?.items || res?.data?.candidates || res?.data || res;
-    if (Array.isArray(list) && list.length > 0) {
+    const res = await axiosClient.get("/candidates", { params: cleanParams });
+    const list = res?.data?.items || res?.data?.data || res?.data?.candidates || res?.data || res;
+    if (Array.isArray(list)) {
       return list;
     }
-    return [...candidates];
-  } catch {
-    return [...candidates];
+    return [];
+  } catch (err) {
+    console.warn("Get candidates error:", err.message);
+    return [];
   }
 };
 
@@ -96,10 +98,9 @@ export const getCandidateById = async (id) => {
   try {
     const res = await axiosClient.get(`/candidates/${id}`);
     return res?.data?.data || res?.data || res;
-  } catch {
-    const found = candidates.find((item) => String(item.id) === String(id));
-    if (!found) throw new Error("Candidate not found.");
-    return { ...found };
+  } catch (err) {
+    console.error("Candidate not found:", err.message);
+    throw err;
   }
 };
 
@@ -116,26 +117,15 @@ export const createCandidate = async (payload) => {
     : `candidate-${Date.now()}@example.com`;
 
   try {
-    const res = await axiosClient.post("/candidates", payload);
-    return res?.data?.data || res?.data || res;
-  } catch {
-    const candidate = {
-      id: `cand-${Date.now()}`,
+    const res = await axiosClient.post("/candidates", {
       ...payload,
       name: cleanName,
       email: cleanEmail,
-      phone: payload?.phone?.trim() || "",
-      role: payload?.role || "Software Engineer",
-      skills: Array.isArray(payload?.skills) ? payload.skills : ["React", "JavaScript"],
-      experience: payload?.experience || "1-3 Years",
-      source: payload?.source || "Manual Entry",
-      status: "New",
-      appliedAt: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    candidates = [candidate, ...candidates.filter(c => c.name !== "[object Object]")];
-    return candidate;
+    });
+    return res?.data?.data || res?.data || res;
+  } catch (err) {
+    console.error("Create candidate error:", err.message);
+    throw err;
   }
 };
 
