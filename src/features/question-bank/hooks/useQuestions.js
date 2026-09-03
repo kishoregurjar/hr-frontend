@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 
 import useQuestionsQuery from "./useQuestionsQuery";
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 25;
 
 const useQuestions = () => {
   const {
@@ -27,7 +27,7 @@ const useQuestions = () => {
 
     if (normalizedSearch) {
       data = data.filter((item) =>
-        item.question
+        (item.question || item.title || "")
           .toLowerCase()
           .includes(normalizedSearch)
       );
@@ -35,36 +35,43 @@ const useQuestions = () => {
 
     if (category !== "all") {
       data = data.filter(
-        (item) => item.category === category
+        (item) => item.category === category || item.categoryName === category
       );
     }
 
     if (difficulty !== "all") {
       data = data.filter(
-        (item) => item.difficulty === difficulty
+        (item) => String(item.difficulty).toLowerCase() === difficulty.toLowerCase()
       );
     }
 
     if (status !== "all") {
       data = data.filter(
-        (item) => item.status === status
+        (item) => String(item.status).toLowerCase() === status.toLowerCase()
       );
     }
 
     switch (sortBy) {
       case "question-asc":
         data.sort((a, b) =>
-          a.question.localeCompare(b.question)
+          (a.question || "").localeCompare(b.question || "")
         );
         break;
 
       case "question-desc":
         data.sort((a, b) =>
-          b.question.localeCompare(a.question)
+          (b.question || "").localeCompare(a.question || "")
         );
         break;
 
+      case "latest":
       default:
+        data.sort((a, b) => {
+          const timeA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+          const timeB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+          if (timeB !== timeA) return timeB - timeA;
+          return String(b.id || "").localeCompare(String(a.id || ""));
+        });
         break;
     }
 

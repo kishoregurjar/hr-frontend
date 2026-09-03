@@ -7,6 +7,10 @@ const useQuestionsQuery = () => {
     queryKey: QUESTION_QUERY_KEYS.lists(),
     queryFn: questionsService.getAll,
     select: (response) => response?.data || [], // Map backend `{ success, data }` envelop to raw questions array
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 };
 
