@@ -30,7 +30,7 @@ import {
 
 export default function AccountSettingsModal({ isOpen, onClose }) {
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState("security"); // 'profile' | 'security' | 'sessions'
+  const [activeTab, setActiveTab] = useState("profile"); // 'profile' | 'security' | 'sessions'
 
   // Change Password Form State
   const [currentPassword, setCurrentPassword] = useState("");
@@ -43,9 +43,9 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
   // Logout All Devices State
   const [isLoggingOutAll, setIsLoggingOutAll] = useState(false);
 
-  const rawName = user?.name || user?.fullName || "HR Manager";
-  const userName = rawName.replace(/\s+user$/i, "").trim() || "HR Manager";
-  const userEmail = user?.email || "hr@mindersworld.com";
+  const rawName = user?.name || user?.fullName || "Rohit Panchal";
+  const userName = rawName.replace(/\s+user$/i, "").trim() || "Rohit Panchal";
+  const userEmail = user?.email || "panchal@gmail.com";
   const companyName = user?.company || "HireQuest HR";
   const userRole = user?.role || "HR";
 
@@ -104,45 +104,45 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-xl p-0 overflow-hidden rounded-3xl border-slate-200 shadow-2xl font-sans bg-white">
-        {/* ── Header ── */}
-        <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 p-6 text-white relative">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-2xl bg-white/10 border border-white/20 text-white flex items-center justify-center font-bold text-base shadow-inner">
-              <Shield className="h-6 w-6 text-blue-400" />
+      <DialogContent className="max-w-xl p-0 overflow-hidden rounded-3xl border-slate-200/90 shadow-2xl font-sans bg-white">
+        {/* ── Light Header Matching HireQuest UI ── */}
+        <div className="p-6 pb-4 border-b border-slate-100 bg-gradient-to-b from-slate-50/80 to-white">
+          <div className="flex items-center gap-3.5">
+            <div className="h-11 w-11 rounded-2xl bg-blue-50 border border-blue-100/80 text-blue-600 flex items-center justify-center font-bold shadow-xs">
+              <Shield className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-xl font-extrabold text-white tracking-tight">
-                Account & Security Settings
+              <DialogTitle className="text-lg font-extrabold text-slate-900 tracking-tight">
+                HR Profile & Account Settings
               </DialogTitle>
-              <DialogDescription className="text-xs text-slate-300 mt-0.5">
-                Manage your profile credentials, password security, and active login sessions.
+              <DialogDescription className="text-xs text-slate-500 mt-0.5">
+                Manage recruiter profile credentials, account security, and active sessions.
               </DialogDescription>
             </div>
           </div>
 
-          {/* Navigation Tabs */}
-          <div className="flex items-center gap-2 mt-6 pt-2 border-t border-white/10">
+          {/* Modern Segmented Pill Tabs */}
+          <div className="flex items-center gap-1.5 mt-5 p-1 bg-slate-100/90 rounded-2xl border border-slate-200/60">
             <button
               type="button"
               onClick={() => { setActiveTab("profile"); setPasswordError(null); }}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "profile"
-                  ? "bg-white text-slate-900 shadow-md"
-                  : "text-slate-300 hover:text-white hover:bg-white/10"
+                  ? "bg-white text-blue-600 shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
               <User className="h-3.5 w-3.5" />
-              Profile
+              Profile Details
             </button>
 
             <button
               type="button"
               onClick={() => { setActiveTab("security"); setPasswordError(null); }}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "security"
-                  ? "bg-white text-slate-900 shadow-md"
-                  : "text-slate-300 hover:text-white hover:bg-white/10"
+                  ? "bg-white text-blue-600 shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
               <KeyRound className="h-3.5 w-3.5" />
@@ -152,10 +152,10 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
             <button
               type="button"
               onClick={() => { setActiveTab("sessions"); setPasswordError(null); }}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "sessions"
-                  ? "bg-white text-slate-900 shadow-md"
-                  : "text-slate-300 hover:text-white hover:bg-white/10"
+                  ? "bg-white text-blue-600 shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
               <Laptop className="h-3.5 w-3.5" />
@@ -165,41 +165,83 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
         </div>
 
         {/* ── Tab Contents ── */}
-        <div className="p-6">
+        <div className="p-6 pt-5">
           {/* TAB 1: PROFILE INFO */}
           {activeTab === "profile" && (
             <div className="space-y-4">
-              <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-lg shadow-md shadow-blue-500/20">
-                  {userName.charAt(0)}
+              <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-blue-50/50 via-indigo-50/30 to-slate-50 border border-blue-100/80">
+                <div className="h-13 w-13 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-base shadow-md shadow-blue-500/20 shrink-0">
+                  {userName.slice(0, 2).toUpperCase()}
                 </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-extrabold text-base text-slate-900">{userName}</h3>
-                    <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] font-extrabold">
-                      {userRole}
+                <div className="space-y-1 min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-extrabold text-base text-slate-900 truncate">{userName}</h3>
+                    <Badge className="bg-blue-600 text-white border-none text-[10px] font-extrabold px-2 py-0.5 shadow-xs">
+                      {userRole} ADMIN
+                    </Badge>
+                    <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-extrabold flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" />
+                      Verified
                     </Badge>
                   </div>
-                  <p className="text-xs text-slate-500 font-medium">{userEmail}</p>
+                  <p className="text-xs text-slate-500 font-medium truncate">{userEmail}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="p-3.5 rounded-xl border border-slate-200 bg-white space-y-1">
-                  <span className="text-[11px] font-bold uppercase text-slate-400 flex items-center gap-1.5">
-                    <Building2 className="h-3.5 w-3.5 text-slate-400" />
+                <div className="p-3.5 rounded-2xl border border-slate-200/90 bg-white space-y-1 hover:border-blue-200 transition-colors">
+                  <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <Building2 className="h-3.5 w-3.5 text-blue-600" />
                     Organization
                   </span>
-                  <p className="font-bold text-slate-800 text-sm">{companyName}</p>
+                  <p className="font-bold text-slate-800 text-sm truncate">{companyName}</p>
                 </div>
 
-                <div className="p-3.5 rounded-xl border border-slate-200 bg-white space-y-1">
-                  <span className="text-[11px] font-bold uppercase text-slate-400 flex items-center gap-1.5">
+                <div className="p-3.5 rounded-2xl border border-slate-200/90 bg-white space-y-1 hover:border-blue-200 transition-colors">
+                  <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                     <Sparkles className="h-3.5 w-3.5 text-amber-500" />
                     Account Role
                   </span>
-                  <p className="font-bold text-slate-800 text-sm">Recruiter / Admin</p>
+                  <p className="font-bold text-slate-800 text-sm">HR & Assessment Manager</p>
                 </div>
+
+                <div className="p-3.5 rounded-2xl border border-slate-200/90 bg-white space-y-1 hover:border-blue-200 transition-colors">
+                  <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <Shield className="h-3.5 w-3.5 text-emerald-600" />
+                    Security Verification
+                  </span>
+                  <p className="font-bold text-slate-800 text-sm">Brevo OTP Verified</p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl border border-slate-200/90 bg-white space-y-1 hover:border-blue-200 transition-colors">
+                  <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <Lock className="h-3.5 w-3.5 text-indigo-600" />
+                    Encryption
+                  </span>
+                  <p className="font-bold text-slate-800 text-sm">256-Bit SSL Protected</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setActiveTab("security")}
+                  className="rounded-xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 gap-1.5 cursor-pointer"
+                >
+                  <KeyRound className="h-3.5 w-3.5" />
+                  Change Password
+                </Button>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={onClose}
+                  className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-6 shadow-sm shadow-blue-500/20 cursor-pointer"
+                >
+                  Close
+                </Button>
               </div>
             </div>
           )}

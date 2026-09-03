@@ -64,29 +64,33 @@ export const normalizeQuestion = (item) => {
 
   // Normalize Options and Correct Answer
   let options = [];
-  let correctAnswer = "optionA";
+  let correctAnswer = item.correctAnswer || item.correct_answer || null;
 
   if (Array.isArray(item.options) && item.options.length > 0) {
     options = item.options.map((opt, index) => {
       const optionKey = `option${String.fromCharCode(65 + index)}`; // optionA, optionB, etc.
-      const isCorrect = Boolean(opt.isCorrect || opt.id === item.correctAnswer);
-      if (isCorrect) {
+      const isCorrect = Boolean(
+        opt.isCorrect === true ||
+        opt.is_correct === true ||
+        (item.correctAnswer && (
+          opt.id === item.correctAnswer ||
+          opt.rawId === item.correctAnswer ||
+          opt.optionKey === item.correctAnswer ||
+          optionKey === item.correctAnswer
+        ))
+      );
+      if (isCorrect && !correctAnswer) {
         correctAnswer = optionKey;
       }
       return {
         id: optionKey,
         rawId: opt.id,
-        text: opt.optionText || opt.text || "",
+        text: opt.optionText || opt.text || opt.title || "",
         isCorrect,
       };
     });
   } else {
-    options = [
-      { id: "optionA", text: "Option A", isCorrect: true },
-      { id: "optionB", text: "Option B", isCorrect: false },
-      { id: "optionC", text: "Option C", isCorrect: false },
-      { id: "optionD", text: "Option D", isCorrect: false },
-    ];
+    options = [];
   }
 
   return {

@@ -54,7 +54,7 @@ const RegisterForm = () => {
           <Input
             id="name"
             type="text"
-            placeholder="Rohit Solanki"
+            placeholder="Enter your full name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="pl-10 h-11 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500/30 transition shadow-2xs"
@@ -72,7 +72,7 @@ const RegisterForm = () => {
           <Input
             id="email"
             type="email"
-            placeholder="rohit@company.com"
+            placeholder="Enter your work email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="pl-10 h-11 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500/30 transition shadow-2xs"
@@ -90,7 +90,7 @@ const RegisterForm = () => {
           <Input
             id="company"
             type="text"
-            placeholder="TechCorp Solutions"
+            placeholder="Enter your company name"
             value={company}
             onChange={(e) => setCompany(e.target.value)}
             className="pl-10 h-11 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500/30 transition shadow-2xs"
@@ -108,7 +108,7 @@ const RegisterForm = () => {
           <Input
             id="password"
             type={showPassword ? "text" : "password"}
-            placeholder="At least 6 characters"
+            placeholder="Enter your password (min. 6 characters)"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="pl-10 pr-10 h-11 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500/30 transition shadow-2xs"

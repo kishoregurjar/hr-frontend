@@ -40,18 +40,18 @@ const AddQuestionDialog = () => {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-2xl p-0 overflow-hidden rounded-3xl border-slate-200 shadow-2xl font-sans bg-white max-h-[90vh] flex flex-col">
-        {/* Executive Gradient Header */}
-        <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 p-6 text-white shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="h-11 w-11 rounded-2xl bg-white/10 border border-white/20 text-white flex items-center justify-center font-black shadow-inner">
-              <HelpCircle className="h-6 w-6 text-blue-400" />
+      <DialogContent className="max-w-2xl p-0 overflow-hidden rounded-3xl border-slate-200/90 shadow-2xl font-sans bg-white max-h-[90vh] flex flex-col">
+        {/* Light Header Matching HireQuest UI */}
+        <div className="p-6 pb-4 border-b border-slate-100 bg-gradient-to-b from-slate-50/80 to-white shrink-0">
+          <div className="flex items-center gap-3.5">
+            <div className="h-11 w-11 rounded-2xl bg-blue-50 border border-blue-100/80 text-blue-600 flex items-center justify-center font-bold shadow-xs shrink-0">
+              <Plus className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-xl font-extrabold text-white tracking-tight">
+              <DialogTitle className="text-lg font-extrabold text-slate-900 tracking-tight">
                 Add New Question
               </DialogTitle>
-              <DialogDescription className="text-xs text-slate-300 mt-0.5">
+              <DialogDescription className="text-xs text-slate-500 mt-0.5">
                 Configure MCQ, problem-solving, or cognitive questions for your question bank.
               </DialogDescription>
             </div>

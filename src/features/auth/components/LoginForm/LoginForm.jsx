@@ -73,7 +73,7 @@ const LoginForm = () => {
           <Input
             id="email"
             type="email"
-            placeholder="hr@company.com"
+            placeholder="Enter your work email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="pl-10 h-11 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500/30 transition shadow-2xs"
@@ -94,7 +94,7 @@ const LoginForm = () => {
           <Input
             id="password"
             type={showPassword ? "text" : "password"}
-            placeholder="••••••••"
+            placeholder="Enter your password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="pl-10 pr-10 h-11 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500/30 transition shadow-2xs"

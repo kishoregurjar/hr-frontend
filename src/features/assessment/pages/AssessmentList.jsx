@@ -83,15 +83,6 @@ const AssessmentList = () => {
         </div>
 
         <div className="flex items-center gap-2.5">
-          {/* User HR Chip */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs font-semibold shadow-2xs">
-            <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-            <span className="font-bold text-slate-900">{userName}</span>
-            <span className="text-[10px] font-extrabold uppercase bg-blue-50 text-blue-700 border border-blue-200/70 px-1.5 py-0.5 rounded ml-0.5">
-              HR
-            </span>
-          </div>
-
           <Button
             variant="outline"
             size="sm"

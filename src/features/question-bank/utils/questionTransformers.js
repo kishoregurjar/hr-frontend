@@ -14,18 +14,22 @@ export const transformQuestionFormToPayload = (data) => {
       {
         id: "optionA",
         text: data.optionA.trim(),
+        isCorrect: data.correctAnswer === "optionA",
       },
       {
         id: "optionB",
         text: data.optionB.trim(),
+        isCorrect: data.correctAnswer === "optionB",
       },
       {
         id: "optionC",
         text: data.optionC.trim(),
+        isCorrect: data.correctAnswer === "optionC",
       },
       {
         id: "optionD",
         text: data.optionD.trim(),
+        isCorrect: data.correctAnswer === "optionD",
       },
     ],
 
@@ -57,5 +61,10 @@ export const transformQuestionToForm = (question) => {
     optionD: getOptionText("optionD"),
 
     correctAnswer: question.correctAnswer || "",
+    tagIds: Array.isArray(question.tags)
+      ? question.tags.map((t) => (typeof t === "object" ? t.id || t.tagId || t.name : t))
+      : Array.isArray(question.tagIds)
+      ? question.tagIds
+      : [],
   };
 };

@@ -71,15 +71,6 @@ const GameList = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* User HR Chip */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs font-semibold shadow-2xs">
-            <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-            <span className="font-bold text-slate-900">{userName}</span>
-            <span className="text-[10px] font-extrabold uppercase bg-blue-50 text-blue-700 border border-blue-200/70 px-1.5 py-0.5 rounded ml-0.5">
-              HR
-            </span>
-          </div>
-
           <Button className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20 cursor-pointer">
             <Plus className="h-3.5 w-3.5" />
             New Configuration

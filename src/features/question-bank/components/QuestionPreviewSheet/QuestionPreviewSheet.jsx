@@ -1,5 +1,5 @@
-"use client";
-
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   CheckCircle2,
   Eye,
@@ -11,6 +11,7 @@ import {
   HelpCircle,
   Clock,
   Pencil,
+  Loader2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -25,19 +26,30 @@ import {
 } from "@/components/ui/sheet";
 
 import { formatDate } from "@/lib/formatters";
+import { getQuestionById } from "@/lib/api/questions";
 
 const QuestionPreviewSheet = ({ question }) => {
-  const options = question.options ?? [];
+  const [open, setOpen] = useState(false);
+  const qId = question?.id || question?._id;
+
+  const { data: detailData, isLoading } = useQuery({
+    queryKey: ["questions", "detail", qId],
+    queryFn: () => getQuestionById(qId),
+    enabled: open && Boolean(qId),
+  });
+
+  const activeQuestion = detailData?.data || question || {};
+  const options = Array.isArray(activeQuestion?.options) ? activeQuestion.options : [];
 
   const difficultyColor =
-    question.difficulty === "Easy"
+    activeQuestion.difficulty === "Easy"
       ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-      : question.difficulty === "Medium"
+      : activeQuestion.difficulty === "Medium"
       ? "bg-amber-50 text-amber-700 border-amber-300"
       : "bg-rose-50 text-rose-700 border-rose-300";
 
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button
           type="button"
@@ -51,25 +63,23 @@ const QuestionPreviewSheet = ({ question }) => {
       </SheetTrigger>
 
       <SheetContent className="w-full sm:max-w-xl p-0 overflow-y-auto font-sans bg-slate-50/60 border-l border-slate-200/90 shadow-2xl flex flex-col">
-        {/* ── 1. SIGNATURE EXECUTIVE HEADER ── */}
-        <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 p-6 text-white shrink-0 relative overflow-hidden">
-          <div className="absolute right-0 top-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="relative z-10 flex items-start gap-3">
-            <div className="h-10 w-10 rounded-xl bg-blue-600/30 border border-blue-400/30 flex items-center justify-center font-bold text-white shadow-sm shrink-0">
-              <Eye className="h-5 w-5 text-blue-300" />
+        {/* ── 1. LIGHT SIGNATURE HEADER ── */}
+        <div className="p-6 pb-4 border-b border-slate-100 bg-gradient-to-b from-slate-50/80 to-white shrink-0">
+          <div className="flex items-center gap-3.5">
+            <div className="h-11 w-11 rounded-2xl bg-blue-50 border border-blue-100/80 text-blue-600 flex items-center justify-center font-bold shadow-xs shrink-0">
+              <Eye className="h-5 w-5" />
             </div>
 
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
-                <SheetTitle className="text-lg font-black tracking-tight text-white">
+                <SheetTitle className="text-lg font-extrabold text-slate-900 tracking-tight">
                   Question Inspector
                 </SheetTitle>
-                <span className="text-[10px] font-extrabold uppercase bg-blue-500/20 text-blue-300 border border-blue-400/30 px-2 py-0.5 rounded">
+                <span className="text-[10px] font-extrabold uppercase bg-blue-50 text-blue-700 border border-blue-200/80 px-2 py-0.5 rounded-full shadow-2xs">
                   Live Preview
                 </span>
               </div>
-              <SheetDescription className="text-xs text-slate-300 font-medium leading-relaxed">
+              <SheetDescription className="text-xs text-slate-500 font-medium leading-relaxed">
                 Inspect question phrasing, answer choices, and scoring benchmarks.
               </SheetDescription>
             </div>
@@ -84,7 +94,7 @@ const QuestionPreviewSheet = ({ question }) => {
               Question Statement
             </p>
             <h2 className="text-base font-extrabold text-slate-900 leading-snug">
-              {question.question}
+              {activeQuestion.question || activeQuestion.title}
             </h2>
           </div>
 
@@ -99,28 +109,28 @@ const QuestionPreviewSheet = ({ question }) => {
                 <span className="font-semibold text-slate-600">Category</span>
                 <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-xs font-bold px-2.5 py-0.5">
                   <Tag className="h-2.5 w-2.5 mr-1 text-blue-600" />
-                  {question.category || "General"}
+                  {activeQuestion.category || "General"}
                 </Badge>
               </div>
 
               <div className="flex items-center justify-between py-2.5">
                 <span className="font-semibold text-slate-600">Difficulty</span>
                 <Badge className={`text-xs font-extrabold uppercase px-2.5 py-0.5 ${difficultyColor}`}>
-                  {question.difficulty || "Medium"}
+                  {activeQuestion.difficulty || "Medium"}
                 </Badge>
               </div>
 
               <div className="flex items-center justify-between py-2.5">
                 <span className="font-semibold text-slate-600">Question Type</span>
                 <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-800 border border-slate-200 px-2.5 py-0.5 rounded text-[11px] font-extrabold uppercase">
-                  {question.type || "MCQ"}
+                  {activeQuestion.type || "MCQ"}
                 </span>
               </div>
 
               <div className="flex items-center justify-between py-2.5">
                 <span className="font-semibold text-slate-600">Status</span>
                 <Badge className="bg-emerald-50 text-emerald-700 border-emerald-300 text-xs font-bold px-2.5 py-0.5">
-                  {question.status || "Active"}
+                  {activeQuestion.status || "Active"}
                 </Badge>
               </div>
             </div>
@@ -141,15 +151,12 @@ const QuestionPreviewSheet = ({ question }) => {
             {options.length > 0 ? (
               <div className="space-y-2.5">
                 {options.map((option, index) => {
-                  const isCorrect = Boolean(
-                    option.isCorrect === true ||
-                    (question.correctAnswer && (option.id === question.correctAnswer || option.rawId === question.correctAnswer))
-                  );
                   const letter = String.fromCharCode(65 + index);
+                  const isCorrect = Boolean(option.isCorrect === true || option.is_correct === true);
 
                   return (
                     <div
-                      key={option.id || index}
+                      key={option.id || option.rawId || index}
                       className={`flex items-start gap-3 rounded-xl border p-3.5 transition-all text-xs ${
                         isCorrect
                           ? "border-emerald-500 bg-emerald-50/70 text-emerald-950 ring-2 ring-emerald-500/20 shadow-xs"
