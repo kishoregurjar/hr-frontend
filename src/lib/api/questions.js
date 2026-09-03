@@ -315,10 +315,7 @@ export const restoreQuestionTag = async (id) => {
 export const getQuestions = async (params = {}) => {
   try {
     const res = await axiosClient.get("/questions", {
-      params: {
-        ...params,
-        _t: Date.now(),
-      },
+      params,
     });
     const rawList = extractArrayData(res);
     const normalized = rawList.map(normalizeQuestion).filter(Boolean);

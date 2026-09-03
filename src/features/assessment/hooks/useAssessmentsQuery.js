@@ -9,6 +9,8 @@ const useAssessmentsQuery = (params) => {
   return useQuery({
     queryKey: ASSESSMENT_QUERY_KEYS.lists(),
     queryFn: () => assessmentService.getAll(params),
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 };
 

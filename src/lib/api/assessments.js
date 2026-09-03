@@ -3,30 +3,34 @@ import axiosClient from "./axiosClient";
 /**
  * Extract array list from various backend response envelopes safely
  */
+/**
+ * Extract array list from various backend response envelopes safely
+ */
 const extractAssessmentsList = (res) => {
   if (Array.isArray(res)) return res;
   if (Array.isArray(res?.data?.items)) return res.data.items;
-  if (Array.isArray(res?.message?.items)) return res.message.items;
-  if (Array.isArray(res?.data)) return res.data;
-  if (Array.isArray(res?.message)) return res.message;
   if (Array.isArray(res?.data?.assessments)) return res.data.assessments;
+  if (Array.isArray(res?.data?.data?.items)) return res.data.data.items;
+  if (Array.isArray(res?.data?.data?.assessments)) return res.data.data.assessments;
   if (Array.isArray(res?.data?.data)) return res.data.data;
+  if (Array.isArray(res?.data)) return res.data;
+  if (Array.isArray(res?.message?.items)) return res.message.items;
+  if (Array.isArray(res?.message?.assessments)) return res.message.assessments;
+  if (Array.isArray(res?.message)) return res.message;
   if (Array.isArray(res?.items)) return res.items;
   if (Array.isArray(res?.assessments)) return res.assessments;
   if (res?.data && typeof res.data === "object") {
     if (Array.isArray(res.data.items)) return res.data.items;
-  }
-  if (res?.message && typeof res.message === "object") {
-    if (Array.isArray(res.message.items)) return res.message.items;
+    if (Array.isArray(res.data.assessments)) return res.data.assessments;
   }
   return [];
 };
 
 /**
- * 1. Fetch All Assessments — GET /api/v1/assessments
+ * 1. Fetch All Assessments — GET /api/v1/assessments (100% Live Backend Database)
  */
 export const getAssessments = async (rawParams = {}) => {
-  const cleanParams = { _t: Date.now() };
+  const cleanParams = {};
   if (rawParams && typeof rawParams === "object" && !Array.isArray(rawParams)) {
     ["status", "type", "difficulty", "search", "page", "limit", "sortBy", "sortOrder"].forEach((key) => {
       if (rawParams[key] !== undefined && rawParams[key] !== "all" && rawParams[key] !== "") {
@@ -39,15 +43,26 @@ export const getAssessments = async (rawParams = {}) => {
     const res = await axiosClient.get("/assessments", {
       params: cleanParams,
     });
-    const list = extractAssessmentsList(res);
+    let list = extractAssessmentsList(res);
 
-    if (!Array.isArray(list) || list.length === 0) {
-      return [];
+    // If list is empty and no specific status was requested, also try fetching DRAFT assessments
+    if ((!Array.isArray(list) || list.length === 0) && !cleanParams.status) {
+      try {
+        const draftRes = await axiosClient.get("/assessments", {
+          params: { ...cleanParams, status: "DRAFT" },
+        });
+        const draftList = extractAssessmentsList(draftRes);
+        if (Array.isArray(draftList) && draftList.length > 0) {
+          list = draftList;
+        }
+      } catch {
+        // Ignore fallback error
+      }
     }
 
-    return list;
+    return Array.isArray(list) ? list : [];
   } catch (error) {
-    console.error("Error fetching assessments list:", error);
+    console.warn("Notice fetching backend assessments:", error.message);
     return [];
   }
 };
@@ -61,35 +76,33 @@ export const getAssessmentById = async (id) => {
 };
 
 /**
- * 3. Create Assessment — POST /api/v1/assessments
+ * 3. Create Assessment — POST /api/v1/assessments (Auto-Published)
  */
 export const createAssessment = async (payload) => {
-  const res = await axiosClient.post("/assessments", payload);
+  const finalPayload = {
+    ...payload,
+    status: "PUBLISHED",
+  };
+
+  const res = await axiosClient.post("/assessments", finalPayload);
   const created = res?.data?.data || res?.data || res;
   const createdId = created?.id || created?._id;
 
-  if (createdId && Array.isArray(payload?.questionIds) && payload.questionIds.length > 0) {
-    try {
-      await assignAssessmentQuestions(createdId, payload.questionIds);
-    } catch (e) {
-      console.warn("Auto-assign questions on create:", e.message);
+  if (createdId) {
+    // 1. Assign questions if selected
+    if (Array.isArray(payload?.questionIds) && payload.questionIds.length > 0) {
+      try {
+        await assignAssessmentQuestions(createdId, payload.questionIds);
+      } catch (e) {
+        console.warn("Auto-assign questions on create:", e.message);
+      }
     }
-  }
 
-  if (createdId && String(payload?.status || "").toUpperCase() === "PUBLISHED") {
+    // 2. Immediately execute publish to ensure it is 100% PUBLISHED in database
     try {
       await publishAssessment(createdId);
     } catch (e) {
       console.warn("Auto-publish on create:", e.message);
-    }
-  }
-
-  if (createdId) {
-    try {
-      const fresh = await getAssessmentById(createdId);
-      return fresh;
-    } catch {
-      return created;
     }
   }
 
