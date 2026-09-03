@@ -4,22 +4,19 @@ import axiosClient from "./axiosClient";
  * Helper to extract response data envelope safely (handles res.data, res.items, or res array)
  */
 const extractArrayData = (res) => {
+  if (!res) return [];
   if (Array.isArray(res)) return res;
   if (Array.isArray(res?.data)) return res.data;
-  if (Array.isArray(res?.data?.questions)) return res.data.questions;
-  if (Array.isArray(res?.data?.categories)) return res.data.categories;
-  if (Array.isArray(res?.data?.tags)) return res.data.tags;
   if (Array.isArray(res?.data?.items)) return res.data.items;
+  if (Array.isArray(res?.data?.questions)) return res.data.questions;
+  if (Array.isArray(res?.items)) return res.items;
+  if (Array.isArray(res?.questions)) return res.questions;
+  if (Array.isArray(res?.data?.data)) return res.data.data;
   if (Array.isArray(res?.data?.results)) return res.data.results;
   if (Array.isArray(res?.data?.rows)) return res.data.rows;
-  if (Array.isArray(res?.questions)) return res.questions;
-  if (Array.isArray(res?.categories)) return res.categories;
-  if (Array.isArray(res?.tags)) return res.tags;
-  if (Array.isArray(res?.items)) return res.items;
-  if (Array.isArray(res?.message)) return res.message;
-  if (Array.isArray(res?.message?.questions)) return res.message.questions;
-  if (Array.isArray(res?.message?.categories)) return res.message.categories;
-  if (Array.isArray(res?.message?.items)) return res.message.items;
+  if (Array.isArray(res?.results)) return res.results;
+  if (Array.isArray(res?.rows)) return res.rows;
+  if (Array.isArray(res?.data?.items?.questions)) return res.data.items.questions;
   return [];
 };
 
@@ -30,7 +27,7 @@ export const normalizeQuestion = (item) => {
   if (!item || typeof item !== "object") return null;
 
   const id = item.id || item._id;
-  const questionText = item.title || item.question || "";
+  const questionText = item.title || item.question || item.content || "";
   const description = item.description || "";
   const explanation = item.explanation || "";
 

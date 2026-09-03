@@ -214,37 +214,20 @@ export const assignAssessmentQuestions = async (id, questionIds = []) => {
   if (flatIds.length === 0) return { success: true };
 
   const objectQuestions = flatIds.map((qId, index) => ({
-    questionId: qId,
+    questionId: String(qId),
     sequence: index + 1,
-    marks: typeof qId === "object" && qId?.marks ? Number(qId.marks) : 1,
+    marks: typeof qId === "object" && qId?.marks ? Number(qId.marks) : 5,
     negativeMarks: typeof qId === "object" && qId?.negativeMarks ? Number(qId.negativeMarks) : 0,
   }));
 
   try {
-    // Attempt 1: Exact backend schema { questions: [ { questionId, sequence, marks, negativeMarks } ] }
     const res = await axiosClient.post(`/assessments/${id}/questions`, {
       questions: objectQuestions,
     });
     return res?.data?.data || res?.data || res;
-  } catch (err1) {
-    try {
-      // Attempt 2: { questionIds: [...] }
-      const res = await axiosClient.post(`/assessments/${id}/questions`, {
-        questionIds: flatIds,
-      });
-      return res?.data?.data || res?.data || res;
-    } catch (err2) {
-      try {
-        // Attempt 3: { questions: [...] } (array of string IDs)
-        const res = await axiosClient.post(`/assessments/${id}/questions`, {
-          questions: flatIds,
-        });
-        return res?.data?.data || res?.data || res;
-      } catch (err3) {
-        console.error("Assign questions API call fallback:", err3?.message);
-        throw err3;
-      }
-    }
+  } catch (err) {
+    console.error("Assign questions error:", err?.message);
+    throw err;
   }
 };
 
