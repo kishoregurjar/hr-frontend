@@ -35,9 +35,9 @@ const AssessmentInvitation = ({ token }) => {
   const candidate =
     data?.candidate ||
     data?.assignment?.candidate || {
-      name: assignment?.candidateName || data?.candidateName || "",
-      email: assignment?.candidateEmail || data?.email || data?.candidateEmail || "",
-      phone: assignment?.candidatePhone || data?.phone || "",
+      name: data?.assignment?.candidateName || data?.candidateName || "Candidate",
+      email: data?.assignment?.candidateEmail || data?.email || data?.candidateEmail || "",
+      phone: data?.assignment?.candidatePhone || data?.phone || "",
     };
 
   const handleStart = async (candidateInfo = {}) => {

@@ -14,9 +14,11 @@ import {
   LogOut,
   Building2,
   X,
+  Settings,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/context";
 import { Button } from "@/components/ui/button";
+import AccountSettingsModal from "@/components/common/AccountSettingsModal/AccountSettingsModal";
 import {
   Dialog,
   DialogContent,
@@ -65,15 +67,19 @@ const NAV_ITEMS = [
   },
 ];
 
-export default function Sidebar({ isOpen, onClose }) {
+export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const displayName = user?.name || user?.fullName || "Sarah Jenkins";
   const userEmail = user?.email || "sarah.jenkins@techcorp.io";
-  const companyName = user?.company || "TechCorp Solutions";
+  const companyName = impersonatedCompany?.name || user?.company || "TechCorp Solutions";
+  const activeCompanyName = companyName;
+  const activePlan = impersonatedCompany?.plan || "Enterprise";
+  const isInspecting = Boolean(impersonatedCompany);
 
   const isActive = (item) => {
     if (item.exact) {
@@ -97,7 +103,7 @@ export default function Sidebar({ isOpen, onClose }) {
   return (
     <>
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 flex-col bg-white text-slate-800 border-r border-slate-200/90 transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 flex-col bg-white text-slate-800 border-r border-slate-200/90 transition-transform duration-300 ease-in-out lg:static lg:h-full lg:translate-x-0 shrink-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -128,18 +134,24 @@ export default function Sidebar({ isOpen, onClose }) {
 
         {/* ── 2. Active Tenant Card ── */}
         <div className="px-4 py-2">
-          <div className="rounded-xl bg-slate-50 border border-slate-200/80 p-3 space-y-1.5 shadow-2xs">
+          <div className={`rounded-xl border p-3 space-y-1.5 shadow-2xs transition-colors ${
+            isInspecting ? "bg-amber-50/70 border-amber-300" : "bg-slate-50 border-slate-200/80"
+          }`}>
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                 Active Tenant
               </span>
-              <span className="text-[9px] font-extrabold uppercase bg-blue-50 text-blue-700 border border-blue-200/80 px-1.5 py-0.5 rounded tracking-wider">
-                Enterprise
+              <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wider ${
+                isInspecting
+                  ? "bg-amber-200/80 text-amber-900 border border-amber-300 animate-pulse"
+                  : "bg-blue-50 text-blue-700 border border-blue-200/80"
+              }`}>
+                {isInspecting ? "Inspecting" : activePlan}
               </span>
             </div>
             <div className="flex items-center gap-2 font-bold text-xs text-slate-900">
-              <Building2 className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-              <span className="truncate">{companyName}</span>
+              <Building2 className={`h-3.5 w-3.5 shrink-0 ${isInspecting ? "text-amber-600" : "text-blue-600"}`} />
+              <span className="truncate">{activeCompanyName}</span>
             </div>
           </div>
         </div>
@@ -172,9 +184,14 @@ export default function Sidebar({ isOpen, onClose }) {
           })}
         </nav>
 
-        {/* ── 4. User Footer with Logout Button ── */}
+        {/* ── 4. User Footer with Settings and Logout Button ── */}
         <div className="p-3 border-t border-slate-200/80 flex items-center justify-between bg-slate-50/50">
-          <div className="flex items-center gap-2.5 min-w-0">
+          <button
+            type="button"
+            onClick={() => setShowAccountSettings(true)}
+            className="flex items-center gap-2.5 min-w-0 text-left hover:opacity-80 transition cursor-pointer flex-1 mr-2"
+            title="Account & Security Settings"
+          >
             <div className="h-8 w-8 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
               {displayName.slice(0, 2).toUpperCase()}
             </div>
@@ -186,19 +203,37 @@ export default function Sidebar({ isOpen, onClose }) {
                 {userEmail}
               </p>
             </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setShowLogoutConfirm(true)}
-            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-            title="Sign Out"
-            aria-label="Sign Out"
-          >
-            <LogOut className="h-4 w-4" />
           </button>
+
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowAccountSettings(true)}
+              className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition cursor-pointer"
+              title="Account & Security Settings"
+              aria-label="Account Settings"
+            >
+              <Settings className="h-4 w-4" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowLogoutConfirm(true)}
+              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+              title="Sign Out"
+              aria-label="Sign Out"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </aside>
+
+      {/* ── Account & Security Settings Modal ── */}
+      <AccountSettingsModal
+        isOpen={showAccountSettings}
+        onClose={() => setShowAccountSettings(false)}
+      />
 
       {/* ── Logout Confirmation Dialog Modal ── */}
       <Dialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>

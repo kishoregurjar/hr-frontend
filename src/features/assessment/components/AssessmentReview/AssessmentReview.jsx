@@ -10,6 +10,10 @@ import {
   Send,
   Sliders,
   TriangleAlert,
+  Sparkles,
+  Trophy,
+  Save,
+  Check,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -49,23 +53,31 @@ const AssessmentReview = ({
     const hasErrors = Object.keys(validationErrors ?? {}).length > 0;
 
     return (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">
-            Review & Publish Assessment
-          </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Check your assessment configuration before publishing.
-          </p>
+      <div className="space-y-6 font-sans">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
+              Review & Launch Assessment
+            </h2>
+            <p className="mt-0.5 text-xs sm:text-sm text-slate-500 font-medium">
+              Review the module configurations, question pool, and grading settings before publishing.
+            </p>
+          </div>
+
+          <Badge className="bg-emerald-50 text-emerald-700 border-emerald-300 text-xs font-bold gap-1 px-3 py-1">
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+            Ready for Deployment
+          </Badge>
         </div>
 
         {/* Validation Errors Banner */}
         {hasErrors && (
-          <div className="rounded-xl border border-destructive/50 bg-destructive/10 p-4 space-y-1">
-            <p className="font-semibold text-destructive">
-              Please fix the following issues before publishing:
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 space-y-1 text-rose-700 text-xs">
+            <p className="font-bold flex items-center gap-1.5">
+              <TriangleAlert className="h-4 w-4 text-rose-600" />
+              Please resolve the following issues before publishing:
             </p>
-            <ul className="list-disc pl-5 text-sm text-destructive">
+            <ul className="list-disc pl-6 space-y-0.5 font-medium">
               {Object.entries(validationErrors).map(([key, msg]) => (
                 <li key={key}>{msg}</li>
               ))}
@@ -75,79 +87,86 @@ const AssessmentReview = ({
 
         {/* Submission Error Banner */}
         {displayError && (
-          <div className="rounded-xl border border-destructive/50 bg-destructive/10 p-4">
-            <p className="font-semibold text-destructive">
-              Unable to save assessment
-            </p>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              {displayError.message || "Please try again."}
-            </p>
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700 text-xs">
+            <p className="font-bold">Unable to save assessment</p>
+            <p className="mt-0.5 font-medium">{displayError.message || "Please try again."}</p>
           </div>
         )}
 
         {/* 1. Basic Details Summary */}
-        <div className="rounded-xl border bg-card p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b pb-3">
-            <h3 className="font-semibold text-slate-900">1. Basic Information</h3>
-            <Badge variant="outline">{assessment?.difficulty ?? "Medium"}</Badge>
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xs space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-blue-600" />
+              1. Assessment Overview
+            </h3>
+            <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] font-bold">
+              {assessment?.difficulty ?? "Medium"}
+            </Badge>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div>
-              <p className="text-xs text-muted-foreground font-medium">Title</p>
-              <p className="mt-1 font-semibold text-slate-900">
+          <div className="grid gap-4 sm:grid-cols-3 text-xs">
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+              <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Assessment Title</p>
+              <p className="mt-1 font-extrabold text-slate-900 text-sm">
                 {assessment?.title || "Untitled Assessment"}
               </p>
             </div>
 
-            <div>
-              <p className="text-xs text-muted-foreground font-medium">Duration</p>
-              <p className="mt-1 font-semibold text-slate-900 flex items-center gap-1.5">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                {assessment?.durationMinutes ?? assessment?.duration ?? 45} minutes
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+              <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Allocated Time</p>
+              <p className="mt-1 font-extrabold text-slate-900 text-sm flex items-center gap-1.5">
+                <Clock className="h-4 w-4 text-blue-600" />
+                {assessment?.durationMinutes ?? assessment?.duration ?? 45} mins
               </p>
             </div>
 
-            <div>
-              <p className="text-xs text-muted-foreground font-medium">Passing Score</p>
-              <p className="mt-1 font-semibold text-slate-900">
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+              <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Passing Benchmark</p>
+              <p className="mt-1 font-extrabold text-emerald-600 text-sm flex items-center gap-1.5">
+                <Trophy className="h-4 w-4 text-amber-500" />
                 {assessment?.passingScore ?? 70}%
               </p>
             </div>
           </div>
 
           {assessment?.description && (
-            <p className="text-xs text-slate-600 border-t pt-3">
+            <p className="text-xs text-slate-600 bg-slate-50/50 p-3 rounded-xl border border-slate-200/60 leading-relaxed font-medium">
               {assessment.description}
             </p>
           )}
         </div>
 
         {/* 2. Selected Games Summary */}
-        <div className="rounded-xl border bg-card p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b pb-3">
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xs space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
-              <Gamepad2 className="h-4 w-4 text-primary" />
-              <h3 className="font-semibold text-slate-900">
+              <Gamepad2 className="h-4 w-4 text-indigo-600" />
+              <h3 className="font-extrabold text-sm text-slate-900">
                 2. Cognitive Games ({selectedGames.length})
               </h3>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Weight: {assessment?.gameWeight ?? 60}%
-            </p>
+            <span className="text-xs font-bold text-slate-500">
+              Module Weight: <strong className="text-slate-900">{assessment?.gameWeight ?? 60}%</strong>
+            </span>
           </div>
 
           {selectedGames.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">No games selected.</p>
+            <p className="text-xs text-slate-400 italic">No cognitive games selected.</p>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               {selectedGames.map((game) => (
                 <div
                   key={game.id}
-                  className="flex items-center justify-between rounded-lg border bg-muted/30 p-3"
+                  className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/60 p-3 text-xs"
                 >
-                  <p className="text-sm font-semibold text-slate-800">{game.title}</p>
-                  <Badge variant="secondary" className="text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px]">
+                      <Gamepad2 className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="font-bold text-slate-900">{game.title}</span>
+                  </div>
+                  <Badge className="bg-white text-indigo-700 border-indigo-200 text-[10px] font-bold">
                     {game.type || "Cognitive"}
                   </Badge>
                 </div>
@@ -157,32 +176,33 @@ const AssessmentReview = ({
         </div>
 
         {/* 3. Selected Questions Summary */}
-        <div className="rounded-xl border bg-card p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b pb-3">
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xs space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
-              <HelpCircle className="h-4 w-4 text-primary" />
-              <h3 className="font-semibold text-slate-900">
-                3. Multiple Choice Questions ({selectedQuestions.length})
+              <HelpCircle className="h-4 w-4 text-blue-600" />
+              <h3 className="font-extrabold text-sm text-slate-900">
+                3. Technical & MCQ Questions ({selectedQuestions.length})
               </h3>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Weight: {assessment?.quizWeight ?? 40}%
-            </p>
+            <span className="text-xs font-bold text-slate-500">
+              Module Weight: <strong className="text-slate-900">{assessment?.quizWeight ?? 40}%</strong>
+            </span>
           </div>
 
           {selectedQuestions.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">No questions selected.</p>
+            <p className="text-xs text-slate-400 italic">No questions selected.</p>
           ) : (
             <div className="space-y-2">
               {selectedQuestions.map((q, idx) => (
                 <div
                   key={q.id}
-                  className="flex items-center justify-between rounded-lg border bg-muted/20 p-3 text-sm"
+                  className="flex items-center justify-between rounded-xl border border-slate-200/80 bg-slate-50/50 p-3 text-xs"
                 >
-                  <p className="font-medium text-slate-800 truncate max-w-lg">
-                    {idx + 1}. {q.question || q.title}
+                  <p className="font-bold text-slate-800 truncate max-w-xl">
+                    <span className="text-slate-400 mr-1.5">{idx + 1}.</span>
+                    {q.question || q.title}
                   </p>
-                  <Badge variant="outline" className="text-xs flex-shrink-0">
+                  <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] font-bold shrink-0 ml-2">
                     {q.category || "General"}
                   </Badge>
                 </div>
@@ -191,29 +211,36 @@ const AssessmentReview = ({
           )}
         </div>
 
-        {/* 4. Weightage & Settings Summary */}
-        <div className="rounded-xl border bg-card p-6 shadow-sm space-y-3">
-          <div className="flex items-center gap-2 border-b pb-3">
-            <Sliders className="h-4 w-4 text-primary" />
-            <h3 className="font-semibold text-slate-900">4. Weightage Breakdown</h3>
+        {/* 4. Weightage Breakdown */}
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xs space-y-3">
+          <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+            <Sliders className="h-4 w-4 text-blue-600" />
+            <h3 className="font-extrabold text-sm text-slate-900">4. Weightage & Scoring Breakdown</h3>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 text-sm">
-            <div className="flex justify-between border-b pb-2">
-              <span className="text-muted-foreground">Quiz Weight</span>
-              <span className="font-bold text-slate-900">{assessment?.quizWeight ?? 40}%</span>
+          <div className="grid gap-4 sm:grid-cols-2 text-xs">
+            <div className="flex justify-between items-center p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+              <span className="font-semibold text-slate-600">Technical Quiz Weight</span>
+              <span className="font-black text-slate-900 text-sm">{assessment?.quizWeight ?? 40}%</span>
             </div>
-            <div className="flex justify-between border-b pb-2">
-              <span className="text-muted-foreground">Game Weight</span>
-              <span className="font-bold text-slate-900">{assessment?.gameWeight ?? 60}%</span>
+            <div className="flex justify-between items-center p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+              <span className="font-semibold text-slate-600">Cognitive Game Weight</span>
+              <span className="font-black text-slate-900 text-sm">{assessment?.gameWeight ?? 60}%</span>
             </div>
           </div>
         </div>
 
         {/* Footer Actions */}
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between pt-4">
-          <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between pt-4 border-t border-slate-200/80">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onBack}
+            disabled={isSubmitting}
+            className="h-10 px-4 rounded-xl border-slate-200 text-xs font-bold text-slate-700"
+          >
+            <ArrowLeft className="h-3.5 w-3.5 mr-1" />
             Back to Settings
           </Button>
 
@@ -221,34 +248,41 @@ const AssessmentReview = ({
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={onSaveDraft}
               disabled={isSubmitting}
+              className="h-10 px-4 rounded-xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50"
             >
               {isSubmitting && submitAction === "draft" ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <span className="flex items-center gap-1.5">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   Saving Draft...
-                </>
+                </span>
               ) : (
-                "Save as Draft"
+                <span className="flex items-center gap-1.5">
+                  <Save className="h-3.5 w-3.5" />
+                  Save as Draft
+                </span>
               )}
             </Button>
 
             <Button
               type="button"
+              size="sm"
               onClick={onPublish}
               disabled={isSubmitting}
+              className="h-10 px-6 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer"
             >
               {isSubmitting && submitAction === "publish" ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Publishing...
-                </>
+                <span className="flex items-center gap-1.5">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Publishing Assessment...
+                </span>
               ) : (
-                <>
-                  <Send className="mr-2 h-4 w-4" />
+                <span className="flex items-center gap-1.5">
+                  <Send className="h-3.5 w-3.5" />
                   Publish Assessment
-                </>
+                </span>
               )}
             </Button>
           </div>
@@ -258,108 +292,52 @@ const AssessmentReview = ({
   }
 
   // ── Mode 2: Candidate Attempt Completion Review Mode ─────────────────
-  const review = getAssessmentReview({
-    assessment,
-    attempt,
-  });
-
-  const progress =
-    review.totalSections > 0
-      ? (review.completedSections / review.totalSections) * 100
-      : 0;
-
+  const review = getAssessmentReview({ assessment, attempt });
+  const progress = review.totalSections > 0 ? (review.completedSections / review.totalSections) * 100 : 0;
   const displayError = error || submitError;
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <header className="sticky top-0 z-20 border-b bg-background shadow-sm">
-        <div className="mx-auto max-w-5xl px-4 py-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Assessment Review
-          </p>
-          <h1 className="mt-0.5 truncate text-xl font-semibold text-slate-900">
-            {assessment.title}
-          </h1>
+    <div className="min-h-screen bg-slate-50/50 font-sans">
+      <header className="sticky top-0 z-20 border-b bg-white shadow-2xs">
+        <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Assessment Review</p>
+            <h1 className="truncate text-lg font-extrabold text-slate-900">{assessment.title}</h1>
+          </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">
-            Review Your Assessment
-          </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Check your progress before submitting the assessment.
-          </p>
-        </div>
-
-        {/* Completion Progress Card */}
-        <div className="rounded-xl border bg-card p-6 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-2xs">
           <div className="flex items-center justify-between">
-            <p className="font-medium text-slate-900">Completion</p>
-            <p className="text-sm font-semibold tabular-nums text-muted-foreground">
+            <p className="font-extrabold text-sm text-slate-900">Total Completion</p>
+            <p className="text-xs font-bold text-slate-500">
               {review.completedSections} / {review.totalSections} sections
             </p>
           </div>
-          <Progress value={progress} className="mt-3 h-2.5" />
+          <Progress value={progress} className="mt-3 h-2" />
         </div>
 
-        {/* Section Review List */}
-        <div className="rounded-xl border bg-card px-6 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white px-6 shadow-2xs">
           {review.sections.map((item) => (
-            <ReviewSectionItem
-              key={item.section.id}
-              item={item}
-              onReview={onReviewSection}
-            />
+            <ReviewSectionItem key={item.section.id} item={item} onReview={onReviewSection} />
           ))}
         </div>
 
-        {/* Validation Status Banner */}
-        {review.isComplete ? (
-          <div className="flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4">
-            <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600" />
-            <div>
-              <p className="font-semibold text-green-900">Ready to submit</p>
-              <p className="mt-0.5 text-sm text-green-700">
-                All assessment sections are complete.
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
-            <TriangleAlert className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
-            <div>
-              <p className="font-semibold text-amber-900">Assessment incomplete</p>
-              <p className="mt-0.5 text-sm text-amber-700">
-                {review.incompleteSections}{" "}
-                {review.incompleteSections === 1 ? "section is" : "sections are"}{" "}
-                still incomplete.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Submission Error Banner */}
         {displayError && (
-          <div className="rounded-xl border border-destructive/50 bg-destructive/5 p-4">
-            <p className="font-medium text-destructive">
-              Unable to submit assessment
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {displayError.message || "Please try again."}
-            </p>
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700 text-xs">
+            <p className="font-bold">Unable to submit assessment</p>
+            <p className="mt-0.5 font-medium">{displayError.message || "Please try again."}</p>
           </div>
         )}
 
-        {/* Actions Footer */}
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between pt-2">
-          <Button type="button" variant="outline" onClick={onBack}>
+        <div className="flex items-center justify-between pt-2">
+          <Button type="button" variant="outline" onClick={onBack} className="rounded-xl border-slate-200 text-xs font-bold">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Assessment
           </Button>
 
-          <Button type="button" onClick={onSubmit} disabled={!review.isComplete}>
+          <Button type="button" onClick={onSubmit} disabled={!review.isComplete} className="rounded-xl bg-blue-600 text-white text-xs font-bold">
             <Send className="mr-2 h-4 w-4" />
             Submit Assessment
           </Button>

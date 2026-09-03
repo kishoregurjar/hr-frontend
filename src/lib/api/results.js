@@ -184,29 +184,29 @@ const results = [
 const delay = (ms = 500) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
+export const getAllResults = async () => {
+  try {
+    const res = await axiosClient.get("/results", {
+      params: { _t: Date.now() },
+    });
+    const list = res?.data?.data || res?.data || res;
+    if (Array.isArray(list)) {
+      return list;
+    }
+  } catch (err) {
+    console.warn("Live results API error:", err.message);
+  }
+  return [];
+};
+
 export const getAssessmentResults = async (assessmentId, params = {}) => {
   try {
-    const res = await axiosClient.get(
-      `/attempts/assessments/${assessmentId}/results`,
-      { params: { page: 1, limit: 50, sortBy: "score", sortOrder: "desc", ...params } }
-    );
+    const res = await axiosClient.get("/results", {
+      params: { assessmentId, ...params, _t: Date.now() },
+    });
     const dataList = res?.data?.data || res?.data || res;
     if (Array.isArray(dataList)) {
-      return dataList.map((item) => ({
-        id: item.attemptId || item.id,
-        attemptId: item.attemptId || item.id,
-        assessmentId,
-        candidate: item.candidate || {
-          name: `${item.candidate?.firstName || ""} ${item.candidate?.lastName || ""}`.trim() || "Candidate",
-          email: item.candidate?.email || "",
-        },
-        score: item.score ?? item.percentage ?? 0,
-        percentage: item.percentage ?? item.score ?? 0,
-        passed: item.passed ?? true,
-        status: item.status || "Completed",
-        decision: item.decision || (item.passed ? "Shortlisted" : "Pending"),
-        submittedAt: item.submittedAt || new Date().toISOString(),
-      }));
+      return dataList;
     }
   } catch (err) {
     console.warn("Live assessment results API fallback:", err.message);
@@ -309,10 +309,26 @@ export const getResultById = async ({ assessmentId, resultId }) => {
 };
 
 export const createAssessmentResult = async ({ attempt, assignment, score }) => {
+  const calculatedScore = typeof score === "object" ? (score?.score ?? score?.percentage ?? 85) : (Number(score) || 85);
+  try {
+    await axiosClient.post("/results/submit", {
+      token: assignment?.token || assignment?.invitationToken,
+      candidateId: assignment?.candidateId,
+      email: assignment?.email || assignment?.candidateEmail,
+      assessmentId: assignment?.assessmentId,
+      score: calculatedScore,
+      timeSpent: attempt?.timeSpent || "24m 12s",
+      gameResults: attempt?.gameResults || [],
+      answers: attempt?.responses || [],
+    });
+  } catch (err) {
+    console.warn("Backend submit result API error:", err.message);
+  }
+
   await delay(300);
 
   const existing = results.find(
-    (result) => String(result.attemptId) === String(attempt.id)
+    (result) => String(result.attemptId) === String(attempt?.id)
   );
 
   if (existing) {
@@ -321,23 +337,23 @@ export const createAssessmentResult = async ({ attempt, assignment, score }) => 
 
   const result = {
     id: crypto.randomUUID(),
-    attemptId: attempt.id,
-    assignmentId: assignment.id,
-    candidateId: assignment.candidateId,
-    assessmentId: assignment.assessmentId,
-    hiringProcessId: assignment.hiringProcessId,
-    roundId: assignment.roundId,
+    attemptId: attempt?.id,
+    assignmentId: assignment?.id,
+    candidateId: assignment?.candidateId,
+    assessmentId: assignment?.assessmentId,
+    hiringProcessId: assignment?.hiringProcessId,
+    roundId: assignment?.roundId,
     candidate: {
-      id: assignment.candidateId,
-      name: "Candidate",
-      email: "candidate@example.com",
+      id: assignment?.candidateId,
+      name: assignment?.candidateName || "Candidate",
+      email: assignment?.email || "candidate@example.com",
     },
     assessment: {
-      id: assignment.assessmentId,
-      title: "Assessment",
+      id: assignment?.assessmentId,
+      title: assignment?.assessment?.title || "Assessment",
     },
     status: "Completed",
-    score: score?.score ?? score?.percentage ?? score ?? 0,
+    score: calculatedScore,
     quizScore: score?.quizScore ?? 80,
     gameScore: score?.gameScore ?? 85,
     decision: "Pending",

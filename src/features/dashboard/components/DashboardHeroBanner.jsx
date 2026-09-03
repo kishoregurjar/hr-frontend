@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Mail, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,16 @@ import { useAuth } from "@/features/auth/context";
 
 const DashboardHeroBanner = () => {
   const { user } = useAuth();
-  const companyName = user?.company || "TechCorp Solutions";
+  const [impersonated, setImpersonated] = useState(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("hq_impersonated_company");
+      if (stored) setImpersonated(JSON.parse(stored));
+    } catch {}
+  }, []);
+
+  const companyName = impersonated?.name || user?.company || "TechCorp Solutions";
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-700 p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/15 border border-indigo-400/20">
@@ -22,6 +32,14 @@ const DashboardHeroBanner = () => {
             <span>WORKSPACE OVERVIEW</span>
             <span className="text-white/60">•</span>
             <span className="font-extrabold">{companyName}</span>
+            {impersonated && (
+              <>
+                <span className="text-white/60">•</span>
+                <span className="bg-amber-400 text-slate-900 px-1.5 py-0.2 rounded text-[9px] font-black uppercase">
+                  Inspecting
+                </span>
+              </>
+            )}
           </div>
 
           {/* Title */}

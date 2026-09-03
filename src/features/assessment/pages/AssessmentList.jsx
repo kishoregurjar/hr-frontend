@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Plus, Sparkles, ChevronDown, Clock, Search } from "lucide-react";
+import { Plus, Sparkles, ChevronDown, Clock, Search, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ const AssessmentList = () => {
   const companyName = user?.company || "TechCorp Solutions";
 
   const [search, setSearch] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [actionAssessmentId, setActionAssessmentId] = useState(null);
 
   const {
@@ -34,6 +36,15 @@ const AssessmentList = () => {
     error,
     refetch,
   } = useAssessmentsQuery();
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setTimeout(() => {
+      setIsRefreshing(false);
+      toast.success("Assessments list updated!");
+    }, 400);
+  };
 
   const statusMutation = useAssessmentStatusMutation();
 
@@ -81,9 +92,20 @@ const AssessmentList = () => {
             </span>
           </div>
 
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="h-9 px-3 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold gap-1.5 shadow-2xs cursor-pointer"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+
           {/* Build CTA */}
           <Link href="/assessments/create">
-            <Button className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20">
+            <Button className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20 cursor-pointer">
               <Plus className="h-3.5 w-3.5" />
               Build Assessment
             </Button>

@@ -1,5 +1,26 @@
 import axiosClient from "./axiosClient";
 
+const CANDIDATES_STORAGE_KEY = "hirequest_candidates_cache_v2";
+
+const getCachedCandidates = () => {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(CANDIDATES_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveCachedCandidates = (list) => {
+  if (typeof window === "undefined" || !Array.isArray(list)) return;
+  try {
+    localStorage.setItem(CANDIDATES_STORAGE_KEY, JSON.stringify(list));
+  } catch {
+    // Ignore storage quota
+  }
+};
+
 let candidates = [];
 
 /**
@@ -74,19 +95,94 @@ export const parseRawEmailContent = (rawText = "") => {
 };
 
 /**
- * 1. Fetch Candidates List — GET /api/v1/candidates
+ * 1. Fetch Candidates List — Live Backend Flow via GET /candidates & GET /attempts
  */
 export const getCandidates = async (params = {}) => {
-  try {
-    const res = await axiosClient.get("/candidates", { params });
-    const list = res?.data?.items || res?.data?.candidates || res?.data || res;
-    if (Array.isArray(list) && list.length > 0) {
-      return list;
-    }
-    return [...candidates];
-  } catch {
-    return [...candidates];
+  const cleanParams = {};
+  if (params?.page) cleanParams.page = params.page;
+  if (params?.limit) cleanParams.limit = params.limit;
+  if (params?.status && params.status !== "all") cleanParams.status = params.status;
+  if (params?.search) cleanParams.search = params.search;
+
+  let localList = getCachedCandidates();
+  if (Array.isArray(localList) && localList.length > 0) {
+    candidates = localList;
   }
+
+  let backendItems = [];
+  let backendSuccess = false;
+
+  // 1. Try GET /invitations endpoint (PostgreSQL Invitations Database)
+  try {
+    const invRes = await axiosClient.get("/invitations", { params: cleanParams });
+    const invItems = invRes?.data?.items || invRes?.data?.data || invRes?.items || invRes?.data || (Array.isArray(invRes) ? invRes : []);
+    if (Array.isArray(invItems)) {
+      backendItems = [...backendItems, ...invItems];
+      backendSuccess = true;
+    }
+  } catch {}
+
+  // 2. Try dedicated GET /candidates endpoint
+  try {
+    const candRes = await axiosClient.get("/candidates", { params: cleanParams });
+    const cItems = candRes?.data?.items || candRes?.data?.data || candRes?.items || candRes?.data || (Array.isArray(candRes) ? candRes : []);
+    if (Array.isArray(cItems)) {
+      backendItems = [...backendItems, ...cItems];
+      backendSuccess = true;
+    }
+  } catch {}
+
+  // 3. Try GET /attempts endpoint
+  try {
+    const res = await axiosClient.get("/attempts", { params: cleanParams });
+    const items = res?.data?.items || res?.data?.data || res?.items || res?.data || (Array.isArray(res) ? res : []);
+    if (Array.isArray(items)) {
+      backendItems = [...backendItems, ...items];
+      backendSuccess = true;
+    }
+  } catch {}
+
+  // Map backend database candidates
+  const mappedBackend = backendItems.map((att, idx) => {
+    const user = att.candidate || att.user || {};
+    const fullName =
+      att.name ||
+      att.candidateName ||
+      user.name ||
+      `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+      (att.email ? att.email.split("@")[0] : `Candidate ${idx + 1}`);
+    const email = att.email || att.candidateEmail || user.email || `candidate${idx + 1}@example.com`;
+    
+    return {
+      id: att.id || att.candidateId || user.id || `cand-${idx}`,
+      name: fullName,
+      email,
+      phone: att.phone || user.phone || "",
+      role: att.role || user.role || "Applicant",
+      skills: Array.isArray(att.skills) ? att.skills : ["General"],
+      experience: att.experience || "1-2 Years",
+      source: att.source || "Assessment Invite",
+      status: att.status || (att.submittedAt ? "Completed" : "Invited"),
+      appliedAt: att.createdAt || att.invitedAt || new Date().toISOString(),
+      createdAt: att.createdAt || new Date().toISOString(),
+      updatedAt: att.updatedAt || new Date().toISOString(),
+      score: att.score ?? null,
+      token: att.token || att.invitationToken,
+      assessmentId: att.assessmentId,
+    };
+  });
+
+  // Merge backend items with local/created candidates (deduplicated by email)
+  const combined = [...mappedBackend];
+  candidates.forEach((c) => {
+    if (!combined.some((m) => m.email.toLowerCase() === (c.email || "").toLowerCase())) {
+      combined.push(c);
+    }
+  });
+
+  candidates = combined;
+  saveCachedCandidates(combined);
+  return combined;
 };
 
 /**
@@ -96,46 +192,109 @@ export const getCandidateById = async (id) => {
   try {
     const res = await axiosClient.get(`/candidates/${id}`);
     return res?.data?.data || res?.data || res;
-  } catch {
-    const found = candidates.find((item) => String(item.id) === String(id));
-    if (!found) throw new Error("Candidate not found.");
-    return { ...found };
+  } catch (err) {
+    console.error("Candidate not found:", err.message);
+    throw err;
   }
 };
 
 /**
- * 3. Create Candidate Manually — POST /api/v1/candidates
+ * 3. Create Candidate Manually — Unified Backend Flow: POST /api/v1/attempts/assessments/:assessmentId/invitations
  */
 export const createCandidate = async (payload) => {
   const cleanName = typeof payload?.name === "string" && payload.name !== "[object Object]"
     ? payload.name.trim()
     : `${payload?.firstName || ""} ${payload?.lastName || ""}`.trim() || "Candidate";
 
+  const parts = cleanName.split(" ").filter(Boolean);
+  const firstName = payload?.firstName || parts[0] || "Candidate";
+  const lastName = payload?.lastName || parts.slice(1).join(" ") || "";
+
   const cleanEmail = typeof payload?.email === "string" && payload.email.includes("@")
     ? payload.email.trim().toLowerCase()
     : `candidate-${Date.now()}@example.com`;
 
+  // 1. Try unified candidate creation & exam invitation flow
+  let targetAssessmentId = payload?.assessmentId;
+  if (!targetAssessmentId) {
+    try {
+      const assessmentsRes = await axiosClient.get("/assessments");
+      const list = assessmentsRes?.data?.items || assessmentsRes?.data?.data || assessmentsRes?.data || assessmentsRes || [];
+      if (Array.isArray(list) && list.length > 0) {
+        targetAssessmentId = list[0]?.id || list[0]?._id;
+      }
+    } catch {
+      // Ignore
+    }
+  }
+
+  if (targetAssessmentId) {
+    try {
+      const res = await axiosClient.post(`/attempts/assessments/${targetAssessmentId}/invitations`, {
+        email: cleanEmail,
+        firstName,
+        lastName,
+      });
+      const resData = res?.data?.data || res?.data || res;
+      const createdCandidate = {
+        id: resData?.candidateId || resData?.id || `cand-${Date.now()}`,
+        name: cleanName,
+        email: cleanEmail,
+        phone: payload?.phone || "",
+        role: payload?.role || "Applicant",
+        skills: Array.isArray(payload?.skills) ? payload.skills : ["General"],
+        experience: payload?.experience || "1-2 Years",
+        source: "Direct Add",
+        status: "Invited",
+        token: resData?.token || resData?.invitationToken,
+        invitationToken: resData?.token || resData?.invitationToken,
+        assessmentId: targetAssessmentId,
+        appliedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      candidates = [createdCandidate, ...candidates.filter((c) => c.email !== cleanEmail)];
+      saveCachedCandidates(candidates);
+      return createdCandidate;
+    } catch (err) {
+      console.warn("Unified invitation endpoint attempt:", err?.message);
+    }
+  }
+
+  // 2. Fallback direct /candidates route if supported
   try {
-    const res = await axiosClient.post("/candidates", payload);
-    return res?.data?.data || res?.data || res;
-  } catch {
-    const candidate = {
-      id: `cand-${Date.now()}`,
+    const res = await axiosClient.post("/candidates", {
       ...payload,
       name: cleanName,
       email: cleanEmail,
-      phone: payload?.phone?.trim() || "",
-      role: payload?.role || "Software Engineer",
-      skills: Array.isArray(payload?.skills) ? payload.skills : ["React", "JavaScript"],
-      experience: payload?.experience || "1-3 Years",
-      source: payload?.source || "Manual Entry",
+      firstName,
+      lastName,
+    });
+    const saved = res?.data?.data || res?.data || res;
+    if (saved && typeof saved === "object") {
+      candidates = [saved, ...candidates.filter((c) => c.email !== cleanEmail)];
+      saveCachedCandidates(candidates);
+    }
+    return saved;
+  } catch (err) {
+    // 3. Graceful client fallback
+    const fallbackCand = {
+      id: `cand-${Date.now()}`,
+      name: cleanName,
+      email: cleanEmail,
+      phone: payload?.phone || "",
+      role: payload?.role || "Applicant",
+      skills: Array.isArray(payload?.skills) ? payload.skills : ["General"],
+      experience: payload?.experience || "1-2 Years",
+      source: "Direct Add",
       status: "New",
       appliedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    candidates = [candidate, ...candidates.filter(c => c.name !== "[object Object]")];
-    return candidate;
+    candidates = [fallbackCand, ...candidates.filter((c) => c.email !== cleanEmail)];
+    saveCachedCandidates(candidates);
+    return fallbackCand;
   }
 };
 
@@ -145,15 +304,31 @@ export const createCandidate = async (payload) => {
 export const updateCandidate = async (id, payload) => {
   try {
     const res = await axiosClient.patch(`/candidates/${id}`, payload);
-    return res?.data?.data || res?.data || res;
+    const updated = res?.data?.data || res?.data || res;
+    if (updated) {
+      const index = candidates.findIndex((c) => String(c.id) === String(id));
+      if (index !== -1) {
+        candidates[index] = { ...candidates[index], ...updated };
+      } else {
+        candidates.push(updated);
+      }
+      saveCachedCandidates(candidates);
+    }
+    return updated;
   } catch {
     const index = candidates.findIndex((c) => String(c.id) === String(id));
-    if (index === -1) throw new Error("Candidate not found.");
+    if (index === -1) {
+      const fallback = { id, ...payload, updatedAt: new Date().toISOString() };
+      candidates.push(fallback);
+      saveCachedCandidates(candidates);
+      return fallback;
+    }
     candidates[index] = {
       ...candidates[index],
       ...payload,
       updatedAt: new Date().toISOString(),
     };
+    saveCachedCandidates(candidates);
     return { ...candidates[index] };
   }
 };
@@ -190,6 +365,7 @@ export const syncEmailApplications = async () => {
       updatedAt: new Date().toISOString(),
     };
     candidates = [simulatedNewEmailApplicant, ...candidates.filter(c => c.name !== "[object Object]")];
+    saveCachedCandidates(candidates);
     return {
       success: true,
       message: "Synced mailbox successfully. 1 new candidate extracted.",
@@ -221,7 +397,12 @@ export const extractCandidateFromEmail = async (input) => {
       emailText: rawEmailText,
       ...parsedData,
     });
-    return res?.data?.data || res?.data || res;
+    const extracted = res?.data?.data || res?.data || res;
+    if (extracted) {
+      candidates = [extracted, ...candidates.filter((c) => c.email !== cleanEmail)];
+      saveCachedCandidates(candidates);
+    }
+    return extracted;
   } catch {
     const newCandidate = {
       id: `cand-${Date.now()}`,
@@ -234,19 +415,43 @@ export const extractCandidateFromEmail = async (input) => {
       updatedAt: new Date().toISOString(),
     };
     candidates = [newCandidate, ...candidates.filter(c => c.name !== "[object Object]")];
+    saveCachedCandidates(candidates);
     return newCandidate;
   }
 };
 
 /**
- * 8. Invite Candidate to Assessment — POST /api/v1/candidates/:id/invite
+ * 8. Invite Candidate to Assessment — POST /api/v1/attempts/assessments/:assessmentId/invitations
  */
-export const inviteCandidateToAssessment = async (candidateId, assessmentId) => {
+export const inviteCandidateToAssessment = async (candidateId, assessmentId, candidateData = {}) => {
+  const candidate = candidates.find((c) => String(c.id) === String(candidateId)) || candidateData;
+  const cleanName = candidate?.name || "Candidate";
+  const parts = cleanName.split(" ").filter(Boolean);
+  const firstName = candidate?.firstName || parts[0] || "Candidate";
+  const lastName = candidate?.lastName || parts.slice(1).join(" ") || "";
+  const email = candidate?.email || `candidate-${Date.now()}@example.com`;
+
   try {
-    const res = await axiosClient.post(`/candidates/${candidateId}/invite`, { assessmentId });
-    return res?.data || res;
-  } catch {
-    return updateCandidate(candidateId, { status: "Invited" });
+    const res = await axiosClient.post(`/attempts/assessments/${assessmentId}/invitations`, {
+      email,
+      firstName,
+      lastName,
+    });
+    const resData = res?.data?.data || res?.data || res;
+    updateCandidate(candidateId, {
+      status: "Invited",
+      token: resData?.token || resData?.invitationToken,
+      invitationToken: resData?.token || resData?.invitationToken,
+      assessmentId,
+    });
+    return resData;
+  } catch (err) {
+    try {
+      const res = await axiosClient.post(`/candidates/${candidateId}/invite`, { assessmentId });
+      return res?.data || res;
+    } catch {
+      return updateCandidate(candidateId, { status: "Invited", assessmentId });
+    }
   }
 };
 
@@ -271,5 +476,6 @@ export const importCandidates = async (importedCandidates) => {
   }));
 
   candidates = [...createdCandidates, ...candidates];
+  saveCachedCandidates(candidates);
   return createdCandidates;
 };

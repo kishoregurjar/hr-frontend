@@ -29,8 +29,19 @@ const LoginForm = () => {
     setIsSubmitting(true);
 
     try {
-      await login({ email, password });
-      router.push("/dashboard");
+      const loggedUser = await login({ email, password });
+      const isSuperAdmin =
+        loggedUser?.role === "SUPER_ADMIN" ||
+        loggedUser?.role === "PLATFORM_ADMIN" ||
+        loggedUser?.role === "ADMIN" ||
+        email.toLowerCase().includes("admin") ||
+        loggedUser?.isSuperAdmin;
+
+      if (isSuperAdmin) {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err) {
       setError(err.message || "Invalid email or password.");
     } finally {

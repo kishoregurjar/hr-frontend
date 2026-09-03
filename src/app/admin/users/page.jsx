@@ -54,10 +54,10 @@ export default function AdminUsersPage() {
         subtitle="Manage HR Administrators, Recruiters, and Super Admin Accounts"
       />
 
-      <main className="flex-1 p-6 sm:p-8 space-y-6 max-w-7xl">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl">
         {/* ── Top Action Bar ── */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
             {/* Search Input */}
             <div className="relative flex-1 sm:w-80">
               <Search className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
@@ -83,7 +83,7 @@ export default function AdminUsersPage() {
             </select>
           </div>
 
-          <Button className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-md shadow-blue-500/20">
+          <Button className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-md shadow-blue-500/20 shrink-0">
             <Plus className="h-4 w-4" />
             Invite Platform Admin
           </Button>
@@ -92,7 +92,7 @@ export default function AdminUsersPage() {
         {/* ── Users Data Table ── */}
         <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[700px]">
               <thead className="bg-slate-50/80 border-b text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="py-3.5 px-6">User Name</th>

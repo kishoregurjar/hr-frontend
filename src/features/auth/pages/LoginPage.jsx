@@ -9,13 +9,24 @@ import { useAuth } from "../context";
 
 const LoginPage = () => {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.push("/dashboard");
+      const isSuperAdmin =
+        user?.role === "SUPER_ADMIN" ||
+        user?.role === "PLATFORM_ADMIN" ||
+        user?.role === "ADMIN" ||
+        user?.email?.toLowerCase().includes("admin") ||
+        user?.isSuperAdmin;
+
+      if (isSuperAdmin) {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, user, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] text-slate-900 font-sans px-4 py-12 relative overflow-hidden">

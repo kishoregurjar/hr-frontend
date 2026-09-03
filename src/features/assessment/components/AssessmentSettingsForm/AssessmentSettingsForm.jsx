@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Clock, Trophy, Repeat, Shuffle, Eye, ArrowLeft, ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +20,6 @@ import { Switch } from "@/components/ui/switch";
 
 import { assessmentSettingsSchema } from "../../validations";
 
-// NaN-Safe Submit Transformer
 const safeNumber = (val, fallback) => {
   const n = Number(val);
   return isNaN(n) ? fallback : n;
@@ -38,34 +38,28 @@ const AssessmentSettingsForm = ({
       passingScore: defaultValues?.passingScore ?? 70,
       attemptsAllowed: defaultValues?.attemptsAllowed ?? 1,
       shuffleQuestions: defaultValues?.shuffleQuestions ?? true,
-      showResultToCandidate:
-        defaultValues?.showResultToCandidate ?? false,
+      showResultToCandidate: defaultValues?.showResultToCandidate ?? false,
     },
   });
 
-  // Restore values when navigating back
   useEffect(() => {
     form.reset({
       duration: defaultValues?.duration ?? 60,
       passingScore: defaultValues?.passingScore ?? 70,
       attemptsAllowed: defaultValues?.attemptsAllowed ?? 1,
       shuffleQuestions: defaultValues?.shuffleQuestions ?? true,
-      showResultToCandidate:
-        defaultValues?.showResultToCandidate ?? false,
+      showResultToCandidate: defaultValues?.showResultToCandidate ?? false,
     });
   }, [defaultValues, form]);
 
-  // Immediately persist changes to wizard state
   useEffect(() => {
     const subscription = form.watch((values) => {
       onChange?.(values);
     });
-
     return () => subscription.unsubscribe();
   }, [form, onChange]);
 
   const handleSubmit = (data) => {
-    // NaN-safe coercion before passing to wizard
     onContinue({
       ...data,
       duration: safeNumber(data.duration, 60),
@@ -75,179 +69,187 @@ const AssessmentSettingsForm = ({
   };
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(handleSubmit)}
-        className="space-y-8"
-      >
-        <div>
-          <h2 className="text-xl font-semibold">
-            Assessment Settings
-          </h2>
+    <div className="rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-2xs font-sans space-y-6">
+      <div className="border-b border-slate-100 pb-4">
+        <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+          Assessment & Proctoring Settings
+        </h2>
+        <p className="text-xs text-slate-500 font-medium mt-0.5">
+          Configure timing constraints, pass benchmarks, and candidate feedback rules.
+        </p>
+      </div>
 
-          <p className="mt-1 text-sm text-muted-foreground">
-            Configure how candidates will take this assessment.
-          </p>
-        </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          {/* Numeric Fields Row */}
+          <div className="grid gap-5 sm:grid-cols-3">
+            {/* Duration */}
+            <FormField
+              control={form.control}
+              name="duration"
+              render={({ field }) => (
+                <FormItem className="space-y-1.5">
+                  <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5 text-blue-600" />
+                    Total Duration
+                  </FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        min={5}
+                        max={300}
+                        {...field}
+                        className="h-10 rounded-xl border-slate-200 bg-slate-50/50 pr-16 text-xs font-bold text-slate-900 focus:bg-white"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400">
+                        mins
+                      </span>
+                    </div>
+                  </FormControl>
+                  <FormDescription className="text-[11px] text-slate-500">
+                    Max test time allowed.
+                  </FormDescription>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )}
+            />
 
-        {/* Numeric Fields */}
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Duration */}
-          <FormField
-            control={form.control}
-            name="duration"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Duration</FormLabel>
+            {/* Passing Score */}
+            <FormField
+              control={form.control}
+              name="passingScore"
+              render={({ field }) => (
+                <FormItem className="space-y-1.5">
+                  <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                    <Trophy className="h-3.5 w-3.5 text-amber-500" />
+                    Passing Mark
+                  </FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        {...field}
+                        className="h-10 rounded-xl border-slate-200 bg-slate-50/50 pr-10 text-xs font-bold text-slate-900 focus:bg-white"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400">
+                        %
+                      </span>
+                    </div>
+                  </FormControl>
+                  <FormDescription className="text-[11px] text-slate-500">
+                    Qualification threshold.
+                  </FormDescription>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )}
+            />
 
-                <FormControl>
-                  <div className="relative">
+            {/* Attempts Allowed */}
+            <FormField
+              control={form.control}
+              name="attemptsAllowed"
+              render={({ field }) => (
+                <FormItem className="space-y-1.5">
+                  <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                    <Repeat className="h-3.5 w-3.5 text-indigo-600" />
+                    Max Retries
+                  </FormLabel>
+                  <FormControl>
                     <Input
                       type="number"
-                      min={5}
-                      max={300}
+                      min={1}
+                      max={5}
                       {...field}
-                      className="pr-20"
+                      className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-bold text-slate-900 focus:bg-white"
                     />
+                  </FormControl>
+                  <FormDescription className="text-[11px] text-slate-500">
+                    Candidate attempt limit.
+                  </FormDescription>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )}
+            />
+          </div>
 
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                      minutes
-                    </span>
+          {/* Toggle Switches */}
+          <div className="space-y-3 pt-2">
+            <FormField
+              control={form.control}
+              name="shuffleQuestions"
+              render={({ field }) => (
+                <FormItem className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition hover:bg-slate-50">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-xs font-extrabold text-slate-900 flex items-center gap-2">
+                      <Shuffle className="h-3.5 w-3.5 text-blue-600" />
+                      Randomize Question Order
+                    </FormLabel>
+                    <FormDescription className="text-[11px] text-slate-500">
+                      Shuffles MCQ question sequences dynamically to prevent collusion.
+                    </FormDescription>
                   </div>
-                </FormControl>
-
-                <FormDescription>
-                  Total time available to complete the assessment.
-                </FormDescription>
-
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Passing Score */}
-          <FormField
-            control={form.control}
-            name="passingScore"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Passing Score</FormLabel>
-
-                <FormControl>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      min={0}
-                      max={100}
-                      {...field}
-                      className="pr-10"
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
                     />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                      %
-                    </span>
+            <FormField
+              control={form.control}
+              name="showResultToCandidate"
+              render={({ field }) => (
+                <FormItem className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition hover:bg-slate-50">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-xs font-extrabold text-slate-900 flex items-center gap-2">
+                      <Eye className="h-3.5 w-3.5 text-emerald-600" />
+                      Candidate Scorecard Visibility
+                    </FormLabel>
+                    <FormDescription className="text-[11px] text-slate-500">
+                      Allow candidates to view their provisional score breakdown immediately after submission.
+                    </FormDescription>
                   </div>
-                </FormControl>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
 
-                <FormDescription>
-                  Minimum score required to pass.
-                </FormDescription>
+          {/* Navigation Buttons */}
+          <div className="flex items-center justify-between border-t border-slate-100 pt-6">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onBack}
+              className="h-10 px-4 rounded-xl border-slate-200 text-xs font-bold text-slate-700"
+            >
+              <ArrowLeft className="h-3.5 w-3.5 mr-1" />
+              Back
+            </Button>
 
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Attempts Allowed */}
-          <FormField
-            control={form.control}
-            name="attemptsAllowed"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Attempts Allowed</FormLabel>
-
-                <FormControl>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={5}
-                    {...field}
-                  />
-                </FormControl>
-
-                <FormDescription>
-                  Number of times a candidate can attempt this assessment.
-                </FormDescription>
-
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        {/* Toggle Settings */}
-        <div className="space-y-4">
-          <FormField
-            control={form.control}
-            name="shuffleQuestions"
-            render={({ field }) => (
-              <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                <div className="space-y-1">
-                  <FormLabel>Shuffle Questions</FormLabel>
-
-                  <FormDescription>
-                    Show questions in a different order for each candidate.
-                  </FormDescription>
-                </div>
-
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="showResultToCandidate"
-            render={({ field }) => (
-              <FormItem className="flex items-center justify-between gap-6 rounded-lg border p-4">
-                <div className="space-y-1">
-                  <FormLabel>Show Result to Candidate</FormLabel>
-
-                  <FormDescription>
-                    Allow candidates to see their result after submission.
-                  </FormDescription>
-                </div>
-
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-        </div>
-
-        {/* Navigation */}
-        <div className="flex items-center justify-between border-t pt-6">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onBack}
-          >
-            Back
-          </Button>
-
-          <Button type="submit">Continue</Button>
-        </div>
-      </form>
-    </Form>
+            <Button
+              type="submit"
+              className="h-10 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20 cursor-pointer"
+            >
+              Continue
+              <ArrowRight className="h-3.5 w-3.5 ml-1" />
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </div>
   );
 };
 

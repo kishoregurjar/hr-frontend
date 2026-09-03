@@ -34,12 +34,20 @@ import { useUpdateCandidateStatus } from "../../hooks";
 
 const CandidateExtractorDrawer = ({
   candidate,
+  open,
   isOpen,
+  onOpenChange,
   onClose,
   onAssignAssessment,
 }) => {
   const [isCopied, setIsCopied] = useState(false);
   const updateStatusMutation = useUpdateCandidateStatus();
+
+  const isDrawerOpen = typeof open === "boolean" ? open : Boolean(isOpen);
+  const handleClose = () => {
+    if (onOpenChange) onOpenChange(false);
+    if (onClose) onClose();
+  };
 
   if (!candidate) return null;
 
@@ -71,7 +79,7 @@ const CandidateExtractorDrawer = ({
     candidate.source === "Email Ingestion" || Boolean(candidate.emailSubject);
 
   const handleCopyLink = async () => {
-    const link = `${window.location.origin}/assessment/invite/${candidate.id}`;
+    const link = `${typeof window !== "undefined" ? window.location.origin : ""}/assessment/invite/${candidate.id}`;
     await navigator.clipboard.writeText(link);
     setIsCopied(true);
     toast.success("Assessment link copied to clipboard!");
@@ -79,7 +87,9 @@ const CandidateExtractorDrawer = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isDrawerOpen} onOpenChange={(nextOpen) => {
+      if (!nextOpen) handleClose();
+    }}>
       <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto p-0 rounded-2xl border border-slate-200 bg-white shadow-2xl">
         {/* ── 1. Top Hero Profile Header ─────────────────────────────── */}
         <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 text-white rounded-t-2xl relative overflow-hidden">

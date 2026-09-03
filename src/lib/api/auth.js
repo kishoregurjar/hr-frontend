@@ -94,12 +94,38 @@ export const loginApi = async ({ email, password }) => {
     throw new Error("Invalid authentication payload received from server.");
   }
 
+  const refreshToken = payload?.refreshToken || res?.refreshToken || res?.data?.refreshToken;
+
   if (typeof window !== "undefined") {
     localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, token);
+    localStorage.setItem("token", token);
+    localStorage.setItem("accessToken", token);
+    localStorage.setItem("jwt", token);
+    if (refreshToken) {
+      localStorage.setItem("hirequest_refresh_token", refreshToken);
+    }
     localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
   }
 
   return { token, user };
+};
+
+/**
+ * Refresh Access Token API — Live Backend Call
+ * Endpoint: POST /api/v1/auth/refresh-token
+ */
+export const refreshTokenApi = async () => {
+  const refreshToken = typeof window !== "undefined" ? localStorage.getItem("hirequest_refresh_token") : null;
+  const res = await axiosClient.post("/auth/refresh-token", { refreshToken });
+  const payload = getPayload(res);
+  const newToken = payload?.accessToken || payload?.token || res?.accessToken || res?.data?.accessToken || res?.token;
+  if (newToken && typeof window !== "undefined") {
+    localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, newToken);
+    localStorage.setItem("token", newToken);
+    localStorage.setItem("accessToken", newToken);
+    localStorage.setItem("jwt", newToken);
+  }
+  return newToken;
 };
 
 /**
