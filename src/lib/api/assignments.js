@@ -55,15 +55,24 @@ export const getAssignmentByToken = async (rawToken) => {
   if (inv && typeof inv === "object") {
     const assessment = inv.assessment || inv.Assessment || {};
     const candidate = inv.candidate || inv.user || inv.User || {};
+    const candidateName =
+      inv.candidateName ||
+      candidate?.name ||
+      (candidate?.firstName ? `${candidate.firstName} ${candidate.lastName || ""}`.trim() : null) ||
+      inv.email ||
+      candidate?.email ||
+      "Candidate";
+    const candidateEmail = inv.email || candidate?.email || "";
+
     return {
       id: inv.id || `inv-${Date.now()}`,
       assignmentId: inv.id || `inv-${Date.now()}`,
       assessmentId: inv.assessmentId || assessment?.id,
       candidateId: inv.candidateId || candidate?.id || inv.id,
-      email: inv.email || candidate?.email || "candidate@hirequest.com",
-      candidateName: inv.candidateName || candidate?.name || "Rohit Panchal",
-      candidateEmail: inv.email || candidate?.email || "rohitpanchal958466@gmail.com",
-      status: "Invited",
+      email: candidateEmail,
+      candidateName,
+      candidateEmail,
+      status: inv.status || "Invited",
       token: inv.token || rawToken,
       invitationToken: inv.token || rawToken,
       expiresAt: inv.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
@@ -71,8 +80,8 @@ export const getAssignmentByToken = async (rawToken) => {
       assessment,
       candidate: {
         id: inv.candidateId || candidate?.id || inv.id,
-        name: inv.candidateName || candidate?.name || "Rohit Panchal",
-        email: inv.email || candidate?.email || "rohitpanchal958466@gmail.com",
+        name: candidateName,
+        email: candidateEmail,
       },
     };
   }

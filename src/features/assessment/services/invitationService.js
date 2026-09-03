@@ -28,7 +28,7 @@ export const invitationService = {
 
     let games = assessment?.games || [];
     if (!Array.isArray(games) || games.length === 0) {
-      games = Array.isArray(staticGames) ? staticGames.slice(0, 2) : [];
+      games = Array.isArray(staticGames) ? staticGames : [];
     }
 
     const hydratedAssessment = {

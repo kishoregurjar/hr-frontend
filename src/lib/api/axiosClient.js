@@ -72,7 +72,10 @@ axiosClient.interceptors.response.use(
       !originalRequest._retry &&
       !originalRequest.url?.includes("/auth/login") &&
       !originalRequest.url?.includes("/auth/register") &&
-      !originalRequest.url?.includes("/auth/refresh-token");
+      !originalRequest.url?.includes("/auth/refresh-token") &&
+      !originalRequest.url?.includes("/verify") &&
+      !originalRequest.url?.includes("/attempts/candidate") &&
+      !originalRequest.url?.includes("/invitations");
 
     if (isTokenExpired) {
       if (isRefreshing) {

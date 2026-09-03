@@ -100,8 +100,16 @@ const AssessmentInvitation = ({ token }) => {
     );
   }
 
-  // ── 5. Invited State — Validation & Pre-Start ──────────────
-  if (assignment?.status === "Invited") {
+  // ── 5. Invited / Pending State — Validation & Pre-Start ──────────────
+  const rawStatus = String(assignment?.status || "").toLowerCase();
+  const isPendingOrInvited =
+    rawStatus === "invited" ||
+    rawStatus === "pending" ||
+    rawStatus === "sent" ||
+    rawStatus === "opened" ||
+    !rawStatus;
+
+  if (isPendingOrInvited) {
     const validation = validateAssessmentStart({ assignment, assessment });
 
     if (!validation.valid) {
