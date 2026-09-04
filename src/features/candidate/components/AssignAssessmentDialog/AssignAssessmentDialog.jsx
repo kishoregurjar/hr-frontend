@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { ClipboardList, Users, Send, CheckCircle2, Loader2, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -89,9 +90,17 @@ const AssignAssessmentDialog = ({
       },
       {
         onSuccess: () => {
+          toast.success("Assessment assigned and invitation sent successfully!");
           onAssigned?.();
           onSuccess?.();
           handleOpenChange(false);
+        },
+        onError: (err) => {
+          toast.error(
+            err?.response?.data?.message ||
+              err?.message ||
+              "Failed to assign assessment."
+          );
         },
       }
     );

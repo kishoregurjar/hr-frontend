@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Pencil, UserCheck } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -30,7 +31,15 @@ const EditCandidateDialog = ({ candidate }) => {
   const handleSubmit = (values) => {
     updateCandidate.mutate(values, {
       onSuccess: () => {
+        toast.success("Candidate updated successfully!");
         setOpen(false);
+      },
+      onError: (err) => {
+        toast.error(
+          err?.response?.data?.message ||
+            err?.message ||
+            "Failed to update candidate."
+        );
       },
     });
   };

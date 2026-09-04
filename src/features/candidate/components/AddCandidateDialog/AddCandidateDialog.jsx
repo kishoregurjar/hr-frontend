@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus, UserPlus, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -30,7 +31,17 @@ const AddCandidateDialog = ({ trigger }) => {
   const handleSubmit = (values) => {
     createCandidate.mutate(values, {
       onSuccess: () => {
+        toast.success("Candidate added successfully!", {
+          description: `${values.name || "Candidate"} has been added to your candidate directory.`,
+        });
         setOpen(false);
+      },
+      onError: (err) => {
+        toast.error(
+          err?.response?.data?.message ||
+            err?.message ||
+            "Failed to add candidate. Please try again."
+        );
       },
     });
   };

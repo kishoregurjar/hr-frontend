@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Upload } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -97,7 +98,19 @@ const ImportCandidatesDialog = ({ existingCandidates = [] }) => {
 
     importMutation.mutate(candidates, {
       onSuccess: () => {
+        toast.success(
+          `Successfully imported ${candidates.length} candidate${
+            candidates.length > 1 ? "s" : ""
+          }!`
+        );
         setOpen(false);
+      },
+      onError: (err) => {
+        toast.error(
+          err?.response?.data?.message ||
+            err?.message ||
+            "Failed to import candidates."
+        );
       },
     });
   };

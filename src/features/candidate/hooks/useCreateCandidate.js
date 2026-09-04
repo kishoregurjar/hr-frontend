@@ -13,7 +13,7 @@ const useCreateCandidate = () => {
 
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: CANDIDATE_QUERY_KEYS.lists(),
+        queryKey: CANDIDATE_QUERY_KEYS.all,
       });
     },
   });
