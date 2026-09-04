@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Building2, Lock, Mail, User, Loader2, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,9 +30,17 @@ const RegisterForm = () => {
 
     try {
       await register({ name, email, company, password });
+      toast.success("Account created successfully!", {
+        description: `Welcome to HireQuest, ${name}! Please sign in.`,
+      });
       router.push("/login?registered=true");
     } catch (err) {
-      setError(err.message || "Failed to create account. Please try again.");
+      const errorMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to create account. Please try again.";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }

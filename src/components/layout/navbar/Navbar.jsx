@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/features/auth/context";
+import { toast } from "sonner";
 
 const Navbar = ({ onMenuClick }) => {
   const pathname = usePathname();
@@ -33,6 +34,7 @@ const Navbar = ({ onMenuClick }) => {
     setIsLoggingOut(true);
     try {
       await logout();
+      toast.success("Logged out successfully.");
       setShowLogoutConfirm(false);
       router.push("/login");
     } catch {

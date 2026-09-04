@@ -17,6 +17,7 @@ import {
   Settings,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/context";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import AccountSettingsModal from "@/components/common/AccountSettingsModal/AccountSettingsModal";
 import {
@@ -92,6 +93,7 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
     try {
       setIsLoggingOut(true);
       await logout();
+      toast.success("Logged out successfully.");
       setShowLogoutConfirm(false);
     } catch {
       setShowLogoutConfirm(false);

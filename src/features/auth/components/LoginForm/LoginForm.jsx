@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Lock, Mail, Loader2, CheckCircle2, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +30,14 @@ const LoginForm = () => {
     setIsSubmitting(true);
 
     try {
-      const loggedUser = await login({ email, password });
+      const authRes = await login({ email, password });
+      const loggedUser = authRes?.user || authRes;
+      const userName = loggedUser?.name || loggedUser?.firstName || "HR Recruiter";
+
+      toast.success(`Welcome back, ${userName}!`, {
+        description: "You have signed in successfully.",
+      });
+
       const isSuperAdmin =
         loggedUser?.role === "SUPER_ADMIN" ||
         loggedUser?.role === "PLATFORM_ADMIN" ||
@@ -43,7 +51,12 @@ const LoginForm = () => {
         router.push("/dashboard");
       }
     } catch (err) {
-      setError(err.message || "Invalid email or password.");
+      const errorMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Invalid email or password.";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
