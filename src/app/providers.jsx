@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "sonner";
 import { AuthProvider } from "@/features/auth/context";
 
 const Providers = ({ children }) => {
@@ -20,7 +21,15 @@ const Providers = ({ children }) => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>{children}</AuthProvider>
+      <AuthProvider>
+        {children}
+        <Toaster
+          position="top-right"
+          richColors
+          closeButton
+          duration={3500}
+        />
+      </AuthProvider>
     </QueryClientProvider>
   );
 };
