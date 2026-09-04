@@ -4,3 +4,5 @@ export { default as DifficultyFilter } from "./DifficultyFilter";
 export { default as StatusFilter } from "./StatusFilter";
 export { default as SortFilter } from "./SortFilter";
 export { default as GameStats } from "./GameStats";
+export { default as GamePreviewModal } from "./GamePreviewModal";
+export { default as GameConfigModal } from "./GameConfigModal";

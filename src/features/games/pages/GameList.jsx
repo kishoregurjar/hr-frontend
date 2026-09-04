@@ -14,20 +14,24 @@ import { useAuth } from "@/features/auth/context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-import { GameStats, GameCard } from "../components";
-import { games as allGames } from "../data";
+import { GameStats, GameCard, GamePreviewModal, GameConfigModal } from "../components";
+import { games as initialGames } from "../data";
 
 const GameList = () => {
   const { user } = useAuth();
   const rawName = user?.name || user?.fullName || "Sarah Jenkins";
   const userName = rawName.replace(/\s+user$/i, "").trim() || "Sarah Jenkins";
 
+  const [gamesList, setGamesList] = useState(initialGames);
+  const [previewGame, setPreviewGame] = useState(null);
+  const [configGame, setConfigGame] = useState(null);
+
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState("all");
   const [status, setStatus] = useState("all");
   const [sortBy, setSortBy] = useState("popular");
 
-  const filteredGames = allGames
+  const filteredGames = gamesList
     .filter((game) => {
       const matchSearch =
         !search ||
@@ -79,7 +83,7 @@ const GameList = () => {
       </div>
 
       {/* ── 2. KPI Stat Cards ── */}
-      <GameStats games={allGames} />
+      <GameStats games={gamesList} />
 
       {/* ── 3. Filter & Search Toolbar ── */}
       <div className="rounded-2xl border bg-card p-3 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
@@ -156,9 +160,40 @@ const GameList = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredGames.map((game) => (
-            <GameCard key={game.id} game={game} />
+            <GameCard
+              key={game.id}
+              game={game}
+              onPreview={(g) => setPreviewGame(g)}
+              onConfigure={(g) => setConfigGame(g)}
+            />
           ))}
         </div>
+      )}
+
+      {/* ── 5. Modals ── */}
+      {previewGame && (
+        <GamePreviewModal
+          game={previewGame}
+          open={Boolean(previewGame)}
+          onOpenChange={(open) => {
+            if (!open) setPreviewGame(null);
+          }}
+        />
+      )}
+
+      {configGame && (
+        <GameConfigModal
+          game={configGame}
+          open={Boolean(configGame)}
+          onOpenChange={(open) => {
+            if (!open) setConfigGame(null);
+          }}
+          onSave={(updated) => {
+            setGamesList((prev) =>
+              prev.map((g) => (g.id === updated.id ? updated : g))
+            );
+          }}
+        />
       )}
     </div>
   );

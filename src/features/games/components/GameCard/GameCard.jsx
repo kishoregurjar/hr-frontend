@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-const GameCard = ({ game }) => {
+const GameCard = ({ game, onPreview, onConfigure }) => {
   const getDifficultyColor = (diff) => {
     switch (diff) {
       case "Easy":
@@ -99,8 +99,10 @@ const GameCard = ({ game }) => {
       {/* ── Actions Footer ── */}
       <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
         <Button
+          type="button"
           variant="outline"
           size="sm"
+          onClick={() => onPreview?.(game)}
           className="flex-1 h-9 rounded-xl border-slate-200 hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-bold gap-1.5 shadow-2xs cursor-pointer transition"
         >
           <Play className="h-3.5 w-3.5 text-blue-600 fill-blue-600" />
@@ -108,7 +110,9 @@ const GameCard = ({ game }) => {
         </Button>
 
         <Button
+          type="button"
           size="sm"
+          onClick={() => onConfigure?.(game)}
           className="flex-1 h-9 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold gap-1.5 shadow-sm shadow-blue-500/25 cursor-pointer transition"
         >
           <Settings2 className="h-3.5 w-3.5" />
