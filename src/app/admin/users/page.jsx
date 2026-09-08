@@ -104,67 +104,79 @@ export default function AdminUsersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y text-slate-700 font-medium">
-                {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-slate-50/60 transition">
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                          {user.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
+                {filteredUsers.length > 0 ? (
+                  filteredUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-slate-50/60 transition">
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                            {user.name
+                              ? user.name
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")
+                              : "U"}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900 text-sm">
+                              {user.name}
+                            </p>
+                            <p className="text-muted-foreground text-[11px]">
+                              Active {user.lastActive || "Recently"}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-bold text-slate-900 text-sm">
-                            {user.name}
-                          </p>
-                          <p className="text-muted-foreground text-[11px]">
-                            Active {user.lastActive}
-                          </p>
+                      </td>
+
+                      <td className="py-4 px-6 font-semibold text-slate-900">
+                        {user.email}
+                      </td>
+
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-1.5 font-semibold text-slate-800">
+                          <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                          {user.company || "Independent"}
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td className="py-4 px-6 font-semibold text-slate-900">
-                      {user.email}
-                    </td>
+                      <td className="py-4 px-6">
+                        <Badge
+                          className={`text-[10px] font-bold ${
+                            user.role === "SUPER_ADMIN"
+                              ? "bg-purple-100 text-purple-800 border-purple-200"
+                              : "bg-blue-100 text-blue-800 border-blue-200"
+                          }`}
+                        >
+                          {user.role}
+                        </Badge>
+                      </td>
 
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-1.5 font-semibold text-slate-800">
-                        <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                        {user.company}
-                      </div>
-                    </td>
+                      <td className="py-4 px-6">
+                        <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px] font-bold">
+                          {user.status || "ACTIVE"}
+                        </Badge>
+                      </td>
 
-                    <td className="py-4 px-6">
-                      <Badge
-                        className={`text-[10px] font-bold ${
-                          user.role === "SUPER_ADMIN"
-                            ? "bg-purple-100 text-purple-800 border-purple-200"
-                            : "bg-blue-100 text-blue-800 border-blue-200"
-                        }`}
-                      >
-                        {user.role}
-                      </Badge>
-                    </td>
-
-                    <td className="py-4 px-6">
-                      <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px] font-bold">
-                        {user.status}
-                      </Badge>
-                    </td>
-
-                    <td className="py-4 px-6 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-xs font-semibold text-blue-600 hover:text-blue-700"
-                      >
-                        Edit Role
-                      </Button>
+                      <td className="py-4 px-6 text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs font-semibold text-blue-600 hover:text-blue-700 cursor-pointer"
+                        >
+                          Edit Role
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-slate-400">
+                      <Users className="h-8 w-8 mx-auto text-slate-300 mb-2" />
+                      <p className="text-xs font-bold text-slate-700">No platform users found</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Users will populate once accounts are registered in the database.</p>
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>

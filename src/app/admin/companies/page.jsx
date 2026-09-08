@@ -126,94 +126,104 @@ export default function AdminCompaniesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y text-slate-700 font-medium">
-                {filteredCompanies.map((company) => (
-                  <tr key={company.id} className="hover:bg-slate-50/60 transition">
-                    {/* Column 1: Company & Logo */}
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-xl bg-slate-900 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm">
-                          {company.logo}
+                {filteredCompanies.length > 0 ? (
+                  filteredCompanies.map((company) => (
+                    <tr key={company.id} className="hover:bg-slate-50/60 transition">
+                      {/* Column 1: Company & Logo */}
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-slate-900 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm">
+                            {company.logo || company.name?.slice(0, 2).toUpperCase() || "CO"}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900 text-sm">
+                              {company.name}
+                            </p>
+                            <p className="text-muted-foreground text-[11px]">
+                              {company.domain || "tenant"} • Joined {company.joinedDate || "Recently"}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-bold text-slate-900 text-sm">
-                            {company.name}
-                          </p>
-                          <p className="text-muted-foreground text-[11px]">
-                            {company.domain} • Joined {company.joinedDate}
-                          </p>
+                      </td>
+
+                      {/* Column 2: HR Contact */}
+                      <td className="py-4 px-6">
+                        <p className="font-semibold text-slate-900">{company.hrContact || company.email}</p>
+                        <p className="text-muted-foreground text-[11px]">{company.email}</p>
+                      </td>
+
+                      {/* Column 3: Plan */}
+                      <td className="py-4 px-6">
+                        <Badge
+                          variant="secondary"
+                          className={`text-[11px] font-bold ${
+                            company.plan === "Enterprise"
+                              ? "bg-purple-100 text-purple-800 border-purple-200"
+                              : company.plan === "Growth"
+                              ? "bg-blue-100 text-blue-800 border-blue-200"
+                              : "bg-slate-100 text-slate-700"
+                          }`}
+                        >
+                          {company.plan || "Standard"}
+                        </Badge>
+                      </td>
+
+                      {/* Column 4: Usage */}
+                      <td className="py-4 px-6">
+                        <p className="font-bold text-slate-900">
+                          {company.candidatesAssessed || 0} candidates
+                        </p>
+                        <p className="text-muted-foreground text-[11px]">
+                          {company.totalAssessments || 0} active assessments
+                        </p>
+                      </td>
+
+                      {/* Column 5: Status */}
+                      <td className="py-4 px-6">
+                        <Badge
+                          className={`text-[10px] font-bold px-2.5 py-0.5 ${
+                            company.status === "ACTIVE"
+                              ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                              : "bg-rose-100 text-rose-800 border-rose-200"
+                          }`}
+                        >
+                          {company.status || "ACTIVE"}
+                        </Badge>
+                      </td>
+
+                      {/* Column 6: Master Actions */}
+                      <td className="py-4 px-6 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleImpersonate(company)}
+                            className="text-xs font-bold h-8 px-3 text-blue-700 bg-blue-50/80 hover:bg-blue-100/90 border-blue-200 gap-1.5 shadow-2xs cursor-pointer transition"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5 text-blue-600" />
+                            <span>View Dashboard</span>
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={company.status === "ACTIVE" ? "destructive" : "outline"}
+                            onClick={() => handleToggle(company.id, company.status)}
+                            className="text-xs font-semibold h-8 px-3 cursor-pointer"
+                          >
+                            {company.status === "ACTIVE" ? "Suspend Tenant" : "Activate Tenant"}
+                          </Button>
                         </div>
-                      </div>
-                    </td>
-
-                    {/* Column 2: HR Contact */}
-                    <td className="py-4 px-6">
-                      <p className="font-semibold text-slate-900">{company.hrContact}</p>
-                      <p className="text-muted-foreground text-[11px]">{company.email}</p>
-                    </td>
-
-                    {/* Column 3: Plan */}
-                    <td className="py-4 px-6">
-                      <Badge
-                        variant="secondary"
-                        className={`text-[11px] font-bold ${
-                          company.plan === "Enterprise"
-                            ? "bg-purple-100 text-purple-800 border-purple-200"
-                            : company.plan === "Growth"
-                            ? "bg-blue-100 text-blue-800 border-blue-200"
-                            : "bg-slate-100 text-slate-700"
-                        }`}
-                      >
-                        {company.plan}
-                      </Badge>
-                    </td>
-
-                    {/* Column 4: Usage */}
-                    <td className="py-4 px-6">
-                      <p className="font-bold text-slate-900">
-                        {company.candidatesAssessed} candidates
-                      </p>
-                      <p className="text-muted-foreground text-[11px]">
-                        {company.totalAssessments} active assessments
-                      </p>
-                    </td>
-
-                    {/* Column 5: Status */}
-                    <td className="py-4 px-6">
-                      <Badge
-                        className={`text-[10px] font-bold px-2.5 py-0.5 ${
-                          company.status === "ACTIVE"
-                            ? "bg-emerald-100 text-emerald-800 border-emerald-200"
-                            : "bg-rose-100 text-rose-800 border-rose-200"
-                        }`}
-                      >
-                        {company.status}
-                      </Badge>
-                    </td>
-
-                    {/* Column 6: Master Actions */}
-                    <td className="py-4 px-6 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleImpersonate(company)}
-                          className="text-xs font-bold h-8 px-3 text-blue-700 bg-blue-50/80 hover:bg-blue-100/90 border-blue-200 gap-1.5 shadow-2xs cursor-pointer transition"
-                        >
-                          <ExternalLink className="h-3.5 w-3.5 text-blue-600" />
-                          <span>View Dashboard</span>
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={company.status === "ACTIVE" ? "destructive" : "outline"}
-                          onClick={() => handleToggle(company.id, company.status)}
-                          className="text-xs font-semibold h-8 px-3 cursor-pointer"
-                        >
-                          {company.status === "ACTIVE" ? "Suspend Tenant" : "Activate Tenant"}
-                        </Button>
-                      </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-slate-400">
+                      <Building2 className="h-8 w-8 mx-auto text-slate-300 mb-2" />
+                      <p className="text-xs font-bold text-slate-700">No client companies found</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Companies will be listed once registered in the database.</p>
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>

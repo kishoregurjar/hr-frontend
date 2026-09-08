@@ -15,6 +15,7 @@ import {
   Building2,
   X,
   Settings,
+  Shield,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/context";
 import { toast } from "sonner";
@@ -66,6 +67,11 @@ const NAV_ITEMS = [
     href: "/games",
     icon: Brain,
   },
+  {
+    title: "Company & Team",
+    href: "/company",
+    icon: Building2,
+  },
 ];
 
 export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
@@ -76,8 +82,14 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const displayName = user?.name || user?.fullName || "Sarah Jenkins";
-  const userEmail = user?.email || "sarah.jenkins@techcorp.io";
-  const companyName = impersonatedCompany?.name || user?.company || "TechCorp Solutions";
+  const userEmail = user?.email || "shivam123@gmail.com";
+  const companyLogo =
+    (typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null) || null;
+  const companyName =
+    impersonatedCompany?.name ||
+    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
+    user?.company ||
+    "Wipro";
   const activeCompanyName = companyName;
   const activePlan = impersonatedCompany?.plan || "Enterprise";
   const isInspecting = Boolean(impersonatedCompany);
@@ -152,7 +164,15 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
               </span>
             </div>
             <div className="flex items-center gap-2 font-bold text-xs text-slate-900">
-              <Building2 className={`h-3.5 w-3.5 shrink-0 ${isInspecting ? "text-amber-600" : "text-blue-600"}`} />
+              {companyLogo ? (
+                <img
+                  src={companyLogo}
+                  alt={activeCompanyName}
+                  className="h-4 w-4 rounded-sm object-contain bg-white border border-slate-200"
+                />
+              ) : (
+                <Building2 className={`h-3.5 w-3.5 shrink-0 ${isInspecting ? "text-amber-600" : "text-blue-600"}`} />
+              )}
               <span className="truncate">{activeCompanyName}</span>
             </div>
           </div>
@@ -186,8 +206,8 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
           })}
         </nav>
 
-        {/* ── 4. User Footer with Settings and Logout Button ── */}
-        <div className="p-3 border-t border-slate-200/80 flex items-center justify-between bg-slate-50/50">
+        {/* ── 4. User Footer with Settings and Logout Button (Only on Mobile View) ── */}
+        <div className="p-3 border-t border-slate-200/80 flex items-center justify-between bg-slate-50/50 lg:hidden">
           <button
             type="button"
             onClick={() => setShowAccountSettings(true)}

@@ -33,8 +33,8 @@ export default function AdminOverviewPage() {
           getAdminGames(),
         ]);
         setMetrics(m);
-        setCompanies(c);
-        setGames(g);
+        setCompanies(Array.isArray(c) ? c : []);
+        setGames(Array.isArray(g) ? g : []);
       } finally {
         setLoading(false);
       }
@@ -64,11 +64,11 @@ export default function AdminOverviewPage() {
             </div>
             <div>
               <p className="text-3xl font-black text-slate-900 tracking-tight">
-                {metrics?.totalCompanies ?? 28}
+                {metrics?.totalCompanies ?? companies.length ?? 0}
               </p>
-              <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1 mt-1">
-                <TrendingUp className="h-3.5 w-3.5" />
-                {metrics?.activeCompanies ?? 24} actively testing candidates
+              <p className="text-xs text-slate-500 font-semibold flex items-center gap-1 mt-1">
+                <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
+                {metrics?.activeCompanies ?? companies.filter(c => c.status === "ACTIVE").length ?? 0} active tenants
               </p>
             </div>
           </div>
@@ -85,11 +85,11 @@ export default function AdminOverviewPage() {
             </div>
             <div>
               <p className="text-3xl font-black text-slate-900 tracking-tight">
-                {(metrics?.totalCandidatesAssessed ?? 4890).toLocaleString()}
+                {(metrics?.totalCandidatesAssessed ?? 0).toLocaleString()}
               </p>
-              <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1 mt-1">
-                <TrendingUp className="h-3.5 w-3.5" />
-                +18.4% month-over-month
+              <p className="text-xs text-slate-500 font-semibold flex items-center gap-1 mt-1">
+                <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
+                Across all company pipelines
               </p>
             </div>
           </div>
@@ -106,11 +106,11 @@ export default function AdminOverviewPage() {
             </div>
             <div>
               <p className="text-3xl font-black text-slate-900 tracking-tight">
-                {metrics?.averageCompletionRate ?? 88.4}%
+                {metrics?.averageCompletionRate ?? 0}%
               </p>
               <p className="text-xs text-purple-600 font-semibold flex items-center gap-1 mt-1">
                 <Award className="h-3.5 w-3.5" />
-                High candidate engagement
+                Assessment engagement
               </p>
             </div>
           </div>
@@ -127,11 +127,11 @@ export default function AdminOverviewPage() {
             </div>
             <div>
               <p className="text-3xl font-black text-slate-900 tracking-tight">
-                {games.length || 6}
+                {games.length || metrics?.activeGamesCount || 0}
               </p>
               <p className="text-xs text-amber-700 font-semibold flex items-center gap-1 mt-1">
                 <Zap className="h-3.5 w-3.5" />
-                Zip, Sudoku, Tango & 3 more
+                {games.length > 0 ? `${games.length} games available` : "Zero active games"}
               </p>
             </div>
           </div>
@@ -163,49 +163,57 @@ export default function AdminOverviewPage() {
               </Link>
             </div>
 
-            <div className="divide-y divide-slate-100">
-              {companies.slice(0, 4).map((company) => (
-                <div
-                  key={company.id}
-                  className="py-3.5 flex items-center justify-between gap-4 first:pt-0 last:pb-0"
-                >
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="h-10 w-10 rounded-xl bg-slate-900 text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-xs">
-                      {company.logo}
+            {companies.length > 0 ? (
+              <div className="divide-y divide-slate-100">
+                {companies.slice(0, 4).map((company) => (
+                  <div
+                    key={company.id}
+                    className="py-3.5 flex items-center justify-between gap-4 first:pt-0 last:pb-0"
+                  >
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="h-10 w-10 rounded-xl bg-slate-900 text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-xs">
+                        {company.logo || company.name?.slice(0, 2).toUpperCase() || "CO"}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-slate-900 truncate">
+                          {company.name}
+                        </p>
+                        <p className="text-xs text-slate-500 truncate mt-0.5">
+                          {company.hrContact || company.email} • {company.domain || "tenant"}
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-slate-900 truncate">
-                        {company.name}
-                      </p>
-                      <p className="text-xs text-slate-500 truncate mt-0.5">
-                        {company.hrContact} • {company.domain}
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center gap-3 shrink-0">
-                    <Badge
-                      variant="outline"
-                      className="text-[11px] font-semibold border-slate-200 text-slate-600 bg-slate-50"
-                    >
-                      {company.plan}
-                    </Badge>
-                    <span className="text-xs font-semibold text-slate-700 hidden sm:inline">
-                      {company.candidatesAssessed} candidates
-                    </span>
-                    <Badge
-                      className={
-                        company.status === "ACTIVE"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-300 font-extrabold text-[10.5px]"
-                          : "bg-rose-50 text-rose-700 border-rose-300 font-extrabold text-[10.5px]"
-                      }
-                    >
-                      {company.status}
-                    </Badge>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <Badge
+                        variant="outline"
+                        className="text-[11px] font-semibold border-slate-200 text-slate-600 bg-slate-50"
+                      >
+                        {company.plan || "Standard"}
+                      </Badge>
+                      <span className="text-xs font-semibold text-slate-700 hidden sm:inline">
+                        {company.candidatesAssessed || 0} candidates
+                      </span>
+                      <Badge
+                        className={
+                          company.status === "ACTIVE"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-300 font-extrabold text-[10.5px]"
+                            : "bg-rose-50 text-rose-700 border-rose-300 font-extrabold text-[10.5px]"
+                        }
+                      >
+                        {company.status || "ACTIVE"}
+                      </Badge>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-12 text-center space-y-2">
+                <Building2 className="h-8 w-8 mx-auto text-slate-300" />
+                <p className="text-xs font-bold text-slate-700">No client companies registered yet</p>
+                <p className="text-[11px] text-slate-400">Companies will appear here once registered or synced from backend.</p>
+              </div>
+            )}
           </div>
 
           {/* Right 1 Col: Cognitive Skill Engine Distribution */}
@@ -220,28 +228,30 @@ export default function AdminOverviewPage() {
               </p>
             </div>
 
-            <div className="space-y-4">
-              {[
-                { name: "Logical Reasoning", percent: 92, color: "bg-blue-600" },
-                { name: "Problem Solving", percent: 86, color: "bg-indigo-600" },
-                { name: "Processing Speed", percent: 79, color: "bg-purple-600" },
-                { name: "Pattern Recognition", percent: 74, color: "bg-emerald-600" },
-                { name: "Memory Retention", percent: 68, color: "bg-amber-500" },
-              ].map((skill) => (
-                <div key={skill.name} className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-semibold text-slate-800">
-                    <span>{skill.name}</span>
-                    <span className="font-bold">{skill.percent}%</span>
+            {Array.isArray(metrics?.topSkillsMeasured) && metrics.topSkillsMeasured.length > 0 ? (
+              <div className="space-y-4">
+                {metrics.topSkillsMeasured.map((skill) => (
+                  <div key={skill.name} className="space-y-1.5">
+                    <div className="flex justify-between text-xs font-semibold text-slate-800">
+                      <span>{skill.name}</span>
+                      <span className="font-bold">{skill.percent || skill.count || 0}%</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-indigo-600"
+                        style={{ width: `${skill.percent || 50}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${skill.color}`}
-                      style={{ width: `${skill.percent}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-12 text-center space-y-2">
+                <Activity className="h-8 w-8 mx-auto text-slate-300" />
+                <p className="text-xs font-bold text-slate-700">No skill telemetry recorded yet</p>
+                <p className="text-[11px] text-slate-400">Skill distribution will calculate as candidates complete games.</p>
+              </div>
+            )}
 
             <div className="pt-2 border-t border-slate-100 text-center">
               <Link href="/admin/games">

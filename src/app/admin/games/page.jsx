@@ -70,92 +70,102 @@ export default function AdminGamesPage() {
         </div>
 
         {/* ── Games Grid ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {games.map((game) => (
-            <div
-              key={game.id}
-              className={`rounded-2xl border bg-card p-6 shadow-sm flex flex-col justify-between transition-all ${
-                game.status === "ACTIVE"
-                  ? "hover:shadow-md hover:border-blue-500/40"
-                  : "opacity-60 bg-slate-100/50"
-              }`}
-            >
-              <div className="space-y-4">
-                {/* Game Header */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-xl bg-blue-600/10 text-blue-600 flex items-center justify-center font-bold text-base shadow-sm">
-                      <Gamepad2 className="h-6 w-6" />
+        {games.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {games.map((game) => (
+              <div
+                key={game.id}
+                className={`rounded-2xl border bg-card p-6 shadow-sm flex flex-col justify-between transition-all ${
+                  game.status === "ACTIVE"
+                    ? "hover:shadow-md hover:border-blue-500/40"
+                    : "opacity-60 bg-slate-100/50"
+                }`}
+              >
+                <div className="space-y-4">
+                  {/* Game Header */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-xl bg-blue-600/10 text-blue-600 flex items-center justify-center font-bold text-base shadow-sm">
+                        <Gamepad2 className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-base text-slate-900">
+                          {game.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground font-medium">
+                          Avg. {game.averagePlayTime || "3-5 mins"} • {game.assessmentsUsedIn || 0} assessments
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-bold text-base text-slate-900">
-                        {game.name}
-                      </h3>
-                      <p className="text-xs text-muted-foreground font-medium">
-                        Avg. {game.averagePlayTime} • {game.assessmentsUsedIn} assessments
-                      </p>
-                    </div>
+
+                    <Badge
+                      className={
+                        game.status === "ACTIVE"
+                          ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                          : "bg-slate-100 text-slate-600"
+                      }
+                    >
+                      {game.status || "ACTIVE"}
+                    </Badge>
                   </div>
 
-                  <Badge
-                    className={
-                      game.status === "ACTIVE"
-                        ? "bg-emerald-100 text-emerald-800 border-emerald-200"
-                        : "bg-slate-100 text-slate-600"
-                    }
-                  >
-                    {game.status}
-                  </Badge>
-                </div>
-
-                {/* Description */}
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  {game.description}
-                </p>
-
-                {/* Measured Skills Chips */}
-                <div className="space-y-1.5 pt-2 border-t">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    Measured Competencies
+                  {/* Description */}
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    {game.description || "Cognitive skill measurement mini-game."}
                   </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {game.skills.map((skill) => (
-                      <Badge
-                        key={skill}
-                        variant="secondary"
-                        className="text-[10px] font-semibold bg-slate-100 text-slate-800"
-                      >
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
+
+                  {/* Measured Skills Chips */}
+                  {Array.isArray(game.skills) && game.skills.length > 0 && (
+                    <div className="space-y-1.5 pt-2 border-t">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                        Measured Competencies
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {game.skills.map((skill) => (
+                          <Badge
+                            key={skill}
+                            variant="secondary"
+                            className="text-[10px] font-semibold bg-slate-100 text-slate-800"
+                          >
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center justify-between gap-3 pt-5 mt-4 border-t">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSelectedGame(game)}
+                    className="text-xs font-semibold gap-1.5 h-8 flex-1 cursor-pointer"
+                  >
+                    <Sliders className="h-3.5 w-3.5" />
+                    Skill Weightage
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant={game.status === "ACTIVE" ? "destructive" : "default"}
+                    onClick={() => handleToggleStatus(game.id, game.status)}
+                    className="text-xs font-semibold h-8 cursor-pointer"
+                  >
+                    {game.status === "ACTIVE" ? "Disable" : "Enable"}
+                  </Button>
                 </div>
               </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center justify-between gap-3 pt-5 mt-4 border-t">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setSelectedGame(game)}
-                  className="text-xs font-semibold gap-1.5 h-8 flex-1"
-                >
-                  <Sliders className="h-3.5 w-3.5" />
-                  Skill Weightage
-                </Button>
-
-                <Button
-                  size="sm"
-                  variant={game.status === "ACTIVE" ? "destructive" : "default"}
-                  onClick={() => handleToggleStatus(game.id, game.status)}
-                  className="text-xs font-semibold h-8"
-                >
-                  {game.status === "ACTIVE" ? "Disable" : "Enable"}
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-12 text-center rounded-2xl border bg-white shadow-2xs space-y-2">
+            <Gamepad2 className="h-10 w-10 mx-auto text-slate-300" />
+            <p className="text-xs font-bold text-slate-800">No active cognitive games configured</p>
+            <p className="text-[11px] text-slate-400">Games engine will populate when catalog is loaded from backend.</p>
+          </div>
+        )}
 
         {/* ── Skill Weightage Modal ── */}
         {selectedGame && (

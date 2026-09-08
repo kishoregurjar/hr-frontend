@@ -49,7 +49,7 @@ export default function AdminAnalyticsPage() {
               Total Companies
             </p>
             <p className="text-2xl font-extrabold text-slate-900">
-              {metrics?.totalCompanies ?? 28}
+              {metrics?.totalCompanies ?? 0}
             </p>
           </div>
 
@@ -58,7 +58,7 @@ export default function AdminAnalyticsPage() {
               Active Jobs
             </p>
             <p className="text-2xl font-extrabold text-slate-900">
-              {metrics?.totalAssessmentsCreated ?? 142}
+              {metrics?.totalAssessmentsCreated ?? 0}
             </p>
           </div>
 
@@ -67,7 +67,7 @@ export default function AdminAnalyticsPage() {
               Assessed Candidates
             </p>
             <p className="text-2xl font-extrabold text-slate-900">
-              {(metrics?.totalCandidatesAssessed ?? 4890).toLocaleString()}
+              {(metrics?.totalCandidatesAssessed ?? 0).toLocaleString()}
             </p>
           </div>
 
@@ -77,8 +77,8 @@ export default function AdminAnalyticsPage() {
             </p>
             <p className="text-2xl font-extrabold text-emerald-600">
               {Math.round(
-                (metrics?.totalCandidatesAssessed ?? 4890) *
-                  ((metrics?.averageCompletionRate ?? 88.4) / 100)
+                (metrics?.totalCandidatesAssessed ?? 0) *
+                  ((metrics?.averageCompletionRate ?? 0) / 100)
               ).toLocaleString()}
             </p>
           </div>
@@ -88,7 +88,7 @@ export default function AdminAnalyticsPage() {
               Avg. Completion
             </p>
             <p className="text-2xl font-extrabold text-purple-600">
-              {metrics?.averageCompletionRate ?? 88.4}%
+              {metrics?.averageCompletionRate ?? 0}%
             </p>
           </div>
 
@@ -97,7 +97,7 @@ export default function AdminAnalyticsPage() {
               Avg. Score
             </p>
             <p className="text-2xl font-extrabold text-blue-600">
-              {metrics?.averageCandidateScore ?? 76.2}%
+              {metrics?.averageCandidateScore ?? 0}%
             </p>
           </div>
         </div>
@@ -119,34 +119,42 @@ export default function AdminAnalyticsPage() {
             </Badge>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {games.map((game, index) => (
-              <div
-                key={game.id}
-                className="rounded-xl border p-4 bg-slate-50/60 space-y-3"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-400">
-                    #{index + 1}
-                  </span>
-                  <Badge variant="outline" className="text-[10px] font-bold">
-                    {game.assessmentsUsedIn} Assessments
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-blue-600 text-white font-bold flex items-center justify-center text-sm shadow-sm">
-                    <Gamepad2 className="h-5 w-5" />
+          {games.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {games.map((game, index) => (
+                <div
+                  key={game.id}
+                  className="rounded-xl border p-4 bg-slate-50/60 space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-400">
+                      #{index + 1}
+                    </span>
+                    <Badge variant="outline" className="text-[10px] font-bold">
+                      {game.assessmentsUsedIn || 0} Assessments
+                    </Badge>
                   </div>
-                  <div>
-                    <p className="font-bold text-sm text-slate-900">{game.name}</p>
-                    <p className="text-[11px] text-muted-foreground font-medium">
-                      {game.category} • {game.averagePlayTime}
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-blue-600 text-white font-bold flex items-center justify-center text-sm shadow-sm">
+                      <Gamepad2 className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-slate-900">{game.name}</p>
+                      <p className="text-[11px] text-muted-foreground font-medium">
+                        {game.category || "Cognitive"} • {game.averagePlayTime || "3-5 mins"}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-12 text-center space-y-2">
+              <Gamepad2 className="h-8 w-8 mx-auto text-slate-300" />
+              <p className="text-xs font-bold text-slate-700">No game usage data yet</p>
+              <p className="text-[11px] text-slate-400">Usage statistics will appear once candidates complete game assessments.</p>
+            </div>
+          )}
         </div>
       </main>
     </>

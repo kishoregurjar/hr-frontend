@@ -101,6 +101,18 @@ export const loginApi = async ({ email, password }) => {
     localStorage.setItem("token", token);
     localStorage.setItem("accessToken", token);
     localStorage.setItem("jwt", token);
+    const companyId =
+      payload?.company?.id ||
+      payload?.companyId ||
+      res?.data?.company?.id ||
+      res?.company?.id ||
+      user?.companyId ||
+      user?.company?.id;
+
+    if (companyId) {
+      localStorage.setItem("companyId", companyId);
+      localStorage.setItem("active_company_id", companyId);
+    }
     if (refreshToken) {
       localStorage.setItem("hirequest_refresh_token", refreshToken);
     }
