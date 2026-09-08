@@ -65,10 +65,26 @@ export const normalizeQuestion = (item) => {
   // Normalize Options and Correct Answer
   let options = [];
   let correctAnswer = item.correctAnswer || item.correct_answer || null;
+  const rawOpts =
+    (Array.isArray(item.options) && item.options.length > 0 ? item.options : null) ||
+    (Array.isArray(item.Option) && item.Option.length > 0 ? item.Option : null) ||
+    (Array.isArray(item.QuestionOption) && item.QuestionOption.length > 0 ? item.QuestionOption : null) ||
+    (Array.isArray(item.questionOptions) && item.questionOptions.length > 0 ? item.questionOptions : null) ||
+    [];
 
-  if (Array.isArray(item.options) && item.options.length > 0) {
-    options = item.options.map((opt, index) => {
-      const optionKey = `option${String.fromCharCode(65 + index)}`; // optionA, optionB, etc.
+  if (rawOpts.length > 0) {
+    options = rawOpts.map((opt, index) => {
+      const letter = String.fromCharCode(65 + index);
+      const optionKey = `option${letter}`; // optionA, optionB, etc.
+      const text = String(
+        opt.optionText ||
+        opt.text ||
+        opt.content ||
+        opt.title ||
+        opt.label ||
+        ""
+      ).trim();
+
       const isCorrect = Boolean(
         opt.isCorrect === true ||
         opt.is_correct === true ||
@@ -83,9 +99,12 @@ export const normalizeQuestion = (item) => {
         correctAnswer = optionKey;
       }
       return {
-        id: optionKey,
+        id: String(opt.id || `opt_${letter}`),
         rawId: opt.id,
-        text: opt.optionText || opt.text || opt.title || "",
+        optionKey,
+        label: text || `Option ${letter}`,
+        text: text || `Option ${letter}`,
+        optionText: text || `Option ${letter}`,
         isCorrect,
       };
     });

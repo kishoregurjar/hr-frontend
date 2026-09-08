@@ -43,12 +43,14 @@ export const attemptService = {
     return updateAttemptProgress({ attemptId, currentSection });
   },
 
-  saveQuizResponse: async ({ attemptId, sectionId, questionId, optionId }) => {
+  saveQuizResponse: async ({ attemptId, sectionId, questionId, optionId, selectedOptionIds, token }) => {
     return saveQuizResponse({
       attemptId,
       sectionId,
       questionId,
       optionId,
+      selectedOptionIds,
+      token,
     });
   },
 

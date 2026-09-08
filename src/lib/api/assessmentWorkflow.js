@@ -5,7 +5,7 @@ import { updateCandidateRoundStatus } from "./hiringPipeline";
 import { createAssessmentResult } from "./results";
 import { calculateAttemptScore } from "@/lib/scoring/calculateAttemptScore";
 
-export const startAssessmentWorkflow = async (token) => {
+export const startAssessmentWorkflow = async (token, candidateInfo = {}) => {
   const assignment = await getAssignmentByToken(token);
 
   if (assignment.isExpired && assignment.status !== "Completed") {
@@ -16,17 +16,32 @@ export const startAssessmentWorkflow = async (token) => {
     throw new Error("Assessment has already been completed.");
   }
 
-  const assessment = await getAssessmentById(assignment.assessmentId).catch(() => null);
+  const assessment = (await getAssessmentById(assignment.assessmentId).catch(() => null)) || assignment.assessment;
 
   const startedAssignment = await startAssignment(token);
 
   const attempt = await startAttempt({
     assignmentId: startedAssignment.id,
     candidateId: startedAssignment.candidateId,
-    assessmentId: startedAssignment.assessmentId,
+    candidateInfo,
+    candidateAccessToken: candidateInfo?.candidateAccessToken,
+    candidateName: candidateInfo?.name,
+    candidatePhone: candidateInfo?.phone,
+    assessmentId: startedAssignment.assessmentId || assessment?.id,
+    assessment,
+    assessmentTitle: assessment?.title,
+    questions:
+      (assessment?.questions?.length ? assessment.questions : null) ||
+      (assessment?.AssessmentQuestion?.length ? assessment.AssessmentQuestion : null) ||
+      (assessment?.AssessmentQuestions?.length ? assessment.AssessmentQuestions : null) ||
+      (assessment?.assessmentQuestion?.length ? assessment.assessmentQuestion : null) ||
+      (assessment?.assessmentQuestions?.length ? assessment.assessmentQuestions : null) ||
+      [],
+    games: assessment?.selectedGameIds || assessment?.AssessmentGames || assessment?.games || [],
     hiringProcessId: startedAssignment.hiringProcessId,
     roundId: startedAssignment.roundId,
-    durationMinutes: assessment?.timeLimit ?? assessment?.durationMinutes ?? 45,
+    durationMinutes: assessment?.timeLimit ?? assessment?.durationMinutes ?? assessment?.duration ?? 45,
+    token,
   });
 
   if (startedAssignment.hiringProcessId && startedAssignment.roundId) {

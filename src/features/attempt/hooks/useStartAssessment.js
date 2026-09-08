@@ -10,7 +10,7 @@ const useStartAssessment = (token) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => attemptService.start(token),
+    mutationFn: (candidateInfo = {}) => attemptService.start(token, candidateInfo),
 
     onSuccess: ({ assignment, attempt }) => {
       queryClient.setQueryData(

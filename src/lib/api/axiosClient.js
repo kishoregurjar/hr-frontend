@@ -14,18 +14,34 @@ const axiosClient = axios.create({
   },
 });
 
-// Request Interceptor: Attach JWT Bearer token & Ngrok header automatically
 axiosClient.interceptors.request.use(
   (config) => {
     config.headers["ngrok-skip-browser-warning"] = "true";
     if (typeof window !== "undefined") {
-      const token =
+      const isCandidateEndpoint =
+        config.url?.includes("/attempts") ||
+        config.url?.includes("/invitations") ||
+        config.url?.includes("/verify") ||
+        config.url?.includes("/assessment-attempts");
+
+      const candidateToken =
+        sessionStorage.getItem("candidateSessionToken") ||
+        localStorage.getItem("candidateSessionToken") ||
+        sessionStorage.getItem("candidateAccessToken") ||
+        localStorage.getItem("candidateAccessToken");
+
+      const adminToken =
         localStorage.getItem(AUTH_STORAGE_KEYS.TOKEN) ||
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken") ||
         localStorage.getItem("jwt");
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+
+      const tokenToUse = isCandidateEndpoint
+        ? (candidateToken || adminToken)
+        : (adminToken || candidateToken);
+
+      if (tokenToUse) {
+        config.headers.Authorization = `Bearer ${tokenToUse}`;
       }
     }
     return config;
@@ -75,6 +91,8 @@ axiosClient.interceptors.response.use(
       !originalRequest.url?.includes("/auth/refresh-token") &&
       !originalRequest.url?.includes("/verify") &&
       !originalRequest.url?.includes("/attempts/candidate") &&
+      !originalRequest.url?.includes("/attempts/start-by-token") &&
+      !originalRequest.url?.includes("/attempts/save-answer") &&
       !originalRequest.url?.includes("/invitations");
 
     if (isTokenExpired) {

@@ -15,6 +15,7 @@ import {
   useSubmitAttempt,
   useUpdateAttemptProgress,
 } from "../hooks";
+import { useQuestionsQuery } from "@/features/question-bank/hooks";
 
 const AssessmentAttempt = ({ attemptId }) => {
   const [isReviewing, setIsReviewing] = useState(false);
@@ -31,6 +32,8 @@ const AssessmentAttempt = ({ attemptId }) => {
     isLoading: assessmentLoading,
     isError: assessmentError,
   } = useAssessmentQuery(attempt?.assessmentId);
+
+  const { data: allDatabaseQuestions = [] } = useQuestionsQuery();
 
   const updateProgress = useUpdateAttemptProgress();
   const submitAttempt = useSubmitAttempt();
@@ -75,47 +78,46 @@ const AssessmentAttempt = ({ attemptId }) => {
     );
   }
 
-  // ── Error ────────────────────────────────────────────────
-  const activeAssessment = assessment || {
-    id: attempt?.assessmentId || "cmtjpcxzw0001vd0glu1856",
-    title: "Full Stack Developer Assessment - React & Node.js",
-    description: "Comprehensive hiring assessment evaluating candidate proficiency in React frontend development, Node.js backend APIs, database design, and cognitive problem-solving logic.",
-    durationMinutes: attempt?.durationMinutes || 60,
-    passingScore: 70,
-    sections: [
-      {
-        id: "sec-game-zip",
-        title: "Module 1: Zip Grid Pathfinder",
-        type: "game",
-        gameId: "zip",
-        slug: "zip",
-        weight: 25,
-      },
-      {
-        id: "sec-game-tango",
-        title: "Module 2: Tango Spatial Deduction",
-        type: "game",
-        gameId: "tango",
-        slug: "tango",
-        weight: 25,
-      },
-      {
-        id: "sec-game-sudoku",
-        title: "Module 3: Mini Sudoku 6x6 Challenge",
-        type: "game",
-        gameId: "sudoku",
-        slug: "sudoku",
-        weight: 25,
-      },
-      {
-        id: "sec-game-mahjong",
-        title: "Module 4: Mahjong Tile Match Strategy",
-        type: "game",
-        gameId: "mahjong",
-        slug: "mahjong",
-        weight: 25,
-      },
-    ],
+  // ── Dynamic Assessment Resolution with Database Hydration ─────────────────
+  const rawCandidateQuestions =
+    (assessment?.questions?.length ? assessment.questions : null) ||
+    (assessment?.AssessmentQuestion?.length ? assessment.AssessmentQuestion : null) ||
+    (assessment?.AssessmentQuestions?.length ? assessment.AssessmentQuestions : null) ||
+    (assessment?.assessmentQuestion?.length ? assessment.assessmentQuestion : null) ||
+    (assessment?.assessmentQuestions?.length ? assessment.assessmentQuestions : null) ||
+    (attempt?.questions?.length ? attempt.questions : null) ||
+    [];
+
+  const hydratedQuestions = (rawCandidateQuestions.length > 0 ? rawCandidateQuestions : allDatabaseQuestions).map((qItem) => {
+    const qObj =
+      (typeof qItem === "object" && qItem?.question && typeof qItem.question === "object" ? qItem.question : null) ||
+      (typeof qItem === "object" && qItem?.Question && typeof qItem.Question === "object" ? qItem.Question : null) ||
+      (typeof qItem === "object" ? qItem : {});
+
+    const targetId = String(
+      qObj?.id || qObj?._id || qObj?.questionId || qItem?.questionId || qItem?.id || qItem?._id || ""
+    );
+    const targetTitle = String(
+      qObj?.question || qObj?.title || qItem?.question || qItem?.title || ""
+    );
+
+    const match = allDatabaseQuestions.find(
+      (q) =>
+        (targetId && String(q.id || q._id) === targetId) ||
+        (targetTitle && String(q.title || q.question) === targetTitle)
+    );
+
+    return match || qObj || qItem;
+  });
+
+  const activeAssessment = {
+    id: assessment?.id || attempt?.assessmentId,
+    title: assessment?.title || attempt?.assessmentTitle || attempt?.assessment?.title || "Candidate Assessment",
+    description: assessment?.description || attempt?.assessmentDescription || attempt?.assessment?.description || "Assessment session in progress.",
+    durationMinutes: assessment?.durationMinutes || attempt?.durationMinutes || 60,
+    passingScore: assessment?.passingScore || attempt?.passingScore || 70,
+    questions: hydratedQuestions.length > 0 ? hydratedQuestions : allDatabaseQuestions,
+    games: assessment?.selectedGameIds || assessment?.AssessmentGames || assessment?.games || attempt?.games || [],
   };
 
   if ((attemptError && !attempt) || (!attempt && !activeAssessment)) {

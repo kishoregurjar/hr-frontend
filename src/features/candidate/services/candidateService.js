@@ -31,8 +31,8 @@ export const candidateService = {
     return updateCandidateStatus(id, status);
   },
 
-  syncEmails: async () => {
-    return syncEmailApplications();
+  syncEmails: async (config) => {
+    return syncEmailApplications(config);
   },
 
   extractFromEmail: async (rawEmailText) => {
@@ -45,5 +45,13 @@ export const candidateService = {
 
   importMany: async (candidates) => {
     return importCandidates(candidates);
+  },
+
+  uploadResume: async ({ file, jobId }) => {
+    return uploadResume({ file, jobId });
+  },
+
+  getResumeStatus: async (resumeId) => {
+    return getResumeStatus(resumeId);
   },
 };

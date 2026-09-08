@@ -10,7 +10,8 @@ import {
 } from "@/lib/api/attempts";
 
 export const attemptService = {
-  start: async (token) => startAssessmentWorkflow(token),
+  start: async (token, candidateInfo = {}) =>
+    startAssessmentWorkflow(token, candidateInfo),
 
   getByAssignment: async (assignmentId) =>
     getAttemptByAssignmentId(assignmentId),

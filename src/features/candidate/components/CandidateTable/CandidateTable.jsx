@@ -95,7 +95,17 @@ const CandidateTable = ({
         </Badge>
       );
     }
-    if (s === "STARTED" || s === "IN PROGRESS") {
+    if (s === "INVITED" || s === "SENT" || s.includes("INVIT")) {
+      return (
+        <Badge
+          variant="outline"
+          className="bg-purple-50 text-purple-700 border-purple-300 font-extrabold text-[10px] uppercase tracking-wider px-2 py-0.5"
+        >
+          Invited
+        </Badge>
+      );
+    }
+    if (s === "STARTED" || s === "IN PROGRESS" || s === "IN_PROGRESS") {
       return (
         <Badge
           variant="outline"
@@ -105,7 +115,7 @@ const CandidateTable = ({
         </Badge>
       );
     }
-    if (s === "COMPLETED") {
+    if (s === "COMPLETED" || s === "SUBMITTED") {
       return (
         <Badge
           variant="outline"

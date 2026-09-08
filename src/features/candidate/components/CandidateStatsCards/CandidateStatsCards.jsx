@@ -8,17 +8,22 @@ const CandidateStatsCards = ({ candidates = [] }) => {
   const stats = useMemo(() => {
     const total = candidates.length;
     const emailIngested = candidates.filter(
-      (c) => c.source === "Email Ingestion" || Boolean(c.emailSubject)
+      (c) =>
+        String(c.source || "").toLowerCase().includes("email") ||
+        Boolean(c.emailSubject)
     ).length;
-    const newApplicants = candidates.filter(
-      (c) => String(c.status || "").toLowerCase() === "new"
-    ).length;
-    const invited = candidates.filter(
-      (c) => String(c.status || "").toLowerCase() === "invited"
-    ).length;
-    const shortlisted = candidates.filter(
-      (c) => String(c.status || "").toLowerCase() === "shortlisted"
-    ).length;
+    const newApplicants = candidates.filter((c) => {
+      const s = String(c.status || "").toLowerCase();
+      return s === "new" || s === "uninvited" || s === "not_started" || !s;
+    }).length;
+    const invited = candidates.filter((c) => {
+      const s = String(c.status || "").toLowerCase();
+      return s === "invited" || s === "sent" || s.includes("invit");
+    }).length;
+    const shortlisted = candidates.filter((c) => {
+      const s = String(c.status || "").toLowerCase();
+      return s === "shortlisted";
+    }).length;
 
     return {
       total,

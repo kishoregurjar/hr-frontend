@@ -50,70 +50,130 @@ export const getAssignmentByToken = async (rawToken) => {
         if (inv && (inv.id || inv.assessmentId || inv.token)) break;
       } catch {}
     }
+
+    // 4. Try GET /invitations/:token
+    if (!inv) {
+      try {
+        const res = await axiosClient.get(`/invitations/${t}`);
+        inv = res?.data?.data || res?.data || res;
+        if (inv && (inv.id || inv.assessmentId || inv.token)) break;
+      } catch {}
+    }
+  }
+
+  let liveAssessment = inv?.assessment || inv?.Assessment || {};
+  const assessmentId = inv?.assessmentId || liveAssessment?.id || liveAssessment?._id;
+
+  // Hydrate full live Assessment details from database if title or questions are missing
+  if (assessmentId && (!liveAssessment?.title || !liveAssessment?.questions || !liveAssessment?.questions?.length)) {
+    try {
+      const assRes = await axiosClient.get(`/assessments/${assessmentId}`);
+      const fetched = assRes?.data?.data || assRes?.data || assRes;
+      if (fetched && (fetched.title || fetched.id)) {
+        liveAssessment = { ...liveAssessment, ...fetched };
+      }
+    } catch (err) {
+      console.warn("Notice hydrating assessment details:", err?.message);
+    }
+  }
+
+  // If questions don't have full options populated, hydrate them from questions API
+  const rawQList = liveAssessment?.AssessmentQuestions || liveAssessment?.questions || liveAssessment?.questionIds;
+  if (Array.isArray(rawQList) && rawQList.length > 0) {
+    try {
+      const qRes = await axiosClient.get("/questions");
+      const allQuestions = qRes?.data?.items || qRes?.data?.data || qRes?.data || [];
+      if (Array.isArray(allQuestions) && allQuestions.length > 0) {
+        liveAssessment.questions = rawQList.map((qItem) => {
+          const targetId = String(
+            (typeof qItem === "object" ? qItem?.questionId || qItem?.id || qItem?._id : qItem) || ""
+          );
+          const targetTitle = String(typeof qItem === "object" ? qItem?.question || qItem?.title || "" : "");
+          const match = allQuestions.find(
+            (q) => (targetId && String(q.id || q._id) === targetId) || (targetTitle && String(q.title || q.question) === targetTitle)
+          );
+          return match || (typeof qItem === "object" ? qItem?.question || qItem : { id: targetId });
+        });
+      }
+    } catch (e) {
+      console.warn("Notice hydrating question options:", e?.message);
+    }
   }
 
   if (inv && typeof inv === "object") {
-    const assessment = inv.assessment || inv.Assessment || {};
     const candidate = inv.candidate || inv.user || inv.User || {};
     const candidateName =
       inv.candidateName ||
       candidate?.name ||
       (candidate?.firstName ? `${candidate.firstName} ${candidate.lastName || ""}`.trim() : null) ||
+      (inv?.firstName ? `${inv.firstName} ${inv.lastName || ""}`.trim() : null) ||
       inv.email ||
       candidate?.email ||
       "Candidate";
     const candidateEmail = inv.email || candidate?.email || "";
+    const candidatePhone = inv.phone || inv.phoneNumber || candidate?.phone || candidate?.phoneNumber || "";
 
     return {
       id: inv.id || `inv-${Date.now()}`,
       assignmentId: inv.id || `inv-${Date.now()}`,
-      assessmentId: inv.assessmentId || assessment?.id,
+      assessmentId: assessmentId || liveAssessment?.id,
       candidateId: inv.candidateId || candidate?.id || inv.id,
       email: candidateEmail,
       candidateName,
       candidateEmail,
+      phone: candidatePhone,
+      candidatePhone,
       status: inv.status || "Invited",
       token: inv.token || rawToken,
       invitationToken: inv.token || rawToken,
       expiresAt: inv.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       isExpired: inv.expiresAt ? new Date(inv.expiresAt).getTime() <= Date.now() : false,
-      assessment,
+      assessment: liveAssessment,
       candidate: {
         id: inv.candidateId || candidate?.id || inv.id,
         name: candidateName,
         email: candidateEmail,
+        phone: candidatePhone,
       },
     };
   }
 
-  // Graceful Universal Hydration for valid token links
-  const defaultAssessment = {
-    id: "cmtjpcxzw0001vd0glu1856",
-    title: "Full Stack Developer Assessment - React & Node.js",
-    description: "Comprehensive hiring assessment evaluating candidate proficiency in React frontend development, Node.js backend APIs, database design, and cognitive problem-solving logic.",
+  // If token was not found on backend verify, try looking up live assessments list
+  let fallbackAssessment = {
+    id: assessmentId || "assessment-live",
+    title: "Candidate Assessment",
+    description: "Please review the instructions and begin your assessment session.",
     durationMinutes: 60,
     passingScore: 70,
     status: "PUBLISHED",
   };
 
+  try {
+    const listRes = await axiosClient.get("/assessments", { params: { limit: 1 } });
+    const items = listRes?.data?.items || listRes?.data?.data || listRes?.data || [];
+    if (Array.isArray(items) && items.length > 0 && items[0]?.title) {
+      fallbackAssessment = items[0];
+    }
+  } catch {}
+
   return {
     id: `inv-${Date.now()}`,
     assignmentId: `inv-${Date.now()}`,
-    assessmentId: defaultAssessment.id,
+    assessmentId: fallbackAssessment.id,
     candidateId: "cand-active-01",
-    email: "rohitpanchal958466@gmail.com",
-    candidateName: "Rohit Panchal",
-    candidateEmail: "rohitpanchal958466@gmail.com",
+    email: "",
+    candidateName: "Candidate",
+    candidateEmail: "",
     status: "Invited",
     token: rawToken,
     invitationToken: rawToken,
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     isExpired: false,
-    assessment: defaultAssessment,
+    assessment: fallbackAssessment,
     candidate: {
       id: "cand-active-01",
-      name: "Rohit Panchal",
-      email: "rohitpanchal958466@gmail.com",
+      name: "Candidate",
+      email: "",
     },
   };
 };

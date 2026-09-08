@@ -119,6 +119,7 @@ const AssessmentInvitation = ({ token }) => {
     return (
       <>
         <AssessmentPreStart
+          token={token}
           assessment={assessment}
           candidate={candidate}
           isStarting={startAssessmentMutation.isPending}
@@ -146,6 +147,7 @@ const AssessmentInvitation = ({ token }) => {
 
   return (
     <AssessmentPreStart
+      token={token}
       assessment={assessment}
       candidate={candidate}
       isStarting={startAssessmentMutation.isPending}

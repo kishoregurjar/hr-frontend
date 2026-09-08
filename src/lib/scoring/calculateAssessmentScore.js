@@ -1,13 +1,16 @@
 import { calculateGameScore } from "./calculateGameScore";
 import { calculateQuizScore } from "./calculateQuizScore";
 import { validateScoringConfig } from "./validateScoringConfig";
+import { buildRuntimeSections } from "@/features/assessment/utils/buildRuntimeSections";
 
 const roundScore = (value) => {
   return Math.round(value * 100) / 100;
 };
 
 export const calculateAssessmentScore = ({ assessment, attempt }) => {
-  const sections = assessment?.sections ?? [];
+  const sections = (Array.isArray(assessment?.sections) && assessment.sections.length > 0)
+    ? assessment.sections
+    : buildRuntimeSections(assessment);
 
   const sectionScores = sections
     .map((section) => {

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   Search,
@@ -12,6 +13,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
+  Copy,
+  RefreshCw,
+  Loader2,
+  Zap,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -28,10 +33,18 @@ import {
   EmailExtractorDialog,
   ImportCandidatesDialog,
 } from "../components";
-import { useCandidatesQuery, useSyncEmails } from "../hooks";
+import {
+  useCandidatesQuery,
+  useMailboxStatus,
+  useConnectGoogleMailbox,
+  useSyncMailboxNow,
+} from "../hooks";
 
 const CandidateList = () => {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   const rawName = user?.name || user?.fullName || "Sarah Jenkins";
   const userName = rawName.replace(/\s+user$/i, "").trim() || "Sarah Jenkins";
   const companyName = user?.company || "TechCorp Solutions";
@@ -51,6 +64,18 @@ const CandidateList = () => {
     error,
     refetch,
   } = useCandidatesQuery();
+
+  // Catch Google OAuth redirect parameters: ?mailbox=connected&email=...
+  useEffect(() => {
+    if (searchParams?.get("mailbox") === "connected") {
+      const email = searchParams.get("email") || "Google Account";
+      toast.success(`🟢 Google Mailbox (${email}) connected successfully! Auto-sync is active.`);
+      refetch();
+      if (typeof window !== "undefined") {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, [searchParams, refetch]);
 
   const filteredCandidates = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -74,10 +99,39 @@ const CandidateList = () => {
 
       const candStatus = String(candidate.status || "").toUpperCase();
       const upperStatusFilter = String(statusFilter || "ALL").toUpperCase();
-      const matchesStatus =
-        upperStatusFilter === "ALL" ||
-        candStatus === upperStatusFilter ||
-        candStatus.includes(upperStatusFilter);
+
+      let matchesStatus = upperStatusFilter === "ALL";
+      if (!matchesStatus) {
+        if (upperStatusFilter === "NEW") {
+          matchesStatus =
+            candStatus === "NEW" ||
+            candStatus === "UNINVITED" ||
+            candStatus === "NOT_STARTED" ||
+            candStatus === "APPLICANT" ||
+            !candStatus;
+        } else if (upperStatusFilter === "INVITED") {
+          matchesStatus =
+            candStatus === "INVITED" ||
+            candStatus === "SENT" ||
+            candStatus.includes("INVIT");
+        } else if (upperStatusFilter === "STARTED") {
+          matchesStatus =
+            candStatus === "STARTED" ||
+            candStatus === "IN_PROGRESS" ||
+            candStatus === "IN PROGRESS";
+        } else if (upperStatusFilter === "COMPLETED") {
+          matchesStatus =
+            candStatus === "COMPLETED" ||
+            candStatus === "SUBMITTED" ||
+            candStatus === "FINISHED";
+        } else if (upperStatusFilter === "SHORTLISTED") {
+          matchesStatus = candStatus === "SHORTLISTED";
+        } else {
+          matchesStatus =
+            candStatus === upperStatusFilter ||
+            candStatus.includes(upperStatusFilter);
+        }
+      }
 
       const candSource = String(candidate.source || "MANUAL").toUpperCase();
       const upperSourceFilter = String(sourceFilter || "ALL").toUpperCase();
@@ -147,6 +201,15 @@ const CandidateList = () => {
     setIsAssignDialogOpen(true);
   };
 
+  const inboundCareerEmail =
+    user?.inboundEmail ||
+    user?.tenant?.inboundEmail ||
+    (user?.tenantSlug ? `${user.tenantSlug}@inbound.hirequest.com` : "careers@hirequest.com");
+
+  const { data: mailboxStatus, refetch: refetchMailboxStatus } = useMailboxStatus();
+  const connectGoogleMutation = useConnectGoogleMailbox();
+  const syncMailboxMutation = useSyncMailboxNow();
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
       {/* ── 1. SINGLE, CLEAN HEADER ── */}
@@ -165,6 +228,84 @@ const CandidateList = () => {
           <EmailExtractorDialog triggerText="Extract from Emails" />
           <ImportCandidatesDialog existingCandidates={candidates} />
           <AddCandidateDialog />
+        </div>
+      </div>
+
+      {/* ── 1.5. INBOUND CAREERS MAILBOX CALLOUT ── */}
+      <div className="rounded-2xl border border-indigo-100/90 bg-gradient-to-r from-indigo-50/90 via-purple-50/50 to-blue-50/80 p-3.5 px-4 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <Mail className="h-4.5 w-4.5" />
+          </div>
+          <div className="text-xs">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-bold text-slate-900">Inbound Career Mailbox:</span>
+              <span className="font-mono font-semibold text-indigo-700 bg-white/90 px-2 py-0.5 rounded-md border border-indigo-200/80">
+                {inboundCareerEmail}
+              </span>
+              {mailboxStatus?.connected ? (
+                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-[10px] py-0 px-2 flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Connected: {mailboxStatus.email || user?.email}
+                </Badge>
+              ) : (
+                <Badge className="bg-slate-100 text-slate-600 border-slate-200 text-[10px] py-0 px-2">
+                  Google Mailbox Not Connected
+                </Badge>
+              )}
+            </div>
+            <p className="text-slate-500 text-[11px] mt-0.5 hidden sm:block">
+              Incoming candidate emails & resumes are auto-parsed into your directory in real-time.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0 self-start md:self-auto">
+          {mailboxStatus?.connected ? (
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => syncMailboxMutation.mutate()}
+              disabled={syncMailboxMutation.isPending}
+              className="text-xs h-8 px-3 gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-xs cursor-pointer"
+            >
+              {syncMailboxMutation.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5" />
+              )}
+              Sync Mailbox
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => connectGoogleMutation.mutate()}
+              disabled={connectGoogleMutation.isPending}
+              className="text-xs h-8 px-3 gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-xs cursor-pointer"
+            >
+              {connectGoogleMutation.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white text-blue-600 font-black text-[10px]">
+                  G
+                </span>
+              )}
+              Connect Google
+            </Button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(inboundCareerEmail);
+              toast.success(`Inbound email copied: ${inboundCareerEmail}`);
+            }}
+            className="text-xs font-semibold text-indigo-700 hover:text-indigo-900 hover:bg-white/90 bg-white/70 border border-indigo-200/80 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+          >
+            <Copy className="h-3.5 w-3.5" />
+            Copy Address
+          </button>
         </div>
       </div>
 
