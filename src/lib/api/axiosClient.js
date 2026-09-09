@@ -16,7 +16,7 @@ const baseURL =
 
 const axiosClient = axios.create({
   baseURL,
-  timeout: 15000,
+  timeout: 60000, // 60s timeout for heavy mailbox syncs & AI resume parsing
   headers: {
     "Content-Type": "application/json",
     "ngrok-skip-browser-warning": "true",
@@ -48,8 +48,8 @@ axiosClient.interceptors.request.use(
         localStorage.getItem("jwt");
 
       const tokenToUse = isCandidateEndpoint
-        ? (candidateToken || adminToken)
-        : (adminToken || candidateToken);
+        ? candidateToken || adminToken
+        : adminToken || candidateToken;
 
       if (tokenToUse) {
         config.headers.Authorization = `Bearer ${tokenToUse}`;
@@ -62,7 +62,11 @@ axiosClient.interceptors.request.use(
         localStorage.getItem("hirequest_company_id") ||
         sessionStorage.getItem("companyId");
 
-      if (companyId && !config.headers["X-Company-Id"] && !config.url?.includes("/companies/invitations/accept")) {
+      if (
+        companyId &&
+        !config.headers["X-Company-Id"] &&
+        !config.url?.includes("/companies/invitations/accept")
+      ) {
         config.headers["X-Company-Id"] = companyId;
       }
     }
@@ -71,7 +75,7 @@ axiosClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Production-Grade Silent Token Refresh Queue
+// ── Production Single Token Refresh Queue ──
 let isRefreshing = false;
 let failedQueue = [];
 
@@ -104,18 +108,17 @@ axiosClient.interceptors.response.use(
           "An error occurred while connecting to the server.";
 
     // Check if error is token expiration (401) and not on auth endpoints
-    const isTokenExpired =
-      status === 401 &&
-      originalRequest &&
-      !originalRequest._retry &&
-      !originalRequest.url?.includes("/auth/login") &&
-      !originalRequest.url?.includes("/auth/register") &&
-      !originalRequest.url?.includes("/auth/refresh-token") &&
-      !originalRequest.url?.includes("/verify") &&
-      !originalRequest.url?.includes("/attempts/candidate") &&
-      !originalRequest.url?.includes("/attempts/start-by-token") &&
-      !originalRequest.url?.includes("/attempts/save-answer") &&
-      !originalRequest.url?.includes("/invitations");
+    const isAuthEndpoint =
+      originalRequest?.url?.includes("/auth/login") ||
+      originalRequest?.url?.includes("/auth/register") ||
+      originalRequest?.url?.includes("/auth/refresh-token") ||
+      originalRequest?.url?.includes("/verify") ||
+      originalRequest?.url?.includes("/attempts/candidate") ||
+      originalRequest?.url?.includes("/attempts/start-by-token") ||
+      originalRequest?.url?.includes("/attempts/save-answer") ||
+      originalRequest?.url?.includes("/invitations");
+
+    const isTokenExpired = status === 401 && originalRequest && !originalRequest._retry && !isAuthEndpoint;
 
     if (isTokenExpired) {
       if (isRefreshing) {
@@ -132,10 +135,18 @@ axiosClient.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      try {
-        const storedRefreshToken =
-          typeof window !== "undefined" ? localStorage.getItem("hirequest_refresh_token") : null;
+      const storedRefreshToken =
+        typeof window !== "undefined"
+          ? localStorage.getItem("hirequest_refresh_token") || localStorage.getItem("refreshToken")
+          : null;
 
+      if (!storedRefreshToken) {
+        isRefreshing = false;
+        processQueue(new Error("No refresh token available"), null);
+        return Promise.reject(new Error("Session expired. Please log in again."));
+      }
+
+      try {
         const refreshResponse = await fetch(`${baseURL}/auth/refresh-token`, {
           method: "POST",
           headers: {
@@ -144,6 +155,10 @@ axiosClient.interceptors.response.use(
           },
           body: JSON.stringify({ refreshToken: storedRefreshToken }),
         });
+
+        if (!refreshResponse.ok) {
+          throw new Error("Refresh token expired or invalid");
+        }
 
         const refreshData = await refreshResponse.json();
         const newToken =
@@ -164,10 +179,17 @@ axiosClient.interceptors.response.use(
           processQueue(null, newToken);
           return axiosClient(originalRequest);
         } else {
-          processQueue(new Error("Token refresh failed"), null);
+          throw new Error("Token refresh response missing access token");
         }
       } catch (refreshErr) {
         processQueue(refreshErr, null);
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(AUTH_STORAGE_KEYS.TOKEN);
+          localStorage.removeItem("token");
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("hirequest_refresh_token");
+        }
+        return Promise.reject(new Error("Session expired. Please log in again."));
       } finally {
         isRefreshing = false;
       }

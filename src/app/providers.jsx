@@ -11,9 +11,12 @@ const Providers = ({ children }) => {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 30 * 1000,
-            refetchOnWindowFocus: false,
-            retry: 1,
+            staleTime: 5 * 60 * 1000, // 5 minutes cache
+            gcTime: 10 * 60 * 1000,    // 10 minutes garbage collection
+            refetchOnWindowFocus: false, // Freeze repetitive tab focus API calls
+            refetchOnMount: false,       // Use cached data on mount if fresh
+            refetchOnReconnect: false,   // Don't spam APIs on network reconnect
+            retry: 1,                    // Only retry once on failure
           },
         },
       })

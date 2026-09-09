@@ -1,28 +1,23 @@
 "use client";
 
-import { useMemo } from "react";
-import { Users, FileText, Send, Bookmark, TrendingUp } from "lucide-react";
-import { useAssessmentsQuery } from "@/features/assessment/hooks";
-import { useCandidatesQuery } from "@/features/candidate/hooks";
+import { Users, FileText, Send, CheckCircle2, TrendingUp, Inbox } from "lucide-react";
+import { useDashboardOverview } from "@/features/dashboard/hooks";
 
 const DashboardMetricCards = () => {
-  const { data: assessments = [] } = useAssessmentsQuery();
-  const { data: candidates = [] } = useCandidatesQuery();
+  const { data: overview, isLoading } = useDashboardOverview();
 
-  const publishedCount = useMemo(() => {
-    return assessments.filter(
-      (a) =>
-        String(a.status).toUpperCase() === "PUBLISHED" ||
-        String(a.status).toUpperCase() === "ACTIVE"
-    ).length;
-  }, [assessments]);
+  // Extract counts from backend overview object
+  const totalCandidates = overview?.candidates?.total ?? 0;
+  const parsedFromEmail = overview?.candidates?.parsedFromEmail ?? 0;
 
-  const totalCandidates = candidates.length;
-  const activeAssessments = publishedCount;
-  const invitationsDispatched = 0;
-  const shortlistedCount = candidates.filter(
-    (c) => String(c.status || "").toLowerCase() === "shortlisted"
-  ).length;
+  const activeAssessments = overview?.assessments?.active ?? overview?.assessments?.total ?? 0;
+  const totalAssessments = overview?.assessments?.total ?? 0;
+
+  const invitationsTotal = overview?.invitations?.total ?? 0;
+  const invitationsCompleted = overview?.invitations?.completed ?? 0;
+
+  const attemptsTotal = overview?.attempts?.total ?? 0;
+  const attemptsSubmitted = overview?.attempts?.submitted ?? 0;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
@@ -40,15 +35,17 @@ const DashboardMetricCards = () => {
         <div>
           <div className="flex items-baseline gap-2.5">
             <p className="text-3xl font-black text-slate-900 tracking-tight">
-              {totalCandidates}
+              {isLoading ? "—" : totalCandidates}
             </p>
-            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[11px] border border-emerald-200/60">
-              <TrendingUp className="h-3 w-3" />
-              +12% this week
-            </span>
+            {parsedFromEmail > 0 && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px] border border-emerald-200/60">
+                <Inbox className="h-3 w-3" />
+                {parsedFromEmail} from email
+              </span>
+            )}
           </div>
           <p className="text-xs text-muted-foreground font-medium mt-1">
-            In pipeline
+            In candidate pipeline
           </p>
         </div>
       </div>
@@ -65,9 +62,16 @@ const DashboardMetricCards = () => {
         </div>
 
         <div>
-          <p className="text-3xl font-black text-slate-900 tracking-tight">
-            {activeAssessments}
-          </p>
+          <div className="flex items-baseline gap-2.5">
+            <p className="text-3xl font-black text-slate-900 tracking-tight">
+              {isLoading ? "—" : activeAssessments}
+            </p>
+            {totalAssessments > 0 && (
+              <span className="text-[11px] font-semibold text-slate-500">
+                / {totalAssessments} total
+              </span>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground font-medium mt-1">
             Published screening tests
           </p>
@@ -87,37 +91,39 @@ const DashboardMetricCards = () => {
 
         <div>
           <p className="text-3xl font-black text-slate-900 tracking-tight">
-            {invitationsDispatched}
+            {isLoading ? "—" : invitationsTotal}
           </p>
           <p className="text-xs text-muted-foreground font-medium mt-1">
-            3 Completed
+            {invitationsCompleted} completed by candidates
           </p>
         </div>
       </div>
 
-      {/* ── Card 4: Shortlisted Candidates ── */}
+      {/* ── Card 4: Assessment Attempts ── */}
       <div className="rounded-2xl border bg-card p-5 shadow-xs flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-            Shortlisted Candidates
+            Completed Evaluations
           </span>
           <div className="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-            <Bookmark className="h-4 w-4" />
+            <CheckCircle2 className="h-4 w-4" />
           </div>
         </div>
 
         <div>
           <div className="flex items-baseline gap-2.5">
             <p className="text-3xl font-black text-slate-900 tracking-tight">
-              {shortlistedCount}
+              {isLoading ? "—" : attemptsSubmitted}
             </p>
-            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[11px] border border-emerald-200/60">
-              <TrendingUp className="h-3 w-3" />
-              Top 15%
-            </span>
+            {attemptsTotal > 0 && (
+              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[11px] border border-emerald-200/60">
+                <TrendingUp className="h-3 w-3" />
+                {attemptsTotal} attempts
+              </span>
+            )}
           </div>
           <p className="text-xs text-muted-foreground font-medium mt-1">
-            Avg Score: 63.8%
+            Submitted & scored
           </p>
         </div>
       </div>

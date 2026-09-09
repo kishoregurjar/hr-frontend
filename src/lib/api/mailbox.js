@@ -29,15 +29,15 @@ export const getGoogleConnectUrl = async () => {
 
 /**
  * 3. Manual Sync Mailbox Now
- * POST /api/v1/mailbox/sync-now
+ * POST /api/v1/mailbox/sync or POST /api/v1/mailbox/sync-now
  */
 export const syncMailboxNow = async () => {
+  const options = { timeout: 120000 }; // 2 minutes for heavy attachments
   try {
-    const res = await axiosClient.post("/mailbox/sync-now");
+    const res = await axiosClient.post("/mailbox/sync", {}, options);
     return res?.data?.data || res?.data || res;
   } catch (err) {
-    // Try fallback alias if needed
-    const res = await axiosClient.post("/candidates/sync-emails");
+    const res = await axiosClient.post("/mailbox/sync-now", {}, options);
     return res?.data?.data || res?.data || res;
   }
 };

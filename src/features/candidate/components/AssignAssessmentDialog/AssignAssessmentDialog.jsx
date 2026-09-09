@@ -30,7 +30,7 @@ const AssignAssessmentDialog = ({
     data: assessments = [],
     isLoading,
     isError,
-  } = useAssessmentsQuery();
+  } = useAssessmentsQuery(undefined, { enabled: Boolean(open) });
 
   const assignAssessment = useAssignAssessment();
 

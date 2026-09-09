@@ -10,7 +10,10 @@ const CandidateStatsCards = ({ candidates = [] }) => {
     const emailIngested = candidates.filter(
       (c) =>
         String(c.source || "").toLowerCase().includes("email") ||
-        Boolean(c.emailSubject)
+        String(c.sourceType || "").toLowerCase().includes("email") ||
+        Boolean(c.inboundEmailId) ||
+        Boolean(c.emailSubject) ||
+        Boolean(c.inboundEventId)
     ).length;
     const newApplicants = candidates.filter((c) => {
       const s = String(c.status || "").toLowerCase();

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { getCurrentUserApi, loginApi, logoutApi, registerApi } from "@/lib/api/auth";
+import { getCurrentUserApi, loginApi, logoutApi, registerApi, clearAllAuthStorage } from "@/lib/api/auth";
 
 const AuthContext = createContext({
   user: null,
@@ -63,10 +63,14 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(true);
     try {
       await logoutApi();
+    } finally {
+      clearAllAuthStorage();
       setToken(null);
       setUser(null);
-    } finally {
       setIsLoading(false);
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
     }
   };
 

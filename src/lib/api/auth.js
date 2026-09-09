@@ -204,6 +204,45 @@ export const getCurrentUserApi = async () => {
 };
 
 /**
+ * Comprehensive Auth Storage Cleanup Helper
+ */
+export const clearAllAuthStorage = () => {
+  if (typeof window === "undefined") return;
+
+  const keysToRemove = [
+    AUTH_STORAGE_KEYS.TOKEN,
+    AUTH_STORAGE_KEYS.USER,
+    "token",
+    "accessToken",
+    "jwt",
+    "hiremind_access_token",
+    "hiremind_refresh_token",
+    "hirequest_refresh_token",
+    "refreshToken",
+    "companyId",
+    "active_company_id",
+    "companyName",
+    "companyLogo",
+    "hirequest_company_id",
+    "hq_impersonated_company",
+    "candidateSessionToken",
+    "candidateAccessToken",
+    "hirequest_recruiter_inbox_config",
+  ];
+
+  keysToRemove.forEach((key) => {
+    try {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    } catch {}
+  });
+
+  try {
+    sessionStorage.clear();
+  } catch {}
+};
+
+/**
  * HR Logout API — Live Backend Call
  * Endpoint: POST /api/v1/auth/logout
  */
@@ -213,10 +252,7 @@ export const logoutApi = async () => {
   } catch {
     // Ignore logout error if session already expired
   } finally {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(AUTH_STORAGE_KEYS.TOKEN);
-      localStorage.removeItem(AUTH_STORAGE_KEYS.USER);
-    }
+    clearAllAuthStorage();
   }
 
   return { success: true };
@@ -266,10 +302,7 @@ export const logoutAllApi = async () => {
   } catch {
     // Ignore error
   } finally {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(AUTH_STORAGE_KEYS.TOKEN);
-      localStorage.removeItem(AUTH_STORAGE_KEYS.USER);
-    }
+    clearAllAuthStorage();
   }
   return { success: true };
 };

@@ -53,9 +53,16 @@ export const useSyncMailboxNow = () => {
   return useMutation({
     mutationFn: syncMailboxNow,
     onSuccess: (res) => {
-      const count = res?.processedResumes ?? res?.newCandidatesCount ?? 0;
-      toast.success(`Processed ${count} candidate resume(s) from inbox!`);
+      const count = res?.processedResumes ?? res?.newCandidatesCount ?? res?.count ?? 0;
+      toast.success(
+        count > 0
+          ? `Synced & extracted ${count} candidate resume(s) from inbox!`
+          : "Mailbox synced successfully! New resumes processed."
+      );
+      // Revalidate all related queries instantly
       queryClient.invalidateQueries({ queryKey: CANDIDATE_QUERY_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboardOverview"] });
       queryClient.invalidateQueries({ queryKey: MAILBOX_QUERY_KEY });
     },
     onError: (err) => {

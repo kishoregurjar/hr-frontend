@@ -201,14 +201,15 @@ const CandidateList = () => {
     setIsAssignDialogOpen(true);
   };
 
-  const inboundCareerEmail =
-    user?.inboundEmail ||
-    user?.tenant?.inboundEmail ||
-    (user?.tenantSlug ? `${user.tenantSlug}@inbound.hirequest.com` : "careers@hirequest.com");
-
   const { data: mailboxStatus, refetch: refetchMailboxStatus } = useMailboxStatus();
   const connectGoogleMutation = useConnectGoogleMailbox();
   const syncMailboxMutation = useSyncMailboxNow();
+
+  const inboundCareerEmail =
+    mailboxStatus?.email ||
+    user?.email ||
+    user?.inboundEmail ||
+    "";
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
@@ -239,72 +240,47 @@ const CandidateList = () => {
           </div>
           <div className="text-xs">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-slate-900">Inbound Career Mailbox:</span>
-              <span className="font-mono font-semibold text-indigo-700 bg-white/90 px-2 py-0.5 rounded-md border border-indigo-200/80">
-                {inboundCareerEmail}
-              </span>
-              {mailboxStatus?.connected ? (
-                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-[10px] py-0 px-2 flex items-center gap-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Connected: {mailboxStatus.email || user?.email}
-                </Badge>
-              ) : (
-                <Badge className="bg-slate-100 text-slate-600 border-slate-200 text-[10px] py-0 px-2">
-                  Google Mailbox Not Connected
-                </Badge>
-              )}
+              <span className="font-bold text-slate-900">Recruiter Mailbox:</span>
+              <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-xs py-0.5 px-2.5 flex items-center gap-1.5 font-semibold">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                {user?.email || mailboxStatus?.email || "Connected"}
+              </Badge>
             </div>
             <p className="text-slate-500 text-[11px] mt-0.5 hidden sm:block">
-              Incoming candidate emails & resumes are auto-parsed into your directory in real-time.
+              Incoming candidate applications & resumes from this email are parsed into your directory.
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 shrink-0 self-start md:self-auto">
-          {mailboxStatus?.connected ? (
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => syncMailboxMutation.mutate()}
-              disabled={syncMailboxMutation.isPending}
-              className="text-xs h-8 px-3 gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-xs cursor-pointer"
-            >
-              {syncMailboxMutation.isPending ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <RefreshCw className="h-3.5 w-3.5" />
-              )}
-              Sync Mailbox
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => connectGoogleMutation.mutate()}
-              disabled={connectGoogleMutation.isPending}
-              className="text-xs h-8 px-3 gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-xs cursor-pointer"
-            >
-              {connectGoogleMutation.isPending ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white text-blue-600 font-black text-[10px]">
-                  G
-                </span>
-              )}
-              Connect Google
-            </Button>
-          )}
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => syncMailboxMutation.mutate()}
+            disabled={syncMailboxMutation.isPending}
+            className="text-xs h-8 px-3 gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-xs cursor-pointer"
+          >
+            {syncMailboxMutation.isPending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3.5 w-3.5" />
+            )}
+            Sync Mailbox
+          </Button>
 
           <button
             type="button"
             onClick={() => {
-              navigator.clipboard.writeText(inboundCareerEmail);
-              toast.success(`Inbound email copied: ${inboundCareerEmail}`);
+              const emailToCopy = user?.email || mailboxStatus?.email || "";
+              if (emailToCopy) {
+                navigator.clipboard.writeText(emailToCopy);
+                toast.success(`Email copied: ${emailToCopy}`);
+              }
             }}
             className="text-xs font-semibold text-indigo-700 hover:text-indigo-900 hover:bg-white/90 bg-white/70 border border-indigo-200/80 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
           >
             <Copy className="h-3.5 w-3.5" />
-            Copy Address
+            Copy Email
           </button>
         </div>
       </div>
