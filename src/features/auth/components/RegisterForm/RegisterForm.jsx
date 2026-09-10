@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Building2, Lock, Mail, User, Loader2, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Building2, Lock, Mail, User, Loader2, Eye, EyeOff, ArrowRight, Globe } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -15,9 +15,9 @@ const RegisterForm = () => {
   const router = useRouter();
   const { register } = useAuth();
 
+  const [company, setCompany] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [company, setCompany] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
@@ -30,15 +30,15 @@ const RegisterForm = () => {
 
     try {
       await register({ name, email, company, password });
-      toast.success("Account created successfully!", {
-        description: `Welcome to HireQuest, ${name}! Please sign in.`,
+      toast.success("Company Workspace created successfully!", {
+        description: `Welcome to HireQuest, ${name}! Please sign in to access your company dashboard.`,
       });
       router.push("/login?registered=true");
     } catch (err) {
       const errorMsg =
         err?.response?.data?.message ||
         err?.message ||
-        "Failed to create account. Please try again.";
+        "Failed to register company. Please try again.";
       setError(errorMsg);
       toast.error(errorMsg);
     } finally {
@@ -54,52 +54,17 @@ const RegisterForm = () => {
         </div>
       )}
 
-      <div className="space-y-1.5">
-        <Label htmlFor="name" className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-          Full Name
-        </Label>
-        <div className="relative">
-          <User className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
-          <Input
-            id="name"
-            type="text"
-            placeholder="Enter your full name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="pl-10 h-11 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500/30 transition shadow-2xs"
-            required
-          />
-        </div>
-      </div>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="email" className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-          Work Email
-        </Label>
-        <div className="relative">
-          <Mail className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
-          <Input
-            id="email"
-            type="email"
-            placeholder="Enter your work email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="pl-10 h-11 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500/30 transition shadow-2xs"
-            required
-          />
-        </div>
-      </div>
-
+      {/* Company Name */}
       <div className="space-y-1.5">
         <Label htmlFor="company" className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-          Company / Organization
+          Company Name *
         </Label>
         <div className="relative">
           <Building2 className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
           <Input
             id="company"
             type="text"
-            placeholder="Enter your company name"
+            placeholder="Enter company workspace name"
             value={company}
             onChange={(e) => setCompany(e.target.value)}
             className="pl-10 h-11 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500/30 transition shadow-2xs"
@@ -108,16 +73,55 @@ const RegisterForm = () => {
         </div>
       </div>
 
+      {/* Company Owner / HR Lead Name */}
+      <div className="space-y-1.5">
+        <Label htmlFor="name" className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+          Company Owner / Primary Admin Name *
+        </Label>
+        <div className="relative">
+          <User className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+          <Input
+            id="name"
+            type="text"
+            placeholder="Enter your name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="pl-10 h-11 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500/30 transition shadow-2xs"
+            required
+          />
+        </div>
+      </div>
+
+      {/* Work Email */}
+      <div className="space-y-1.5">
+        <Label htmlFor="email" className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+          Official Work Email *
+        </Label>
+        <div className="relative">
+          <Mail className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+          <Input
+            id="email"
+            type="email"
+            placeholder="work.email@company.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="pl-10 h-11 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500/30 transition shadow-2xs"
+            required
+          />
+        </div>
+      </div>
+
+      {/* Password */}
       <div className="space-y-1.5">
         <Label htmlFor="password" className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-          Password
+          Workspace Password *
         </Label>
         <div className="relative">
           <Lock className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
           <Input
             id="password"
             type={showPassword ? "text" : "password"}
-            placeholder="Enter your password (min. 6 characters)"
+            placeholder="Enter password (min. 6 characters)"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="pl-10 pr-10 h-11 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500/30 transition shadow-2xs"
@@ -147,22 +151,29 @@ const RegisterForm = () => {
         {isSubmitting ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Creating Account...
+            Creating Workspace...
           </>
         ) : (
           <span className="flex items-center justify-center gap-1.5">
-            Create HR Recruiter Account
+            Register Company Workspace
             <ArrowRight className="h-3.5 w-3.5" />
           </span>
         )}
       </Button>
 
-      <p className="text-center text-xs text-slate-500 font-medium pt-3 border-t border-slate-100">
-        Already have an account?{" "}
-        <Link href="/login" className="font-bold text-indigo-600 hover:text-indigo-700 hover:underline">
-          Sign In
+      {/* Helper for Invited HRs */}
+      <div className="pt-3 border-t border-slate-100 space-y-2 text-center text-xs">
+        <p className="text-slate-600 font-medium">
+          Invited by your company as an HR Recruiter?
+        </p>
+        <Link
+          href="/login"
+          className="inline-flex items-center gap-1 font-bold text-indigo-600 hover:text-indigo-700 hover:underline"
+        >
+          Sign In to your workspace
+          <ArrowRight className="h-3 w-3" />
         </Link>
-      </p>
+      </div>
     </form>
   );
 };

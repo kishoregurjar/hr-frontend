@@ -9,8 +9,6 @@ import {
   Users,
   BarChart3,
   Shield,
-  ArrowLeft,
-  Sparkles,
   X,
 } from "lucide-react";
 
@@ -67,7 +65,7 @@ const AdminSidebar = ({ isOpen = false, onClose = () => {} }) => {
           </div>
           <div>
             <span className="font-extrabold text-base tracking-tight text-slate-900 flex items-center gap-1.5 leading-none">
-              Minders Admin
+              HireQuest Admin
               <span className="text-[9px] font-extrabold uppercase bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded tracking-wider">
                 SUPER
               </span>
@@ -118,29 +116,6 @@ const AdminSidebar = ({ isOpen = false, onClose = () => {} }) => {
             </Link>
           );
         })}
-      </div>
-
-      {/* ── Quick Switch to HR Portal ── */}
-      <div className="p-3.5 border-t border-slate-200/80 bg-slate-50/50">
-        <div className="rounded-xl bg-gradient-to-br from-blue-50/90 to-indigo-50/60 border border-blue-200/70 p-3.5 space-y-2 shadow-2xs">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-amber-500 shrink-0" />
-            <p className="text-xs font-bold text-slate-900">
-              HR Recruitment Mode
-            </p>
-          </div>
-          <p className="text-[11px] text-slate-600 leading-tight">
-            Switch from Super Admin to HR Portal to test candidate assessments.
-          </p>
-          <Link
-            href="/dashboard"
-            onClick={onClose}
-            className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-white hover:bg-blue-50 text-xs font-bold text-blue-700 border border-blue-200 shadow-2xs transition cursor-pointer"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Open HR Portal
-          </Link>
-        </div>
       </div>
     </aside>
   );

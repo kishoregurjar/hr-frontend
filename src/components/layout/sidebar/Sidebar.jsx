@@ -80,16 +80,43 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const resolveDisplayName = (u) => {
+    if (!u) return "Rohit Panchal";
+    if (typeof u === "string" && u.toLowerCase() !== "hr") return u;
+    if (typeof u.name === "string" && u.name.trim() && u.name.toLowerCase() !== "hr") return u.name.trim();
+    if (typeof u.fullName === "string" && u.fullName.trim() && u.fullName.toLowerCase() !== "hr") return u.fullName.trim();
+    if (typeof u.firstName === "string" || typeof u.lastName === "string") {
+      const full = `${u.firstName || ""} ${u.lastName || ""}`.trim();
+      if (full && full.toLowerCase() !== "hr") return full;
+    }
+    if (typeof u.email === "string" && u.email.trim()) {
+      if (u.email.toLowerCase().includes("rohit")) return "Rohit Panchal";
+      return u.email.split("@")[0];
+    }
+    return "Rohit Panchal";
+  };
 
-  const displayName = user?.name || user?.fullName || "Sarah Jenkins";
-  const userEmail = user?.email || "shivam123@gmail.com";
+  const getInitials = (name) => {
+    const str = String(name || "HR").trim();
+    if (!str) return "HR";
+    const parts = str.split(" ").filter(Boolean);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+  };
+
+  const displayName = resolveDisplayName(user);
+  const userEmail = typeof user?.email === "string" ? user.email : "";
   const companyLogo =
-    (typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null) || null;
+    (typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null) ||
+    user?.companyLogo ||
+    null;
   const companyName =
     impersonatedCompany?.name ||
-    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
+    user?.companyName ||
+    user?.company?.name ||
     user?.company ||
-    "Wipro";
+    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
+    "";
   const activeCompanyName = companyName;
   const activePlan = impersonatedCompany?.plan || "Enterprise";
   const isInspecting = Boolean(impersonatedCompany);
@@ -146,39 +173,7 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
           </button>
         </div>
 
-        {/* ── 2. Active Tenant Card ── */}
-        <div className="px-4 py-2">
-          <div className={`rounded-xl border p-3 space-y-1.5 shadow-2xs transition-colors ${
-            isInspecting ? "bg-amber-50/70 border-amber-300" : "bg-slate-50 border-slate-200/80"
-          }`}>
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                Active Tenant
-              </span>
-              <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wider ${
-                isInspecting
-                  ? "bg-amber-200/80 text-amber-900 border border-amber-300 animate-pulse"
-                  : "bg-blue-50 text-blue-700 border border-blue-200/80"
-              }`}>
-                {isInspecting ? "Inspecting" : activePlan}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 font-bold text-xs text-slate-900">
-              {companyLogo ? (
-                <img
-                  src={companyLogo}
-                  alt={activeCompanyName}
-                  className="h-4 w-4 rounded-sm object-contain bg-white border border-slate-200"
-                />
-              ) : (
-                <Building2 className={`h-3.5 w-3.5 shrink-0 ${isInspecting ? "text-amber-600" : "text-blue-600"}`} />
-              )}
-              <span className="truncate">{activeCompanyName}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* ── 3. Navigation Links ── */}
+        {/* ── 2. Navigation Links ── */}
         <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
@@ -215,7 +210,7 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
             title="Account & Security Settings"
           >
             <div className="h-8 w-8 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
-              {displayName.slice(0, 2).toUpperCase()}
+              {getInitials(displayName)}
             </div>
             <div className="min-w-0">
               <p className="text-xs font-bold text-slate-900 truncate leading-none">

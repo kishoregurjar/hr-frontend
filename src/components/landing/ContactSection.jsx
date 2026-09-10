@@ -80,23 +80,23 @@ export default function ContactSection() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-slate-700">Full Name</label>
-                    <Input placeholder="Rohit Solanki" required />
+                    <Input placeholder="Enter your name" required />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-slate-700">Work Email</label>
-                    <Input type="email" placeholder="rohit@company.com" required />
+                    <Input type="email" placeholder="name@company.com" required />
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-slate-700">Subject</label>
-                  <Input placeholder="Inquiry about HR Pipeline Automation" required />
+                  <Input placeholder="e.g. Enterprise Custom Assessment Inquiry" required />
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-slate-700">Message</label>
                   <Textarea
-                    placeholder="How can we help your team?"
+                    placeholder="Tell us about your organization's hiring and assessment needs..."
                     className="min-h-[100px] sm:min-h-[120px]"
                     required
                   />

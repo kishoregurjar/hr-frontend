@@ -43,10 +43,18 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
   // Logout All Devices State
   const [isLoggingOutAll, setIsLoggingOutAll] = useState(false);
 
-  const rawName = user?.name || user?.fullName || "Rohit Panchal";
-  const userName = rawName.replace(/\s+user$/i, "").trim() || "Rohit Panchal";
-  const userEmail = user?.email || "panchal@gmail.com";
-  const companyName = user?.company || "HireQuest HR";
+  const rawName =
+    (typeof user?.name === "string" ? user.name : "") ||
+    (typeof user?.fullName === "string" ? user.fullName : "") ||
+    "HR User";
+  const userName = String(rawName).replace(/\s+user$/i, "").trim() || "HR User";
+  const userEmail = user?.email || "";
+  const companyName =
+    user?.companyName ||
+    user?.company?.name ||
+    user?.company ||
+    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
+    "";
   const userRole = user?.role || "HR";
 
   const handleChangePassword = async (e) => {
@@ -171,13 +179,13 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
             <div className="space-y-4">
               <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-blue-50/50 via-indigo-50/30 to-slate-50 border border-blue-100/80">
                 <div className="h-13 w-13 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-base shadow-md shadow-blue-500/20 shrink-0">
-                  {userName.slice(0, 2).toUpperCase()}
+                  {String(userName || "HR").slice(0, 2).toUpperCase()}
                 </div>
                 <div className="space-y-1 min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-extrabold text-base text-slate-900 truncate">{userName}</h3>
-                    <Badge className="bg-blue-600 text-white border-none text-[10px] font-extrabold px-2 py-0.5 shadow-xs">
-                      {userRole} ADMIN
+                    <Badge className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-extrabold px-2 py-0.5 shadow-xs">
+                      {user?.isOwner || userRole === "Company Owner" || userRole === "OWNER" ? "Company Owner" : userRole}
                     </Badge>
                     <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-extrabold flex items-center gap-1">
                       <CheckCircle2 className="h-3 w-3" />
@@ -202,7 +210,9 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
                     <Sparkles className="h-3.5 w-3.5 text-amber-500" />
                     Account Role
                   </span>
-                  <p className="font-bold text-slate-800 text-sm">HR & Assessment Manager</p>
+                  <p className="font-bold text-slate-800 text-sm">
+                    {user?.isOwner || userRole === "Company Owner" || userRole === "OWNER" ? "Company Owner" : "HR Manager"}
+                  </p>
                 </div>
 
                 <div className="p-3.5 rounded-2xl border border-slate-200/90 bg-white space-y-1 hover:border-blue-200 transition-colors">

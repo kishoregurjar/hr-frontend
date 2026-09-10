@@ -37,19 +37,44 @@ import {
   sendMemberInvitation,
   getCompanyInvitations,
   revokeInvitation,
-  createCompany,
 } from "@/lib/api/company";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useAuth } from "@/features/auth/context";
 
 export default function CompanySettingsPage() {
-  const [activeTab, setActiveTab] = useState("profile"); // 'profile' | 'members' | 'invitations'
+  const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab") || "profile";
+  const [activeTab, setActiveTab] = useState(initialTab); // 'profile' | 'members' | 'invitations'
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
+  const defaultCompanyName =
+    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
+    user?.companyName ||
+    user?.company?.name ||
+    user?.company ||
+    "";
+  const defaultCompanyLogo =
+    (typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null) ||
+    user?.companyLogo ||
+    "";
+
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && ["profile", "members", "invitations"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
   // Profile Form State
-  const [company, setCompany] = useState(null);
+  const [company, setCompany] = useState({
+    name: defaultCompanyName,
+    logoUrl: defaultCompanyLogo,
+  });
   const [formData, setFormData] = useState({
-    name: "",
+    name: defaultCompanyName,
     website: "",
     industry: "Technology",
     email: "",
@@ -59,10 +84,6 @@ export default function CompanySettingsPage() {
     country: "",
     description: "",
   });
-
-  // Create Company Modal (if no company yet)
-  const [showCreateCompany, setShowCreateCompany] = useState(false);
-  const [creatingCompany, setCreatingCompany] = useState(false);
 
   // Members & Invites State
   const [members, setMembers] = useState([]);
@@ -83,30 +104,57 @@ export default function CompanySettingsPage() {
     try {
       setLoading(true);
       const data = await getCompanyProfile();
-      if (data && (data.id || data.name)) {
-        setCompany(data);
-        setFormData({
-          name: data.name || "",
-          website: data.website || "",
-          industry: data.industry || "Technology",
-          email: data.email || "",
-          phone: data.phone || "",
-          address: data.address || "",
-          city: data.city || "",
-          country: data.country || "",
-          description: data.description || "",
+      if (data && (data.id || data.name || data.companyName)) {
+        const compName = data.name || data.companyName || defaultCompanyName;
+        const compLogo = data.logoUrl || data.logo || defaultCompanyLogo;
+        const compWebsite = data.website || data.websiteUrl || "";
+        const compIndustry = data.industry || "Technology";
+        const compEmail = data.email || data.officialEmail || "";
+        const compPhone = data.phone || "";
+        const compAddress = data.address || "";
+        const compCity = data.city || "";
+        const compCountry = data.country || "";
+        const compDesc = data.description || data.about || "";
+
+        setCompany({
+          ...data,
+          name: compName,
+          logoUrl: compLogo,
         });
-        if (data.logoUrl && typeof window !== "undefined") {
-          localStorage.setItem("companyLogo", data.logoUrl);
+
+        setFormData({
+          name: compName,
+          website: compWebsite,
+          websiteUrl: compWebsite,
+          industry: compIndustry,
+          email: compEmail,
+          officialEmail: compEmail,
+          phone: compPhone,
+          address: compAddress,
+          city: compCity,
+          country: compCountry,
+          description: compDesc,
+          about: compDesc,
+        });
+
+        if (compLogo && typeof window !== "undefined") {
+          localStorage.setItem("companyLogo", compLogo);
         }
-        if (data.name && typeof window !== "undefined") {
-          localStorage.setItem("companyName", data.name);
+        if (compName && typeof window !== "undefined") {
+          localStorage.setItem("companyName", compName);
         }
       } else {
         setCompany(null);
       }
     } catch {
-      setCompany(null);
+      const fallbackName =
+        (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
+        "Walking Dreamz";
+      setCompany({
+        name: fallbackName,
+        logoUrl: typeof window !== "undefined" ? localStorage.getItem("companyLogo") : "",
+      });
+      setFormData((prev) => ({ ...prev, name: fallbackName }));
     } finally {
       setLoading(false);
     }
@@ -151,12 +199,28 @@ export default function CompanySettingsPage() {
     e.preventDefault();
     setSavingProfile(true);
     try {
-      const res = await updateCompanyProfile(formData);
+      const payload = {
+        name: formData.name,
+        website: formData.website || formData.websiteUrl || "",
+        websiteUrl: formData.website || formData.websiteUrl || "",
+        industry: formData.industry || "Technology",
+        email: formData.email || formData.officialEmail || "",
+        officialEmail: formData.email || formData.officialEmail || "",
+        phone: formData.phone || "",
+        address: formData.address || "",
+        city: formData.city || "",
+        country: formData.country || "",
+        description: formData.description || formData.about || "",
+        about: formData.description || formData.about || "",
+      };
+      const res = await updateCompanyProfile(payload);
       toast.success("Company profile updated successfully!");
-      setCompany(res?.data || res);
-      if (res?.name) localStorage.setItem("companyName", res.name);
+      if (res?.name && typeof window !== "undefined") {
+        localStorage.setItem("companyName", res.name);
+      }
+      fetchCompanyData();
     } catch (err) {
-      toast.error(err.message || "Failed to update company profile.");
+      toast.error(err.message || "Failed to update profile.");
     } finally {
       setSavingProfile(false);
     }
@@ -174,33 +238,24 @@ export default function CompanySettingsPage() {
     setUploadingLogo(true);
     try {
       const res = await uploadCompanyLogo(file);
-      const logoUrl = res?.data?.logoUrl || res?.logoUrl;
-      setCompany((prev) => ({ ...prev, logoUrl }));
-      if (logoUrl && typeof window !== "undefined") {
-        localStorage.setItem("companyLogo", logoUrl);
+      const logoUrl =
+        res?.data?.logoUrl ||
+        res?.logoUrl ||
+        res?.company?.logoUrl ||
+        res?.data?.company?.logoUrl ||
+        res?.url;
+      if (logoUrl) {
+        setCompany((prev) => ({ ...prev, logoUrl }));
+        if (typeof window !== "undefined") {
+          localStorage.setItem("companyLogo", logoUrl);
+        }
       }
       toast.success("Company logo uploaded successfully!");
+      await fetchCompanyData();
     } catch (err) {
-      toast.error(err.message || "Failed to upload logo.");
+      toast.error(err?.response?.data?.message || err.message || "Failed to upload logo.");
     } finally {
       setUploadingLogo(false);
-    }
-  };
-
-  const handleCreateCompany = async (e) => {
-    e.preventDefault();
-    setCreatingCompany(true);
-    try {
-      const res = await createCompany(formData);
-      const comp = res?.data?.company || res?.company || res?.data;
-      setCompany(comp);
-      setShowCreateCompany(false);
-      toast.success("Company registered successfully!");
-      fetchCompanyData();
-    } catch (err) {
-      toast.error(err.message || "Failed to create company.");
-    } finally {
-      setCreatingCompany(false);
     }
   };
 
@@ -287,108 +342,86 @@ export default function CompanySettingsPage() {
 
         {company && (
           <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-blue-200/80 bg-blue-50/80 shadow-xs">
-            {company.logoUrl ? (
+            {company?.logoUrl ? (
               <img
                 src={company.logoUrl}
-                alt={company.name}
+                alt={company?.name || "Company"}
                 className="h-6 w-6 object-contain rounded-lg bg-white p-0.5 border border-slate-200 shadow-2xs"
               />
             ) : (
               <div className="h-6 w-6 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center">
-                {company.name ? company.name[0]?.toUpperCase() : "C"}
+                {company?.name ? company.name[0]?.toUpperCase() : "C"}
               </div>
             )}
             <span className="font-extrabold text-xs sm:text-sm text-blue-900 tracking-tight">
-              {company.name || "My Company"}
+              {company?.name || "My Company"}
             </span>
           </div>
         )}
       </div>
 
-      {/* ── If no company created yet ── */}
-      {!loading && !company && (
-        <div className="rounded-2xl border bg-card p-8 text-center space-y-4 shadow-sm max-w-xl mx-auto my-8">
-          <div className="h-16 w-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
-            <Building2 className="h-8 w-8" />
-          </div>
-          <h2 className="text-xl font-bold text-slate-900">Set Up Your Company Profile</h2>
-          <p className="text-sm text-muted-foreground">
-            You haven't set up a company profile yet. Register your company to start branding candidate assessments and inviting recruiters.
-          </p>
-          <Button
-            onClick={() => setShowCreateCompany(true)}
-            className="bg-blue-600 hover:bg-blue-700 font-bold px-6 shadow-md"
-          >
-            <Building2 className="h-4 w-4 mr-2" />
-            Register Company Now
-          </Button>
-        </div>
-      )}
-
       {/* ── Navigation Tabs ── */}
-      {company && (
-        <>
-          <div className="flex items-center gap-2 border-b">
-            <button
-              onClick={() => setActiveTab("profile")}
-              className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${
-                activeTab === "profile"
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Building2 className="h-4 w-4" />
-              Company Profile & Logo
-            </button>
+      <div className="flex items-center gap-2 border-b">
+        <button
+          onClick={() => setActiveTab("profile")}
+          className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === "profile"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Building2 className="h-4 w-4" />
+          Company Profile & Logo
+        </button>
 
-            <button
-              onClick={() => setActiveTab("members")}
-              className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${
-                activeTab === "members"
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Users className="h-4 w-4" />
-              Team Members ({members.length})
-            </button>
+        <button
+          onClick={() => setActiveTab("members")}
+          className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === "members"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Users className="h-4 w-4" />
+          Team Members ({members.length})
+        </button>
 
-            <button
-              onClick={() => setActiveTab("invitations")}
-              className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${
-                activeTab === "invitations"
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Mail className="h-4 w-4" />
-              Recruiter Invitations ({invitations.length})
-            </button>
-          </div>
+        <button
+          onClick={() => setActiveTab("invitations")}
+          className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === "invitations"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Mail className="h-4 w-4" />
+          Recruiter Invitations ({invitations.length})
+        </button>
+      </div>
 
-          {/* ── TAB 1: Company Profile & Logo ── */}
-          {activeTab === "profile" && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left Column: Logo & Branding Card */}
-              <div className="lg:col-span-1 rounded-2xl border bg-card p-6 shadow-sm space-y-5 h-fit">
-                <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-blue-600" />
-                  Company Logo
-                </h3>
+      {/* ── TAB 1: Company Profile & Logo ── */}
+      {activeTab === "profile" && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column: Logo & Branding Card */}
+          <div className="lg:col-span-1 rounded-2xl border bg-card p-6 shadow-sm space-y-5 h-fit">
+            <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-blue-600" />
+              Company Logo
+            </h3>
                 <p className="text-xs text-muted-foreground">
                   This logo will appear on candidate assessment tests, email invites, and scorecards.
                 </p>
 
                 <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl bg-slate-50/60 space-y-3 text-center">
-                  {company.logoUrl ? (
+                  {company?.logoUrl ? (
                     <img
                       src={company.logoUrl}
-                      alt={company.name}
+                      alt={company?.name || "Company"}
                       className="h-24 w-24 object-contain rounded-xl border bg-white shadow-sm"
                     />
                   ) : (
                     <div className="h-24 w-24 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-black text-3xl shadow-inner">
-                      {company.name ? company.name[0]?.toUpperCase() : "C"}
+                      {company?.name ? company.name[0]?.toUpperCase() : "C"}
                     </div>
                   )}
 
@@ -415,12 +448,12 @@ export default function CompanySettingsPage() {
                 <div className="space-y-2 border-t pt-4 text-xs text-muted-foreground">
                   <div className="flex items-center justify-between">
                     <span>Company Slug:</span>
-                    <span className="font-mono font-bold text-slate-700">{company.slug || "n/a"}</span>
+                    <span className="font-mono font-bold text-slate-700">{company?.slug || "n/a"}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span>Company ID:</span>
                     <span className="font-mono text-[10px] text-slate-500 truncate max-w-[140px]">
-                      {company.id || "n/a"}
+                      {company?.id || "n/a"}
                     </span>
                   </div>
                 </div>
@@ -802,93 +835,6 @@ export default function CompanySettingsPage() {
               </div>
             </div>
           )}
-        </>
-      )}
-
-      {/* ── Create Company Dialog (Modal) ── */}
-      {showCreateCompany && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="bg-card w-full max-w-lg rounded-2xl border shadow-2xl p-6 space-y-5 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-blue-600" />
-                Register Company
-              </h3>
-              <button
-                onClick={() => setShowCreateCompany(false)}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateCompany} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Company Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full h-10 px-3 rounded-xl border bg-background text-sm outline-none focus:ring-2 focus:ring-blue-600"
-                  placeholder="e.g. Acme Tech Solutions"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Website</label>
-                  <input
-                    type="url"
-                    value={formData.website}
-                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                    className="w-full h-10 px-3 rounded-xl border bg-background text-sm outline-none"
-                    placeholder="https://acme.com"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Industry</label>
-                  <input
-                    type="text"
-                    value={formData.industry}
-                    onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                    className="w-full h-10 px-3 rounded-xl border bg-background text-sm outline-none"
-                    placeholder="Technology"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Official Email</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full h-10 px-3 rounded-xl border bg-background text-sm outline-none"
-                  placeholder="contact@acme.com"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowCreateCompany(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={creatingCompany}
-                  className="bg-blue-600 hover:bg-blue-700 font-bold"
-                >
-                  {creatingCompany ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Company"}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

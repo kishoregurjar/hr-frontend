@@ -1,15 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ArrowRight, ShieldCheck, LayoutDashboard } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ROUTES } from "@/constants";
+import { useAuth } from "@/features/auth/context/AuthContext";
 
 export default function LandingHeader({
   mobileMenuOpen,
   setMobileMenuOpen,
   handleScrollTo,
 }) {
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  const isSuperAdmin =
+    user?.role === "SUPER_ADMIN" ||
+    user?.role === "PLATFORM_ADMIN" ||
+    user?.email?.toLowerCase()?.includes("admin");
+
+  const dashboardHref = isSuperAdmin ? "/admin" : ROUTES.DASHBOARD;
+  const dashboardLabel = isSuperAdmin ? "Admin Console" : "Go to Dashboard";
+
   return (
     <>
       <header className="sticky top-0 z-50 flex items-center justify-between py-2.5 sm:py-3.5 backdrop-blur-md bg-[#e8f2fe]/90 rounded-2xl px-3 sm:px-6 border border-blue-100/60 shadow-sm gap-2">
@@ -57,29 +68,37 @@ export default function LandingHeader({
 
         {/* Right Action buttons */}
         <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
-          <Link
-            href="/login"
-            className={buttonVariants({
-              variant: "outline",
-              size: "sm",
-              className:
-                "border-blue-600 text-blue-600 hover:bg-blue-50 rounded-md font-semibold px-2.5 sm:px-4 text-xs sm:text-sm h-8 sm:h-10",
-            })}
-          >
-            Sign In
-          </Link>
-
-          <Link
-            href={ROUTES.DASHBOARD}
-            className={buttonVariants({
-              variant: "default",
-              size: "sm",
-              className:
-                "bg-blue-600 hover:bg-blue-700 text-white rounded-md px-3 sm:px-5 shadow-md font-semibold text-xs sm:text-sm h-8 sm:h-10",
-            })}
-          >
-            Dashboard
-          </Link>
+          {!isLoading && isAuthenticated && user ? (
+            <Link
+              href={dashboardHref}
+              className={buttonVariants({
+                variant: "default",
+                size: "sm",
+                className:
+                  "bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-3 sm:px-5 shadow-md font-semibold text-xs sm:text-sm h-8 sm:h-10 gap-1.5 cursor-pointer transition",
+              })}
+            >
+              {isSuperAdmin ? (
+                <ShieldCheck className="h-4 w-4 text-white" />
+              ) : (
+                <LayoutDashboard className="h-4 w-4 text-white" />
+              )}
+              <span>{dashboardLabel}</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className={buttonVariants({
+                variant: "default",
+                size: "sm",
+                className:
+                  "bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold px-4 sm:px-6 text-xs sm:text-sm h-8 sm:h-10 shadow-md shadow-blue-500/20 transition cursor-pointer",
+              })}
+            >
+              Sign In
+            </Link>
+          )}
 
           {/* Mobile Menu Toggle Button */}
           <Button

@@ -345,7 +345,7 @@ export const syncEmailApplications = async (config = {}) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: config.email || "rohitpanchal958466@gmail.com",
+          email: config.email || "",
           appPassword: config.appPassword,
           keywords: config.keywords,
         }),

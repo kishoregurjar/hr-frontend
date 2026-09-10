@@ -18,12 +18,13 @@ import { CandidateStatusBadge } from "@/features/candidate/components";
 import { recentCandidates as fallbackCandidates } from "../data/recent-candidates";
 
 function getInitials(name) {
-  if (!name) return "U";
-  const parts = name.trim().split(" ");
+  const str = String(name || "U").trim();
+  if (!str) return "U";
+  const parts = str.split(" ").filter(Boolean);
   if (parts.length >= 2) {
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
-  return name.slice(0, 2).toUpperCase();
+  return str.slice(0, 2).toUpperCase();
 }
 
 const RecentCandidates = () => {

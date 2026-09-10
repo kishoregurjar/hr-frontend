@@ -19,8 +19,11 @@ import { games as initialGames } from "../data";
 
 const GameList = () => {
   const { user } = useAuth();
-  const rawName = user?.name || user?.fullName || "Sarah Jenkins";
-  const userName = rawName.replace(/\s+user$/i, "").trim() || "Sarah Jenkins";
+  const rawName =
+    (typeof user?.name === "string" ? user.name : "") ||
+    (typeof user?.fullName === "string" ? user.fullName : "") ||
+    "HR Manager";
+  const userName = String(rawName).replace(/\s+user$/i, "").trim() || "HR Manager";
 
   const [gamesList, setGamesList] = useState(initialGames);
   const [previewGame, setPreviewGame] = useState(null);

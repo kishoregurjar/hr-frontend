@@ -5,58 +5,123 @@ import Link from "next/link";
 import {
   Building2,
   Users,
-  Gamepad2,
+  ShieldCheck,
   TrendingUp,
-  Award,
+  Plus,
   CheckCircle2,
+  XCircle,
   ArrowUpRight,
-  Zap,
-  Activity,
+  Clock,
+  Briefcase,
+  ExternalLink,
+  Loader2,
+  RefreshCw,
 } from "lucide-react";
 import AdminHeader from "@/components/admin/AdminHeader";
-import { getAdminMetrics, getAdminCompanies, getAdminGames } from "@/lib/api/admin";
+import { getAdminMetrics, getAdminCompanies } from "@/lib/api/admin";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 export default function AdminOverviewPage() {
   const [metrics, setMetrics] = useState(null);
   const [companies, setCompanies] = useState([]);
-  const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      const [m, c] = await Promise.all([
+        getAdminMetrics(),
+        getAdminCompanies({ limit: 10 }),
+      ]);
+      setMetrics(m);
+      setCompanies(Array.isArray(c) ? c : []);
+    } catch {
+      // Handled in api layer
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [m, c, g] = await Promise.all([
-          getAdminMetrics(),
-          getAdminCompanies(),
-          getAdminGames(),
-        ]);
-        setMetrics(m);
-        setCompanies(Array.isArray(c) ? c : []);
-        setGames(Array.isArray(g) ? g : []);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    fetchData();
+  };
+
+  const totalCompaniesCount =
+    metrics?.companies?.total ?? metrics?.totalCompanies ?? companies.length ?? 0;
+  const activeCompaniesCount =
+    metrics?.companies?.active ??
+    metrics?.activeCompanies ??
+    companies.filter((c) => c.status === "ACTIVE").length ??
+    0;
+  const suspendedCompaniesCount =
+    metrics?.companies?.suspended ??
+    metrics?.suspendedCompanies ??
+    companies.filter((c) => c.status === "SUSPENDED").length ??
+    0;
+  const totalMembersCount =
+    metrics?.members?.total ?? metrics?.totalMembers ?? 0;
+  const totalJobsCount = metrics?.jobs?.total ?? metrics?.totalJobs ?? 0;
+  const pendingActivationsCount =
+    metrics?.ownerActivations?.pending ?? metrics?.pendingActivations ?? 0;
 
   return (
     <>
       <AdminHeader
-        title="Platform Master Overview"
-        subtitle="Minders World Recruitment Ecosystem Live Statistics"
+        title="Super Admin Executive Dashboard"
+        subtitle="HireQuest Multi-Tenant Recruitment Ecosystem Overview"
       />
 
       <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 max-w-7xl font-sans">
-        {/* ── 1. Executive Metric Cards ── */}
+        {/* ── Top Bar with Quick Actions ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-linear-to-r from-blue-900 to-indigo-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-2 bg-blue-500/20 text-blue-200 px-3 py-1 rounded-full text-xs font-bold border border-blue-400/20">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Platform Administrator Portal
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+              Enterprise Tenant Management
+            </h1>
+            <p className="text-sm text-blue-100/80 max-w-xl">
+              Monitor client organizations, manage tenant activation lifecycles, and supervise multi-tenant hiring pipelines.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            <Button
+              onClick={handleRefresh}
+              variant="outline"
+              size="sm"
+              disabled={isRefreshing}
+              className="border-white/20 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold gap-1.5 cursor-pointer"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+
+            <Link href="/admin/companies?new=true">
+              <Button className="bg-white hover:bg-blue-50 text-blue-900 font-bold rounded-xl text-xs sm:text-sm px-5 py-5 shadow-lg gap-2 cursor-pointer transition-all hover:scale-102">
+                <Plus className="h-4 w-4 text-blue-600" />
+                Register New Company
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* ── 1. Executive Metric Cards Row ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* Card 1: Total Companies */}
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs space-y-3 hover:shadow-md transition-shadow">
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-3 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                Client Companies
+                Total Organizations
               </span>
               <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
                 <Building2 className="h-4 w-4" />
@@ -64,136 +129,145 @@ export default function AdminOverviewPage() {
             </div>
             <div>
               <p className="text-3xl font-black text-slate-900 tracking-tight">
-                {metrics?.totalCompanies ?? companies.length ?? 0}
+                {loading ? "..." : totalCompaniesCount}
               </p>
               <p className="text-xs text-slate-500 font-semibold flex items-center gap-1 mt-1">
                 <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
-                {metrics?.activeCompanies ?? companies.filter(c => c.status === "ACTIVE").length ?? 0} active tenants
+                Across all tenant workspaces
               </p>
             </div>
           </div>
 
-          {/* Card 2: Candidates Assessed */}
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs space-y-3 hover:shadow-md transition-shadow">
+          {/* Card 2: Active Companies */}
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-3 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                Candidates Assessed
+                Active Tenants
               </span>
               <div className="h-9 w-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+                <CheckCircle2 className="h-4 w-4" />
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="text-3xl font-black text-slate-900 tracking-tight">
+                  {loading ? "..." : activeCompaniesCount}
+                </p>
+                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-extrabold">
+                  ACTIVE
+                </Badge>
+              </div>
+              <p className="text-xs text-slate-500 font-semibold flex items-center gap-1 mt-1">
+                {suspendedCompaniesCount} currently suspended
+              </p>
+            </div>
+          </div>
+
+          {/* Card 3: Platform HR & Recruiters */}
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-3 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                Total Platform Users
+              </span>
+              <div className="h-9 w-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
                 <Users className="h-4 w-4" />
               </div>
             </div>
             <div>
               <p className="text-3xl font-black text-slate-900 tracking-tight">
-                {(metrics?.totalCandidatesAssessed ?? 0).toLocaleString()}
+                {loading ? "..." : totalMembersCount}
               </p>
-              <p className="text-xs text-slate-500 font-semibold flex items-center gap-1 mt-1">
-                <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
-                Across all company pipelines
-              </p>
-            </div>
-          </div>
-
-          {/* Card 3: Completion Rate */}
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs space-y-3 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                Avg. Completion Rate
-              </span>
-              <div className="h-9 w-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
-                <CheckCircle2 className="h-4 w-4" />
-              </div>
-            </div>
-            <div>
-              <p className="text-3xl font-black text-slate-900 tracking-tight">
-                {metrics?.averageCompletionRate ?? 0}%
-              </p>
-              <p className="text-xs text-purple-600 font-semibold flex items-center gap-1 mt-1">
-                <Award className="h-3.5 w-3.5" />
-                Assessment engagement
+              <p className="text-xs text-indigo-600 font-semibold flex items-center gap-1 mt-1">
+                <Briefcase className="h-3.5 w-3.5" />
+                {totalJobsCount} active job roles
               </p>
             </div>
           </div>
 
-          {/* Card 4: Active Cognitive Games */}
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs space-y-3 hover:shadow-md transition-shadow">
+          {/* Card 4: Pending Owner Activations */}
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-3 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                Active Games Engine
+                Pending Activations
               </span>
               <div className="h-9 w-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
-                <Gamepad2 className="h-4 w-4" />
+                <Clock className="h-4 w-4" />
               </div>
             </div>
             <div>
-              <p className="text-3xl font-black text-slate-900 tracking-tight">
-                {games.length || metrics?.activeGamesCount || 0}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-3xl font-black text-slate-900 tracking-tight">
+                  {loading ? "..." : pendingActivationsCount}
+                </p>
+                {pendingActivationsCount > 0 && (
+                  <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-extrabold">
+                    AWAITING SETUP
+                  </Badge>
+                )}
+              </div>
               <p className="text-xs text-amber-700 font-semibold flex items-center gap-1 mt-1">
-                <Zap className="h-3.5 w-3.5" />
-                {games.length > 0 ? `${games.length} games available` : "Zero active games"}
+                Owner invitation tokens pending
               </p>
             </div>
           </div>
         </div>
 
-        {/* ── 2. Two-Column Dashboard Grids ── */}
+        {/* ── 2. Client Companies Directory & Recent Activity ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left 2 Cols: Client Companies Directory Preview */}
-          <div className="lg:col-span-2 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xs space-y-5">
+          {/* Left 2 Cols: Organizations Directory */}
+          <div className="lg:col-span-2 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
                 <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
                   <Building2 className="h-4 w-4 text-blue-600" />
-                  Top Client Companies & Tenant Status
+                  Client Organizations & Tenant Status
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Companies utilizing Minders World assessments for recruitment.
+                  Recent onboarding and active company directory.
                 </p>
               </div>
               <Link href="/admin/companies">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs font-semibold gap-1 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl shadow-2xs"
+                  className="text-xs font-semibold gap-1 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl"
                 >
-                  View All Companies
+                  View All Directory
                   <ArrowUpRight className="h-3.5 w-3.5" />
                 </Button>
               </Link>
             </div>
 
-            {companies.length > 0 ? (
+            {loading ? (
+              <div className="py-12 text-center flex flex-col items-center justify-center space-y-2">
+                <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
+                <p className="text-xs text-slate-500">Fetching organizations...</p>
+              </div>
+            ) : companies.length > 0 ? (
               <div className="divide-y divide-slate-100">
-                {companies.slice(0, 4).map((company) => (
+                {companies.slice(0, 5).map((company) => (
                   <div
                     key={company.id}
                     className="py-3.5 flex items-center justify-between gap-4 first:pt-0 last:pb-0"
                   >
                     <div className="flex items-center gap-3.5 min-w-0">
                       <div className="h-10 w-10 rounded-xl bg-slate-900 text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-xs">
-                        {company.logo || company.name?.slice(0, 2).toUpperCase() || "CO"}
+                        {company.name?.slice(0, 2).toUpperCase() || "CO"}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-slate-900 truncate">
+                        <Link
+                          href={`/admin/companies/${company.id}`}
+                          className="text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors truncate block"
+                        >
                           {company.name}
-                        </p>
+                        </Link>
                         <p className="text-xs text-slate-500 truncate mt-0.5">
-                          {company.hrContact || company.email} • {company.domain || "tenant"}
+                          {company.ownerEmail || company.email || company.domain || "tenant"}
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3 shrink-0">
-                      <Badge
-                        variant="outline"
-                        className="text-[11px] font-semibold border-slate-200 text-slate-600 bg-slate-50"
-                      >
-                        {company.plan || "Standard"}
-                      </Badge>
-                      <span className="text-xs font-semibold text-slate-700 hidden sm:inline">
-                        {company.candidatesAssessed || 0} candidates
-                      </span>
                       <Badge
                         className={
                           company.status === "ACTIVE"
@@ -203,6 +277,15 @@ export default function AdminOverviewPage() {
                       >
                         {company.status || "ACTIVE"}
                       </Badge>
+                      <Link href={`/admin/companies/${company.id}`}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-slate-400 hover:text-blue-600"
+                        >
+                          <ArrowUpRight className="h-4 w-4" />
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 ))}
@@ -210,59 +293,66 @@ export default function AdminOverviewPage() {
             ) : (
               <div className="py-12 text-center space-y-2">
                 <Building2 className="h-8 w-8 mx-auto text-slate-300" />
-                <p className="text-xs font-bold text-slate-700">No client companies registered yet</p>
-                <p className="text-[11px] text-slate-400">Companies will appear here once registered or synced from backend.</p>
+                <p className="text-xs font-bold text-slate-700">No organizations onboarded yet</p>
+                <p className="text-[11px] text-slate-400">
+                  Click &apos;Register New Company&apos; to onboard your first client organization.
+                </p>
               </div>
             )}
           </div>
 
-          {/* Right 1 Col: Cognitive Skill Engine Distribution */}
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xs space-y-5">
+          {/* Right 1 Col: Platform Security & Controls Quick Card */}
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs space-y-5">
             <div className="pb-3 border-b border-slate-100">
               <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Activity className="h-4 w-4 text-purple-600" />
-                Top Measured Skills
+                <ShieldCheck className="h-4 w-4 text-blue-600" />
+                Super Admin Quick Controls
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Competencies measured across candidate assessments.
+                Essential management shortcuts.
               </p>
             </div>
 
-            {Array.isArray(metrics?.topSkillsMeasured) && metrics.topSkillsMeasured.length > 0 ? (
-              <div className="space-y-4">
-                {metrics.topSkillsMeasured.map((skill) => (
-                  <div key={skill.name} className="space-y-1.5">
-                    <div className="flex justify-between text-xs font-semibold text-slate-800">
-                      <span>{skill.name}</span>
-                      <span className="font-bold">{skill.percent || skill.count || 0}%</span>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-indigo-600"
-                        style={{ width: `${skill.percent || 50}%` }}
-                      />
-                    </div>
+            <div className="space-y-3">
+              <Link href="/admin/companies?new=true" className="block">
+                <div className="p-3.5 rounded-xl border border-blue-100 bg-blue-50/50 hover:bg-blue-50 transition-colors flex items-center justify-between group">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-bold text-blue-900">Onboard New Organization</p>
+                    <p className="text-[11px] text-blue-700/70">Create tenant & trigger owner activation</p>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-12 text-center space-y-2">
-                <Activity className="h-8 w-8 mx-auto text-slate-300" />
-                <p className="text-xs font-bold text-slate-700">No skill telemetry recorded yet</p>
-                <p className="text-[11px] text-slate-400">Skill distribution will calculate as candidates complete games.</p>
-              </div>
-            )}
-
-            <div className="pt-2 border-t border-slate-100 text-center">
-              <Link href="/admin/games">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full text-xs font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl"
-                >
-                  Manage Game Skill Mappings ➔
-                </Button>
+                  <Plus className="h-4 w-4 text-blue-600 group-hover:scale-110 transition-transform" />
+                </div>
               </Link>
+
+              <Link href="/admin/companies" className="block">
+                <div className="p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 transition-colors flex items-center justify-between group">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-bold text-slate-900">Manage Tenant Directory</p>
+                    <p className="text-[11px] text-slate-500">Suspend, activate, or audit client companies</p>
+                  </div>
+                  <ArrowUpRight className="h-4 w-4 text-slate-400 group-hover:text-slate-700 transition-colors" />
+                </div>
+              </Link>
+
+              <Link href="/admin/users" className="block">
+                <div className="p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 transition-colors flex items-center justify-between group">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-bold text-slate-900">Platform User Directory</p>
+                    <p className="text-[11px] text-slate-500">View HR recruiters & platform administrators</p>
+                  </div>
+                  <Users className="h-4 w-4 text-slate-400 group-hover:text-slate-700 transition-colors" />
+                </div>
+              </Link>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-between text-xs text-slate-500">
+                <span>System Status</span>
+                <span className="flex items-center gap-1.5 font-bold text-emerald-600">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Operational
+                </span>
+              </div>
             </div>
           </div>
         </div>

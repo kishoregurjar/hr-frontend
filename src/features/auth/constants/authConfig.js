@@ -5,9 +5,9 @@ export const AUTH_STORAGE_KEYS = {
 
 export const DEFAULT_HR_USER = {
   id: "hr-user-001",
-  name: "Rohit Solanki",
-  email: "rohit@hirequest.com",
-  company: "HireQuest Tech",
+  name: "HR Recruiter",
+  email: "recruiter@company.com",
+  company: "HireQuest HR",
   role: "Recruiter",
   avatar: null,
 };

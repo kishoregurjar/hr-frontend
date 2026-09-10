@@ -43,8 +43,11 @@ import {
 
 export default function ResultsAndRankingPage() {
   const { user } = useAuth();
-  const rawName = user?.name || user?.fullName || "Rohit Panchal";
-  const userName = rawName.replace(/\s+user$/i, "").trim() || "Rohit Panchal";
+  const rawName =
+    (typeof user?.name === "string" ? user.name : "") ||
+    (typeof user?.fullName === "string" ? user.fullName : "") ||
+    "HR Manager";
+  const userName = String(rawName).replace(/\s+user$/i, "").trim() || "HR Manager";
 
   const { data: apiAssessments = [] } = useAssessmentsQuery();
 
@@ -386,10 +389,13 @@ export default function ResultsAndRankingPage() {
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-3">
                         <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-slate-900 to-indigo-950 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
-                          {(item.candidateName || "C")
+                          {String(item.candidateName || "C")
                             .split(" ")
+                            .filter(Boolean)
                             .map((n) => n[0])
-                            .join("")}
+                            .slice(0, 2)
+                            .join("")
+                            .toUpperCase()}
                         </div>
                         <div>
                           <p className="font-extrabold text-slate-900 text-sm leading-tight">

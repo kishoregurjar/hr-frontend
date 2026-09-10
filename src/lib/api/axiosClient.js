@@ -94,18 +94,25 @@ const processQueue = (error, token = null) => {
 axiosClient.interceptors.response.use(
   (response) => response.data,
   async (error) => {
-    const originalRequest = error.config;
-    const status = error.response?.status;
-    const responseData = error.response?.data;
-    const message =
+    const originalRequest = error?.config;
+    const status = error?.response?.status;
+    const responseData = error?.response?.data;
+
+    let message =
       typeof responseData?.message === "string"
         ? responseData.message
         : typeof responseData?.error === "string"
         ? responseData.error
         : responseData?.error?.message ||
           responseData?.message?.message ||
-          error.message ||
+          (status === 404
+            ? "No account found with this email. Please check your credentials or register first."
+            : error?.message) ||
           "An error occurred while connecting to the server.";
+
+    if (status === 404 && originalRequest?.url?.includes("/auth/login")) {
+      message = "No account found with this email. Please register first or check your email.";
+    }
 
     // Check if error is token expiration (401) and not on auth endpoints
     const isAuthEndpoint =

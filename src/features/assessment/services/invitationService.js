@@ -44,7 +44,7 @@ export const invitationService = {
       gameCount: games.length,
     };
 
-    const candidateName = candidate?.name || assignment?.candidateName || (assignment?.email ? assignment.email.split("@")[0] : "Rohit Panchal");
+    const candidateName = candidate?.name || assignment?.candidateName || (assignment?.email ? assignment.email.split("@")[0] : "Candidate");
 
     return {
       assignment,

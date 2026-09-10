@@ -110,11 +110,14 @@ export default function AdminUsersPage() {
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-3">
                           <div className="h-8 w-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                            {user.name
+                            {typeof user.name === "string" && user.name.trim()
                               ? user.name
                                   .split(" ")
+                                  .filter(Boolean)
                                   .map((n) => n[0])
+                                  .slice(0, 2)
                                   .join("")
+                                  .toUpperCase()
                               : "U"}
                           </div>
                           <div>

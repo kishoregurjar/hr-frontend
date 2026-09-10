@@ -1,23 +1,34 @@
 "use client";
 
 import { Users, FileText, Send, CheckCircle2, TrendingUp, Inbox } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useDashboardOverview } from "@/features/dashboard/hooks";
+import { useCandidatesQuery, useAssignmentsQuery } from "@/features/candidate/hooks";
+import { useAssessmentsQuery } from "@/features/assessment/hooks";
+import { getAttempts } from "@/lib/api/attempts";
 
 const DashboardMetricCards = () => {
   const { data: overview, isLoading } = useDashboardOverview();
+  const { data: candidates = [] } = useCandidatesQuery();
+  const { data: assessments = [] } = useAssessmentsQuery();
+  const { data: assignments = [] } = useAssignmentsQuery();
+  const { data: attempts = [] } = useQuery({
+    queryKey: ["attempts", "metric"],
+    queryFn: () => getAttempts(),
+  });
 
-  // Extract counts from backend overview object
-  const totalCandidates = overview?.candidates?.total ?? 0;
-  const parsedFromEmail = overview?.candidates?.parsedFromEmail ?? 0;
+  // Dynamic live counts with overview fallback
+  const totalCandidates = overview?.candidates?.total ?? (Array.isArray(candidates) ? candidates.length : 0);
+  const parsedFromEmail = overview?.candidates?.parsedFromEmail ?? (Array.isArray(candidates) ? candidates.filter((c) => c.source === "Email Ingestion" || Boolean(c.emailSubject)).length : 0);
 
-  const activeAssessments = overview?.assessments?.active ?? overview?.assessments?.total ?? 0;
-  const totalAssessments = overview?.assessments?.total ?? 0;
+  const activeAssessments = overview?.assessments?.active ?? (Array.isArray(assessments) ? assessments.filter((a) => String(a.status).toUpperCase() === "ACTIVE" || a.status === "PUBLISHED").length || assessments.length : 0);
+  const totalAssessments = overview?.assessments?.total ?? (Array.isArray(assessments) ? assessments.length : 0);
 
-  const invitationsTotal = overview?.invitations?.total ?? 0;
-  const invitationsCompleted = overview?.invitations?.completed ?? 0;
+  const invitationsTotal = overview?.invitations?.total ?? (Array.isArray(assignments) ? assignments.length : 0);
+  const invitationsCompleted = overview?.invitations?.completed ?? (Array.isArray(assignments) ? assignments.filter((a) => String(a.status).toUpperCase() === "COMPLETED").length : 0);
 
-  const attemptsTotal = overview?.attempts?.total ?? 0;
-  const attemptsSubmitted = overview?.attempts?.submitted ?? 0;
+  const attemptsTotal = overview?.attempts?.total ?? (Array.isArray(attempts) ? attempts.length : 0);
+  const attemptsSubmitted = overview?.attempts?.submitted ?? (Array.isArray(attempts) ? attempts.filter((a) => String(a.status).toUpperCase() === "COMPLETED" || String(a.status).toUpperCase() === "SUBMITTED").length : attemptsTotal);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">

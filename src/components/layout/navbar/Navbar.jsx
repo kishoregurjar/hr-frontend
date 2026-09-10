@@ -7,6 +7,7 @@ import {
   LogOut,
   Menu,
   Shield,
+  ShieldCheck,
   User,
   Building2,
   Mail,
@@ -35,7 +36,7 @@ import { useAuth } from "@/features/auth/context";
 import { toast } from "sonner";
 import AccountSettingsModal from "@/components/common/AccountSettingsModal/AccountSettingsModal";
 
-const Navbar = ({ onMenuClick }) => {
+const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
@@ -74,20 +75,26 @@ const Navbar = ({ onMenuClick }) => {
     }
   };
 
-  const rawName = user?.name || user?.fullName || "Shivam Solanki";
-  const displayName = rawName.replace(/\s+user$/i, "").trim() || "Shivam Solanki";
-  const userEmail = user?.email || "shivam123@gmail.com";
+  const rawName =
+    (typeof user?.name === "string" && user.name.toLowerCase() !== "hr" ? user.name : "") ||
+    (typeof user?.fullName === "string" && user.fullName.toLowerCase() !== "hr" ? user.fullName : "") ||
+    "Rohit Panchal";
+  const displayName = String(rawName).replace(/\s+user$/i, "").trim() || "Rohit Panchal";
+  const userEmail = typeof user?.email === "string" ? user.email : "rohitpanchal958466@gmail.com";
   const companyLogo =
-    (typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null) || null;
+    (typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null) || user?.companyLogo || null;
   const companyName =
-    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
+    user?.companyName ||
+    user?.company?.name ||
     user?.company ||
-    "HireQuest HR";
-  const userRole = user?.role || "HR Recruiter";
+    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
+    "";
+  const userRole = user?.role || (user?.isOwner ? "Company Owner" : "HR Member");
 
   const getInitials = (name) => {
-    if (!name) return "HR";
-    const clean = name.replace(/\s+user$/i, "").trim();
+    const str = String(name || "RP").trim();
+    if (!str) return "RP";
+    const clean = str.replace(/\s+user$/i, "").trim();
     const parts = clean.split(" ").filter(Boolean);
     if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
     return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
@@ -101,31 +108,39 @@ const Navbar = ({ onMenuClick }) => {
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden h-9 w-9 text-slate-700 hover:bg-slate-100 rounded-xl"
             onClick={onMenuClick}
-            aria-label="Open Sidebar"
+            className="lg:hidden h-9 w-9 text-slate-600 hover:text-slate-900"
+            aria-label="Open Mobile Menu"
           >
             <Menu className="h-5 w-5" />
           </Button>
 
-          <div className="hidden sm:block">
-            <h1 className="text-lg md:text-xl font-bold text-slate-900 tracking-tight">
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-base font-extrabold text-slate-900 tracking-tight">
               {pageTitle}
             </h1>
+
+            {/* Impersonation Banner for Super Admin */}
+            {impersonatedCompany && (
+              <Badge className="bg-amber-100 text-amber-800 border-amber-300 font-extrabold text-[10px] gap-1 shadow-2xs">
+                <ShieldCheck className="h-3 w-3 text-amber-600" />
+                Impersonating: {impersonatedCompany.name}
+              </Badge>
+            )}
           </div>
         </div>
 
-        {/* Right Section: Notifications + HR Profile Dropdown */}
-        <div className="flex items-center gap-3">
-          {/* Notifications Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl"
-            aria-label="Notifications"
+        {/* Right Section: Notifications + Quick Actions + User Menu */}
+        <div className="flex items-center gap-2.5 sm:gap-3.5">
+          {/* Notifications Trigger */}
+          <button
+            type="button"
+            className="relative p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+            title="Notifications"
           >
-            <Bell className="h-4.5 w-4.5" />
-          </Button>
+            <Bell className="h-4 w-4" />
+            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-blue-600 ring-2 ring-white" />
+          </button>
 
           {/* ── Interactive HR Profile Menu ── */}
           <div className="relative" ref={menuRef}>
@@ -142,9 +157,14 @@ const Navbar = ({ onMenuClick }) => {
               </Avatar>
 
               <div className="hidden md:block text-left mr-1">
-                <p className="text-xs font-bold text-slate-900 leading-tight">
-                  {displayName}
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs font-bold text-slate-900 leading-tight">
+                    {displayName}
+                  </p>
+                  <span className="px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-extrabold uppercase">
+                    {user?.isOwner || userRole === "Company Owner" || userRole === "OWNER" ? "Owner" : userRole}
+                  </span>
+                </div>
                 <div className="flex items-center gap-1 mt-0.5">
                   {companyLogo && (
                     <img
@@ -153,7 +173,7 @@ const Navbar = ({ onMenuClick }) => {
                       className="h-3.5 w-3.5 rounded object-contain bg-white border border-slate-200"
                     />
                   )}
-                  <p className="text-[11px] text-muted-foreground font-medium truncate max-w-[120px]">
+                  <p className="text-[11px] text-blue-600 font-bold truncate max-w-[130px]">
                     {companyName}
                   </p>
                 </div>
@@ -167,13 +187,20 @@ const Navbar = ({ onMenuClick }) => {
               <div className="absolute right-0 mt-2 w-72 rounded-2xl border bg-card p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95 space-y-4">
                 {/* User Header */}
                 <div className="flex items-center gap-3 pb-3 border-b">
-                  <div className="h-11 w-11 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-sm flex items-center justify-center shadow-md shrink-0">
-                    {getInitials(displayName)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-extrabold text-slate-900 truncate">
-                      {displayName}
-                    </p>
+                  <Avatar className="h-10 w-10 rounded-xl shadow-xs">
+                    <AvatarFallback className="bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-sm">
+                      {getInitials(displayName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="overflow-hidden">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-extrabold text-slate-900 truncate">
+                        {displayName}
+                      </p>
+                      <span className="px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-extrabold uppercase shrink-0">
+                        Owner
+                      </span>
+                    </div>
                     <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5" title={userEmail}>
                       <Mail className="h-3 w-3 text-slate-400 shrink-0" />
                       <span className="truncate">{userEmail}</span>
@@ -204,7 +231,7 @@ const Navbar = ({ onMenuClick }) => {
                       <Shield className="h-3.5 w-3.5 text-purple-600" />
                       Role:
                     </span>
-                    <Badge variant="outline" className="text-[10px] font-bold py-0 h-5 bg-purple-50 text-purple-700 border-purple-200">
+                    <Badge variant="outline" className="text-[10px] font-extrabold py-0 h-5 bg-amber-50 text-amber-700 border-amber-200">
                       {userRole}
                     </Badge>
                   </div>

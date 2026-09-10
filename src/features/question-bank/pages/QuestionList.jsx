@@ -32,9 +32,17 @@ import { useQuestions } from "../hooks";
 
 const QuestionList = () => {
   const { user } = useAuth();
-  const rawName = user?.name || user?.fullName || "Sarah Jenkins";
-  const userName = rawName.replace(/\s+user$/i, "").trim() || "Sarah Jenkins";
-  const companyName = user?.company || "HireQuest HR";
+  const rawName =
+    (typeof user?.name === "string" ? user.name : "") ||
+    (typeof user?.fullName === "string" ? user.fullName : "") ||
+    "HR Manager";
+  const userName = String(rawName).replace(/\s+user$/i, "").trim() || "HR Manager";
+  const companyName =
+    user?.companyName ||
+    user?.company?.name ||
+    user?.company ||
+    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
+    "";
 
   const [viewMode, setViewMode] = useState("table");
 

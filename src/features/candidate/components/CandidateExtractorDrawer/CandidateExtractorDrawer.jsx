@@ -66,7 +66,7 @@ const CandidateExtractorDrawer = ({
   };
 
   const getInitials = (name = "") => {
-    return name
+    return String(name || "CD")
       .split(" ")
       .filter(Boolean)
       .map((n) => n[0])
@@ -196,7 +196,7 @@ const CandidateExtractorDrawer = ({
                 </div>
                 <div>
                   <p className="text-xs font-bold text-slate-900">
-                    {candidate.name.replace(/\s+/g, "_")}_Resume.pdf
+                    {String(candidate.name || "Candidate").replace(/\s+/g, "_")}_Resume.pdf
                   </p>
                   <p className="text-[11px] text-slate-500 font-medium">
                     Verified Application Document
