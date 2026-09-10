@@ -97,24 +97,54 @@ function ActivateOwnerContent() {
 
     setIsSubmitting(true);
     try {
-      await activateOwnerApi({
+      const response = await activateOwnerApi({
         token,
         password,
       });
 
-      // Clear any remaining cached session keys so the login page doesn't auto-redirect to old session
-      clearAllAuthStorage();
-      try {
-        await logout();
-      } catch {}
+      const payload = response?.data || response;
+      const accessToken =
+        payload?.accessToken ||
+        payload?.token ||
+        payload?.data?.accessToken ||
+        payload?.data?.token;
+
+      const userData = payload?.user || payload?.data?.user;
+      const companies = payload?.companies || payload?.data?.companies || [];
+      const primaryCompany = (Array.isArray(companies) && companies[0]) || payload?.company;
+
+      if (typeof window !== "undefined" && accessToken) {
+        localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, accessToken);
+        localStorage.setItem("token", accessToken);
+        localStorage.setItem("accessToken", accessToken);
+        localStorage.setItem("jwt", accessToken);
+        if (userData) {
+          localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(userData));
+          if (userData.email) localStorage.setItem("user_email", userData.email);
+        }
+        if (primaryCompany?.id) {
+          localStorage.setItem("companyId", primaryCompany.id);
+          localStorage.setItem("active_company_id", primaryCompany.id);
+        }
+        if (primaryCompany?.name) {
+          localStorage.setItem("companyName", primaryCompany.name);
+        }
+        if (primaryCompany?.logoUrl || primaryCompany?.logo) {
+          localStorage.setItem("companyLogo", primaryCompany.logoUrl || primaryCompany.logo);
+        }
+      }
 
       setIsSuccess(true);
-      toast.success("Account activated successfully! Please sign in with your email & password.");
-      
-      // Redirect to login page after 1.5s
+      toast.success("Account activated successfully! Logging you in...");
+
+      // Auto-login directly to dashboard
       setTimeout(() => {
-        router.push("/login?activated=true");
-      }, 1500);
+        if (accessToken) {
+          window.location.href = "/dashboard";
+        } else {
+          router.push("/login?activated=true");
+        }
+      }, 1200);
     } catch (err) {
       const errMsg =
         err?.response?.data?.message ||

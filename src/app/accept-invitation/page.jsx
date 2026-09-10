@@ -74,9 +74,8 @@ function AcceptInvitationContent() {
         const payload = data?.data || data;
         setInvitationData(payload);
         setTokenValid(true);
-        if (payload?.isExistingUser) {
-          setIsExistingUserMode(true);
-        }
+        const isExisting = payload?.isExistingUser === true || payload?.isNewUser === false;
+        setIsExistingUserMode(isExisting);
       } catch (err) {
         const msg =
           err?.response?.data?.message ||
