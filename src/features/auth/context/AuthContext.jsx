@@ -98,54 +98,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await loginApi(credentials);
       setToken(res.token);
-      let loggedUser = res.user;
-      if (res.token && loggedUser && loggedUser.role !== "SUPER_ADMIN") {
-        try {
-          let compName = loggedUser.companyName || loggedUser.company;
-          let compId = loggedUser.companyId;
-          let compLogo = loggedUser.companyLogo;
-
-          try {
-            const companyData = await getCompanyProfile();
-            if (companyData && (companyData.name || companyData.id)) {
-              compName = companyData.name || compName;
-              compId = companyData.id || compId;
-              compLogo = companyData.logoUrl || compLogo;
-            }
-          } catch {}
-
-          if (!compName) {
-            try {
-              const userCompanies = await getUserCompaniesApi();
-              if (Array.isArray(userCompanies) && userCompanies.length > 0) {
-                compName = userCompanies[0].name || compName;
-                compId = userCompanies[0].id || compId;
-                compLogo = userCompanies[0].logoUrl || compLogo;
-              }
-            } catch {}
-          }
-
-          if (compName || compId) {
-            loggedUser = {
-              ...loggedUser,
-              company: compName || loggedUser.company,
-              companyName: compName || loggedUser.companyName,
-              companyId: compId || loggedUser.companyId,
-              companyLogo: compLogo || loggedUser.companyLogo,
-            };
-            if (typeof window !== "undefined") {
-              if (compName) localStorage.setItem("companyName", compName);
-              if (compLogo) localStorage.setItem("companyLogo", compLogo);
-              if (compId) {
-                localStorage.setItem("companyId", compId);
-                localStorage.setItem("active_company_id", compId);
-              }
-              localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(loggedUser));
-            }
-          }
-        } catch {}
-      }
-      setUser(loggedUser);
+      setUser(res.user);
       return res;
     } finally {
       setIsLoading(false);
