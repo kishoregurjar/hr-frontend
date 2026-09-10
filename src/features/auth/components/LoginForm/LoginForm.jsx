@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -28,15 +28,23 @@ const LoginForm = () => {
   const searchParams = useSearchParams();
   const isRegisteredSuccess = searchParams.get("registered") === "true";
   const isActivatedSuccess = searchParams.get("activated") === "true";
+  const isExpiredSession = searchParams.get("expired") === "true";
+  const initialEmail = searchParams.get("email") || "";
   const { login } = useAuth();
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [errorType, setErrorType] = useState(null); // 'INVALID_CREDENTIALS' | 'ACCOUNT_SUSPENDED' | 'COMPANY_SUSPENDED' | 'PENDING_ACTIVATION' | 'GENERAL'
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (initialEmail) {
+      setEmail(initialEmail);
+    }
+  }, [initialEmail]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,7 +75,11 @@ const LoginForm = () => {
         email.toLowerCase().includes("admin") ||
         loggedUser?.isSuperAdmin;
 
-      if (isSuperAdmin) {
+      const returnUrl = searchParams.get("returnUrl");
+
+      if (returnUrl && !isSuperAdmin) {
+        router.push(returnUrl);
+      } else if (isSuperAdmin) {
         router.push("/admin?welcome=true");
       } else if (role === "CANDIDATE") {
         router.push("/take-test");
@@ -105,6 +117,14 @@ const LoginForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 font-sans">
+      {/* Session Expired Banner */}
+      {isExpiredSession && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/90 p-3.5 text-xs text-amber-800 font-semibold flex items-center gap-2.5">
+          <Info className="h-4 w-4 text-amber-600 shrink-0" />
+          <span>Session expired. Please sign in again to continue.</span>
+        </div>
+      )}
+
       {/* Registration Success Banner */}
       {isRegisteredSuccess && (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50/90 p-3.5 text-xs text-emerald-800 font-semibold flex items-center gap-2.5">

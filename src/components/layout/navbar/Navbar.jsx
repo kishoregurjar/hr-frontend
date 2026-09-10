@@ -76,11 +76,11 @@ const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
   };
 
   const rawName =
-    (typeof user?.name === "string" && user.name.toLowerCase() !== "hr" ? user.name : "") ||
-    (typeof user?.fullName === "string" && user.fullName.toLowerCase() !== "hr" ? user.fullName : "") ||
-    "Rohit Panchal";
-  const displayName = String(rawName).replace(/\s+user$/i, "").trim() || "Rohit Panchal";
-  const userEmail = typeof user?.email === "string" ? user.email : "rohitpanchal958466@gmail.com";
+    (typeof user?.name === "string" ? user.name : "") ||
+    (typeof user?.fullName === "string" ? user.fullName : "") ||
+    (user?.email ? user.email.split("@")[0] : "");
+  const displayName = String(rawName).replace(/\s+user$/i, "").trim() || "User";
+  const userEmail = typeof user?.email === "string" ? user.email : (typeof window !== "undefined" ? localStorage.getItem("user_email") || "" : "");
   const companyLogo =
     (typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null) || user?.companyLogo || null;
   const companyName =
@@ -89,7 +89,15 @@ const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
     user?.company ||
     (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
     "";
-  const userRole = user?.role || (user?.isOwner ? "Company Owner" : "HR Member");
+  const isOwnerUser = Boolean(user?.isOwner || user?.companyRole === "OWNER" || user?.role === "Company Owner");
+  const isAdminUser = Boolean(user?.companyRole === "ADMIN" || user?.role === "HR Admin");
+  const userRole = user?.role || (isOwnerUser ? "Company Owner" : isAdminUser ? "HR Admin" : "Recruiter");
+  const badgeLabel = isOwnerUser ? "Owner" : isAdminUser ? "Admin" : "Recruiter";
+  const badgeColor = isOwnerUser
+    ? "bg-amber-50 text-amber-700 border-amber-200"
+    : isAdminUser
+    ? "bg-purple-50 text-purple-700 border-purple-200"
+    : "bg-blue-50 text-blue-700 border-blue-200";
 
   const getInitials = (name) => {
     const str = String(name || "RP").trim();
@@ -161,8 +169,8 @@ const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
                   <p className="text-xs font-bold text-slate-900 leading-tight">
                     {displayName}
                   </p>
-                  <span className="px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-extrabold uppercase">
-                    {user?.isOwner || userRole === "Company Owner" || userRole === "OWNER" ? "Owner" : userRole}
+                  <span className={`px-1.5 py-0.2 rounded border text-[9px] font-extrabold uppercase ${badgeColor}`}>
+                    {badgeLabel}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 mt-0.5">
@@ -228,10 +236,10 @@ const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
 
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
-                      <Shield className="h-3.5 w-3.5 text-purple-600" />
+                      <Shield className="h-3.5 w-3.5 text-blue-600" />
                       Role:
                     </span>
-                    <Badge variant="outline" className="text-[10px] font-extrabold py-0 h-5 bg-amber-50 text-amber-700 border-amber-200">
+                    <Badge variant="outline" className={`text-[10px] font-extrabold py-0 h-5 ${badgeColor}`}>
                       {userRole}
                     </Badge>
                   </div>
@@ -251,14 +259,16 @@ const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
                     Account Settings & Password
                   </button>
 
-                  <Link
-                    href="/company"
-                    onClick={() => setIsProfileMenuOpen(false)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-700 hover:text-blue-600 hover:bg-blue-50/80 rounded-xl transition-all cursor-pointer text-left"
-                  >
-                    <Building2 className="h-4 w-4 text-slate-400" />
-                    Company & Team Settings
-                  </Link>
+                  {(isOwnerUser || isAdminUser) && (
+                    <Link
+                      href="/company"
+                      onClick={() => setIsProfileMenuOpen(false)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-700 hover:text-blue-600 hover:bg-blue-50/80 rounded-xl transition-all cursor-pointer text-left"
+                    >
+                      <Building2 className="h-4 w-4 text-slate-400" />
+                      Company & Team Settings
+                    </Link>
+                  )}
 
                   <button
                     type="button"

@@ -22,7 +22,10 @@ import {
   Loader2,
   XCircle,
   RefreshCw,
+  ShieldAlert,
+  Lock,
 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -88,6 +91,7 @@ export default function CompanySettingsPage() {
   // Members & Invites State
   const [members, setMembers] = useState([]);
   const [invitations, setInvitations] = useState([]);
+  const [invitationStatusFilter, setInvitationStatusFilter] = useState("PENDING"); // 'PENDING' | 'ACCEPTED' | 'ALL'
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [loadingInvites, setLoadingInvites] = useState(false);
 
@@ -148,13 +152,16 @@ export default function CompanySettingsPage() {
       }
     } catch {
       const fallbackName =
-        (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
-        "Walking Dreamz";
-      setCompany({
-        name: fallbackName,
-        logoUrl: typeof window !== "undefined" ? localStorage.getItem("companyLogo") : "",
-      });
-      setFormData((prev) => ({ ...prev, name: fallbackName }));
+        (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) || "";
+      if (fallbackName) {
+        setCompany({
+          name: fallbackName,
+          logoUrl: typeof window !== "undefined" ? localStorage.getItem("companyLogo") || "" : "",
+        });
+        setFormData((prev) => ({ ...prev, name: fallbackName }));
+      } else {
+        setCompany(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -164,8 +171,13 @@ export default function CompanySettingsPage() {
     try {
       setLoadingMembers(true);
       const res = await getCompanyMembers({ page: 1, limit: 50 });
-      const list = res?.data?.members || res?.members || (Array.isArray(res?.data) ? res?.data : []);
-      setMembers(list);
+      const list = Array.isArray(res)
+        ? res
+        : res?.data?.data?.members ||
+          res?.data?.members ||
+          res?.members ||
+          (Array.isArray(res?.data) ? res?.data : []);
+      setMembers(list || []);
     } catch {
       setMembers([]);
     } finally {
@@ -173,12 +185,21 @@ export default function CompanySettingsPage() {
     }
   };
 
-  const fetchInvites = async () => {
+  const fetchInvites = async (status = invitationStatusFilter) => {
     try {
       setLoadingInvites(true);
-      const res = await getCompanyInvitations({ page: 1, limit: 50, status: "PENDING" });
-      const list = res?.data?.invitations || res?.invitations || (Array.isArray(res?.data) ? res?.data : []);
-      setInvitations(list);
+      const params = { page: 1, limit: 50 };
+      if (status && status !== "ALL") {
+        params.status = status;
+      }
+      const res = await getCompanyInvitations(params);
+      const list = Array.isArray(res)
+        ? res
+        : res?.data?.data?.invitations ||
+          res?.data?.invitations ||
+          res?.invitations ||
+          (Array.isArray(res?.data) ? res?.data : []);
+      setInvitations(list || []);
     } catch {
       setInvitations([]);
     } finally {
@@ -186,13 +207,20 @@ export default function CompanySettingsPage() {
     }
   };
 
+  const handleFilterChange = (status) => {
+    setInvitationStatusFilter(status);
+    fetchInvites(status);
+  };
+
   useEffect(() => {
     fetchCompanyData();
+    fetchMembers();
+    fetchInvites(invitationStatusFilter);
   }, []);
 
   useEffect(() => {
     if (activeTab === "members") fetchMembers();
-    if (activeTab === "invitations") fetchInvites();
+    if (activeTab === "invitations") fetchInvites(invitationStatusFilter);
   }, [activeTab]);
 
   const handleProfileSubmit = async (e) => {
@@ -272,7 +300,9 @@ export default function CompanySettingsPage() {
       setInviteEmail("");
       fetchInvites();
     } catch (err) {
-      toast.error(err.message || "Failed to send invitation.");
+      const msg = err?.response?.data?.message || err?.message || "Failed to send invitation.";
+      toast.error(msg);
+      fetchInvites();
     } finally {
       setSendingInvite(false);
     }
@@ -325,6 +355,38 @@ export default function CompanySettingsPage() {
       setTransferring(false);
     }
   };
+
+  const isOwnerOrAdmin = Boolean(
+    user?.isOwner ||
+    user?.companyRole === "OWNER" ||
+    user?.companyRole === "ADMIN" ||
+    user?.role === "Company Owner" ||
+    user?.role === "HR Admin"
+  );
+
+  // Access Guard: If logged in as Recruiter / Team Member, restrict settings access
+  if (user && !isOwnerOrAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center space-y-5 max-w-md mx-auto my-12 bg-white rounded-3xl border border-slate-200/90 shadow-xl shadow-slate-200/60 font-sans">
+        <div className="h-16 w-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-200 shadow-xs">
+          <ShieldAlert className="h-8 w-8 text-amber-600" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-black text-slate-900">Owner Access Required</h2>
+          <p className="text-xs text-slate-500 leading-relaxed max-w-sm">
+            Company Profile, Team Members, and Recruiter Invitations are managed exclusively by the Workspace Owner and Administrators.
+          </p>
+        </div>
+        <div className="w-full pt-2">
+          <Link href="/dashboard" className="block w-full">
+            <Button className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/20 cursor-pointer">
+              Return to Screening Dashboard
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
@@ -765,23 +827,68 @@ export default function CompanySettingsPage() {
                 </form>
               </div>
 
-              {/* Pending Invitations Table */}
+              {/* Recruiter Invitations Table with Status Filter */}
               <div className="rounded-2xl border bg-card p-6 shadow-sm space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-base text-slate-900">Pending Invitations</h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={fetchInvites}
-                    className="text-xs font-semibold"
-                  >
-                    <RefreshCw className="h-3.5 w-3.5 mr-1" /> Refresh
-                  </Button>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b pb-4">
+                  <div>
+                    <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-blue-600" />
+                      Recruiter Invitations ({invitations.length})
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Track and manage recruiter invitations across your company workspace.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 bg-slate-100/90 p-1 rounded-xl border border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => handleFilterChange("PENDING")}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                        invitationStatusFilter === "PENDING"
+                          ? "bg-white text-blue-600 shadow-xs"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      Pending
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleFilterChange("ACCEPTED")}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                        invitationStatusFilter === "ACCEPTED"
+                          ? "bg-white text-blue-600 shadow-xs"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      Accepted
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleFilterChange("ALL")}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                        invitationStatusFilter === "ALL"
+                          ? "bg-white text-blue-600 shadow-xs"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      All
+                    </button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => fetchInvites(invitationStatusFilter)}
+                      className="h-7 px-2 text-slate-500 hover:text-slate-900 ml-1"
+                      title="Refresh invitations list"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
 
                 {loadingInvites ? (
                   <div className="py-8 text-center text-muted-foreground animate-pulse text-sm">
-                    Loading pending invites...
+                    Loading {invitationStatusFilter.toLowerCase()} invitations...
                   </div>
                 ) : invitations.length > 0 ? (
                   <div className="overflow-x-auto">
@@ -796,40 +903,72 @@ export default function CompanySettingsPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y">
-                        {invitations.map((inv) => (
-                          <tr key={inv.id} className="hover:bg-slate-50/50">
-                            <td className="py-3 px-4 font-bold text-slate-900">{inv.email}</td>
-                            <td className="py-3 px-4">
-                              <Badge variant="outline" className="font-bold text-xs">
-                                {inv.role}
-                              </Badge>
-                            </td>
-                            <td className="py-3 px-4">
-                              <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs font-semibold">
-                                {inv.status || "PENDING"}
-                              </Badge>
-                            </td>
-                            <td className="py-3 px-4 text-xs text-muted-foreground">
-                              {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString() : "—"}
-                            </td>
-                            <td className="py-3 px-4 text-right">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleRevokeInvite(inv.id)}
-                                className="text-red-600 hover:bg-red-50 text-xs font-bold"
-                              >
-                                Revoke
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
+                        {invitations.map((inv) => {
+                          const statusUpper = String(inv.status || "PENDING").toUpperCase();
+                          const isPending = statusUpper === "PENDING";
+                          const isAccepted = statusUpper === "ACCEPTED";
+                          const isExpired = statusUpper === "EXPIRED";
+                          const isRevoked = statusUpper === "REVOKED";
+
+                          return (
+                            <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="py-3.5 px-4 font-bold text-slate-900">{inv.email}</td>
+                              <td className="py-3.5 px-4">
+                                <Badge variant="outline" className="font-bold text-xs">
+                                  {inv.role}
+                                </Badge>
+                              </td>
+                              <td className="py-3.5 px-4">
+                                {isAccepted ? (
+                                  <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-xs font-semibold gap-1">
+                                    <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                                    ACCEPTED
+                                  </Badge>
+                                ) : isExpired ? (
+                                  <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-xs font-semibold">
+                                    EXPIRED
+                                  </Badge>
+                                ) : isRevoked ? (
+                                  <Badge className="bg-rose-100 text-rose-700 border-rose-200 text-xs font-semibold">
+                                    REVOKED
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs font-semibold gap-1">
+                                    <Clock className="h-3 w-3 text-amber-600" />
+                                    PENDING
+                                  </Badge>
+                                )}
+                              </td>
+                              <td className="py-3.5 px-4 text-xs text-muted-foreground">
+                                {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString() : "—"}
+                              </td>
+                              <td className="py-3.5 px-4 text-right">
+                                {isPending ? (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleRevokeInvite(inv.id)}
+                                    className="text-red-600 hover:bg-red-50 text-xs font-bold h-8 px-2.5"
+                                  >
+                                    Revoke
+                                  </Button>
+                                ) : isAccepted ? (
+                                  <span className="text-xs text-emerald-700 font-bold inline-flex items-center gap-1">
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> Joined
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground font-medium">—</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
                 ) : (
                   <div className="py-8 text-center text-muted-foreground text-sm">
-                    No pending invitations at this time.
+                    No {invitationStatusFilter === "ALL" ? "" : invitationStatusFilter.toLowerCase()} invitations found.
                   </div>
                 )}
               </div>

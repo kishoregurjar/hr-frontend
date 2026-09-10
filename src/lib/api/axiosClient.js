@@ -17,6 +17,7 @@ const baseURL =
 const axiosClient = axios.create({
   baseURL,
   timeout: 60000, // 60s timeout for heavy mailbox syncs & AI resume parsing
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
     "ngrok-skip-browser-warning": "true",
@@ -30,10 +31,9 @@ axiosClient.interceptors.request.use(
     config.headers["ngrok-skip-browser-warning"] = "true";
     if (typeof window !== "undefined") {
       const isCandidateEndpoint =
-        config.url?.includes("/attempts") ||
-        config.url?.includes("/invitations") ||
-        config.url?.includes("/verify") ||
-        config.url?.includes("/assessment-attempts");
+        config.url?.includes("/attempts/candidate") ||
+        config.url?.includes("/attempts/start-by-token") ||
+        config.url?.includes("/attempts/save-answer");
 
       const candidateToken =
         sessionStorage.getItem("candidateSessionToken") ||
@@ -55,7 +55,7 @@ axiosClient.interceptors.request.use(
         config.headers.Authorization = `Bearer ${tokenToUse}`;
       }
 
-      // ── X-Company-Id Header for Multi-Tenant APIs ──
+      // ── X-Company-Id & x-company-id Header for Multi-Tenant APIs ──
       const companyId =
         localStorage.getItem("companyId") ||
         localStorage.getItem("active_company_id") ||
@@ -64,10 +64,10 @@ axiosClient.interceptors.request.use(
 
       if (
         companyId &&
-        !config.headers["X-Company-Id"] &&
         !config.url?.includes("/companies/invitations/accept")
       ) {
         config.headers["X-Company-Id"] = companyId;
+        config.headers["x-company-id"] = companyId;
       }
     }
     return config;
@@ -114,16 +114,14 @@ axiosClient.interceptors.response.use(
       message = "No account found with this email. Please register first or check your email.";
     }
 
-    // Check if error is token expiration (401) and not on auth endpoints
+    // Only skip refresh on purely public auth endpoints
     const isAuthEndpoint =
       originalRequest?.url?.includes("/auth/login") ||
       originalRequest?.url?.includes("/auth/register") ||
       originalRequest?.url?.includes("/auth/refresh-token") ||
-      originalRequest?.url?.includes("/verify") ||
-      originalRequest?.url?.includes("/attempts/candidate") ||
-      originalRequest?.url?.includes("/attempts/start-by-token") ||
-      originalRequest?.url?.includes("/attempts/save-answer") ||
-      originalRequest?.url?.includes("/invitations");
+      originalRequest?.url?.includes("/auth/forgot-password") ||
+      originalRequest?.url?.includes("/auth/reset-password") ||
+      originalRequest?.url?.includes("/auth/owner/activate");
 
     const isTokenExpired = status === 401 && originalRequest && !originalRequest._retry && !isAuthEndpoint;
 
@@ -144,14 +142,10 @@ axiosClient.interceptors.response.use(
 
       const storedRefreshToken =
         typeof window !== "undefined"
-          ? localStorage.getItem("hirequest_refresh_token") || localStorage.getItem("refreshToken")
+          ? localStorage.getItem("hirequest_refresh_token") ||
+            localStorage.getItem("refreshToken") ||
+            localStorage.getItem("hiremind_refresh_token")
           : null;
-
-      if (!storedRefreshToken) {
-        isRefreshing = false;
-        processQueue(new Error("No refresh token available"), null);
-        return Promise.reject(new Error("Session expired. Please log in again."));
-      }
 
       try {
         const refreshResponse = await fetch(`${baseURL}/auth/refresh-token`, {
@@ -160,6 +154,7 @@ axiosClient.interceptors.response.use(
             "Content-Type": "application/json",
             "ngrok-skip-browser-warning": "true",
           },
+          credentials: "include",
           body: JSON.stringify({ refreshToken: storedRefreshToken }),
         });
 
@@ -174,12 +169,19 @@ axiosClient.interceptors.response.use(
           refreshData?.accessToken ||
           refreshData?.token;
 
+        const newRefreshToken =
+          refreshData?.data?.refreshToken ||
+          refreshData?.refreshToken;
+
         if (newToken) {
           if (typeof window !== "undefined") {
             localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, newToken);
             localStorage.setItem("token", newToken);
             localStorage.setItem("accessToken", newToken);
             localStorage.setItem("jwt", newToken);
+            if (newRefreshToken) {
+              localStorage.setItem("hirequest_refresh_token", newRefreshToken);
+            }
           }
           axiosClient.defaults.headers.common.Authorization = `Bearer ${newToken}`;
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
@@ -195,6 +197,7 @@ axiosClient.interceptors.response.use(
           localStorage.removeItem("token");
           localStorage.removeItem("accessToken");
           localStorage.removeItem("hirequest_refresh_token");
+          window.location.href = "/login?expired=true";
         }
         return Promise.reject(new Error("Session expired. Please log in again."));
       } finally {

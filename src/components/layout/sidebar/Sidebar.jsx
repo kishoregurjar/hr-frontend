@@ -71,6 +71,7 @@ const NAV_ITEMS = [
     title: "Company & Team",
     href: "/company",
     icon: Building2,
+    ownerOnly: true,
   },
 ];
 
@@ -80,20 +81,35 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const isOwnerOrAdmin = Boolean(
+    user?.isOwner ||
+    user?.companyRole === "OWNER" ||
+    user?.companyRole === "ADMIN" ||
+    user?.role === "Company Owner" ||
+    user?.role === "HR Admin"
+  );
+
+  const visibleNavItems = NAV_ITEMS.filter((item) => {
+    if (item.ownerOnly && !isOwnerOrAdmin) {
+      return false;
+    }
+    return true;
+  });
+
   const resolveDisplayName = (u) => {
-    if (!u) return "Rohit Panchal";
-    if (typeof u === "string" && u.toLowerCase() !== "hr") return u;
-    if (typeof u.name === "string" && u.name.trim() && u.name.toLowerCase() !== "hr") return u.name.trim();
-    if (typeof u.fullName === "string" && u.fullName.trim() && u.fullName.toLowerCase() !== "hr") return u.fullName.trim();
+    if (!u) return "User";
+    if (typeof u === "string") return u;
+    if (typeof u.name === "string" && u.name.trim()) return u.name.trim();
+    if (typeof u.fullName === "string" && u.fullName.trim()) return u.fullName.trim();
     if (typeof u.firstName === "string" || typeof u.lastName === "string") {
       const full = `${u.firstName || ""} ${u.lastName || ""}`.trim();
-      if (full && full.toLowerCase() !== "hr") return full;
+      if (full) return full;
     }
     if (typeof u.email === "string" && u.email.trim()) {
-      if (u.email.toLowerCase().includes("rohit")) return "Rohit Panchal";
       return u.email.split("@")[0];
     }
-    return "Rohit Panchal";
+    return "User";
   };
 
   const getInitials = (name) => {
@@ -111,11 +127,10 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
     user?.companyLogo ||
     null;
   const companyName =
-    impersonatedCompany?.name ||
+    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
     user?.companyName ||
     user?.company?.name ||
     user?.company ||
-    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
     "";
   const activeCompanyName = companyName;
   const activePlan = impersonatedCompany?.plan || "Enterprise";
@@ -175,7 +190,7 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
 
         {/* ── 2. Navigation Links ── */}
         <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
-          {NAV_ITEMS.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item);
 

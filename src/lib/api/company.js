@@ -247,12 +247,20 @@ export const getCompanyInvitations = async (params = {}) => {
   try {
     const res = await axiosClient.get("/companies/me/invitations", { params });
     const payload = res?.data?.data || res?.data || res;
-    return payload?.invitations || (Array.isArray(payload) ? payload : []);
+    return (
+      payload?.invitations ||
+      payload?.items ||
+      (Array.isArray(payload) ? payload : [])
+    );
   } catch {
     try {
       const res = await axiosClient.get("/company/invitations", { params });
       const payload = res?.data?.data || res?.data || res;
-      return payload?.invitations || (Array.isArray(payload) ? payload : []);
+      return (
+        payload?.invitations ||
+        payload?.items ||
+        (Array.isArray(payload) ? payload : [])
+      );
     } catch {
       return [];
     }
@@ -287,7 +295,78 @@ export const acceptCompanyInvitation = async (token) => {
       const res = await axiosClient.post("/companies/invitations/accept", { token });
       return res?.data?.data || res?.data || res;
     } catch {
-      throw err;
+      try {
+        const res = await axiosClient.post("/invitations/accept", { token });
+        return res?.data?.data || res?.data || res;
+      } catch {
+        throw err;
+      }
     }
   }
 };
+
+/**
+ * 12. Verify Invitation Token (Public)
+ * GET /api/v1/company/invitations/verify?token=... or GET /api/v1/invitations/verify?token=...
+ */
+export const verifyCompanyInvitation = async (token) => {
+  try {
+    const res = await axiosClient.get("/company/invitations/verify", {
+      params: { token },
+    });
+    return res?.data?.data || res?.data || res;
+  } catch (err) {
+    try {
+      const res = await axiosClient.get("/companies/invitations/verify", {
+        params: { token },
+      });
+      return res?.data?.data || res?.data || res;
+    } catch {
+      try {
+        const res = await axiosClient.get("/invitations/verify", {
+          params: { token },
+        });
+        return res?.data?.data || res?.data || res;
+      } catch {
+        throw err;
+      }
+    }
+  }
+};
+
+/**
+ * 13. Atomic Accept & Register (1-Screen Onboarding for New Recruiter)
+ * POST /api/v1/company/invitations/accept-and-register or POST /api/v1/invitations/accept-and-register
+ * Payload: { token, name, password }
+ */
+export const acceptAndRegisterCompanyInvitation = async ({ token, name, password }) => {
+  try {
+    const res = await axiosClient.post("/company/invitations/accept-and-register", {
+      token,
+      name,
+      password,
+    });
+    return res?.data?.data || res?.data || res;
+  } catch (err) {
+    try {
+      const res = await axiosClient.post("/companies/invitations/accept-and-register", {
+        token,
+        name,
+        password,
+      });
+      return res?.data?.data || res?.data || res;
+    } catch {
+      try {
+        const res = await axiosClient.post("/invitations/accept-and-register", {
+          token,
+          name,
+          password,
+        });
+        return res?.data?.data || res?.data || res;
+      } catch {
+        throw err;
+      }
+    }
+  }
+};
+

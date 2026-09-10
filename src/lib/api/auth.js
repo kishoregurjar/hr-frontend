@@ -55,8 +55,6 @@ const normalizeUser = (resData, fallbackEmail = "") => {
   if (fullName.toLowerCase() === "hr" || fullName.toLowerCase() === "user" || !fullName) {
     if (rawUser.owner?.name) {
       fullName = rawUser.owner.name;
-    } else if (typeof rawUser.email === "string" && rawUser.email.toLowerCase().includes("rohit")) {
-      fullName = "Rohit Panchal";
     } else if (typeof rawUser.email === "string" && rawUser.email.includes("@")) {
       fullName = rawUser.email.split("@")[0].replace(/[0-9_.-]/g, " ").trim();
     }
@@ -71,7 +69,7 @@ const normalizeUser = (resData, fallbackEmail = "") => {
       .split(" ")
       .filter(Boolean)
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-      .join(" ") || "Rohit Panchal";
+      .join(" ") || (email ? email.split("@")[0] : "Team Member");
 
   const primaryCompany =
     (Array.isArray(payload?.companies) && payload.companies[0]) ||
@@ -122,44 +120,46 @@ const normalizeUser = (resData, fallbackEmail = "") => {
     (typeof window !== "undefined" ? localStorage.getItem("user_email") || "" : "");
 
   let companyRole =
+    rawUser?.companyMember?.role ||
+    rawUser?.companyMembers?.[0]?.role ||
+    rawUser?.memberships?.[0]?.role ||
     companyObj?.role ||
     primaryCompany?.role ||
     rawUser?.companyRole ||
     rawUser?.role ||
-    "OWNER";
+    "RECRUITER";
 
-  if (String(companyRole).toUpperCase() === "HR" || String(companyRole).toUpperCase() === "ADMIN") {
-    companyRole = "OWNER";
-  }
+  companyRole = String(companyRole).toUpperCase().trim();
 
+  // OWNER is true ONLY if explicitly OWNER / COMPANY_OWNER or rawUser.isOwner is true
   const isOwner =
-    String(companyRole).toUpperCase() === "OWNER" ||
-    rawUser.isOwner === true ||
-    rawUser.role === "HR" ||
-    true;
+    companyRole === "OWNER" ||
+    companyRole === "COMPANY_OWNER" ||
+    rawUser.isOwner === true;
 
-  const displayRole =
-    isOwner
-      ? "Company Owner"
-      : companyRole === "ADMIN"
-      ? "HR Admin"
-      : companyRole === "RECRUITER"
-      ? "Recruiter"
-      : "Company Owner";
+  const displayRole = isOwner
+    ? "Company Owner"
+    : companyRole === "ADMIN" || companyRole === "COMPANY_ADMIN"
+    ? "HR Admin"
+    : companyRole === "RECRUITER" || companyRole === "HR" || companyRole === "HR_RECRUITER"
+    ? "Recruiter"
+    : companyRole === "SUPER_ADMIN"
+    ? "Super Admin"
+    : companyRole;
 
   return {
-    id: rawUser.id || rawUser._id || `hr-${Date.now()}`,
-    name: formattedName || "Rohit Panchal",
-    fullName: formattedName || "Rohit Panchal",
-    email: email || "rohitpanchal958466@gmail.com",
+    id: rawUser.id || rawUser._id || `user-${Date.now()}`,
+    name: formattedName,
+    fullName: formattedName,
+    email: email,
     company: companyName || "",
     companyName: companyName || "",
     companyId: companyId || "",
     companyLogo: companyLogo || "",
-    companyRole: "OWNER",
-    role: "Company Owner",
-    rawRole: rawUser.role || "HR",
-    isOwner: true,
+    companyRole: companyRole,
+    role: displayRole,
+    rawRole: companyRole,
+    isOwner: isOwner,
   };
 };
 
@@ -242,23 +242,49 @@ export const refreshTokenApi = async () => {
  * HR Register API — Live Backend Call
  * Endpoint: POST /api/v1/auth/register
  */
-export const registerApi = async ({ name, email, company, password }) => {
-  const parts = (name || "").trim().split(" ");
-  const firstName = parts[0] || "HR";
-  const lastName = parts.slice(1).join(" ").trim();
+export const registerApi = async ({ firstName, lastName, name, email, company, password }) => {
+  let fName = (firstName || "").trim();
+  let lName = (lastName || "").trim();
+  if (!fName && name) {
+    const parts = (name || "").trim().split(" ");
+    fName = parts[0] || "Recruiter";
+    lName = parts.slice(1).join(" ").trim();
+  }
 
   const res = await axiosClient.post("/auth/register", {
-    firstName,
-    lastName: lastName || "",
-    email,
+    firstName: fName || "Recruiter",
+    lastName: lName || "",
+    email: (email || "").trim(),
     password,
-    company,
-    role: "HR",
+    company: company || undefined,
+    role: "RECRUITER",
   });
 
-  const user = normalizeUser(res, email);
+  const payload = getPayload(res);
+  const token =
+    payload?.accessToken ||
+    payload?.token ||
+    res?.accessToken ||
+    res?.data?.accessToken ||
+    res?.token;
 
-  return { user };
+  const user = normalizeUser(res, email);
+  const refreshToken = payload?.refreshToken || res?.refreshToken || res?.data?.refreshToken;
+
+  if (token && typeof window !== "undefined") {
+    localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, token);
+    localStorage.setItem("token", token);
+    localStorage.setItem("accessToken", token);
+    localStorage.setItem("jwt", token);
+    if (refreshToken) {
+      localStorage.setItem("hirequest_refresh_token", refreshToken);
+    }
+    if (user) {
+      localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
+    }
+  }
+
+  return { token, user };
 };
 
 /**

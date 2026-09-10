@@ -14,93 +14,261 @@ import {
   Building2,
   Sparkles,
   Lock,
+  Mail,
+  LogIn,
+  UserPlus,
+  LogOut,
+  Eye,
+  EyeOff,
+  User,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
-import { acceptCompanyInvitation } from "@/lib/api/company";
-import { clearAllAuthStorage } from "@/lib/api/auth";
+import {
+  acceptCompanyInvitation,
+  verifyCompanyInvitation,
+  acceptAndRegisterCompanyInvitation,
+} from "@/lib/api/company";
+import { loginApi } from "@/lib/api/auth";
+import { AUTH_STORAGE_KEYS } from "@/features/auth/constants";
+import { useAuth } from "@/features/auth/context";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 
 function AcceptInvitationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") || "";
+  const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
 
   const [isVerifying, setIsVerifying] = useState(true);
   const [tokenValid, setTokenValid] = useState(true);
+  const [invitationData, setInvitationData] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  // In-Place Form States
+  const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isExistingUserMode, setIsExistingUserMode] = useState(false);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [successData, setSuccessData] = useState(null);
+  const [successCompany, setSuccessCompany] = useState("");
 
+  // 1. Verify invitation token on mount
   useEffect(() => {
-    // Clear previous sessions for fresh invitation flow
-    clearAllAuthStorage();
-
-    const timer = setTimeout(() => {
+    const verifyToken = async () => {
       if (!token || token.trim().length === 0) {
         setTokenValid(false);
-      } else {
-        setTokenValid(true);
+        setErrorMessage("Invitation token is missing from the URL.");
+        setIsVerifying(false);
+        return;
       }
-      setIsVerifying(false);
-    }, 400);
 
-    return () => clearTimeout(timer);
+      try {
+        const data = await verifyCompanyInvitation(token);
+        const payload = data?.data || data;
+        setInvitationData(payload);
+        setTokenValid(true);
+        if (payload?.isExistingUser) {
+          setIsExistingUserMode(true);
+        }
+      } catch (err) {
+        const msg =
+          err?.response?.data?.message ||
+          err?.message ||
+          "This invitation link is invalid or has already been accepted.";
+        setErrorMessage(msg);
+        setTokenValid(false);
+      } finally {
+        setIsVerifying(false);
+      }
+    };
+
+    verifyToken();
   }, [token]);
 
-  const handleAccept = async () => {
-    if (!token) {
-      toast.error("Invitation token is missing from the link.");
+  // Helper to store tokens in localStorage
+  const saveAuthSession = (authPayload) => {
+    const accessToken =
+      authPayload?.accessToken ||
+      authPayload?.token ||
+      authPayload?.data?.accessToken ||
+      authPayload?.data?.token;
+
+    const refreshToken =
+      authPayload?.refreshToken ||
+      authPayload?.data?.refreshToken;
+
+    const userData =
+      authPayload?.user ||
+      authPayload?.data?.user;
+
+    if (typeof window !== "undefined" && accessToken) {
+      localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, accessToken);
+      localStorage.setItem("token", accessToken);
+      localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("jwt", accessToken);
+      if (refreshToken) {
+        localStorage.setItem("hirequest_refresh_token", refreshToken);
+      }
+      if (userData) {
+        localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(userData));
+        if (userData.email) {
+          localStorage.setItem("user_email", userData.email);
+        }
+      } else if (invitationData?.email) {
+        localStorage.setItem("user_email", invitationData.email);
+      }
+      if (invitationData?.companyId) {
+        localStorage.setItem("companyId", invitationData.companyId);
+        localStorage.setItem("active_company_id", invitationData.companyId);
+      }
+      if (invitationData?.companyName) {
+        localStorage.setItem("companyName", invitationData.companyName);
+      }
+    }
+  };
+
+  // 2A. In-Place Join Team for New User (Atomic Accept & Register)
+  const handleNewUserJoin = async (e) => {
+    e.preventDefault();
+    if (!token) return;
+
+    if (!name.trim()) {
+      toast.error("Please enter your full name.");
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters long.");
+      return;
+    }
+
+    if (confirmPassword && password !== confirmPassword) {
+      toast.error("Passwords do not match.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const res = await acceptCompanyInvitation(token);
-      setSuccessData(res);
+      const response = await acceptAndRegisterCompanyInvitation({
+        token,
+        name: name.trim(),
+        password,
+      });
+
+      const payload = response?.data || response;
+      saveAuthSession(payload);
+
+      setSuccessCompany(invitationData?.companyName || "the organization");
       setIsSuccess(true);
-      toast.success("Team invitation accepted successfully!");
+      toast.success("Account created & team invitation accepted successfully!");
 
-      // If response includes new auth token, store it
-      const payload = res?.data?.data || res?.data || res;
-      if (payload?.accessToken || payload?.token) {
-        localStorage.setItem("accessToken", payload.accessToken || payload.token);
-      }
-
-      // Auto redirect to login after 2 seconds
       setTimeout(() => {
-        router.push("/login?accepted=true");
-      }, 2000);
+        window.location.href = "/dashboard";
+      }, 1200);
     } catch (err) {
       const errMsg =
         err?.response?.data?.message ||
         err?.message ||
-        "Failed to accept invitation. The invitation link may have expired or already been accepted.";
-
-      if (
-        errMsg.toLowerCase().includes("expired") ||
-        errMsg.toLowerCase().includes("invalid") ||
-        errMsg.toLowerCase().includes("not found") ||
-        errMsg.toLowerCase().includes("already accepted")
-      ) {
-        setTokenValid(false);
-      }
+        "Failed to complete registration and join workspace.";
       toast.error(errMsg);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // 2B. In-Place Join for Existing User with Password
+  const handleExistingUserJoin = async (e) => {
+    e.preventDefault();
+    if (!token) return;
+
+    if (!password) {
+      toast.error("Please enter your account password.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // 1. Authenticate user
+      const loginRes = await loginApi({
+        email: invitationData?.email,
+        password,
+      });
+
+      // 2. Accept invitation
+      await acceptCompanyInvitation(token);
+
+      setSuccessCompany(invitationData?.companyName || "the organization");
+      setIsSuccess(true);
+      toast.success("Welcome back! You have joined the workspace.");
+
+      setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 1200);
+    } catch (err) {
+      const errMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Invalid password or failed to accept invitation.";
+      toast.error(errMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 2C. Direct 1-Click Accept for Already Logged-In User
+  const handleDirectAccept = async () => {
+    if (!token) return;
+
+    setIsSubmitting(true);
+    try {
+      await acceptCompanyInvitation(token);
+      setSuccessCompany(invitationData?.companyName || "the organization");
+      setIsSuccess(true);
+      toast.success("Team invitation accepted successfully!");
+
+      setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 1200);
+    } catch (err) {
+      const errMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to accept invitation.";
+      toast.error(errMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSwitchAccount = async () => {
+    try {
+      await logout();
+      const loginUrl = `/login?email=${encodeURIComponent(
+        invitationData?.email || ""
+      )}&returnUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+      router.push(loginUrl);
+    } catch {
+      router.push("/login");
+    }
+  };
+
   // State 1: Verification Loading
-  if (isVerifying) {
+  if (isVerifying || authLoading) {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center space-y-4">
         <div className="h-12 w-12 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100 shadow-xs">
           <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
         </div>
         <div>
-          <h2 className="text-lg font-extrabold text-slate-900">Verifying Team Invitation...</h2>
-          <p className="text-xs text-slate-500 mt-1">Validating your secure workspace invitation link.</p>
+          <h2 className="text-lg font-extrabold text-slate-900">Verifying Invitation...</h2>
+          <p className="text-xs text-slate-500 mt-1">Validating your workspace invitation details.</p>
         </div>
       </div>
     );
@@ -116,17 +284,17 @@ function AcceptInvitationContent() {
         <div className="space-y-1.5 max-w-sm">
           <h2 className="text-xl font-extrabold text-slate-900">Invalid or Expired Invitation</h2>
           <p className="text-xs text-slate-500 leading-relaxed">
-            This recruiter invitation link is no longer valid. It may have expired or already been accepted.
+            {errorMessage || "This invitation link is no longer valid or has already been accepted."}
           </p>
         </div>
 
         <div className="bg-amber-50/90 border border-amber-200/80 rounded-2xl p-4 text-xs text-amber-800 text-left space-y-1 w-full">
           <div className="font-bold flex items-center gap-1.5 text-amber-900">
             <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-            Next Steps
+            Need a New Link?
           </div>
           <p className="text-[11px] text-amber-700 leading-relaxed">
-            Please ask your company workspace administrator to send you a fresh team invitation email.
+            Please ask your company workspace owner to re-send your recruiter team invitation.
           </p>
         </div>
 
@@ -154,16 +322,16 @@ function AcceptInvitationContent() {
         <div className="space-y-1.5 max-w-sm">
           <h2 className="text-xl font-extrabold text-slate-900">Invitation Accepted!</h2>
           <p className="text-xs text-slate-500 leading-relaxed">
-            You are now officially a member of the workspace team. You can sign in to access recruitment analytics and assessments.
+            You are now officially a team member of <strong className="text-slate-800">{successCompany || "the organization"}</strong>. Redirecting you to your dashboard...
           </p>
         </div>
 
         <div className="pt-2 w-full">
           <Button
-            onClick={() => router.push("/login")}
+            onClick={() => { window.location.href = "/company"; }}
             className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span>Continue to Sign In</span>
+            <span>Go to Dashboard</span>
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
@@ -171,45 +339,314 @@ function AcceptInvitationContent() {
     );
   }
 
-  // State 4: Default - Simple One-Click "Accept Invitation" Screen
+  const invitedEmail = invitationData?.email || "";
+  const companyName = invitationData?.companyName || invitationData?.company?.name || invitationData?.company || "Company Workspace";
+  const role = invitationData?.role || "RECRUITER";
+  const isExistingUser = Boolean(invitationData?.isExistingUser);
+
+  const userEmail = user?.email || "";
+  const isEmailMatching =
+    isAuthenticated &&
+    userEmail &&
+    invitedEmail &&
+    userEmail.toLowerCase() === invitedEmail.toLowerCase();
+
+  // State 4A: User is Logged-In with the Matching Invited Email -> Show 1-Click Accept
+  if (isAuthenticated && isEmailMatching) {
+    return (
+      <div className="space-y-6">
+        {/* Invitation Context Card */}
+        <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4 space-y-2.5 text-left">
+          <div className="flex items-center justify-between">
+            <span className="font-extrabold text-xs text-blue-900 flex items-center gap-1.5">
+              <Building2 className="h-4 w-4 text-blue-600" />
+              {companyName}
+            </span>
+            <Badge className="bg-blue-600 text-white font-extrabold text-[10px] tracking-wider uppercase px-2 py-0.5">
+              {role}
+            </Badge>
+          </div>
+          <p className="text-xs text-slate-700 leading-relaxed font-medium">
+            You are logged in as <strong className="text-slate-900 font-bold">{userEmail}</strong>. Click below to accept the invitation and link your account to this workspace.
+          </p>
+        </div>
+
+        {/* Accept Button */}
+        <div className="space-y-3">
+          <Button
+            onClick={handleDirectAccept}
+            disabled={isSubmitting}
+            className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-300 disabled:to-slate-300 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Joining Workspace...</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="h-4 w-4" />
+                <span>Accept Invitation & Join Team</span>
+              </>
+            )}
+          </Button>
+
+          <p className="text-[11px] text-center text-slate-400 font-medium">
+            Authorized workspace member permissions will be granted immediately.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // State 4B: User is Logged-In with a DIFFERENT Email -> Prompt Switch Account
+  if (isAuthenticated && !isEmailMatching) {
+    return (
+      <div className="space-y-5">
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/90 p-4 space-y-2 text-left">
+          <div className="flex items-center gap-1.5 text-amber-900 font-bold text-xs">
+            <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+            Email Account Mismatch
+          </div>
+          <p className="text-xs text-amber-800 leading-relaxed">
+            This invitation was sent to <strong className="text-slate-900 font-bold">{invitedEmail}</strong>, but you are currently signed in as <strong className="text-slate-900 font-bold">{userEmail}</strong>.
+          </p>
+        </div>
+
+        <div className="space-y-2.5">
+          <Button
+            onClick={handleSwitchAccount}
+            className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md gap-2 cursor-pointer"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Switch Account / Sign In as {invitedEmail}</span>
+          </Button>
+
+          <Link href="/dashboard" className="block w-full">
+            <Button
+              variant="outline"
+              className="w-full h-11 font-bold text-xs rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
+            >
+              Continue to My Current Dashboard
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // State 4C: User is NOT Logged In -> IN-PLACE 1-SCREEN ONBOARDING
   return (
-    <div className="space-y-6">
-      {/* Workspace & Role Banner Card */}
-      <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4 space-y-2 text-left">
-        <div className="flex items-center gap-2">
-          <Badge className="bg-blue-600 text-white font-extrabold text-[10px] tracking-wide uppercase px-2 py-0.5">
-            Team Invitation
+    <div className="space-y-5">
+      {/* Invitation Overview Header Card */}
+      <div className="rounded-2xl border border-blue-100 bg-blue-50/80 p-4 space-y-2.5 text-left">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="h-9 w-9 rounded-xl bg-blue-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
+              {companyName ? companyName[0]?.toUpperCase() : "W"}
+            </div>
+            <div>
+              <span className="font-extrabold text-sm text-slate-900 block leading-tight">
+                {companyName}
+              </span>
+              <span className="text-[11px] text-blue-700 font-bold flex items-center gap-1">
+                <span>Role:</span>
+                <span className="bg-blue-200/80 text-blue-900 px-1.5 py-0.2 rounded font-extrabold text-[10px]">
+                  {role}
+                </span>
+              </span>
+            </div>
+          </div>
+          <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px] font-bold uppercase">
+            Verified Invite
           </Badge>
         </div>
-        <p className="text-xs text-slate-700 leading-relaxed font-medium">
-          You have been invited to collaborate as a team recruiter. By accepting, you will get access to candidate pipelines, cognitive assessments, and leaderboards.
-        </p>
+
+        <div className="pt-2 border-t border-blue-200/60 flex items-center justify-between text-xs text-slate-600">
+          <span className="flex items-center gap-1">
+            <Mail className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+            <span>Invited:</span>
+          </span>
+          <strong className="text-slate-900 font-bold truncate max-w-[220px]">{invitedEmail}</strong>
+        </div>
       </div>
 
-      {/* Action Button */}
-      <div className="space-y-3">
-        <Button
-          onClick={handleAccept}
-          disabled={isSubmitting}
-          className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-300 disabled:to-slate-300 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Accepting Invitation...</span>
-            </>
-          ) : (
-            <>
-              <CheckCircle2 className="h-4 w-4" />
-              <span>Accept Invitation</span>
-            </>
-          )}
-        </Button>
+      {/* ── CASE 1: NEW USER (In-Place 1-Click Join Form) ── */}
+      {!isExistingUserMode ? (
+        <form onSubmit={handleNewUserJoin} className="space-y-3.5 text-left font-sans">
+          <div className="text-center pb-1">
+            <h3 className="font-extrabold text-base text-slate-900">
+              Complete Your Recruiter Profile
+            </h3>
+          </div>
 
-        <p className="text-[11px] text-center text-slate-400 font-medium">
-          Click above to verify your invite and join the organization.
-        </p>
-      </div>
+          {/* Full Name */}
+          <div className="space-y-1">
+            <Label htmlFor="name" className="text-xs font-bold text-slate-700">
+              Your Full Name *
+            </Label>
+            <div className="relative">
+              <User className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
+              <Input
+                id="name"
+                type="text"
+                placeholder="e.g. Rohit Panchal"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="pl-10 h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500/30 shadow-2xs"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Password */}
+          <div className="space-y-1">
+            <Label htmlFor="password" className="text-xs font-bold text-slate-700">
+              Create Password *
+            </Label>
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Min. 6 characters"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pl-10 pr-10 h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500/30 shadow-2xs"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-700 focus:outline-none"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Confirm Password */}
+          <div className="space-y-1">
+            <Label htmlFor="confirmPassword" className="text-xs font-bold text-slate-700">
+              Confirm Password *
+            </Label>
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
+              <Input
+                id="confirmPassword"
+                type={showPassword ? "text" : "password"}
+                placeholder="Re-enter password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="pl-10 h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500/30 shadow-2xs"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Submit CTA */}
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full h-11 mt-1 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 cursor-pointer transition-all"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Joining Workspace...</span>
+              </>
+            ) : (
+              <>
+                <span>Join {companyName} Team</span>
+                <ArrowRight className="h-4 w-4" />
+              </>
+            )}
+          </Button>
+
+          {/* Toggle for existing user */}
+          <div className="pt-2 text-center text-xs text-slate-500 border-t border-slate-100">
+            <span>Already have an account? </span>
+            <button
+              type="button"
+              onClick={() => setIsExistingUserMode(true)}
+              className="font-bold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+            >
+              Sign In Instead
+            </button>
+          </div>
+        </form>
+      ) : (
+        /* ── CASE 2: EXISTING USER (Direct Password Sign In) ── */
+        <form onSubmit={handleExistingUserJoin} className="space-y-3.5 text-left font-sans">
+          <div className="text-center space-y-1">
+            <h3 className="font-extrabold text-base text-slate-900">
+              Welcome Back! Sign In to Join
+            </h3>
+            <p className="text-xs text-slate-500">
+              Enter your password for <strong className="text-slate-800">{invitedEmail}</strong> to link to this workspace.
+            </p>
+          </div>
+
+          {/* Password */}
+          <div className="space-y-1">
+            <Label htmlFor="existingPassword" className="text-xs font-bold text-slate-700">
+              Account Password *
+            </Label>
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
+              <Input
+                id="existingPassword"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your account password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pl-10 pr-10 h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500/30 shadow-2xs"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-700 focus:outline-none"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Submit CTA */}
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full h-11 mt-1 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 cursor-pointer transition-all"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Signing In & Joining...</span>
+              </>
+            ) : (
+              <>
+                <span>Sign In & Join Team</span>
+                <ArrowRight className="h-4 w-4" />
+              </>
+            )}
+          </Button>
+
+          {/* Toggle for new user */}
+          <div className="pt-2 text-center text-xs text-slate-500 border-t border-slate-100">
+            <span>New user? </span>
+            <button
+              type="button"
+              onClick={() => setIsExistingUserMode(false)}
+              className="font-bold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+            >
+              Create New Recruiter Profile
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }
@@ -217,7 +654,7 @@ function AcceptInvitationContent() {
 export default function AcceptInvitationPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] text-slate-900 font-sans px-4 py-12 relative overflow-hidden">
-      {/* Subtle Ambient Glow Elements */}
+      {/* Ambient Lighting Accents */}
       <div className="absolute top-1/4 -left-20 h-72 w-72 rounded-full bg-blue-400/10 blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 -right-20 h-80 w-80 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
 
@@ -241,7 +678,7 @@ export default function AcceptInvitationPage() {
             fallback={
               <div className="p-8 text-center flex flex-col items-center justify-center space-y-3">
                 <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
-                <p className="text-xs text-slate-500 font-medium">Verifying invitation...</p>
+                <p className="text-xs text-slate-500 font-medium">Loading invitation...</p>
               </div>
             }
           >

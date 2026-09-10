@@ -330,32 +330,27 @@ function AdminCompaniesContent() {
                       {/* Actions Dropdown */}
                       <td className="py-4 px-5 text-right">
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              disabled={actionLoadingId === company.id}
-                              className="h-8 w-8 text-slate-400 hover:text-slate-700 cursor-pointer"
-                            >
-                              {actionLoadingId === company.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                              ) : (
-                                <MoreVertical className="h-4 w-4" />
-                              )}
-                            </Button>
+                          <DropdownMenuTrigger
+                            disabled={actionLoadingId === company.id}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer focus-visible:outline-none"
+                            aria-label="Tenant actions"
+                          >
+                            {actionLoadingId === company.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                            ) : (
+                              <MoreVertical className="h-4 w-4" />
+                            )}
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48 rounded-xl font-sans">
                             <DropdownMenuLabel className="text-[11px] text-slate-400 font-semibold uppercase">
                               Tenant Actions
                             </DropdownMenuLabel>
-                            <DropdownMenuItem asChild>
-                              <Link
-                                href={`/admin/companies/${company.id}`}
-                                className="flex items-center gap-2 cursor-pointer"
-                              >
-                                <Eye className="h-4 w-4 text-slate-500" />
-                                <span>View Details</span>
-                              </Link>
+                            <DropdownMenuItem
+                              onClick={() => router.push(`/admin/companies/${company.id}`)}
+                              className="flex items-center gap-2 cursor-pointer"
+                            >
+                              <Eye className="h-4 w-4 text-slate-500" />
+                              <span>View Details</span>
                             </DropdownMenuItem>
 
                             <DropdownMenuItem

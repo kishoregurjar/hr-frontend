@@ -154,11 +154,21 @@ function fetchGmailInbox({ email, password, limit = 10, keywords = [] }) {
 export async function POST(req) {
   try {
     const body = await req.json().catch(() => ({}));
-    const email = body.email || "rohitpanchal958466@gmail.com";
+    const email = body.email;
     const password = body.appPassword || body.password;
     const keywords = body.keywords
       ? body.keywords.split(",").map((k) => k.trim()).filter(Boolean)
       : [];
+
+    if (!email) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Account email address is required.",
+        },
+        { status: 400 }
+      );
+    }
 
     if (!password) {
       return NextResponse.json(

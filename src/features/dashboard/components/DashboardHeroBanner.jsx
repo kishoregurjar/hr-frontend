@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Mail, FileText, Crown, Building2 } from "lucide-react";
+import { Mail, FileText, Crown, Building2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/context";
 
@@ -19,22 +19,25 @@ const DashboardHeroBanner = () => {
 
   const companyName =
     impersonated?.name ||
-    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
     user?.companyName ||
     user?.company?.name ||
     user?.company ||
-    "Walking Dreamz";
+    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
+    "";
 
   const rawName =
-    (typeof user?.name === "string" && user.name.toLowerCase() !== "hr" ? user.name : "") ||
-    (typeof user?.fullName === "string" && user.fullName.toLowerCase() !== "hr" ? user.fullName : "") ||
-    "Rohit Panchal";
-  const ownerName = String(rawName).replace(/\s+user$/i, "").trim() || "Rohit Panchal";
+    (typeof user?.name === "string" ? user.name : "") ||
+    (typeof user?.fullName === "string" ? user.fullName : "") ||
+    (user?.email ? user.email.split("@")[0] : "");
+  const userName = String(rawName).replace(/\s+user$/i, "").trim();
 
-  const ownerEmail =
+  const userEmail =
     (typeof user?.email === "string" && user.email) ||
     (typeof window !== "undefined" ? localStorage.getItem("user_email") : null) ||
-    "rohitpanchal958466@gmail.com";
+    "";
+
+  const isOwner = Boolean(user?.isOwner || user?.companyRole === "OWNER" || user?.role === "Company Owner");
+  const userRole = user?.role || (isOwner ? "Company Owner" : "Recruiter");
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-700 p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/15 border border-indigo-400/20">
@@ -44,11 +47,15 @@ const DashboardHeroBanner = () => {
 
       <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
         <div className="space-y-3 max-w-3xl">
-          {/* Workspace & Owner Badges */}
+          {/* Workspace & User Badges */}
           <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 border border-white/25 text-white text-[11px] font-bold uppercase tracking-wider backdrop-blur-md">
-              <Crown className="h-3 w-3 text-amber-300" />
-              <span>COMPANY OWNER</span>
+              {isOwner ? (
+                <Crown className="h-3 w-3 text-amber-300" />
+              ) : (
+                <Shield className="h-3 w-3 text-blue-200" />
+              )}
+              <span>{userRole.toUpperCase()}</span>
               {companyName && (
                 <>
                   <span className="text-white/60">•</span>
@@ -65,10 +72,12 @@ const DashboardHeroBanner = () => {
               )}
             </div>
 
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/20 border border-white/15 text-blue-100 text-[11px] font-medium backdrop-blur-md">
-              <Mail className="h-3 w-3 text-blue-200 shrink-0" />
-              <span>{ownerEmail}</span>
-            </div>
+            {userEmail && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/20 border border-white/15 text-blue-100 text-[11px] font-medium backdrop-blur-md">
+                <Mail className="h-3 w-3 text-blue-200 shrink-0" />
+                <span>{userEmail}</span>
+              </div>
+            )}
           </div>
 
           {/* Title */}
@@ -78,7 +87,11 @@ const DashboardHeroBanner = () => {
 
           {/* Subtitle */}
           <p className="text-xs sm:text-sm text-blue-50/90 leading-relaxed max-w-2xl font-normal">
-            Welcome back, <strong className="text-white font-bold">{ownerName}</strong>. You have full ownership permissions over <strong className="text-white font-bold">{companyName}</strong>. Deploy multi-module cognitive assessments, manage candidate pipelines, and shortlist top talent with authoritative scoring.
+            Welcome back, <strong className="text-white font-bold">{userName || "there"}</strong>. {isOwner ? (
+              <>You have full ownership permissions over <strong className="text-white font-bold">{companyName || "your workspace"}</strong>. Deploy multi-module cognitive assessments, manage candidate pipelines, and shortlist top talent.</>
+            ) : (
+              <>You are logged in to <strong className="text-white font-bold">{companyName || "your workspace"}</strong>. Review candidate assessments, manage recruitment screening pipelines, and shortlist top talent.</>
+            )}
           </p>
         </div>
 

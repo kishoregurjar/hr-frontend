@@ -19,9 +19,11 @@ function DropdownMenuPortal({
 }
 
 function DropdownMenuTrigger({
+  asChild,
+  className,
   ...props
 }) {
-  return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />;
+  return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" className={className} {...props} />;
 }
 
 function DropdownMenuContent({
@@ -79,6 +81,7 @@ function DropdownMenuItem({
   className,
   inset,
   variant = "default",
+  asChild,
   ...props
 }) {
   return (

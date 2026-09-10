@@ -184,8 +184,14 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
                 <div className="space-y-1 min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-extrabold text-base text-slate-900 truncate">{userName}</h3>
-                    <Badge className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-extrabold px-2 py-0.5 shadow-xs">
-                      {user?.isOwner || userRole === "Company Owner" || userRole === "OWNER" ? "Company Owner" : userRole}
+                    <Badge className={`text-[10px] font-extrabold px-2 py-0.5 shadow-xs ${
+                      user?.isOwner || userRole === "Company Owner" || userRole === "OWNER"
+                        ? "bg-amber-100 text-amber-900 border border-amber-300"
+                        : userRole === "HR Admin" || userRole === "ADMIN"
+                        ? "bg-purple-100 text-purple-900 border border-purple-300"
+                        : "bg-blue-100 text-blue-900 border border-blue-300"
+                    }`}>
+                      {userRole}
                     </Badge>
                     <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-extrabold flex items-center gap-1">
                       <CheckCircle2 className="h-3 w-3" />
@@ -211,7 +217,7 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
                     Account Role
                   </span>
                   <p className="font-bold text-slate-800 text-sm">
-                    {user?.isOwner || userRole === "Company Owner" || userRole === "OWNER" ? "Company Owner" : "HR Manager"}
+                    {userRole}
                   </p>
                 </div>
 
