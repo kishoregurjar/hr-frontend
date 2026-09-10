@@ -404,6 +404,10 @@ export const getCurrentUserApi = async () => {
       if (liveUser.companyLogo) {
         localStorage.setItem("companyLogo", liveUser.companyLogo);
       }
+      if (liveUser.companyRole) {
+        localStorage.setItem("active_company_role", liveUser.companyRole);
+        localStorage.setItem("companyRole", liveUser.companyRole);
+      }
     }
 
     return { token, user: liveUser || parsedUser };

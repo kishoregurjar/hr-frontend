@@ -77,13 +77,27 @@ export const AuthProvider = ({ children }) => {
                 } catch {}
               }
 
-              if (compName || compId) {
+              const primaryRole =
+                currentUser?.activeCompany?.role ||
+                currentUser?.companies?.[0]?.role ||
+                currentUser?.companyRole ||
+                (currentUser?.isOwner ? "OWNER" : "RECRUITER");
+
+              if (compName || compId || primaryRole) {
                 currentUser = {
                   ...currentUser,
                   company: compName || currentUser.company,
                   companyName: compName || currentUser.companyName,
                   companyId: compId || currentUser.companyId,
                   companyLogo: compLogo || currentUser.companyLogo,
+                  companyRole: primaryRole,
+                  isOwner: String(primaryRole).toUpperCase() === "OWNER" || Boolean(currentUser?.isOwner),
+                  activeCompany: {
+                    id: compId || currentUser.companyId,
+                    name: compName || currentUser.companyName,
+                    role: primaryRole,
+                    logoUrl: compLogo || currentUser.companyLogo,
+                  },
                 };
                 if (typeof window !== "undefined") {
                   if (compName) localStorage.setItem("companyName", compName);
@@ -91,6 +105,10 @@ export const AuthProvider = ({ children }) => {
                   if (compId) {
                     localStorage.setItem("companyId", compId);
                     localStorage.setItem("active_company_id", compId);
+                  }
+                  if (primaryRole) {
+                    localStorage.setItem("active_company_role", primaryRole);
+                    localStorage.setItem("companyRole", primaryRole);
                   }
                   localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(currentUser));
                 }
