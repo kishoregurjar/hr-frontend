@@ -4,15 +4,17 @@ import { AUTH_STORAGE_KEYS } from "@/features/auth/constants";
 const rawBaseURL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  "https://enjoyable-preoccupy-scowling.ngrok-free.dev/api/v1";
+  "https://walkingdreamzhrmanagement.up.railway.app";
+
+const cleanBaseURL = rawBaseURL
+  .replace(/\/api\/v1\/?$/, "")
+  .replace(/\/+$/, "");
 
 // In browser, using relative "/api/v1" routes through Next.js proxy rewrites which completely eliminates browser CORS errors!
 const baseURL =
   typeof window !== "undefined"
     ? "/api/v1"
-    : rawBaseURL.endsWith("/api/v1")
-    ? rawBaseURL
-    : `${rawBaseURL.replace(/\/+$/, "")}/api/v1`;
+    : `${cleanBaseURL}/api/v1`;
 
 const axiosClient = axios.create({
   baseURL,
