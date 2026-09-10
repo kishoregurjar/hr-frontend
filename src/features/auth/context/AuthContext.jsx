@@ -23,68 +23,91 @@ const AuthContext = createContext({
 });
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [token, setToken] = useState(() => {
+    if (typeof window === "undefined") return null;
+    return (
+      localStorage.getItem(AUTH_STORAGE_KEYS.TOKEN) ||
+      localStorage.getItem("token") ||
+      localStorage.getItem("accessToken") ||
+      null
+    );
+  });
+
+  const [user, setUser] = useState(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const stored = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // If we already have token and user in storage, do NOT block the screen (0ms initial load)
+  const [isLoading, setIsLoading] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const existingToken =
+      localStorage.getItem(AUTH_STORAGE_KEYS.TOKEN) ||
+      localStorage.getItem("token") ||
+      localStorage.getItem("accessToken");
+    return !existingToken;
+  });
 
   useEffect(() => {
     const initAuth = async () => {
       try {
         const session = await getCurrentUserApi();
-        setToken(session.token);
-        let currentUser = session.user;
-        if (session.token && currentUser && currentUser.role !== "SUPER_ADMIN") {
-          try {
-            let compName = currentUser.companyName || currentUser.company;
-            let compId = currentUser.companyId;
-            let compLogo = currentUser.companyLogo;
-
-            // 1. Try getCompanyProfile
+        if (session?.token) {
+          setToken(session.token);
+          let currentUser = session.user;
+          if (currentUser && currentUser.role !== "SUPER_ADMIN") {
             try {
-              const companyData = await getCompanyProfile();
-              if (companyData && (companyData.name || companyData.id)) {
-                compName = companyData.name || compName;
-                compId = companyData.id || compId;
-                compLogo = companyData.logoUrl || compLogo;
+              let compName = currentUser.companyName || currentUser.company;
+              let compId = currentUser.companyId;
+              let compLogo = currentUser.companyLogo;
+
+              if (!compName || !compId) {
+                try {
+                  const companyData = await getCompanyProfile();
+                  if (companyData && (companyData.name || companyData.id)) {
+                    compName = companyData.name || compName;
+                    compId = companyData.id || compId;
+                    compLogo = companyData.logoUrl || compLogo;
+                  }
+                } catch {}
+              }
+
+              if (compName || compId) {
+                currentUser = {
+                  ...currentUser,
+                  company: compName || currentUser.company,
+                  companyName: compName || currentUser.companyName,
+                  companyId: compId || currentUser.companyId,
+                  companyLogo: compLogo || currentUser.companyLogo,
+                };
+                if (typeof window !== "undefined") {
+                  if (compName) localStorage.setItem("companyName", compName);
+                  if (compLogo) localStorage.setItem("companyLogo", compLogo);
+                  if (compId) {
+                    localStorage.setItem("companyId", compId);
+                    localStorage.setItem("active_company_id", compId);
+                  }
+                  localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(currentUser));
+                }
               }
             } catch {}
-
-            // 2. Fallback: try getUserCompaniesApi
-            if (!compName) {
-              try {
-                const userCompanies = await getUserCompaniesApi();
-                if (Array.isArray(userCompanies) && userCompanies.length > 0) {
-                  compName = userCompanies[0].name || compName;
-                  compId = userCompanies[0].id || compId;
-                  compLogo = userCompanies[0].logoUrl || compLogo;
-                }
-              } catch {}
-            }
-
-            if (compName || compId) {
-              currentUser = {
-                ...currentUser,
-                company: compName || currentUser.company,
-                companyName: compName || currentUser.companyName,
-                companyId: compId || currentUser.companyId,
-                companyLogo: compLogo || currentUser.companyLogo,
-              };
-              if (typeof window !== "undefined") {
-                if (compName) localStorage.setItem("companyName", compName);
-                if (compLogo) localStorage.setItem("companyLogo", compLogo);
-                if (compId) {
-                  localStorage.setItem("companyId", compId);
-                  localStorage.setItem("active_company_id", compId);
-                }
-                localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(currentUser));
-              }
-            }
-          } catch {}
+          }
+          setUser(currentUser);
+        } else if (!localStorage.getItem(AUTH_STORAGE_KEYS.TOKEN)) {
+          setToken(null);
+          setUser(null);
         }
-        setUser(currentUser);
-      } catch {
-        setToken(null);
-        setUser(null);
+      } catch (err) {
+        if (err?.response?.status === 401) {
+          clearAllAuthStorage();
+          setToken(null);
+          setUser(null);
+        }
       } finally {
         setIsLoading(false);
       }

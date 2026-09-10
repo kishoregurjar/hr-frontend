@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/features/auth/context";
 
 export default function AdminAuthGuard({ children }) {
@@ -20,8 +21,9 @@ export default function AdminAuthGuard({ children }) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f8fafc]">
-        <p className="text-xs text-slate-500 font-semibold animate-pulse">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 gap-3">
+        <Loader2 className="h-7 w-7 animate-spin text-indigo-600" />
+        <p className="text-xs text-slate-500 font-medium tracking-wide">
           Loading Admin Console...
         </p>
       </div>

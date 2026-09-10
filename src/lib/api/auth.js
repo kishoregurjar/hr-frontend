@@ -317,33 +317,41 @@ export const getCurrentUserApi = async () => {
   }
 
   try {
-    const [meRes, companiesRes, companyProfileRes] = await Promise.allSettled([
-      axiosClient.get("/auth/me"),
-      axiosClient.get("/auth/me/companies"),
-      axiosClient.get("/companies/me"),
-    ]);
+    const isSuperAdmin = parsedUser?.role === "SUPER_ADMIN";
 
-    const meData = meRes.status === "fulfilled" ? meRes.value : null;
-    const compData = companiesRes.status === "fulfilled" ? companiesRes.value : null;
-    const profileData = companyProfileRes.status === "fulfilled" ? companyProfileRes.value : null;
+    // For Super Admin or fast session check, fetch /auth/me
+    const meRes = await axiosClient.get("/auth/me", { timeout: 8000 });
+    const meData = meRes?.data?.data || meRes?.data || meRes;
 
-    const companies =
-      compData?.data?.data?.companies ||
-      compData?.data?.companies ||
-      (Array.isArray(compData?.data) ? compData.data : []);
+    let combinedPayload = { ...(meData || {}) };
 
-    const singleCompany =
-      profileData?.data?.data?.company ||
-      profileData?.data?.data ||
-      profileData?.data?.company ||
-      profileData?.data ||
-      null;
+    // Only query company endpoints for non-superadmin users if companies are missing
+    if (!isSuperAdmin && !combinedPayload?.companies && !combinedPayload?.company) {
+      try {
+        const [compRes, profileRes] = await Promise.allSettled([
+          axiosClient.get("/auth/me/companies", { timeout: 5000 }),
+          axiosClient.get("/companies/me", { timeout: 5000 }),
+        ]);
 
-    const combinedPayload = {
-      ...(meData?.data?.data || meData?.data || {}),
-      companies,
-      company: singleCompany,
-    };
+        const compData = compRes.status === "fulfilled" ? compRes.value : null;
+        const profileData = profileRes.status === "fulfilled" ? profileRes.value : null;
+
+        const companies =
+          compData?.data?.data?.companies ||
+          compData?.data?.companies ||
+          (Array.isArray(compData?.data) ? compData.data : []);
+
+        const singleCompany =
+          profileData?.data?.data?.company ||
+          profileData?.data?.data ||
+          profileData?.data?.company ||
+          profileData?.data ||
+          null;
+
+        combinedPayload.companies = companies;
+        combinedPayload.company = singleCompany;
+      } catch {}
+    }
 
     const liveUser = normalizeUser(combinedPayload) || parsedUser;
 
