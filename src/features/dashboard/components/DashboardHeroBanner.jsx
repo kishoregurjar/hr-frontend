@@ -36,8 +36,35 @@ const DashboardHeroBanner = () => {
     (typeof window !== "undefined" ? localStorage.getItem("user_email") : null) ||
     "";
 
-  const isOwner = Boolean(user?.isOwner || user?.companyRole === "OWNER" || user?.role === "Company Owner");
-  const userRole = user?.role || (isOwner ? "Company Owner" : "Recruiter");
+  const activeCompanyRole =
+    user?.activeCompany?.role ||
+    user?.companies?.[0]?.role ||
+    user?.companyRole ||
+    (user?.isOwner ? "OWNER" : "") ||
+    user?.role ||
+    "";
+
+  const isOwner = Boolean(
+    user?.isOwner ||
+    String(activeCompanyRole).toUpperCase() === "OWNER" ||
+    String(activeCompanyRole).toUpperCase() === "COMPANY_OWNER" ||
+    user?.companyRole === "OWNER" ||
+    user?.role === "Company Owner"
+  );
+
+  const isAdmin = Boolean(
+    user?.isAdmin ||
+    String(activeCompanyRole).toUpperCase() === "ADMIN" ||
+    String(activeCompanyRole).toUpperCase() === "COMPANY_ADMIN" ||
+    user?.companyRole === "ADMIN" ||
+    user?.role === "HR Admin"
+  );
+
+  const badgeText = isOwner
+    ? "OWNER"
+    : isAdmin
+    ? "ADMIN"
+    : "RECRUITER";
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-700 p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/15 border border-indigo-400/20">
@@ -55,7 +82,7 @@ const DashboardHeroBanner = () => {
               ) : (
                 <Shield className="h-3 w-3 text-blue-200" />
               )}
-              <span>{userRole.toUpperCase()}</span>
+              <span>{badgeText}</span>
               {companyName && (
                 <>
                   <span className="text-white/60">•</span>

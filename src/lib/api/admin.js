@@ -64,10 +64,16 @@ export const getAdminCompanies = async (params = {}) => {
   try {
     const res = await axiosClient.get("/super-admin/companies", { params });
     const data = res?.data?.data || res?.data || res;
-    if (Array.isArray(data)) return data;
-    if (Array.isArray(data?.companies)) return data.companies;
-    if (Array.isArray(data?.items)) return data.items;
-    return [];
+    let list = [];
+    if (Array.isArray(data)) list = data;
+    else if (Array.isArray(data?.companies)) list = data.companies;
+    else if (Array.isArray(data?.items)) list = data.items;
+
+    return list.map((item) => ({
+      ...item,
+      ownerEmail: item?.owner?.email || item?.ownerEmail || item?.email || "",
+      ownerName: item?.owner?.name || item?.ownerName || "",
+    }));
   } catch {
     return [];
   }

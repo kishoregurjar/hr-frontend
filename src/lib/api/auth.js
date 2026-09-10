@@ -119,33 +119,41 @@ const normalizeUser = (resData, fallbackEmail = "") => {
     fallbackEmail ||
     (typeof window !== "undefined" ? localStorage.getItem("user_email") || "" : "");
 
-  let companyRole =
+  const explicitCompanyRole =
+    primaryCompany?.role ||
+    rawUser?.activeCompany?.role ||
+    payload?.activeCompany?.role ||
+    resData?.activeCompany?.role ||
     rawUser?.companyMember?.role ||
     rawUser?.companyMembers?.[0]?.role ||
     rawUser?.memberships?.[0]?.role ||
     companyObj?.role ||
-    primaryCompany?.role ||
     rawUser?.companyRole ||
-    rawUser?.role ||
+    (rawUser?.role && rawUser.role !== "HR" ? rawUser.role : null) ||
     "RECRUITER";
 
-  companyRole = String(companyRole).toUpperCase().trim();
+  let companyRole = String(explicitCompanyRole).toUpperCase().trim();
 
-  // OWNER is true ONLY if explicitly OWNER / COMPANY_OWNER or rawUser.isOwner is true
+  // OWNER is true if explicitly OWNER / COMPANY_OWNER or rawUser.isOwner is true
   const isOwner =
     companyRole === "OWNER" ||
     companyRole === "COMPANY_OWNER" ||
-    rawUser.isOwner === true;
+    primaryCompany?.role === "OWNER" ||
+    rawUser?.isOwner === true;
+
+  const isAdmin =
+    companyRole === "ADMIN" ||
+    companyRole === "COMPANY_ADMIN" ||
+    primaryCompany?.role === "ADMIN" ||
+    rawUser?.isAdmin === true;
 
   const displayRole = isOwner
     ? "Company Owner"
-    : companyRole === "ADMIN" || companyRole === "COMPANY_ADMIN"
+    : isAdmin
     ? "HR Admin"
-    : companyRole === "RECRUITER" || companyRole === "HR" || companyRole === "HR_RECRUITER"
-    ? "Recruiter"
     : companyRole === "SUPER_ADMIN"
     ? "Super Admin"
-    : companyRole;
+    : "Recruiter";
 
   return {
     id: rawUser.id || rawUser._id || `user-${Date.now()}`,
@@ -156,10 +164,24 @@ const normalizeUser = (resData, fallbackEmail = "") => {
     companyName: companyName || "",
     companyId: companyId || "",
     companyLogo: companyLogo || "",
-    companyRole: companyRole,
+    companyRole: isOwner ? "OWNER" : isAdmin ? "ADMIN" : "RECRUITER",
     role: displayRole,
     rawRole: companyRole,
     isOwner: isOwner,
+    isAdmin: isAdmin,
+    activeCompany: {
+      id: companyId,
+      name: companyName,
+      role: isOwner ? "OWNER" : isAdmin ? "ADMIN" : "RECRUITER",
+      logoUrl: companyLogo,
+    },
+    companies: Array.isArray(payload?.companies)
+      ? payload.companies
+      : Array.isArray(resData?.companies)
+      ? resData.companies
+      : primaryCompany
+      ? [primaryCompany]
+      : [],
   };
 };
 

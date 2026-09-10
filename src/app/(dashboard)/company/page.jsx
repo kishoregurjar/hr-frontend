@@ -356,8 +356,21 @@ export default function CompanySettingsPage() {
     }
   };
 
+  const activeCompanyRole =
+    user?.activeCompany?.role ||
+    user?.companies?.[0]?.role ||
+    user?.companyRole ||
+    (user?.isOwner ? "OWNER" : "") ||
+    user?.role ||
+    "";
+
   const isOwnerOrAdmin = Boolean(
     user?.isOwner ||
+    user?.isAdmin ||
+    String(activeCompanyRole).toUpperCase() === "OWNER" ||
+    String(activeCompanyRole).toUpperCase() === "ADMIN" ||
+    String(activeCompanyRole).toUpperCase() === "COMPANY_OWNER" ||
+    String(activeCompanyRole).toUpperCase() === "COMPANY_ADMIN" ||
     user?.companyRole === "OWNER" ||
     user?.companyRole === "ADMIN" ||
     user?.role === "Company Owner" ||

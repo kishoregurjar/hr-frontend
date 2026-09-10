@@ -89,9 +89,29 @@ const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
     user?.company ||
     (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
     "";
-  const isOwnerUser = Boolean(user?.isOwner || user?.companyRole === "OWNER" || user?.role === "Company Owner");
-  const isAdminUser = Boolean(user?.companyRole === "ADMIN" || user?.role === "HR Admin");
-  const userRole = user?.role || (isOwnerUser ? "Company Owner" : isAdminUser ? "HR Admin" : "Recruiter");
+  const activeCompanyRole =
+    user?.activeCompany?.role ||
+    user?.companies?.[0]?.role ||
+    user?.companyRole ||
+    (user?.isOwner ? "OWNER" : "") ||
+    user?.role ||
+    "";
+
+  const isOwnerUser = Boolean(
+    user?.isOwner ||
+    String(activeCompanyRole).toUpperCase() === "OWNER" ||
+    String(activeCompanyRole).toUpperCase() === "COMPANY_OWNER" ||
+    user?.companyRole === "OWNER" ||
+    user?.role === "Company Owner"
+  );
+  const isAdminUser = Boolean(
+    user?.isAdmin ||
+    String(activeCompanyRole).toUpperCase() === "ADMIN" ||
+    String(activeCompanyRole).toUpperCase() === "COMPANY_ADMIN" ||
+    user?.companyRole === "ADMIN" ||
+    user?.role === "HR Admin"
+  );
+  const userRole = isOwnerUser ? "Company Owner" : isAdminUser ? "HR Admin" : "Recruiter";
   const badgeLabel = isOwnerUser ? "Owner" : isAdminUser ? "Admin" : "Recruiter";
   const badgeColor = isOwnerUser
     ? "bg-amber-50 text-amber-700 border-amber-200"
@@ -205,8 +225,8 @@ const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
                       <p className="text-sm font-extrabold text-slate-900 truncate">
                         {displayName}
                       </p>
-                      <span className="px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-extrabold uppercase shrink-0">
-                        Owner
+                      <span className={`px-1.5 py-0.2 rounded border text-[9px] font-extrabold uppercase shrink-0 ${badgeColor}`}>
+                        {badgeLabel}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5" title={userEmail}>

@@ -262,7 +262,7 @@ export default function AdminOverviewPage() {
                           {company.name}
                         </Link>
                         <p className="text-xs text-slate-500 truncate mt-0.5">
-                          {company.ownerEmail || company.email || company.domain || "tenant"}
+                          {company.owner?.email || company.ownerEmail || company.email || company.domain || company.slug || "tenant"}
                         </p>
                       </div>
                     </div>
