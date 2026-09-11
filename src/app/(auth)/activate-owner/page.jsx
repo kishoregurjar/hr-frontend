@@ -29,6 +29,7 @@ function ActivateOwnerContent() {
 
   const [isVerifying, setIsVerifying] = useState(true);
   const [tokenValid, setTokenValid] = useState(true);
+  const [isAlreadyActive, setIsAlreadyActive] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -150,6 +151,13 @@ function ActivateOwnerContent() {
         "Activation failed. The link may have expired or already been used.";
 
       if (
+        errMsg.toLowerCase().includes("already active") ||
+        errMsg.toLowerCase().includes("already used") ||
+        errMsg.toLowerCase().includes("already been used") ||
+        errMsg.toLowerCase().includes("sign in directly")
+      ) {
+        setIsAlreadyActive(true);
+      } else if (
         errMsg.toLowerCase().includes("expired") ||
         errMsg.toLowerCase().includes("invalid") ||
         errMsg.toLowerCase().includes("not found")
@@ -172,6 +180,44 @@ function ActivateOwnerContent() {
         <div>
           <h2 className="text-lg font-bold text-slate-900">Verifying Activation Link...</h2>
           <p className="text-xs text-slate-500 mt-1">Please wait while we validate your invitation token.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // State 4: Account Already Activated Screen
+  if (isAlreadyActive) {
+    return (
+      <div className="flex flex-col items-center justify-center p-6 text-center space-y-5">
+        <div className="h-14 w-14 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100">
+          <CheckCircle2 className="h-7 w-7 text-blue-600" />
+        </div>
+        <div className="space-y-1.5 max-w-sm">
+          <h2 className="text-xl font-extrabold text-slate-900">Account Already Activated</h2>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            Your Organization Owner workspace account is already active. You can sign in using your credentials.
+          </p>
+        </div>
+
+        <div className="bg-blue-50/80 border border-blue-200/80 rounded-2xl p-4 text-xs text-blue-900 text-left space-y-1 w-full">
+          <div className="font-semibold flex items-center gap-1.5 text-blue-900">
+            <Sparkles className="h-3.5 w-3.5 text-blue-600" />
+            Ready to Sign In
+          </div>
+          <p className="text-[11px] text-blue-700 leading-relaxed">
+            Your workspace password was set successfully during activation. Please sign in directly to access your portal.
+          </p>
+        </div>
+
+        <div className="pt-2 w-full">
+          <Link href="/login?activated=true" className="block w-full">
+            <Button
+              className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>Sign In to Your Workspace</span>
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
         </div>
       </div>
     );
