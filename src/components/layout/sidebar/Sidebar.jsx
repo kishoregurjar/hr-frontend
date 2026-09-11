@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -82,6 +82,31 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
   const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  const [dynamicLogo, setDynamicLogo] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null
+  );
+  const [dynamicName, setDynamicName] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("companyName") : null
+  );
+
+  useEffect(() => {
+    const handleCompanyUpdate = () => {
+      if (typeof window !== "undefined") {
+        setDynamicLogo(localStorage.getItem("companyLogo"));
+        setDynamicName(localStorage.getItem("companyName"));
+      }
+    };
+
+    window.addEventListener("companyLogoUpdated", handleCompanyUpdate);
+    window.addEventListener("companyUpdated", handleCompanyUpdate);
+    window.addEventListener("storage", handleCompanyUpdate);
+    return () => {
+      window.removeEventListener("companyLogoUpdated", handleCompanyUpdate);
+      window.removeEventListener("companyUpdated", handleCompanyUpdate);
+      window.removeEventListener("storage", handleCompanyUpdate);
+    };
+  }, []);
+
   const activeCompanyRole =
     user?.activeCompany?.role ||
     user?.companies?.[0]?.role ||
@@ -137,6 +162,7 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
   const displayName = resolveDisplayName(user);
   const userEmail = typeof user?.email === "string" ? user.email : "";
   const companyLogo =
+    dynamicLogo ||
     (typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null) ||
     user?.companyLogo ||
     user?.company?.logo ||
@@ -144,10 +170,11 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
     null;
   const companyName =
     impersonatedCompany?.name ||
+    dynamicName ||
+    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
     user?.companyName ||
     user?.company?.name ||
     (typeof user?.company === "string" ? user.company : null) ||
-    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
     "";
   const companyDomain =
     user?.companyDomain ||
