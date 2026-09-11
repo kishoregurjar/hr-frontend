@@ -17,6 +17,7 @@ import {
   ChevronDown,
   Sparkles,
   CheckCircle2,
+  ArrowRight,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -142,6 +143,13 @@ const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
     return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
   };
 
+  const companyDomain =
+    user?.companyDomain ||
+    user?.company?.domain ||
+    user?.domain ||
+    (typeof window !== "undefined" ? localStorage.getItem("companyDomain") : null) ||
+    "";
+
   return (
     <>
       <header className="min-h-16 border-b border-slate-200/80 bg-white px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between sticky top-0 z-30 font-sans shadow-2xs gap-3">
@@ -182,7 +190,7 @@ const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
           </div>
         </div>
 
-        {/* Right Section: Notifications + Company Workspace Identity */}
+        {/* Right Section: Notifications + Interactive Company Workspace Identity Dropdown */}
         <div className="flex items-center gap-3 shrink-0">
           {/* Notifications Trigger */}
           <button
@@ -194,39 +202,123 @@ const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
             <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-blue-600 ring-2 ring-white" />
           </button>
 
-          {/* ── Organization / Company Workspace Identity Pill ── */}
-          <Link
-            href="/company"
-            className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 shadow-2xs transition cursor-pointer group focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            title="Company & Team Settings"
-          >
-            {/* Company Avatar / Logo */}
-            {companyLogo ? (
-              <img
-                src={companyLogo}
-                alt={companyName}
-                className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg object-contain bg-white border border-slate-200 p-0.5 shadow-2xs group-hover:scale-105 transition-transform"
+          {/* ── Organization / Company Workspace Identity Dropdown ── */}
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+              className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 shadow-2xs transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              aria-label="Company workspace details"
+              aria-expanded={isProfileMenuOpen}
+            >
+              {/* Company Avatar / Logo */}
+              {companyLogo ? (
+                <img
+                  src={companyLogo}
+                  alt={companyName}
+                  className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg object-contain bg-white border border-slate-200 p-0.5 shadow-2xs shrink-0"
+                />
+              ) : (
+                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-gradient-to-br from-slate-900 to-slate-800 text-white flex items-center justify-center font-extrabold text-xs shadow-xs shrink-0">
+                  {companyName ? companyName.slice(0, 2).toUpperCase() : "HQ"}
+                </div>
+              )}
+
+              <div className="hidden sm:block text-left">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs font-bold text-slate-900 leading-tight truncate max-w-[150px]">
+                    {companyName || "Workspace"}
+                  </p>
+                  <span className={`px-1.5 py-0.2 rounded border text-[9px] font-extrabold uppercase ${badgeColor}`}>
+                    {badgeLabel}
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-500 font-medium truncate max-w-[140px]">
+                  {userRole}
+                </p>
+              </div>
+
+              <ChevronDown
+                className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${
+                  isProfileMenuOpen ? "rotate-180 text-slate-700" : ""
+                }`}
               />
-            ) : (
-              <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-gradient-to-br from-slate-900 to-slate-800 text-white flex items-center justify-center font-extrabold text-xs shadow-xs shrink-0 group-hover:scale-105 transition-transform">
-                {companyName ? companyName.slice(0, 2).toUpperCase() : "HQ"}
+            </button>
+
+            {/* ── Floating Company Workspace Overview Card (100% Dynamic) ── */}
+            {isProfileMenuOpen && (
+              <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white border border-slate-200 shadow-xl shadow-slate-200/60 p-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150 font-sans space-y-3">
+                {/* Company Header */}
+                <div className="flex items-center gap-3 pb-2.5 border-b border-slate-100">
+                  {companyLogo ? (
+                    <img
+                      src={companyLogo}
+                      alt={companyName}
+                      className="h-10 w-10 rounded-xl object-contain bg-white border border-slate-200 p-1 shadow-2xs shrink-0"
+                    />
+                  ) : (
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 text-white flex items-center justify-center font-black text-sm shadow-xs shrink-0">
+                      {companyName ? companyName.slice(0, 2).toUpperCase() : "HQ"}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-extrabold text-slate-900 truncate">
+                      {companyName || "Workspace"}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded border text-[9px] font-extrabold uppercase ${badgeColor}`}>
+                        {isOwnerUser ? <Crown className="h-2.5 w-2.5 text-amber-600" /> : <ShieldCheck className="h-2.5 w-2.5 text-blue-600" />}
+                        {userRole}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Company Details (Purely dynamic from Auth / User state) */}
+                <div className="space-y-2 text-xs bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-slate-500 font-medium shrink-0">Owner / User:</span>
+                    <span className="font-bold text-slate-900 text-right truncate max-w-[150px]">
+                      {displayName}
+                    </span>
+                  </div>
+
+                  {userEmail && (
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-slate-500 font-medium shrink-0">Email:</span>
+                      <span className="font-semibold text-slate-700 text-right truncate max-w-[150px]" title={userEmail}>
+                        {userEmail}
+                      </span>
+                    </div>
+                  )}
+
+                  {companyDomain && (
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-slate-500 font-medium shrink-0">Domain:</span>
+                      <span className="font-semibold text-blue-600 text-right truncate max-w-[150px]">
+                        {companyDomain}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Direct Action Link to Company Management */}
+                <div className="pt-1">
+                  <Link
+                    href="/company"
+                    onClick={() => setIsProfileMenuOpen(false)}
+                    className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold text-blue-700 bg-blue-50/70 hover:bg-blue-100/80 border border-blue-200/60 rounded-xl transition-all cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-blue-600" />
+                      Manage Company & Team
+                    </span>
+                    <ArrowRight className="h-3.5 w-3.5 text-blue-600" />
+                  </Link>
+                </div>
               </div>
             )}
-
-            <div className="hidden sm:block text-left">
-              <div className="flex items-center gap-1.5">
-                <p className="text-xs font-bold text-slate-900 leading-tight truncate max-w-[150px]">
-                  {companyName || "Workspace"}
-                </p>
-                <span className={`px-1.5 py-0.2 rounded border text-[9px] font-extrabold uppercase ${badgeColor}`}>
-                  {badgeLabel}
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-500 font-medium truncate max-w-[140px]">
-                {userRole}
-              </p>
-            </div>
-          </Link>
+          </div>
         </div>
       </header>
 
