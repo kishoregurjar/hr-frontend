@@ -232,12 +232,9 @@ function AcceptInvitationContent() {
   const handleSwitchAccount = async () => {
     try {
       await logout();
-      const loginUrl = `/login?email=${encodeURIComponent(
-        invitationData?.email || ""
-      )}&returnUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`;
-      router.push(loginUrl);
-    } catch {
-      router.push("/login");
+    } catch {}
+    if (typeof window !== "undefined") {
+      window.location.reload();
     }
   };
 
