@@ -58,7 +58,7 @@ const AdminSidebar = ({ isOpen = false, onClose = () => {} }) => {
       } font-sans`}
     >
       {/* ── Brand Header ── */}
-      <div className="h-16 flex items-center justify-between px-5 py-4 border-b border-slate-100">
+      <div className="h-[70px] flex items-center justify-between px-5 py-3 border-b border-slate-200/80">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 font-bold text-white shadow-md shadow-blue-500/20">
             <Shield className="h-5 w-5" />

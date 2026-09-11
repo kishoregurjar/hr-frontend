@@ -196,7 +196,7 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
         }`}
       >
         {/* ── 1. Top Dynamic Company Workspace Header ── */}
-        <div className="h-16 flex items-center justify-between px-4 py-3 border-b border-slate-100">
+        <div className="h-[70px] flex items-center justify-between px-4 py-3 border-b border-slate-200/80">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             {companyLogo ? (
               <img

@@ -70,7 +70,7 @@ const AdminHeader = ({
       .toUpperCase() || "SA";
 
   return (
-    <header className="min-h-16 border-b border-slate-200/80 bg-white px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between sticky top-0 z-30 font-sans shadow-2xs gap-3">
+    <header className="h-[70px] border-b border-slate-200/80 bg-white px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between sticky top-0 z-30 font-sans shadow-2xs gap-3">
       <div className="flex items-center gap-3 min-w-0">
         {/* Mobile Hamburger Menu Toggle */}
         <button
