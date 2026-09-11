@@ -64,9 +64,20 @@ axiosClient.interceptors.request.use(
         localStorage.getItem("hirequest_company_id") ||
         sessionStorage.getItem("companyId");
 
+      const storedUserRaw = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
+      let isSuperAdmin = false;
+      try {
+        if (storedUserRaw) {
+          const u = JSON.parse(storedUserRaw);
+          isSuperAdmin = u?.role === "SUPER_ADMIN" || u?.rawRole === "SUPER_ADMIN";
+        }
+      } catch {}
+
       if (
         companyId &&
-        !config.url?.includes("/companies/invitations/accept")
+        !isSuperAdmin &&
+        !config.url?.includes("/companies/invitations/accept") &&
+        !config.url?.includes("/super-admin/")
       ) {
         config.headers["X-Company-Id"] = companyId;
         config.headers["x-company-id"] = companyId;
@@ -152,6 +163,7 @@ axiosClient.interceptors.response.use(
           : null;
 
       try {
+        const refreshBody = storedRefreshToken ? { refreshToken: storedRefreshToken } : {};
         const refreshResponse = await fetch(`${baseURL}/auth/refresh-token`, {
           method: "POST",
           headers: {
@@ -159,7 +171,7 @@ axiosClient.interceptors.response.use(
             "ngrok-skip-browser-warning": "true",
           },
           credentials: "include",
-          body: JSON.stringify({ refreshToken: storedRefreshToken }),
+          body: JSON.stringify(refreshBody),
         });
 
         if (!refreshResponse.ok) {
