@@ -73,8 +73,27 @@ const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const rawName =
+    (typeof user?.name === "string" ? user.name : "") ||
+    (typeof user?.fullName === "string" ? user.fullName : "") ||
+    (user?.email ? user.email.split("@")[0] : "");
+  const displayName = String(rawName).replace(/\s+user$/i, "").trim() || "User";
+  const userEmail = typeof user?.email === "string" ? user.email : (typeof window !== "undefined" ? localStorage.getItem("user_email") || "" : "");
+  const companyLogo =
+    (typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null) || user?.companyLogo || null;
+  const companyName =
+    impersonatedCompany?.name ||
+    user?.companyName ||
+    user?.company?.name ||
+    (typeof user?.company === "string" ? user.company : null) ||
+    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
+    "";
+
   const pageTitle = PAGE_TITLES[pathname] || "Dashboard";
-  const pageSubtitle = PAGE_SUBTITLES[pathname] || "Manage recruitment pipeline, candidate assessments, and evaluations";
+  const pageSubtitle =
+    pathname === "/dashboard"
+      ? `${companyName ? `${companyName} ` : ""}Recruitment & Cognitive Candidate Screening Overview`
+      : PAGE_SUBTITLES[pathname] || "Manage recruitment pipeline, candidate assessments, and evaluations";
 
   const handleConfirmLogout = async () => {
     setIsLoggingOut(true);
@@ -89,21 +108,6 @@ const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
       setIsLoggingOut(false);
     }
   };
-
-  const rawName =
-    (typeof user?.name === "string" ? user.name : "") ||
-    (typeof user?.fullName === "string" ? user.fullName : "") ||
-    (user?.email ? user.email.split("@")[0] : "");
-  const displayName = String(rawName).replace(/\s+user$/i, "").trim() || "User";
-  const userEmail = typeof user?.email === "string" ? user.email : (typeof window !== "undefined" ? localStorage.getItem("user_email") || "" : "");
-  const companyLogo =
-    (typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null) || user?.companyLogo || null;
-  const companyName =
-    user?.companyName ||
-    user?.company?.name ||
-    user?.company ||
-    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
-    "";
   const activeCompanyRole =
     user?.activeCompany?.role ||
     user?.companies?.[0]?.role ||
