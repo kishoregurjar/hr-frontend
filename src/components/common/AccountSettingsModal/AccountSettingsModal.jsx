@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/features/auth/context";
-import { changePasswordApi, logoutAllApi } from "@/lib/api/auth";
+import { changePasswordApi, logoutAllApi, updateUserProfileApi } from "@/lib/api/auth";
 import { toast } from "sonner";
 import {
   Shield,
@@ -32,6 +32,33 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState("profile"); // 'profile' | 'security' | 'sessions'
 
+  const rawName =
+    (typeof user?.name === "string" ? user.name : "") ||
+    (typeof user?.fullName === "string" ? user.fullName : "") ||
+    "";
+  const userName = String(rawName).replace(/\s+user$/i, "").trim() || (user?.email ? user.email.split("@")[0] : "HR User");
+  const userEmail = user?.email || "";
+  const companyName =
+    user?.companyName ||
+    user?.company?.name ||
+    user?.company ||
+    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
+    "";
+  const userRole = user?.role || "HR";
+
+  // Profile Edit State
+  const [nameInput, setNameInput] = useState(userName);
+  const [isSavingName, setIsSavingName] = useState(false);
+  const [nameError, setNameError] = useState(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setNameInput(userName);
+      setNameError(null);
+      setPasswordError(null);
+    }
+  }, [isOpen, userName]);
+
   // Change Password Form State
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -43,19 +70,27 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
   // Logout All Devices State
   const [isLoggingOutAll, setIsLoggingOutAll] = useState(false);
 
-  const rawName =
-    (typeof user?.name === "string" ? user.name : "") ||
-    (typeof user?.fullName === "string" ? user.fullName : "") ||
-    "HR User";
-  const userName = String(rawName).replace(/\s+user$/i, "").trim() || "HR User";
-  const userEmail = user?.email || "";
-  const companyName =
-    user?.companyName ||
-    user?.company?.name ||
-    user?.company ||
-    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
-    "";
-  const userRole = user?.role || "HR";
+  const handleUpdateName = async (e) => {
+    e?.preventDefault();
+    setNameError(null);
+    const trimmed = nameInput.trim();
+    if (!trimmed || trimmed.length < 2) {
+      setNameError("Name must be at least 2 characters long.");
+      return;
+    }
+
+    setIsSavingName(true);
+    try {
+      await updateUserProfileApi({ name: trimmed });
+      toast.success("Profile name updated successfully!");
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || "Failed to update profile name.";
+      setNameError(msg);
+      toast.error(msg);
+    } finally {
+      setIsSavingName(false);
+    }
+  };
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
@@ -201,6 +236,48 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
                   <p className="text-xs text-slate-500 font-medium truncate">{userEmail}</p>
                 </div>
               </div>
+
+              {/* Full Name Edit Section */}
+              <form onSubmit={handleUpdateName} className="p-4 rounded-2xl border border-slate-200/90 bg-slate-50/50 space-y-3">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <User className="h-3.5 w-3.5 text-blue-600" />
+                      Full Name
+                    </label>
+                    <span className="text-[11px] font-medium text-slate-400">
+                      Displayed on sidebar, invites & evaluations
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        value={nameInput}
+                        onChange={(e) => {
+                          setNameInput(e.target.value);
+                          if (nameError) setNameError(null);
+                        }}
+                        placeholder="Enter your full name (e.g. Shivam Singh)"
+                        className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition shadow-2xs"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={isSavingName || !nameInput.trim() || nameInput.trim() === userName}
+                      className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition disabled:opacity-40 cursor-pointer shrink-0"
+                    >
+                      {isSavingName ? "Saving..." : "Save Name"}
+                    </Button>
+                  </div>
+                  {nameError && (
+                    <p className="text-[11px] font-semibold text-rose-600 flex items-center gap-1 mt-1">
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                      {nameError}
+                    </p>
+                  )}
+                </div>
+              </form>
 
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="p-3.5 rounded-2xl border border-slate-200/90 bg-white space-y-1 hover:border-blue-200 transition-colors">

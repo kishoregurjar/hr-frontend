@@ -99,10 +99,12 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
 
     window.addEventListener("companyLogoUpdated", handleCompanyUpdate);
     window.addEventListener("companyUpdated", handleCompanyUpdate);
+    window.addEventListener("userProfileUpdated", handleCompanyUpdate);
     window.addEventListener("storage", handleCompanyUpdate);
     return () => {
       window.removeEventListener("companyLogoUpdated", handleCompanyUpdate);
       window.removeEventListener("companyUpdated", handleCompanyUpdate);
+      window.removeEventListener("userProfileUpdated", handleCompanyUpdate);
       window.removeEventListener("storage", handleCompanyUpdate);
     };
   }, []);

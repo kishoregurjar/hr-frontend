@@ -134,6 +134,24 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, []);
 
+  useEffect(() => {
+    const handleProfileUpdate = () => {
+      try {
+        const stored = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
+        if (stored) {
+          setUser(JSON.parse(stored));
+        }
+      } catch {}
+    };
+
+    window.addEventListener("userProfileUpdated", handleProfileUpdate);
+    window.addEventListener("storage", handleProfileUpdate);
+    return () => {
+      window.removeEventListener("userProfileUpdated", handleProfileUpdate);
+      window.removeEventListener("storage", handleProfileUpdate);
+    };
+  }, []);
+
   const login = async (credentials) => {
     setIsLoading(true);
     try {
@@ -177,6 +195,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{
         user,
+        setUser,
         token,
         isAuthenticated: Boolean(token && user),
         isLoading,

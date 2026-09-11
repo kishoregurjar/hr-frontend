@@ -591,4 +591,35 @@ export const getUserCompaniesApi = async () => {
   }
 };
 
+/**
+ * Update User Profile (e.g., Full Name)
+ * Endpoint: PATCH /api/v1/auth/profile
+ */
+export const updateUserProfileApi = async ({ name }) => {
+  const res = await axiosClient.patch("/auth/profile", { name });
+  const payload = res?.data?.data || res?.data || res;
+  const user = normalizeUser(payload);
+
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
+      let updatedUser = user;
+      if (stored) {
+        const prev = JSON.parse(stored);
+        updatedUser = {
+          ...prev,
+          ...(user || {}),
+          name: name.trim(),
+          fullName: name.trim(),
+        };
+      }
+      if (updatedUser) {
+        localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(updatedUser));
+      }
+    } catch {}
+    window.dispatchEvent(new Event("userProfileUpdated"));
+  }
+  return user || payload?.user;
+};
+
 
