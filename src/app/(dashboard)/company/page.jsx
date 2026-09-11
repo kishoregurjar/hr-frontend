@@ -147,6 +147,10 @@ export default function CompanySettingsPage() {
         if (compName && typeof window !== "undefined") {
           localStorage.setItem("companyName", compName);
         }
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("companyLogoUpdated"));
+          window.dispatchEvent(new Event("companyUpdated"));
+        }
       } else {
         setCompany(null);
       }
@@ -246,7 +250,11 @@ export default function CompanySettingsPage() {
       if (res?.name && typeof window !== "undefined") {
         localStorage.setItem("companyName", res.name);
       }
-      fetchCompanyData();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("companyLogoUpdated"));
+        window.dispatchEvent(new Event("companyUpdated"));
+      }
+      await fetchCompanyData();
     } catch (err) {
       toast.error(err.message || "Failed to update profile.");
     } finally {
@@ -277,6 +285,7 @@ export default function CompanySettingsPage() {
         if (typeof window !== "undefined") {
           localStorage.setItem("companyLogo", logoUrl);
           window.dispatchEvent(new Event("companyLogoUpdated"));
+          window.dispatchEvent(new Event("companyUpdated"));
         }
       }
       toast.success("Company logo uploaded successfully!");
