@@ -402,39 +402,7 @@ export default function CompanySettingsPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12">
-      {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b pb-5">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
-            <Building2 className="h-8 w-8 text-blue-600" />
-            Company & Team Management
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage your company profile, recruitment branding, team members, and role permissions.
-          </p>
-        </div>
-
-        {company && (
-          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-blue-200/80 bg-blue-50/80 shadow-xs">
-            {company?.logoUrl ? (
-              <img
-                src={company.logoUrl}
-                alt={company?.name || "Company"}
-                className="h-6 w-6 object-contain rounded-lg bg-white p-0.5 border border-slate-200 shadow-2xs"
-              />
-            ) : (
-              <div className="h-6 w-6 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center">
-                {company?.name ? company.name[0]?.toUpperCase() : "C"}
-              </div>
-            )}
-            <span className="font-extrabold text-xs sm:text-sm text-blue-900 tracking-tight">
-              {company?.name || "My Company"}
-            </span>
-          </div>
-        )}
-      </div>
-
+    <div className="space-y-6 max-w-6xl mx-auto pb-12 font-sans">
       {/* ── Navigation Tabs ── */}
       <div className="flex items-center gap-2 border-b">
         <button
