@@ -171,16 +171,11 @@ const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
                 {pageTitle}
               </h1>
 
-              {/* Impersonation Banner for Super Admin */}
-              {impersonatedCompany ? (
+              {/* Impersonation Banner for Super Admin if inspecting tenant */}
+              {impersonatedCompany && (
                 <Badge className="bg-amber-100 text-amber-800 border-amber-300 font-extrabold text-[10px] sm:text-[10.5px] gap-1 shrink-0 shadow-2xs">
                   <ShieldCheck className="h-3 w-3 text-amber-600" />
                   Impersonating: {impersonatedCompany.name}
-                </Badge>
-              ) : (
-                <Badge className={`text-[10px] sm:text-[10.5px] font-extrabold gap-1 shrink-0 ${badgeColor}`}>
-                  {isOwnerUser ? <Crown className="h-3 w-3 text-amber-600" /> : <ShieldCheck className="h-3 w-3 text-blue-600" />}
-                  {badgeLabel}
                 </Badge>
               )}
             </div>
