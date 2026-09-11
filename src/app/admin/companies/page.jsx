@@ -43,14 +43,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 // Module-level in-memory cache for instant navigation (Stale-While-Revalidate)
 let adminCompaniesCache = {
@@ -68,6 +60,18 @@ function AdminCompaniesContent() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [loading, setLoading] = useState(!adminCompaniesCache.companies);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activeMenuId, setActiveMenuId] = useState(null);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleGlobalClick = (e) => {
+      if (!e.target.closest(".actions-menu-container")) {
+        setActiveMenuId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleGlobalClick);
+    return () => document.removeEventListener("mousedown", handleGlobalClick);
+  }, []);
 
   // Register New Company Modal State
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(autoOpenNewModal);
@@ -339,10 +343,15 @@ function AdminCompaniesContent() {
                       </td>
 
                       {/* Actions Dropdown */}
-                      <td className="py-4 px-5 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger
+                      <td className="py-4 px-5 text-right relative">
+                        <div className="relative inline-block text-left actions-menu-container">
+                          <button
+                            type="button"
                             disabled={actionLoadingId === company.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveMenuId((prev) => (prev === company.id ? null : company.id));
+                            }}
                             className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer focus-visible:outline-none"
                             aria-label="Tenant actions"
                           >
@@ -351,51 +360,67 @@ function AdminCompaniesContent() {
                             ) : (
                               <MoreVertical className="h-4 w-4" />
                             )}
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48 rounded-xl font-sans">
-                            <DropdownMenuLabel className="text-[11px] text-slate-400 font-semibold uppercase">
-                              Tenant Actions
-                            </DropdownMenuLabel>
-                            <DropdownMenuItem
-                              onClick={() => router.push(`/admin/companies/${company.id}`)}
-                              className="flex items-center gap-2 cursor-pointer"
-                            >
-                              <Eye className="h-4 w-4 text-slate-500" />
-                              <span>View Details</span>
-                            </DropdownMenuItem>
+                          </button>
 
-                            <DropdownMenuItem
-                              onClick={() => handleResendActivation(company)}
-                              className="flex items-center gap-2 cursor-pointer text-blue-600 font-medium"
-                            >
-                              <Send className="h-4 w-4 text-blue-600" />
-                              <span>Resend Activation Link</span>
-                            </DropdownMenuItem>
+                          {activeMenuId === company.id && (
+                            <div className="absolute right-0 mt-1 w-52 rounded-xl bg-white border border-slate-200 shadow-xl shadow-slate-200/60 p-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150 font-sans text-left">
+                              <p className="px-2.5 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                Tenant Actions
+                              </p>
 
-                            <DropdownMenuSeparator />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveMenuId(null);
+                                  router.push(`/admin/companies/${company.id}`);
+                                }}
+                                className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-semibold text-slate-700 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer text-left"
+                              >
+                                <Eye className="h-4 w-4 text-slate-400" />
+                                <span>View Details</span>
+                              </button>
 
-                            <DropdownMenuItem
-                              onClick={() => handleToggleStatus(company)}
-                              className={`flex items-center gap-2 cursor-pointer font-medium ${
-                                company.status === "ACTIVE"
-                                  ? "text-rose-600 hover:text-rose-700"
-                                  : "text-emerald-600 hover:text-emerald-700"
-                              }`}
-                            >
-                              {company.status === "ACTIVE" ? (
-                                <>
-                                  <Ban className="h-4 w-4" />
-                                  <span>Suspend Tenant</span>
-                                </>
-                              ) : (
-                                <>
-                                  <PlayCircle className="h-4 w-4" />
-                                  <span>Activate Tenant</span>
-                                </>
-                              )}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveMenuId(null);
+                                  handleResendActivation(company);
+                                }}
+                                className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer text-left"
+                              >
+                                <Send className="h-4 w-4 text-blue-600" />
+                                <span>Resend Activation Link</span>
+                              </button>
+
+                              <div className="my-1 border-t border-slate-100" />
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveMenuId(null);
+                                  handleToggleStatus(company);
+                                }}
+                                className={`w-full flex items-center gap-2 px-2.5 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-left ${
+                                  company.status === "ACTIVE"
+                                    ? "text-rose-600 hover:bg-rose-50"
+                                    : "text-emerald-600 hover:bg-emerald-50"
+                                }`}
+                              >
+                                {company.status === "ACTIVE" ? (
+                                  <>
+                                    <Ban className="h-4 w-4 text-rose-500" />
+                                    <span>Suspend Tenant</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <PlayCircle className="h-4 w-4 text-emerald-500" />
+                                    <span>Activate Tenant</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
