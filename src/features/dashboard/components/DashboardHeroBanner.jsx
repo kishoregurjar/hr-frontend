@@ -67,78 +67,37 @@ const DashboardHeroBanner = () => {
     : "RECRUITER";
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-700 p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/15 border border-indigo-400/20">
+    <div className="relative overflow-hidden rounded-2xl bg-linear-to-r from-slate-900 via-blue-950 to-indigo-950 p-5 sm:p-6 text-white shadow-lg border border-slate-800">
       {/* Background ambient lighting accents */}
-      <div className="absolute right-0 top-0 -mt-10 -mr-10 h-72 w-72 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-      <div className="absolute left-1/4 bottom-0 h-44 w-44 rounded-full bg-cyan-400/10 blur-2xl pointer-events-none" />
+      <div className="absolute right-0 top-0 -mt-10 -mr-10 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+      <div className="absolute left-1/4 bottom-0 h-40 w-40 rounded-full bg-indigo-500/10 blur-2xl pointer-events-none" />
 
-      <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-        <div className="space-y-3 max-w-3xl">
-          {/* Workspace & User Badges */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 border border-white/25 text-white text-[11px] font-bold uppercase tracking-wider backdrop-blur-md">
-              {isOwner ? (
-                <Crown className="h-3 w-3 text-amber-300" />
-              ) : (
-                <Shield className="h-3 w-3 text-blue-200" />
-              )}
-              <span>{badgeText}</span>
-              {companyName && (
-                <>
-                  <span className="text-white/60">•</span>
-                  <span className="font-extrabold text-amber-200">{companyName}</span>
-                </>
-              )}
-              {impersonated && (
-                <>
-                  <span className="text-white/60">•</span>
-                  <span className="bg-amber-400 text-slate-900 px-1.5 py-0.2 rounded text-[9px] font-black uppercase">
-                    Inspecting
-                  </span>
-                </>
-              )}
-            </div>
-
-            {userEmail && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/20 border border-white/15 text-blue-100 text-[11px] font-medium backdrop-blur-md">
-                <Mail className="h-3 w-3 text-blue-200 shrink-0" />
-                <span>{userEmail}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Title */}
-          <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
+      <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight">
             Automated Candidate Screening Pipeline
           </h2>
-
-          {/* Subtitle */}
-          <p className="text-xs sm:text-sm text-blue-50/90 leading-relaxed max-w-2xl font-normal">
-            Welcome back, <strong className="text-white font-bold">{userName || "there"}</strong>. {isOwner ? (
-              <>You have full ownership permissions over <strong className="text-white font-bold">{companyName || "your workspace"}</strong>. Deploy multi-module cognitive assessments, manage candidate pipelines, and shortlist top talent.</>
-            ) : (
-              <>You are logged in to <strong className="text-white font-bold">{companyName || "your workspace"}</strong>. Review candidate assessments, manage recruitment screening pipelines, and shortlist top talent.</>
-            )}
+          <p className="text-xs sm:text-sm text-slate-300 max-w-xl font-medium">
+            Deploy multi-module cognitive assessments, manage candidate pipelines, and shortlist top talent.
           </p>
         </div>
 
         {/* Action CTAs */}
-        <div className="flex flex-wrap items-center gap-3 shrink-0">
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
           <Link href="/candidates">
             <Button
-              className="h-11 px-5 rounded-xl bg-white hover:bg-slate-50 text-indigo-700 hover:text-indigo-800 font-bold text-xs gap-2 shadow-lg shadow-black/10 transition-all border border-white/80"
+              className="bg-white hover:bg-slate-100 text-slate-900 font-bold rounded-xl text-xs sm:text-sm px-4 py-2 shadow-md gap-1.5 cursor-pointer transition-all"
             >
-              <Mail className="h-4 w-4 text-indigo-600" />
-              Extract / Add Candidates
+              <Mail className="h-4 w-4 text-blue-600" />
+              Extract Candidates
             </Button>
           </Link>
 
           <Link href="/assessments/create">
             <Button
-              variant="outline"
-              className="h-11 px-5 rounded-xl bg-indigo-700/40 hover:bg-indigo-700/60 text-white font-semibold text-xs gap-2 border-white/30 backdrop-blur-md transition-all"
+              className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs sm:text-sm px-4 py-2 shadow-md gap-1.5 cursor-pointer transition-all"
             >
-              <FileText className="h-4 w-4 text-white" />
+              <FileText className="h-4 w-4" />
               Assessment Builder
             </Button>
           </Link>

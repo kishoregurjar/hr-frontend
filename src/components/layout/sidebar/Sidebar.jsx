@@ -178,17 +178,17 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
         }`}
       >
         {/* ── 1. Top Logo Header ── */}
-        <div className="h-18 flex items-center justify-between px-5 pt-5 pb-3">
+        <div className="h-16 flex items-center justify-between px-5 py-4 border-b border-slate-100">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 font-extrabold text-sm text-white shadow-md shadow-blue-500/20">
               HQ
             </div>
             <div>
               <span className="font-extrabold text-base tracking-tight text-slate-900 leading-none block">
-                AssessFlow
+                HireQuest
               </span>
               <span className="text-[11px] text-slate-500 font-medium block mt-0.5">
-                Multi-Tenant Screening
+                Recruitment Workspace
               </span>
             </div>
           </div>
