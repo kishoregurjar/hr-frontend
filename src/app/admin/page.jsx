@@ -213,148 +213,90 @@ export default function AdminOverviewPage() {
         </div>
 
         {/* ── 2. Client Companies Directory & Recent Activity ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left 2 Cols: Organizations Directory */}
-          <div className="lg:col-span-2 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div>
-                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-blue-600" />
-                  Client Organizations & Tenant Status
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Recent onboarding and active company directory.
-                </p>
-              </div>
-              <Link href="/admin/companies">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs font-semibold gap-1 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl"
-                >
-                  View All Directory
-                  <ArrowUpRight className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
-            </div>
-
-            {loading ? (
-              <div className="py-12 text-center flex flex-col items-center justify-center space-y-2">
-                <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
-                <p className="text-xs text-slate-500">Fetching organizations...</p>
-              </div>
-            ) : companies.length > 0 ? (
-              <div className="divide-y divide-slate-100">
-                {companies.slice(0, 5).map((company) => (
-                  <div
-                    key={company.id}
-                    className="py-3.5 flex items-center justify-between gap-4 first:pt-0 last:pb-0"
-                  >
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <div className="h-10 w-10 rounded-xl bg-slate-900 text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-xs">
-                        {company.name?.slice(0, 2).toUpperCase() || "CO"}
-                      </div>
-                      <div className="min-w-0">
-                        <Link
-                          href={`/admin/companies/${company.id}`}
-                          className="text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors truncate block"
-                        >
-                          {company.name}
-                        </Link>
-                        <p className="text-xs text-slate-500 truncate mt-0.5">
-                          {company.owner?.email || company.ownerEmail || company.email || company.domain || company.slug || "tenant"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 shrink-0">
-                      <Badge
-                        className={
-                          company.status === "ACTIVE"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-300 font-extrabold text-[10.5px]"
-                            : "bg-rose-50 text-rose-700 border-rose-300 font-extrabold text-[10.5px]"
-                        }
-                      >
-                        {company.status || "ACTIVE"}
-                      </Badge>
-                      <Link href={`/admin/companies/${company.id}`}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-slate-400 hover:text-blue-600"
-                        >
-                          <ArrowUpRight className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-12 text-center space-y-2">
-                <Building2 className="h-8 w-8 mx-auto text-slate-300" />
-                <p className="text-xs font-bold text-slate-700">No organizations onboarded yet</p>
-                <p className="text-[11px] text-slate-400">
-                  Click &apos;Register New Company&apos; to onboard your first client organization.
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Right 1 Col: Platform Security & Controls Quick Card */}
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs space-y-5">
-            <div className="pb-3 border-b border-slate-100">
-              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-blue-600" />
-                Super Admin Quick Controls
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-7 shadow-xs space-y-5">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-blue-600" />
+                Client Organizations & Tenant Status
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Essential management shortcuts.
+                Recent onboarding and active company directory.
               </p>
             </div>
-
-            <div className="space-y-3">
-              <Link href="/admin/companies?new=true" className="block">
-                <div className="p-3.5 rounded-xl border border-blue-100 bg-blue-50/50 hover:bg-blue-50 transition-colors flex items-center justify-between group">
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-bold text-blue-900">Onboard New Organization</p>
-                    <p className="text-[11px] text-blue-700/70">Create tenant & trigger owner activation</p>
-                  </div>
-                  <Plus className="h-4 w-4 text-blue-600 group-hover:scale-110 transition-transform" />
-                </div>
-              </Link>
-
-              <Link href="/admin/companies" className="block">
-                <div className="p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 transition-colors flex items-center justify-between group">
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-bold text-slate-900">Manage Tenant Directory</p>
-                    <p className="text-[11px] text-slate-500">Suspend, activate, or audit client companies</p>
-                  </div>
-                  <ArrowUpRight className="h-4 w-4 text-slate-400 group-hover:text-slate-700 transition-colors" />
-                </div>
-              </Link>
-
-              <Link href="/admin/users" className="block">
-                <div className="p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 transition-colors flex items-center justify-between group">
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-bold text-slate-900">Platform User Directory</p>
-                    <p className="text-[11px] text-slate-500">View HR recruiters & platform administrators</p>
-                  </div>
-                  <Users className="h-4 w-4 text-slate-400 group-hover:text-slate-700 transition-colors" />
-                </div>
-              </Link>
-            </div>
-
-            <div className="pt-2 border-t border-slate-100">
-              <div className="flex items-center justify-between text-xs text-slate-500">
-                <span>System Status</span>
-                <span className="flex items-center gap-1.5 font-bold text-emerald-600">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Operational
-                </span>
-              </div>
-            </div>
+            <Link href="/admin/companies">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs font-semibold gap-1.5 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl px-4 py-2"
+              >
+                View All Directory
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
           </div>
+
+          {loading ? (
+            <div className="py-12 text-center flex flex-col items-center justify-center space-y-2">
+              <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
+              <p className="text-xs text-slate-500">Fetching organizations...</p>
+            </div>
+          ) : companies.length > 0 ? (
+            <div className="divide-y divide-slate-100">
+              {companies.slice(0, 10).map((company) => (
+                <div
+                  key={company.id}
+                  className="py-3.5 flex items-center justify-between gap-4 first:pt-0 last:pb-0 hover:bg-slate-50/50 px-2 rounded-xl transition-colors"
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="h-10 w-10 rounded-xl bg-slate-900 text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-xs">
+                      {company.name?.slice(0, 2).toUpperCase() || "CO"}
+                    </div>
+                    <div className="min-w-0">
+                      <Link
+                        href={`/admin/companies/${company.id}`}
+                        className="text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors truncate block"
+                      >
+                        {company.name}
+                      </Link>
+                      <p className="text-xs text-slate-500 truncate mt-0.5">
+                        {company.owner?.email || company.ownerEmail || company.email || company.domain || company.slug || "tenant"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0">
+                    <Badge
+                      className={
+                        company.status === "ACTIVE"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-300 font-extrabold text-[10.5px]"
+                          : "bg-rose-50 text-rose-700 border-rose-300 font-extrabold text-[10.5px]"
+                      }
+                    >
+                      {company.status || "ACTIVE"}
+                    </Badge>
+                    <Link href={`/admin/companies/${company.id}`}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-slate-400 hover:text-blue-600"
+                      >
+                        <ArrowUpRight className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-12 text-center space-y-2">
+              <Building2 className="h-8 w-8 mx-auto text-slate-300" />
+              <p className="text-xs font-bold text-slate-700">No organizations onboarded yet</p>
+              <p className="text-[11px] text-slate-400">
+                Click &apos;Register New Company&apos; to onboard your first client organization.
+              </p>
+            </div>
+          )}
         </div>
       </main>
     </>
