@@ -230,23 +230,23 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
           })}
         </nav>
 
-        {/* ── 4. User Footer with Settings and Logout Button (Only on Mobile View) ── */}
-        <div className="p-3 border-t border-slate-200/80 flex items-center justify-between bg-slate-50/50 lg:hidden">
+        {/* ── 4. User Account Footer with Settings and Logout (Desktop & Mobile) ── */}
+        <div className="p-3 border-t border-slate-200/90 bg-slate-50/70 flex items-center justify-between gap-2 shrink-0">
           <button
             type="button"
             onClick={() => setShowAccountSettings(true)}
-            className="flex items-center gap-2.5 min-w-0 text-left hover:opacity-80 transition cursor-pointer flex-1 mr-2"
+            className="flex items-center gap-2.5 min-w-0 text-left hover:opacity-85 transition cursor-pointer flex-1 py-0.5"
             title="Account & Security Settings"
           >
-            <div className="h-8 w-8 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
               {getInitials(displayName)}
             </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-slate-900 truncate leading-none">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-slate-900 truncate leading-tight">
                 {displayName}
               </p>
-              <p className="text-[10px] text-slate-500 truncate mt-1">
-                {userEmail}
+              <p className="text-[10px] text-slate-500 truncate font-medium mt-0.5">
+                {userEmail || userRole}
               </p>
             </div>
           </button>
@@ -255,8 +255,8 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
             <button
               type="button"
               onClick={() => setShowAccountSettings(true)}
-              className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition cursor-pointer"
-              title="Account & Security Settings"
+              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer"
+              title="Account Settings"
               aria-label="Account Settings"
             >
               <Settings className="h-4 w-4" />

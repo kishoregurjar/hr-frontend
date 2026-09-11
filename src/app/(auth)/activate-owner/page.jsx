@@ -17,7 +17,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
-import { activateOwnerApi, clearAllAuthStorage, normalizeUser } from "@/lib/api/auth";
+import { activateOwnerApi, normalizeUser } from "@/lib/api/auth";
 import { AUTH_STORAGE_KEYS } from "@/features/auth/constants";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -40,9 +40,6 @@ function ActivateOwnerContent() {
   const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
-    // Clear any previous active sessions (e.g. Super Admin session) so activation operates in fresh state
-    clearAllAuthStorage();
-
     const timer = setTimeout(() => {
       if (!token || token.trim().length === 0) {
         setTokenValid(false);

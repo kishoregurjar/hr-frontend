@@ -207,12 +207,11 @@ axiosClient.interceptors.response.use(
             currentPath.includes("/reset-password") ||
             currentPath.includes("/verify-email");
 
-          localStorage.removeItem(AUTH_STORAGE_KEYS.TOKEN);
-          localStorage.removeItem("token");
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("hirequest_refresh_token");
-
           if (!isExemptFromExpiredRedirect) {
+            localStorage.removeItem(AUTH_STORAGE_KEYS.TOKEN);
+            localStorage.removeItem("token");
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("hirequest_refresh_token");
             window.location.href = "/login?expired=true";
           }
         }
