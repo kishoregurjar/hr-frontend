@@ -30,9 +30,28 @@ let adminOverviewCache = {
 };
 
 export default function AdminOverviewPage() {
-  const [metrics, setMetrics] = useState(adminOverviewCache.metrics);
-  const [companies, setCompanies] = useState(adminOverviewCache.companies || []);
-  const [loading, setLoading] = useState(!adminOverviewCache.metrics && !adminOverviewCache.companies);
+  const [metrics, setMetrics] = useState(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const cached = localStorage.getItem("cached_admin_metrics");
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [companies, setCompanies] = useState(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const cached = localStorage.getItem("cached_admin_companies");
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // If cache exists, do NOT show spinner!
+  const [loading, setLoading] = useState(() => !metrics);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchData = async (isManual = false) => {
@@ -44,6 +63,15 @@ export default function AdminOverviewPage() {
       const validCompanies = Array.isArray(c) ? c : [];
       setMetrics(m);
       setCompanies(validCompanies);
+
+      if (typeof window !== "undefined") {
+        try {
+          if (m) localStorage.setItem("cached_admin_metrics", JSON.stringify(m));
+          if (validCompanies) {
+            localStorage.setItem("cached_admin_companies", JSON.stringify(validCompanies));
+          }
+        } catch {}
+      }
 
       // Save to in-memory cache
       adminOverviewCache = {
