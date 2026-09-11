@@ -42,16 +42,20 @@ const AdminHeader = ({
   };
 
   const resolveAdminName = (u) => {
-    if (!u) return "Platform Admin";
-    if (typeof u === "string") return u;
-    if (typeof u.name === "string" && u.name.trim()) return u.name.trim();
-    if (typeof u.fullName === "string" && u.fullName.trim()) return u.fullName.trim();
-    if (typeof u.firstName === "string" || typeof u.lastName === "string") {
-      const full = `${u.firstName || ""} ${u.lastName || ""}`.trim();
-      if (full) return full;
+    if (!u) return "Super Admin";
+    if (typeof u === "string") {
+      if (u === "Platform Super Admin" || u === "Platform Admin") return "Super Admin";
+      return u;
     }
-    if (typeof u.email === "string" && u.email.trim()) return u.email.split("@")[0];
-    return "Platform Admin";
+    const rawName =
+      (typeof u.name === "string" ? u.name : "") ||
+      (typeof u.fullName === "string" ? u.fullName : "") ||
+      (u.firstName || u.lastName ? `${u.firstName || ""} ${u.lastName || ""}`.trim() : "") ||
+      "";
+    if (rawName.trim() && rawName !== "Platform Super Admin" && rawName !== "Platform Admin") {
+      return rawName.trim();
+    }
+    return "Super Admin";
   };
 
   const adminName = resolveAdminName(user);
@@ -66,7 +70,7 @@ const AdminHeader = ({
       .toUpperCase() || "SA";
 
   return (
-    <header className="min-h-16 border-b border-slate-200/80 bg-white px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between sticky top-0 z-30 font-sans shadow-2xs gap-3">
+    <header className="h-[70px] border-b border-slate-200/80 bg-white px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between sticky top-0 z-30 font-sans shadow-2xs gap-3">
       <div className="flex items-center gap-3 min-w-0">
         {/* Mobile Hamburger Menu Toggle */}
         <button

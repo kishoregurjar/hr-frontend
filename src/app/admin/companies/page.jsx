@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -43,25 +44,44 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
+// Module-level in-memory cache for instant navigation (Stale-While-Revalidate)
+let adminCompaniesCache = {
+  companies: null,
+  timestamp: 0,
+};
 
 function AdminCompaniesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const autoOpenNewModal = searchParams.get("new") === "true";
 
-  const [companies, setCompanies] = useState([]);
+  const [companies, setCompanies] = useState(adminCompaniesCache.companies || []);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!adminCompaniesCache.companies);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activeMenu, setActiveMenu] = useState(null);
+
+  // Close dropdown on click outside, scroll, or resize
+  useEffect(() => {
+    const handleGlobalClick = (e) => {
+      if (!e.target.closest(".actions-menu-portal") && !e.target.closest(".actions-menu-trigger")) {
+        setActiveMenu(null);
+      }
+    };
+    const handleScrollOrResize = () => {
+      setActiveMenu(null);
+    };
+    document.addEventListener("mousedown", handleGlobalClick);
+    window.addEventListener("scroll", handleScrollOrResize, true);
+    window.addEventListener("resize", handleScrollOrResize);
+    return () => {
+      document.removeEventListener("mousedown", handleGlobalClick);
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+      window.removeEventListener("resize", handleScrollOrResize);
+    };
+  }, []);
 
   // Register New Company Modal State
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(autoOpenNewModal);
@@ -79,7 +99,12 @@ function AdminCompaniesContent() {
   const fetchCompanies = async () => {
     try {
       const data = await getAdminCompanies();
-      setCompanies(Array.isArray(data) ? data : []);
+      const validData = Array.isArray(data) ? data : [];
+      setCompanies(validData);
+      adminCompaniesCache = {
+        companies: validData,
+        timestamp: Date.now(),
+      };
     } catch {
       toast.error("Failed to load company organizations.");
     } finally {
@@ -329,62 +354,36 @@ function AdminCompaniesContent() {
 
                       {/* Actions Dropdown */}
                       <td className="py-4 px-5 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger
-                            disabled={actionLoadingId === company.id}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer focus-visible:outline-none"
-                            aria-label="Tenant actions"
-                          >
-                            {actionLoadingId === company.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                            ) : (
-                              <MoreVertical className="h-4 w-4" />
-                            )}
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48 rounded-xl font-sans">
-                            <DropdownMenuLabel className="text-[11px] text-slate-400 font-semibold uppercase">
-                              Tenant Actions
-                            </DropdownMenuLabel>
-                            <DropdownMenuItem
-                              onClick={() => router.push(`/admin/companies/${company.id}`)}
-                              className="flex items-center gap-2 cursor-pointer"
-                            >
-                              <Eye className="h-4 w-4 text-slate-500" />
-                              <span>View Details</span>
-                            </DropdownMenuItem>
+                        <button
+                          type="button"
+                          disabled={actionLoadingId === company.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (activeMenu?.id === company.id) {
+                              setActiveMenu(null);
+                              return;
+                            }
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const spaceBelow = window.innerHeight - rect.bottom;
+                            const menuHeight = 175;
+                            const openUpwards = spaceBelow < menuHeight && rect.top > menuHeight;
 
-                            <DropdownMenuItem
-                              onClick={() => handleResendActivation(company)}
-                              className="flex items-center gap-2 cursor-pointer text-blue-600 font-medium"
-                            >
-                              <Send className="h-4 w-4 text-blue-600" />
-                              <span>Resend Activation Link</span>
-                            </DropdownMenuItem>
-
-                            <DropdownMenuSeparator />
-
-                            <DropdownMenuItem
-                              onClick={() => handleToggleStatus(company)}
-                              className={`flex items-center gap-2 cursor-pointer font-medium ${
-                                company.status === "ACTIVE"
-                                  ? "text-rose-600 hover:text-rose-700"
-                                  : "text-emerald-600 hover:text-emerald-700"
-                              }`}
-                            >
-                              {company.status === "ACTIVE" ? (
-                                <>
-                                  <Ban className="h-4 w-4" />
-                                  <span>Suspend Tenant</span>
-                                </>
-                              ) : (
-                                <>
-                                  <PlayCircle className="h-4 w-4" />
-                                  <span>Activate Tenant</span>
-                                </>
-                              )}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                            setActiveMenu({
+                              id: company.id,
+                              company,
+                              top: openUpwards ? rect.top - menuHeight - 4 : rect.bottom + 4,
+                              right: Math.max(12, window.innerWidth - rect.right),
+                            });
+                          }}
+                          className="actions-menu-trigger inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer focus-visible:outline-none"
+                          aria-label="Tenant actions"
+                        >
+                          {actionLoadingId === company.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                          ) : (
+                            <MoreVertical className="h-4 w-4" />
+                          )}
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -535,6 +534,77 @@ function AdminCompaniesContent() {
             </form>
           </DialogContent>
         </Dialog>
+        {/* ── 4. Floating Portal Actions Dropdown Menu (Guaranteed Zero Table Clipping) ── */}
+        {activeMenu && typeof document !== "undefined" && createPortal(
+          <div
+            style={{
+              position: "fixed",
+              top: `${activeMenu.top}px`,
+              right: `${activeMenu.right}px`,
+            }}
+            className="actions-menu-portal w-52 rounded-xl bg-white border border-slate-200 shadow-2xl shadow-slate-900/15 p-1.5 z-[99999] animate-in fade-in zoom-in-95 duration-100 font-sans text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="px-2.5 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Tenant Actions
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                const targetId = activeMenu.id;
+                setActiveMenu(null);
+                router.push(`/admin/companies/${targetId}`);
+              }}
+              className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-semibold text-slate-700 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer text-left"
+            >
+              <Eye className="h-4 w-4 text-slate-400" />
+              <span>View Details</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const targetComp = activeMenu.company;
+                setActiveMenu(null);
+                handleResendActivation(targetComp);
+              }}
+              className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer text-left"
+            >
+              <Send className="h-4 w-4 text-blue-600" />
+              <span>Resend Activation Link</span>
+            </button>
+
+            <div className="my-1 border-t border-slate-100" />
+
+            <button
+              type="button"
+              onClick={() => {
+                const targetComp = activeMenu.company;
+                setActiveMenu(null);
+                handleToggleStatus(targetComp);
+              }}
+              className={`w-full flex items-center gap-2 px-2.5 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-left ${
+                activeMenu.company.status === "ACTIVE"
+                  ? "text-rose-600 hover:bg-rose-50"
+                  : "text-emerald-600 hover:bg-emerald-50"
+              }`}
+            >
+              {activeMenu.company.status === "ACTIVE" ? (
+                <>
+                  <Ban className="h-4 w-4 text-rose-500" />
+                  <span>Suspend Tenant</span>
+                </>
+              ) : (
+                <>
+                  <PlayCircle className="h-4 w-4 text-emerald-500" />
+                  <span>Activate Tenant</span>
+                </>
+              )}
+            </button>
+          </div>,
+          document.body
+        )}
       </main>
     </>
   );

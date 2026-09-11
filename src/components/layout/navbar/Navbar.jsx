@@ -8,6 +8,7 @@ import {
   Menu,
   Shield,
   ShieldCheck,
+  Crown,
   User,
   Building2,
   Mail,
@@ -16,6 +17,7 @@ import {
   ChevronDown,
   Sparkles,
   CheckCircle2,
+  ArrowRight,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -35,6 +37,18 @@ import {
 import { useAuth } from "@/features/auth/context";
 import { toast } from "sonner";
 import AccountSettingsModal from "@/components/common/AccountSettingsModal/AccountSettingsModal";
+
+const PAGE_SUBTITLES = {
+  "/dashboard": "HireQuest Recruitment & Cognitive Candidate Screening Overview",
+  "/candidates": "Candidate Pipeline, Talent Profiles & Assessment Tracking",
+  "/assessments": "Manage Cognitive & Skill-Based Assessment Modules",
+  "/invitations": "Candidate Dispatched Test Links & Live Status",
+  "/results": "Evaluation Leaderboard, Cheat Detection & Ranking",
+  "/questions": "Comprehensive Question Bank & Evaluation Metrics",
+  "/question-bank": "Comprehensive Question Bank & Evaluation Metrics",
+  "/games": "Interactive Cognitive & Behavioral Game Engine",
+  "/company": "Manage Organization, Team Members & Workspace Roles",
+};
 
 const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
   const pathname = usePathname();
@@ -59,7 +73,27 @@ const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const rawName =
+    (typeof user?.name === "string" ? user.name : "") ||
+    (typeof user?.fullName === "string" ? user.fullName : "") ||
+    (user?.email ? user.email.split("@")[0] : "");
+  const displayName = String(rawName).replace(/\s+user$/i, "").trim() || "User";
+  const userEmail = typeof user?.email === "string" ? user.email : (typeof window !== "undefined" ? localStorage.getItem("user_email") || "" : "");
+  const companyLogo =
+    (typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null) || user?.companyLogo || null;
+  const companyName =
+    impersonatedCompany?.name ||
+    user?.companyName ||
+    user?.company?.name ||
+    (typeof user?.company === "string" ? user.company : null) ||
+    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
+    "";
+
   const pageTitle = PAGE_TITLES[pathname] || "Dashboard";
+  const pageSubtitle =
+    pathname === "/dashboard"
+      ? `${companyName ? `${companyName} ` : ""}Recruitment & Cognitive Candidate Screening Overview`
+      : PAGE_SUBTITLES[pathname] || "Manage recruitment pipeline, candidate assessments, and evaluations";
 
   const handleConfirmLogout = async () => {
     setIsLoggingOut(true);
@@ -74,21 +108,6 @@ const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
       setIsLoggingOut(false);
     }
   };
-
-  const rawName =
-    (typeof user?.name === "string" ? user.name : "") ||
-    (typeof user?.fullName === "string" ? user.fullName : "") ||
-    (user?.email ? user.email.split("@")[0] : "");
-  const displayName = String(rawName).replace(/\s+user$/i, "").trim() || "User";
-  const userEmail = typeof user?.email === "string" ? user.email : (typeof window !== "undefined" ? localStorage.getItem("user_email") || "" : "");
-  const companyLogo =
-    (typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null) || user?.companyLogo || null;
-  const companyName =
-    user?.companyName ||
-    user?.company?.name ||
-    user?.company ||
-    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
-    "";
   const activeCompanyRole =
     user?.activeCompany?.role ||
     user?.companies?.[0]?.role ||
@@ -115,10 +134,10 @@ const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
   const userRole = isOwnerUser ? "Company Owner" : isAdminUser ? "HR Admin" : "Recruiter";
   const badgeLabel = isOwnerUser ? "Owner" : isAdminUser ? "Admin" : "Recruiter";
   const badgeColor = isOwnerUser
-    ? "bg-amber-50 text-amber-700 border-amber-200"
+    ? "bg-amber-50 text-amber-800 border-amber-200/80"
     : isAdminUser
-    ? "bg-purple-50 text-purple-700 border-purple-200"
-    : "bg-blue-50 text-blue-700 border-blue-200";
+    ? "bg-purple-50 text-purple-700 border-purple-200/80"
+    : "bg-blue-50 text-blue-700 border-blue-200/80";
 
   const getInitials = (name) => {
     const str = String(name || "RP").trim();
@@ -129,179 +148,158 @@ const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
     return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
   };
 
+  const companyDomain =
+    user?.companyDomain ||
+    user?.company?.domain ||
+    user?.domain ||
+    (typeof window !== "undefined" ? localStorage.getItem("companyDomain") : null) ||
+    "";
+
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 backdrop-blur-md px-4 md:px-6 shadow-xs">
-        {/* Left Section: Mobile Menu + Page Title */}
-        <div className="flex items-center gap-3">
+      <header className="h-[70px] border-b border-slate-200/80 bg-white px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between sticky top-0 z-30 font-sans shadow-2xs gap-3">
+        {/* Left Section: Mobile Menu + Page Title & Subtitle Matching AdminHeader */}
+        <div className="flex items-center gap-3 min-w-0">
           <Button
             variant="ghost"
             size="icon"
             onClick={onMenuClick}
-            className="lg:hidden h-9 w-9 text-slate-600 hover:text-slate-900"
+            className="lg:hidden p-2 h-9 w-9 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition shrink-0 border border-slate-200/80 cursor-pointer"
             aria-label="Open Mobile Menu"
           >
             <Menu className="h-5 w-5" />
           </Button>
 
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-base font-extrabold text-slate-900 tracking-tight">
-              {pageTitle}
-            </h1>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight truncate">
+                {pageTitle}
+              </h1>
 
-            {/* Impersonation Banner for Super Admin */}
-            {impersonatedCompany && (
-              <Badge className="bg-amber-100 text-amber-800 border-amber-300 font-extrabold text-[10px] gap-1 shadow-2xs">
-                <ShieldCheck className="h-3 w-3 text-amber-600" />
-                Impersonating: {impersonatedCompany.name}
-              </Badge>
-            )}
+              {/* Impersonation Banner for Super Admin if inspecting tenant */}
+              {impersonatedCompany && (
+                <Badge className="bg-amber-100 text-amber-800 border-amber-300 font-extrabold text-[10px] sm:text-[10.5px] gap-1 shrink-0 shadow-2xs">
+                  <ShieldCheck className="h-3 w-3 text-amber-600" />
+                  Impersonating: {impersonatedCompany.name}
+                </Badge>
+              )}
+            </div>
+            <p className="text-[11px] sm:text-xs text-slate-500 font-medium mt-0.5 truncate max-w-xs sm:max-w-md md:max-w-none">
+              {pageSubtitle}
+            </p>
           </div>
         </div>
 
-        {/* Right Section: Notifications + Quick Actions + User Menu */}
-        <div className="flex items-center gap-2.5 sm:gap-3.5">
+        {/* Right Section: Notifications + Interactive Company Workspace Identity Dropdown */}
+        <div className="flex items-center gap-3 shrink-0">
           {/* Notifications Trigger */}
           <button
             type="button"
-            className="relative p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+            className="relative p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 border border-slate-200/80 transition-all cursor-pointer shadow-2xs"
             title="Notifications"
           >
             <Bell className="h-4 w-4" />
             <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-blue-600 ring-2 ring-white" />
           </button>
 
-          {/* ── Interactive HR Profile Menu ── */}
+          {/* ── Organization / Company Workspace Identity Dropdown ── */}
           <div className="relative" ref={menuRef}>
             <button
               type="button"
-              onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-              className="flex items-center gap-2.5 p-1.5 pl-2 rounded-xl border border-slate-200/80 bg-slate-50/70 hover:bg-slate-100 transition-all cursor-pointer shadow-xs focus:ring-2 focus:ring-blue-600/20"
-              title="View HR Profile"
+              onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+              className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 shadow-2xs transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              aria-label="Company workspace details"
+              aria-expanded={isProfileMenuOpen}
             >
-              <Avatar className="h-8 w-8 rounded-lg shadow-xs">
-                <AvatarFallback className="bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-xs">
-                  {getInitials(displayName)}
-                </AvatarFallback>
-              </Avatar>
+              {/* Company Avatar / Logo */}
+              {companyLogo ? (
+                <img
+                  src={companyLogo}
+                  alt={companyName}
+                  className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg object-contain bg-white border border-slate-200 p-0.5 shadow-2xs shrink-0"
+                />
+              ) : (
+                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-gradient-to-br from-slate-900 to-slate-800 text-white flex items-center justify-center font-extrabold text-xs shadow-xs shrink-0">
+                  {companyName ? companyName.slice(0, 2).toUpperCase() : "HQ"}
+                </div>
+              )}
 
-              <div className="hidden md:block text-left mr-1">
+              <div className="hidden sm:block text-left">
                 <div className="flex items-center gap-1.5">
-                  <p className="text-xs font-bold text-slate-900 leading-tight">
-                    {displayName}
+                  <p className="text-xs font-bold text-slate-900 leading-tight truncate max-w-[150px]">
+                    {companyName || "Workspace"}
                   </p>
                   <span className={`px-1.5 py-0.2 rounded border text-[9px] font-extrabold uppercase ${badgeColor}`}>
                     {badgeLabel}
                   </span>
                 </div>
-                <div className="flex items-center gap-1 mt-0.5">
-                  {companyLogo && (
+                <p className="text-[10px] text-slate-500 font-medium truncate max-w-[140px]">
+                  {userRole}
+                </p>
+              </div>
+
+              <ChevronDown
+                className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${
+                  isProfileMenuOpen ? "rotate-180 text-slate-700" : ""
+                }`}
+              />
+            </button>
+
+            {/* ── Floating Company Workspace Overview Card (100% Dynamic) ── */}
+            {isProfileMenuOpen && (
+              <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white border border-slate-200 shadow-xl shadow-slate-200/60 p-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150 font-sans space-y-3">
+                {/* Company Header */}
+                <div className="flex items-center gap-3 pb-2.5 border-b border-slate-100">
+                  {companyLogo ? (
                     <img
                       src={companyLogo}
                       alt={companyName}
-                      className="h-3.5 w-3.5 rounded object-contain bg-white border border-slate-200"
+                      className="h-10 w-10 rounded-xl object-contain bg-white border border-slate-200 p-1 shadow-2xs shrink-0"
                     />
+                  ) : (
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 text-white flex items-center justify-center font-black text-sm shadow-xs shrink-0">
+                      {companyName ? companyName.slice(0, 2).toUpperCase() : "HQ"}
+                    </div>
                   )}
-                  <p className="text-[11px] text-blue-600 font-bold truncate max-w-[130px]">
-                    {companyName}
-                  </p>
-                </div>
-              </div>
-
-              <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${isProfileMenuOpen ? "rotate-180" : ""}`} />
-            </button>
-
-            {/* ── Floating HR Profile Dropdown Card ── */}
-            {isProfileMenuOpen && (
-              <div className="absolute right-0 mt-2 w-72 rounded-2xl border bg-card p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95 space-y-4">
-                {/* User Header */}
-                <div className="flex items-center gap-3 pb-3 border-b">
-                  <Avatar className="h-10 w-10 rounded-xl shadow-xs">
-                    <AvatarFallback className="bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-sm">
-                      {getInitials(displayName)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="overflow-hidden">
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-sm font-extrabold text-slate-900 truncate">
-                        {displayName}
-                      </p>
-                      <span className={`px-1.5 py-0.2 rounded border text-[9px] font-extrabold uppercase shrink-0 ${badgeColor}`}>
-                        {badgeLabel}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-extrabold text-slate-900 truncate">
+                      {companyName || "Workspace"}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded border text-[9px] font-extrabold uppercase ${badgeColor}`}>
+                        {isOwnerUser ? <Crown className="h-2.5 w-2.5 text-amber-600" /> : <ShieldCheck className="h-2.5 w-2.5 text-blue-600" />}
+                        {userRole}
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5" title={userEmail}>
-                      <Mail className="h-3 w-3 text-slate-400 shrink-0" />
-                      <span className="truncate">{userEmail}</span>
-                    </p>
                   </div>
                 </div>
 
-                {/* Profile Details */}
-                <div className="space-y-2 text-xs bg-slate-50/80 p-3 rounded-xl border border-slate-100">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
-                      {companyLogo ? (
-                        <img
-                          src={companyLogo}
-                          alt={companyName}
-                          className="h-4 w-4 rounded-sm object-contain bg-white border border-slate-200"
-                        />
-                      ) : (
-                        <Building2 className="h-3.5 w-3.5 text-blue-600" />
-                      )}
-                      Company:
+                {/* Company Details (Purely dynamic from Auth / User state) */}
+                <div className="space-y-2 text-xs bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-slate-500 font-medium shrink-0">Owner / User:</span>
+                    <span className="font-bold text-slate-900 text-right truncate max-w-[150px]">
+                      {displayName}
                     </span>
-                    <span className="font-bold text-slate-900 truncate max-w-[130px]">{companyName}</span>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
-                      <Shield className="h-3.5 w-3.5 text-blue-600" />
-                      Role:
-                    </span>
-                    <Badge variant="outline" className={`text-[10px] font-extrabold py-0 h-5 ${badgeColor}`}>
-                      {userRole}
-                    </Badge>
-                  </div>
-                </div>
-
-                {/* Menu Actions */}
-                <div className="space-y-1 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsProfileMenuOpen(false);
-                      setShowAccountSettings(true);
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-700 hover:text-blue-600 hover:bg-blue-50/80 rounded-xl transition-all cursor-pointer text-left"
-                  >
-                    <Settings className="h-4 w-4 text-slate-400 group-hover:text-blue-600" />
-                    Account Settings & Password
-                  </button>
-
-                  {(isOwnerUser || isAdminUser) && (
-                    <Link
-                      href="/company"
-                      onClick={() => setIsProfileMenuOpen(false)}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-700 hover:text-blue-600 hover:bg-blue-50/80 rounded-xl transition-all cursor-pointer text-left"
-                    >
-                      <Building2 className="h-4 w-4 text-slate-400" />
-                      Company & Team Settings
-                    </Link>
+                  {userEmail && (
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-slate-500 font-medium shrink-0">Email:</span>
+                      <span className="font-semibold text-slate-700 text-right truncate max-w-[150px]" title={userEmail}>
+                        {userEmail}
+                      </span>
+                    </div>
                   )}
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsProfileMenuOpen(false);
-                      setShowLogoutConfirm(true);
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer text-left border-t border-slate-100 mt-1 pt-2"
-                  >
-                    <LogOut className="h-4 w-4 text-rose-500" />
-                    Sign Out Account
-                  </button>
+                  {companyDomain && (
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-slate-500 font-medium shrink-0">Domain:</span>
+                      <span className="font-semibold text-blue-600 text-right truncate max-w-[150px]">
+                        {companyDomain}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

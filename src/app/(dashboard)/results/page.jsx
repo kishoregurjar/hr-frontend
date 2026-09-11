@@ -146,21 +146,17 @@ export default function ResultsAndRankingPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
-      {/* ── 1. UNIFIED SINGLE HEADER ── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Results & Candidate Ranking
-            </h1>
-            <Badge className="bg-amber-50 text-amber-700 border-amber-300 text-[10.5px] font-extrabold gap-1">
-              <Trophy className="h-3 w-3 text-amber-600" />
-              Live Leaderboard
-            </Badge>
-          </div>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-            Comprehensive evaluation leaderboard, cognitive percentiles, and assessment scoring analytics.
-          </p>
+      {/* ── 1. TOP ACTION TOOLBAR ── */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Badge className="bg-amber-50 text-amber-700 border-amber-300 text-[10.5px] font-extrabold gap-1">
+            <Trophy className="h-3 w-3 text-amber-600" />
+            Live Leaderboard
+          </Badge>
+          <span className="text-slate-300">•</span>
+          <span className="text-xs text-slate-500 font-medium">
+            {filteredResults.length} scored {filteredResults.length === 1 ? "candidate" : "candidates"}
+          </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">

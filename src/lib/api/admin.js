@@ -7,37 +7,91 @@ import axiosClient from "./axiosClient";
 export const getAdminMetrics = async () => {
   try {
     const res = await axiosClient.get("/super-admin/dashboard");
-    const data = res?.data?.data || res?.data || res;
+    const raw = res?.data?.data || res?.data || res;
+    const stats = raw?.statistics || raw;
+
+    const totalCompanies =
+      stats?.companies?.total ??
+      stats?.totalCompanies ??
+      0;
+
+    const activeCompanies =
+      stats?.companies?.active ??
+      stats?.activeCompanies ??
+      0;
+
+    const suspendedCompanies =
+      stats?.companies?.suspended ??
+      stats?.suspendedCompanies ??
+      0;
+
+    const totalMembers =
+      stats?.members?.total ??
+      stats?.totalMembers ??
+      0;
+
+    const totalJobs =
+      stats?.jobs?.total ??
+      stats?.totalJobs ??
+      0;
+
+    const pendingInvitations =
+      stats?.invitations?.pending ??
+      stats?.pendingInvitations ??
+      0;
+
+    const pendingOwnerActivations =
+      stats?.ownerActivations?.pending ??
+      stats?.pendingActivations ??
+      0;
+
     return {
       companies: {
-        total: data?.companies?.total ?? 0,
-        active: data?.companies?.active ?? 0,
-        suspended: data?.companies?.suspended ?? 0,
+        total: totalCompanies,
+        active: activeCompanies,
+        suspended: suspendedCompanies,
       },
       members: {
-        total: data?.members?.total ?? 0,
+        total: totalMembers,
       },
       jobs: {
-        total: data?.jobs?.total ?? 0,
+        total: totalJobs,
       },
       invitations: {
-        pending: data?.invitations?.pending ?? 0,
+        pending: pendingInvitations,
       },
       ownerActivations: {
-        pending: data?.ownerActivations?.pending ?? 0,
+        pending: pendingOwnerActivations,
       },
-      totalCompanies: data?.companies?.total ?? 0,
-      activeCompanies: data?.companies?.active ?? 0,
-      suspendedCompanies: data?.companies?.suspended ?? 0,
-      totalMembers: data?.members?.total ?? 0,
-      totalJobs: data?.jobs?.total ?? 0,
-      pendingActivations: data?.ownerActivations?.pending ?? 0,
+      totalCompanies,
+      activeCompanies,
+      suspendedCompanies,
+      totalMembers,
+      totalJobs,
+      pendingActivations: pendingOwnerActivations,
     };
   } catch (err) {
     try {
       const fallbackRes = await axiosClient.get("/super-admin/metrics");
-      const data = fallbackRes?.data?.data || fallbackRes?.data || fallbackRes;
-      return data;
+      const fallbackRaw = fallbackRes?.data?.data || fallbackRes?.data || fallbackRes;
+      const stats = fallbackRaw?.statistics || fallbackRaw;
+      return {
+        companies: {
+          total: stats?.companies?.total ?? stats?.totalCompanies ?? 0,
+          active: stats?.companies?.active ?? stats?.activeCompanies ?? 0,
+          suspended: stats?.companies?.suspended ?? stats?.suspendedCompanies ?? 0,
+        },
+        members: { total: stats?.members?.total ?? stats?.totalMembers ?? 0 },
+        jobs: { total: stats?.jobs?.total ?? stats?.totalJobs ?? 0 },
+        invitations: { pending: stats?.invitations?.pending ?? stats?.pendingInvitations ?? 0 },
+        ownerActivations: { pending: stats?.ownerActivations?.pending ?? stats?.pendingActivations ?? 0 },
+        totalCompanies: stats?.companies?.total ?? stats?.totalCompanies ?? 0,
+        activeCompanies: stats?.companies?.active ?? stats?.activeCompanies ?? 0,
+        suspendedCompanies: stats?.companies?.suspended ?? stats?.suspendedCompanies ?? 0,
+        totalMembers: stats?.members?.total ?? stats?.totalMembers ?? 0,
+        totalJobs: stats?.jobs?.total ?? stats?.totalJobs ?? 0,
+        pendingActivations: stats?.ownerActivations?.pending ?? stats?.pendingActivations ?? 0,
+      };
     } catch {
       return {
         companies: { total: 0, active: 0, suspended: 0 },

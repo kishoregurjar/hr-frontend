@@ -22,20 +22,63 @@ import { getAdminMetrics, getAdminCompanies } from "@/lib/api/admin";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+// Module-level in-memory cache for instant 0ms tab switching (Stale-While-Revalidate)
+let adminOverviewCache = {
+  metrics: null,
+  companies: null,
+  timestamp: 0,
+};
+
 export default function AdminOverviewPage() {
-  const [metrics, setMetrics] = useState(null);
-  const [companies, setCompanies] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [metrics, setMetrics] = useState(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const cached = localStorage.getItem("cached_admin_metrics");
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [companies, setCompanies] = useState(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const cached = localStorage.getItem("cached_admin_companies");
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // If cache exists, do NOT show spinner!
+  const [loading, setLoading] = useState(() => !metrics);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = async (isManual = false) => {
     try {
       const [m, c] = await Promise.all([
         getAdminMetrics(),
         getAdminCompanies({ limit: 10 }),
       ]);
+      const validCompanies = Array.isArray(c) ? c : [];
       setMetrics(m);
-      setCompanies(Array.isArray(c) ? c : []);
+      setCompanies(validCompanies);
+
+      if (typeof window !== "undefined") {
+        try {
+          if (m) localStorage.setItem("cached_admin_metrics", JSON.stringify(m));
+          if (validCompanies) {
+            localStorage.setItem("cached_admin_companies", JSON.stringify(validCompanies));
+          }
+        } catch {}
+      }
+
+      // Save to in-memory cache
+      adminOverviewCache = {
+        metrics: m,
+        companies: validCompanies,
+        timestamp: Date.now(),
+      };
     } catch {
       // Handled in api layer
     } finally {
@@ -50,7 +93,7 @@ export default function AdminOverviewPage() {
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    fetchData();
+    fetchData(true);
   };
 
   const totalCompaniesCount =
@@ -80,21 +123,17 @@ export default function AdminOverviewPage() {
 
       <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 max-w-7xl font-sans">
         {/* ── Top Bar with Quick Actions ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-linear-to-r from-blue-900 to-indigo-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl">
-          <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-2 bg-blue-500/20 text-blue-200 px-3 py-1 rounded-full text-xs font-bold border border-blue-400/20">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              Platform Administrator Portal
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-linear-to-r from-slate-900 via-blue-950 to-indigo-950 text-white rounded-2xl p-5 sm:p-6 shadow-lg border border-slate-800">
+          <div className="space-y-1">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight flex items-center gap-2">
               Enterprise Tenant Management
             </h1>
-            <p className="text-sm text-blue-100/80 max-w-xl">
-              Monitor client organizations, manage tenant activation lifecycles, and supervise multi-tenant hiring pipelines.
+            <p className="text-xs sm:text-sm text-slate-300 max-w-xl font-medium">
+              Monitor client organizations, tenant lifecycles, and system operations.
             </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
             <Button
               onClick={handleRefresh}
               variant="outline"
@@ -107,8 +146,8 @@ export default function AdminOverviewPage() {
             </Button>
 
             <Link href="/admin/companies?new=true">
-              <Button className="bg-white hover:bg-blue-50 text-blue-900 font-bold rounded-xl text-xs sm:text-sm px-5 py-5 shadow-lg gap-2 cursor-pointer transition-all hover:scale-102">
-                <Plus className="h-4 w-4 text-blue-600" />
+              <Button className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs sm:text-sm px-4 py-2 shadow-md gap-1.5 cursor-pointer transition-all">
+                <Plus className="h-4 w-4" />
                 Register New Company
               </Button>
             </Link>
@@ -178,8 +217,8 @@ export default function AdminOverviewPage() {
                 {loading ? "..." : totalMembersCount}
               </p>
               <p className="text-xs text-indigo-600 font-semibold flex items-center gap-1 mt-1">
-                <Briefcase className="h-3.5 w-3.5" />
-                {totalJobsCount} active job roles
+                <Users className="h-3.5 w-3.5" />
+                Active platform recruiters & members
               </p>
             </div>
           </div>
@@ -213,148 +252,100 @@ export default function AdminOverviewPage() {
         </div>
 
         {/* ── 2. Client Companies Directory & Recent Activity ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left 2 Cols: Organizations Directory */}
-          <div className="lg:col-span-2 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-7 shadow-xs space-y-5">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-blue-600" />
+                Client Organizations & Tenant Status
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Recent onboarding and active company directory.
+              </p>
+            </div>
+            <Link href="/admin/companies">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs font-semibold gap-1.5 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl px-4 py-2"
+              >
+                View All Directory
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="py-12 text-center flex flex-col items-center justify-center space-y-2">
+              <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
+              <p className="text-xs text-slate-500">Fetching organizations...</p>
+            </div>
+          ) : companies.length > 0 ? (
+            <div className="divide-y divide-slate-100">
+              {companies.slice(0, 10).map((company) => (
+                <div
+                  key={company.id}
+                  className="py-3.5 flex items-center justify-between gap-4 first:pt-0 last:pb-0 hover:bg-slate-50/50 px-2 rounded-xl transition-colors"
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="h-10 w-10 rounded-xl bg-slate-900 text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-xs">
+                      {company.name?.slice(0, 2).toUpperCase() || "CO"}
+                    </div>
+                    <div className="min-w-0">
+                      <Link
+                        href={`/admin/companies/${company.id}`}
+                        className="text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors truncate block"
+                      >
+                        {company.name}
+                      </Link>
+                      <p className="text-xs text-slate-500 truncate mt-0.5">
+                        {company.owner?.email || company.ownerEmail || company.email || company.domain || company.slug || "tenant"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0">
+                    <Badge
+                      className={
+                        company.status === "ACTIVE"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-300 font-extrabold text-[10.5px]"
+                          : "bg-rose-50 text-rose-700 border-rose-300 font-extrabold text-[10.5px]"
+                      }
+                    >
+                      {company.status || "ACTIVE"}
+                    </Badge>
+                    <Link href={`/admin/companies/${company.id}`}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-slate-400 hover:text-blue-600"
+                      >
+                        <ArrowUpRight className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-12 text-center space-y-3">
+              <div className="h-12 w-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                <Building2 className="h-6 w-6" />
+              </div>
               <div>
-                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-blue-600" />
-                  Client Organizations & Tenant Status
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Recent onboarding and active company directory.
+                <p className="text-sm font-bold text-slate-800">No organizations onboarded yet</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Get started by onboarding your first client enterprise tenant.
                 </p>
               </div>
-              <Link href="/admin/companies">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs font-semibold gap-1 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl"
-                >
-                  View All Directory
-                  <ArrowUpRight className="h-3.5 w-3.5" />
+              <Link href="/admin/companies?new=true" className="inline-block pt-1">
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs gap-1.5 shadow-sm px-4 py-2 cursor-pointer">
+                  <Plus className="h-3.5 w-3.5" />
+                  Register First Company
                 </Button>
               </Link>
             </div>
-
-            {loading ? (
-              <div className="py-12 text-center flex flex-col items-center justify-center space-y-2">
-                <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
-                <p className="text-xs text-slate-500">Fetching organizations...</p>
-              </div>
-            ) : companies.length > 0 ? (
-              <div className="divide-y divide-slate-100">
-                {companies.slice(0, 5).map((company) => (
-                  <div
-                    key={company.id}
-                    className="py-3.5 flex items-center justify-between gap-4 first:pt-0 last:pb-0"
-                  >
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <div className="h-10 w-10 rounded-xl bg-slate-900 text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-xs">
-                        {company.name?.slice(0, 2).toUpperCase() || "CO"}
-                      </div>
-                      <div className="min-w-0">
-                        <Link
-                          href={`/admin/companies/${company.id}`}
-                          className="text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors truncate block"
-                        >
-                          {company.name}
-                        </Link>
-                        <p className="text-xs text-slate-500 truncate mt-0.5">
-                          {company.owner?.email || company.ownerEmail || company.email || company.domain || company.slug || "tenant"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 shrink-0">
-                      <Badge
-                        className={
-                          company.status === "ACTIVE"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-300 font-extrabold text-[10.5px]"
-                            : "bg-rose-50 text-rose-700 border-rose-300 font-extrabold text-[10.5px]"
-                        }
-                      >
-                        {company.status || "ACTIVE"}
-                      </Badge>
-                      <Link href={`/admin/companies/${company.id}`}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-slate-400 hover:text-blue-600"
-                        >
-                          <ArrowUpRight className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-12 text-center space-y-2">
-                <Building2 className="h-8 w-8 mx-auto text-slate-300" />
-                <p className="text-xs font-bold text-slate-700">No organizations onboarded yet</p>
-                <p className="text-[11px] text-slate-400">
-                  Click &apos;Register New Company&apos; to onboard your first client organization.
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Right 1 Col: Platform Security & Controls Quick Card */}
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs space-y-5">
-            <div className="pb-3 border-b border-slate-100">
-              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-blue-600" />
-                Super Admin Quick Controls
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Essential management shortcuts.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <Link href="/admin/companies?new=true" className="block">
-                <div className="p-3.5 rounded-xl border border-blue-100 bg-blue-50/50 hover:bg-blue-50 transition-colors flex items-center justify-between group">
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-bold text-blue-900">Onboard New Organization</p>
-                    <p className="text-[11px] text-blue-700/70">Create tenant & trigger owner activation</p>
-                  </div>
-                  <Plus className="h-4 w-4 text-blue-600 group-hover:scale-110 transition-transform" />
-                </div>
-              </Link>
-
-              <Link href="/admin/companies" className="block">
-                <div className="p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 transition-colors flex items-center justify-between group">
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-bold text-slate-900">Manage Tenant Directory</p>
-                    <p className="text-[11px] text-slate-500">Suspend, activate, or audit client companies</p>
-                  </div>
-                  <ArrowUpRight className="h-4 w-4 text-slate-400 group-hover:text-slate-700 transition-colors" />
-                </div>
-              </Link>
-
-              <Link href="/admin/users" className="block">
-                <div className="p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 transition-colors flex items-center justify-between group">
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-bold text-slate-900">Platform User Directory</p>
-                    <p className="text-[11px] text-slate-500">View HR recruiters & platform administrators</p>
-                  </div>
-                  <Users className="h-4 w-4 text-slate-400 group-hover:text-slate-700 transition-colors" />
-                </div>
-              </Link>
-            </div>
-
-            <div className="pt-2 border-t border-slate-100">
-              <div className="flex items-center justify-between text-xs text-slate-500">
-                <span>System Status</span>
-                <span className="flex items-center gap-1.5 font-bold text-emerald-600">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Operational
-                </span>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       </main>
     </>

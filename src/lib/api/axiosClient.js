@@ -123,7 +123,9 @@ axiosClient.interceptors.response.use(
       originalRequest?.url?.includes("/auth/refresh-token") ||
       originalRequest?.url?.includes("/auth/forgot-password") ||
       originalRequest?.url?.includes("/auth/reset-password") ||
-      originalRequest?.url?.includes("/auth/owner/activate");
+      originalRequest?.url?.includes("/auth/owner/activate") ||
+      originalRequest?.url?.includes("/companies/invitations/accept") ||
+      originalRequest?.url?.includes("/auth/accept-invitation");
 
     const isTokenExpired = status === 401 && originalRequest && !originalRequest._retry && !isAuthEndpoint;
 
@@ -195,11 +197,23 @@ axiosClient.interceptors.response.use(
       } catch (refreshErr) {
         processQueue(refreshErr, null);
         if (typeof window !== "undefined") {
-          localStorage.removeItem(AUTH_STORAGE_KEYS.TOKEN);
-          localStorage.removeItem("token");
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("hirequest_refresh_token");
-          window.location.href = "/login?expired=true";
+          const currentPath = window.location.pathname || "";
+          const isExemptFromExpiredRedirect =
+            currentPath.includes("/activate-owner") ||
+            currentPath.includes("/accept-invitation") ||
+            currentPath.includes("/login") ||
+            currentPath.includes("/register") ||
+            currentPath.includes("/forgot-password") ||
+            currentPath.includes("/reset-password") ||
+            currentPath.includes("/verify-email");
+
+          if (!isExemptFromExpiredRedirect) {
+            localStorage.removeItem(AUTH_STORAGE_KEYS.TOKEN);
+            localStorage.removeItem("token");
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("hirequest_refresh_token");
+            window.location.href = "/login?expired=true";
+          }
         }
         return Promise.reject(new Error("Session expired. Please log in again."));
       } finally {

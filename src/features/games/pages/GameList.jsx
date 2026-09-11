@@ -60,21 +60,17 @@ const GameList = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
-      {/* ── 1. SINGLE, CLEAN UNIFIED HEADER ── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Cognitive Games & Simulations
-            </h1>
-            <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10.5px] font-extrabold gap-1">
-              <Zap className="h-3 w-3 text-amber-500 fill-amber-500" />
-              Interactive Tests
-            </Badge>
-          </div>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-            Scientifically calibrated neuro-cognitive games measuring Problem Solving, Memory Recall, and Spatial Reasoning.
-          </p>
+      {/* ── 1. TOP ACTION TOOLBAR ── */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10.5px] font-extrabold gap-1">
+            <Zap className="h-3 w-3 text-amber-500 fill-amber-500" />
+            Interactive Simulations
+          </Badge>
+          <span className="text-slate-300">•</span>
+          <span className="text-xs text-slate-500 font-medium">
+            {filteredGames.length} cognitive {filteredGames.length === 1 ? "game" : "games"} available
+          </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">

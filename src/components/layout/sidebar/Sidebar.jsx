@@ -139,13 +139,31 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
   const companyLogo =
     (typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null) ||
     user?.companyLogo ||
+    user?.company?.logo ||
+    impersonatedCompany?.logo ||
     null;
   const companyName =
-    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
+    impersonatedCompany?.name ||
     user?.companyName ||
     user?.company?.name ||
-    user?.company ||
+    (typeof user?.company === "string" ? user.company : null) ||
+    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
     "";
+  const companyDomain =
+    user?.companyDomain ||
+    user?.company?.domain ||
+    user?.domain ||
+    (typeof window !== "undefined" ? localStorage.getItem("companyDomain") : null) ||
+    "";
+
+  const getCompanyInitials = (name) => {
+    const str = String(name || "").trim();
+    if (!str) return "HQ";
+    const parts = str.split(" ").filter(Boolean);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+  };
+
   const activeCompanyName = companyName;
   const activePlan = impersonatedCompany?.plan || "Enterprise";
   const isInspecting = Boolean(impersonatedCompany);
@@ -177,25 +195,33 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* ── 1. Top Logo Header ── */}
-        <div className="h-18 flex items-center justify-between px-5 pt-5 pb-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 font-extrabold text-sm text-white shadow-md shadow-blue-500/20">
-              HQ
-            </div>
-            <div>
-              <span className="font-extrabold text-base tracking-tight text-slate-900 leading-none block">
-                AssessFlow
+        {/* ── 1. Top Dynamic Company Workspace Header ── */}
+        <div className="h-[70px] flex items-center justify-between px-4 py-3 border-b border-slate-200/80">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            {companyLogo ? (
+              <img
+                src={companyLogo}
+                alt={companyName || "Company Logo"}
+                className="h-9 w-9 rounded-xl object-contain bg-white border border-slate-200 p-1 shadow-2xs shrink-0"
+              />
+            ) : (
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 font-extrabold text-xs text-white shadow-md shadow-slate-900/10 shrink-0">
+                {getCompanyInitials(companyName)}
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <span className="font-extrabold text-sm tracking-tight text-slate-900 leading-tight truncate block">
+                {companyName || "HireQuest"}
               </span>
-              <span className="text-[11px] text-slate-500 font-medium block mt-0.5">
-                Multi-Tenant Screening
+              <span className="text-[11px] text-slate-500 font-medium block truncate mt-0.5">
+                {companyDomain || (isInspecting ? "Impersonated Workspace" : "Recruitment Workspace")}
               </span>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="lg:hidden p-1.5 text-slate-400 hover:text-slate-700 rounded-lg"
+            className="lg:hidden p-1.5 text-slate-400 hover:text-slate-700 rounded-lg shrink-0"
             aria-label="Close"
           >
             <X className="h-5 w-5" />
@@ -230,23 +256,23 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
           })}
         </nav>
 
-        {/* ── 4. User Footer with Settings and Logout Button (Only on Mobile View) ── */}
-        <div className="p-3 border-t border-slate-200/80 flex items-center justify-between bg-slate-50/50 lg:hidden">
+        {/* ── 4. User Account Footer with Settings and Logout (Desktop & Mobile) ── */}
+        <div className="p-3 border-t border-slate-200/90 bg-slate-50/70 flex items-center justify-between gap-2 shrink-0">
           <button
             type="button"
             onClick={() => setShowAccountSettings(true)}
-            className="flex items-center gap-2.5 min-w-0 text-left hover:opacity-80 transition cursor-pointer flex-1 mr-2"
+            className="flex items-center gap-2.5 min-w-0 text-left hover:opacity-85 transition cursor-pointer flex-1 py-0.5"
             title="Account & Security Settings"
           >
-            <div className="h-8 w-8 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
               {getInitials(displayName)}
             </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-slate-900 truncate leading-none">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-slate-900 truncate leading-tight">
                 {displayName}
               </p>
-              <p className="text-[10px] text-slate-500 truncate mt-1">
-                {userEmail}
+              <p className="text-[10px] text-slate-500 truncate font-medium mt-0.5">
+                {userEmail || userRole}
               </p>
             </div>
           </button>
@@ -255,8 +281,8 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
             <button
               type="button"
               onClick={() => setShowAccountSettings(true)}
-              className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition cursor-pointer"
-              title="Account & Security Settings"
+              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer"
+              title="Account Settings"
               aria-label="Account Settings"
             >
               <Settings className="h-4 w-4" />

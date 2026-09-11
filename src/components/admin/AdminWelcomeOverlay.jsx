@@ -63,7 +63,10 @@ export default function AdminWelcomeOverlay() {
 
   if (!isVisible) return null;
 
-  const adminName = user?.name || user?.fullName || "Platform Super Admin";
+  const adminName =
+    (user?.name && user.name !== "Platform Super Admin" ? user.name : null) ||
+    (user?.fullName && user.fullName !== "Platform Super Admin" ? user.fullName : null) ||
+    "Super Admin";
 
   const handleSkip = () => {
     setIsFadingOut(true);

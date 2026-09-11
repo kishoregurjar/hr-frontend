@@ -77,19 +77,17 @@ const QuestionList = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
-      {/* ── 1. SINGLE, CLEAN UNIFIED HEADER ── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Question Bank
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-            Manage all MCQ questions, coding items, and problem-solving puzzles used in assessments.
-          </p>
+      {/* ── 1. TOP ACTION TOOLBAR ── */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-slate-800">Question Repository</span>
+          <span className="text-slate-300">•</span>
+          <span className="text-xs text-slate-500 font-medium">
+            {totalQuestions || allQuestions.length} {(totalQuestions || allQuestions.length) === 1 ? "question" : "questions"} in bank
+          </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Action Dialogs */}
           <ManageCategoriesDialog />
           <AddQuestionDialog />
         </div>
