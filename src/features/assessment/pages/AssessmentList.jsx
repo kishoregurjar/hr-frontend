@@ -79,15 +79,14 @@ const AssessmentList = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
-      {/* ── 1. SINGLE, CLEAN HEADER ── */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Assessments & Modules
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-            Configure multi-module candidate tests combining cognitive games, problem-solving puzzles, and technical MCQs.
-          </p>
+      {/* ── 1. TOP ACTION TOOLBAR ── */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-slate-800">Test Modules</span>
+          <span className="text-slate-300">•</span>
+          <span className="text-xs text-slate-500 font-medium">
+            {filteredAssessments.length} {filteredAssessments.length === 1 ? "assessment" : "assessments"} published
+          </span>
         </div>
 
         <div className="flex items-center gap-2.5">

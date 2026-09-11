@@ -45,6 +45,7 @@ const PAGE_SUBTITLES = {
   "/invitations": "Candidate Dispatched Test Links & Live Status",
   "/results": "Evaluation Leaderboard, Cheat Detection & Ranking",
   "/questions": "Comprehensive Question Bank & Evaluation Metrics",
+  "/question-bank": "Comprehensive Question Bank & Evaluation Metrics",
   "/games": "Interactive Cognitive & Behavioral Game Engine",
   "/company": "Manage Organization, Team Members & Workspace Roles",
 };

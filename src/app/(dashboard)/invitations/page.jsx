@@ -131,15 +131,14 @@ export default function InvitationsPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
-      {/* ── 1. SINGLE, CLEAN HEADER (No Redundancy) ── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Assessment Invitations
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-            Dispatch authoritative tokenized screening links and monitor candidate progress in real time.
-          </p>
+      {/* ── 1. TOP ACTION TOOLBAR ── */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-slate-800">Tokenized Dispatches</span>
+          <span className="text-slate-300">•</span>
+          <span className="text-xs text-slate-500 font-medium">
+            {filteredInvitations.length} {filteredInvitations.length === 1 ? "invitation" : "invitations"} active
+          </span>
         </div>
 
         <div className="flex items-center gap-2.5">
@@ -148,7 +147,7 @@ export default function InvitationsPage() {
             variant="outline"
             size="icon"
             onClick={handleRefresh}
-            className="h-9 w-9 rounded-xl border-slate-200 bg-white"
+            className="h-9 w-9 rounded-xl border-slate-200 bg-white hover:bg-slate-50 cursor-pointer"
             title="Refresh"
           >
             <RefreshCw
@@ -161,7 +160,7 @@ export default function InvitationsPage() {
           {/* Dispatch CTA */}
           <Button
             onClick={() => setIsAssignDialogOpen(true)}
-            className="h-9 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-indigo-500/20"
+            className="h-9 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-indigo-500/20 cursor-pointer"
           >
             <Send className="h-3.5 w-3.5" />
             Dispatch Invitations
