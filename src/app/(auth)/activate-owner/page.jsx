@@ -17,7 +17,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
-import { activateOwnerApi, clearAllAuthStorage } from "@/lib/api/auth";
+import { activateOwnerApi, clearAllAuthStorage, normalizeUser } from "@/lib/api/auth";
 import { AUTH_STORAGE_KEYS } from "@/features/auth/constants";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -119,10 +119,30 @@ function ActivateOwnerContent() {
         localStorage.setItem("token", accessToken);
         localStorage.setItem("accessToken", accessToken);
         localStorage.setItem("jwt", accessToken);
-        if (userData) {
-          localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(userData));
-          if (userData.email) localStorage.setItem("user_email", userData.email);
+
+        const normalizedUser = normalizeUser(response) || userData || {};
+        if (primaryCompany?.role === "OWNER" || primaryCompany?.role === "COMPANY_OWNER" || !normalizedUser.companyRole) {
+          normalizedUser.isOwner = true;
+          normalizedUser.companyRole = "OWNER";
+          normalizedUser.role = "Company Owner";
+          normalizedUser.rawRole = "OWNER";
+          if (!normalizedUser.activeCompany) {
+            normalizedUser.activeCompany = {
+              id: primaryCompany?.id || "",
+              name: primaryCompany?.name || "",
+              role: "OWNER",
+            };
+          } else {
+            normalizedUser.activeCompany.role = "OWNER";
+          }
         }
+
+        localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(normalizedUser));
+        localStorage.setItem("active_company_role", "OWNER");
+        localStorage.setItem("companyRole", "OWNER");
+
+        if (normalizedUser.email) localStorage.setItem("user_email", normalizedUser.email);
+
         if (primaryCompany?.id) {
           localStorage.setItem("companyId", primaryCompany.id);
           localStorage.setItem("active_company_id", primaryCompany.id);
