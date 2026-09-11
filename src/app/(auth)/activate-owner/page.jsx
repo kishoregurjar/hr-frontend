@@ -165,14 +165,10 @@ function ActivateOwnerContent() {
       setIsSuccess(true);
       toast.success("Account activated successfully! Logging you in...");
 
-      // Auto-login directly to dashboard
+      // Direct auto-login redirect to dashboard
       setTimeout(() => {
-        if (accessToken) {
-          window.location.href = "/dashboard";
-        } else {
-          router.push("/login?activated=true");
-        }
-      }, 1200);
+        window.location.href = "/dashboard";
+      }, 1000);
     } catch (err) {
       const errMsg =
         err?.response?.data?.message ||
@@ -245,7 +241,7 @@ function ActivateOwnerContent() {
     );
   }
 
-  // Success State
+  // Success State: Redirecting to Dashboard
   if (isSuccess) {
     return (
       <div className="flex flex-col items-center justify-center p-6 text-center space-y-5">
@@ -255,16 +251,16 @@ function ActivateOwnerContent() {
         <div className="space-y-1.5 max-w-sm">
           <h2 className="text-xl font-extrabold text-slate-900">Welcome to HireQuest!</h2>
           <p className="text-xs text-slate-500 leading-relaxed">
-            Your Organization Owner account has been activated. You can now sign in to configure your recruitment workspace.
+            Your Organization Owner account has been activated. Redirecting you directly to your workspace dashboard...
           </p>
         </div>
 
         <div className="pt-2 w-full">
           <Button
-            onClick={() => router.push("/login")}
+            onClick={() => { window.location.href = "/dashboard"; }}
             className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span>Sign In to Workspace</span>
+            <span>Proceed to Workspace Dashboard</span>
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
