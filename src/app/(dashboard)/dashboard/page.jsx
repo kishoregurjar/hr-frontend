@@ -2,7 +2,6 @@
 
 import DashboardHeroBanner from "@/features/dashboard/components/DashboardHeroBanner";
 import DashboardMetricCards from "@/features/dashboard/components/DashboardMetricCards";
-import ScreeningWorkflowCard from "@/features/dashboard/components/ScreeningWorkflowCard";
 import RecentResultsTable from "@/features/dashboard/components/RecentResultsTable";
 
 export default function DashboardPage() {
@@ -14,17 +13,9 @@ export default function DashboardPage() {
       {/* ── 2. 4 KPI Metric Cards ── */}
       <DashboardMetricCards />
 
-      {/* ── 4. Bottom 2-Column Grid (Workflow + Results) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Left 1/3 Col: Screening Workflow Guide */}
-        <div className="lg:col-span-1">
-          <ScreeningWorkflowCard />
-        </div>
-
-        {/* Right 2/3 Col: Recent Assessment Results Table */}
-        <div className="lg:col-span-2">
-          <RecentResultsTable />
-        </div>
+      {/* ── 3. Recent Assessment Results (Full Width) ── */}
+      <div className="w-full">
+        <RecentResultsTable />
       </div>
     </div>
   );
