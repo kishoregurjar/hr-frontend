@@ -60,7 +60,33 @@ const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  const [dynamicLogo, setDynamicLogo] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null
+  );
+  const [dynamicName, setDynamicName] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("companyName") : null
+  );
+
   const menuRef = useRef(null);
+
+  // Real-time synchronization for company logo and name
+  useEffect(() => {
+    const handleCompanyUpdate = () => {
+      if (typeof window !== "undefined") {
+        setDynamicLogo(localStorage.getItem("companyLogo"));
+        setDynamicName(localStorage.getItem("companyName"));
+      }
+    };
+
+    window.addEventListener("companyLogoUpdated", handleCompanyUpdate);
+    window.addEventListener("companyUpdated", handleCompanyUpdate);
+    window.addEventListener("storage", handleCompanyUpdate);
+    return () => {
+      window.removeEventListener("companyLogoUpdated", handleCompanyUpdate);
+      window.removeEventListener("companyUpdated", handleCompanyUpdate);
+      window.removeEventListener("storage", handleCompanyUpdate);
+    };
+  }, []);
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -80,13 +106,18 @@ const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
   const displayName = String(rawName).replace(/\s+user$/i, "").trim() || "User";
   const userEmail = typeof user?.email === "string" ? user.email : (typeof window !== "undefined" ? localStorage.getItem("user_email") || "" : "");
   const companyLogo =
-    (typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null) || user?.companyLogo || null;
+    dynamicLogo ||
+    (typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null) ||
+    user?.companyLogo ||
+    user?.company?.logo ||
+    null;
   const companyName =
     impersonatedCompany?.name ||
+    dynamicName ||
+    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
     user?.companyName ||
     user?.company?.name ||
     (typeof user?.company === "string" ? user.company : null) ||
-    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
     "";
 
   const pageTitle = PAGE_TITLES[pathname] || "Dashboard";

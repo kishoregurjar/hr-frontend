@@ -9,19 +9,25 @@ export default function SidebarHeader() {
   const [dynamicLogo, setDynamicLogo] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null
   );
+  const [dynamicName, setDynamicName] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("companyName") : null
+  );
 
   useEffect(() => {
-    const handleLogoUpdate = () => {
+    const handleUpdate = () => {
       if (typeof window !== "undefined") {
         setDynamicLogo(localStorage.getItem("companyLogo"));
+        setDynamicName(localStorage.getItem("companyName"));
       }
     };
 
-    window.addEventListener("companyLogoUpdated", handleLogoUpdate);
-    window.addEventListener("storage", handleLogoUpdate);
+    window.addEventListener("companyLogoUpdated", handleUpdate);
+    window.addEventListener("companyUpdated", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
     return () => {
-      window.removeEventListener("companyLogoUpdated", handleLogoUpdate);
-      window.removeEventListener("storage", handleLogoUpdate);
+      window.removeEventListener("companyLogoUpdated", handleUpdate);
+      window.removeEventListener("companyUpdated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
     };
   }, []);
 
@@ -32,10 +38,11 @@ export default function SidebarHeader() {
     user?.company?.logo ||
     null;
   const companyName =
+    dynamicName ||
+    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
     user?.companyName ||
     user?.company?.name ||
     (typeof user?.company === "string" ? user.company : null) ||
-    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
     "";
   const companyDomain =
     user?.companyDomain ||
