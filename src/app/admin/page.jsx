@@ -80,21 +80,17 @@ export default function AdminOverviewPage() {
 
       <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 max-w-7xl font-sans">
         {/* ── Top Bar with Quick Actions ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-linear-to-r from-blue-900 to-indigo-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl">
-          <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-2 bg-blue-500/20 text-blue-200 px-3 py-1 rounded-full text-xs font-bold border border-blue-400/20">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              Platform Administrator Portal
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-linear-to-r from-slate-900 via-blue-950 to-indigo-950 text-white rounded-2xl p-5 sm:p-6 shadow-lg border border-slate-800">
+          <div className="space-y-1">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight flex items-center gap-2">
               Enterprise Tenant Management
             </h1>
-            <p className="text-sm text-blue-100/80 max-w-xl">
-              Monitor client organizations, manage tenant activation lifecycles, and supervise multi-tenant hiring pipelines.
+            <p className="text-xs sm:text-sm text-slate-300 max-w-xl font-medium">
+              Monitor client organizations, tenant lifecycles, and system operations.
             </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
             <Button
               onClick={handleRefresh}
               variant="outline"
@@ -107,8 +103,8 @@ export default function AdminOverviewPage() {
             </Button>
 
             <Link href="/admin/companies?new=true">
-              <Button className="bg-white hover:bg-blue-50 text-blue-900 font-bold rounded-xl text-xs sm:text-sm px-5 py-5 shadow-lg gap-2 cursor-pointer transition-all hover:scale-102">
-                <Plus className="h-4 w-4 text-blue-600" />
+              <Button className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs sm:text-sm px-4 py-2 shadow-md gap-1.5 cursor-pointer transition-all">
+                <Plus className="h-4 w-4" />
                 Register New Company
               </Button>
             </Link>
@@ -178,8 +174,8 @@ export default function AdminOverviewPage() {
                 {loading ? "..." : totalMembersCount}
               </p>
               <p className="text-xs text-indigo-600 font-semibold flex items-center gap-1 mt-1">
-                <Briefcase className="h-3.5 w-3.5" />
-                {totalJobsCount} active job roles
+                <Users className="h-3.5 w-3.5" />
+                Active platform recruiters & members
               </p>
             </div>
           </div>
@@ -289,12 +285,22 @@ export default function AdminOverviewPage() {
               ))}
             </div>
           ) : (
-            <div className="py-12 text-center space-y-2">
-              <Building2 className="h-8 w-8 mx-auto text-slate-300" />
-              <p className="text-xs font-bold text-slate-700">No organizations onboarded yet</p>
-              <p className="text-[11px] text-slate-400">
-                Click &apos;Register New Company&apos; to onboard your first client organization.
-              </p>
+            <div className="py-12 text-center space-y-3">
+              <div className="h-12 w-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                <Building2 className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-800">No organizations onboarded yet</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Get started by onboarding your first client enterprise tenant.
+                </p>
+              </div>
+              <Link href="/admin/companies?new=true" className="inline-block pt-1">
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs gap-1.5 shadow-sm px-4 py-2 cursor-pointer">
+                  <Plus className="h-3.5 w-3.5" />
+                  Register First Company
+                </Button>
+              </Link>
             </div>
           )}
         </div>

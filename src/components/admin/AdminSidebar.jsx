@@ -14,7 +14,7 @@ import {
 
 const NAV_ITEMS = [
   {
-    label: "Platform Overview",
+    label: "Overview",
     href: "/admin",
     icon: LayoutDashboard,
     exact: true,
@@ -25,17 +25,17 @@ const NAV_ITEMS = [
     icon: Building2,
   },
   {
-    label: "Global Games Engine",
+    label: "Games Engine",
     href: "/admin/games",
     icon: Gamepad2,
   },
   {
-    label: "Platform Users",
+    label: "Users & Teams",
     href: "/admin/users",
     icon: Users,
   },
   {
-    label: "Platform Analytics",
+    label: "Analytics",
     href: "/admin/analytics",
     icon: BarChart3,
   },
@@ -58,21 +58,18 @@ const AdminSidebar = ({ isOpen = false, onClose = () => {} }) => {
       } font-sans`}
     >
       {/* ── Brand Header ── */}
-      <div className="h-18 flex items-center justify-between px-5 pt-5 pb-3">
+      <div className="h-16 flex items-center justify-between px-5 py-4 border-b border-slate-100">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 font-bold text-white shadow-md shadow-blue-500/20">
             <Shield className="h-5 w-5" />
           </div>
           <div>
             <span className="font-extrabold text-base tracking-tight text-slate-900 flex items-center gap-1.5 leading-none">
-              HireQuest Admin
+              HireQuest
               <span className="text-[9px] font-extrabold uppercase bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded tracking-wider">
                 SUPER
               </span>
             </span>
-            <p className="text-[11px] text-slate-500 font-medium mt-1">
-              Platform Master Console
-            </p>
           </div>
         </div>
 
@@ -88,9 +85,6 @@ const AdminSidebar = ({ isOpen = false, onClose = () => {} }) => {
 
       {/* ── Nav Links ── */}
       <div className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-          Management
-        </p>
 
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
