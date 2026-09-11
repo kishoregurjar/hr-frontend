@@ -221,19 +221,17 @@ const CandidateList = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
-      {/* ── 1. SINGLE, CLEAN HEADER ── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Candidate Directory
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-            Manage applicants, extract resumes from recruiter inboxes, and prepare invitations.
-          </p>
+      {/* ── 1. TOP ACTION TOOLBAR (Streamlined SaaS Layout) ── */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-slate-800">Candidate Pipeline</span>
+          <span className="text-slate-300">•</span>
+          <span className="text-xs text-slate-500 font-medium">
+            {filteredCandidates.length} {filteredCandidates.length === 1 ? "candidate" : "candidates"} in directory
+          </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Actions */}
           <EmailExtractorDialog triggerText="Extract from Emails" />
           <ImportCandidatesDialog existingCandidates={candidates} />
           <AddCandidateDialog />
