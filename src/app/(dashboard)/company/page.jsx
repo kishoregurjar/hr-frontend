@@ -276,6 +276,7 @@ export default function CompanySettingsPage() {
         setCompany((prev) => ({ ...prev, logoUrl }));
         if (typeof window !== "undefined") {
           localStorage.setItem("companyLogo", logoUrl);
+          window.dispatchEvent(new Event("companyLogoUpdated"));
         }
       }
       toast.success("Company logo uploaded successfully!");

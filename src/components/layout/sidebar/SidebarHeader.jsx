@@ -1,12 +1,32 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/features/auth/context";
 
 export default function SidebarHeader() {
   const { user } = useAuth();
+  const [dynamicLogo, setDynamicLogo] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null
+  );
+
+  useEffect(() => {
+    const handleLogoUpdate = () => {
+      if (typeof window !== "undefined") {
+        setDynamicLogo(localStorage.getItem("companyLogo"));
+      }
+    };
+
+    window.addEventListener("companyLogoUpdated", handleLogoUpdate);
+    window.addEventListener("storage", handleLogoUpdate);
+    return () => {
+      window.removeEventListener("companyLogoUpdated", handleLogoUpdate);
+      window.removeEventListener("storage", handleLogoUpdate);
+    };
+  }, []);
 
   const companyLogo =
+    dynamicLogo ||
     (typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null) ||
     user?.companyLogo ||
     user?.company?.logo ||
