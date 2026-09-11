@@ -31,8 +31,23 @@ const DashboardHeader = () => {
     (typeof window !== "undefined" ? localStorage.getItem("user_email") : null) ||
     "";
 
-  const isOwner = Boolean(user?.isOwner || user?.companyRole === "OWNER" || user?.role === "Company Owner");
-  const userRole = user?.role || (isOwner ? "Company Owner" : "Recruiter");
+  const activeCompanyRole =
+    user?.activeCompany?.role ||
+    user?.companies?.[0]?.role ||
+    user?.companyRole ||
+    (user?.isOwner ? "OWNER" : "") ||
+    (typeof window !== "undefined" ? localStorage.getItem("active_company_role") || localStorage.getItem("companyRole") : "") ||
+    user?.role ||
+    "";
+
+  const isOwner = Boolean(
+    user?.isOwner ||
+    String(activeCompanyRole).toUpperCase() === "OWNER" ||
+    String(activeCompanyRole).toUpperCase() === "COMPANY_OWNER" ||
+    user?.companyRole === "OWNER" ||
+    user?.role === "Company Owner"
+  );
+  const userRole = isOwner ? "Company Owner" : user?.role || "Recruiter";
 
   return (
     <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-2 border-b border-slate-100">

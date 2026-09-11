@@ -87,6 +87,7 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
     user?.companies?.[0]?.role ||
     user?.companyRole ||
     (user?.isOwner ? "OWNER" : "") ||
+    (typeof window !== "undefined" ? localStorage.getItem("active_company_role") || localStorage.getItem("companyRole") : "") ||
     user?.role ||
     "";
 

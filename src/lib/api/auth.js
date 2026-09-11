@@ -17,7 +17,7 @@ const getPayload = (res) => {
 /**
  * Helper to normalize backend user response into consistent frontend HR user object
  */
-const normalizeUser = (resData, fallbackEmail = "") => {
+export const normalizeUser = (resData, fallbackEmail = "") => {
   const payload = getPayload(resData);
 
   const rawUser =
