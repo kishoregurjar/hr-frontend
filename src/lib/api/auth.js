@@ -208,7 +208,11 @@ export const loginApi = async ({ email, password }) => {
     throw new Error("Invalid authentication payload received from server.");
   }
 
-  const refreshToken = payload?.refreshToken || res?.refreshToken || res?.data?.refreshToken;
+  const refreshToken =
+    payload?.refreshToken ||
+    res?.refreshToken ||
+    res?.data?.refreshToken ||
+    payload?.data?.refreshToken;
 
   if (typeof window !== "undefined") {
     localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, token);
@@ -235,6 +239,7 @@ export const loginApi = async ({ email, password }) => {
     }
     if (refreshToken) {
       localStorage.setItem("hirequest_refresh_token", refreshToken);
+      localStorage.setItem("refreshToken", refreshToken);
     }
     localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
   }
@@ -531,7 +536,20 @@ export const activateOwnerApi = async ({ token, password }) => {
     token,
     password,
   });
-  return res?.data?.data || res?.data || res;
+  const data = res?.data?.data || res?.data || res;
+  const refreshToken = data?.refreshToken || res?.refreshToken || res?.data?.refreshToken;
+  if (refreshToken && typeof window !== "undefined") {
+    localStorage.setItem("hirequest_refresh_token", refreshToken);
+    localStorage.setItem("refreshToken", refreshToken);
+  }
+  const accessToken = data?.accessToken || data?.token || res?.accessToken;
+  if (accessToken && typeof window !== "undefined") {
+    localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, accessToken);
+    localStorage.setItem("token", accessToken);
+    localStorage.setItem("accessToken", accessToken);
+    localStorage.setItem("jwt", accessToken);
+  }
+  return data;
 };
 
 /**

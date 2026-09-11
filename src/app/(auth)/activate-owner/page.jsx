@@ -18,8 +18,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { activateOwnerApi, normalizeUser } from "@/lib/api/auth";
-import { AUTH_STORAGE_KEYS } from "@/features/auth/constants";
-import { useAuth } from "@/features/auth/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,7 +26,6 @@ function ActivateOwnerContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") || "";
-  const { logout } = useAuth();
 
   const [isVerifying, setIsVerifying] = useState(true);
   const [tokenValid, setTokenValid] = useState(true);
