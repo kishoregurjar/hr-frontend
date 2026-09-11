@@ -22,20 +22,35 @@ import { getAdminMetrics, getAdminCompanies } from "@/lib/api/admin";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+// Module-level in-memory cache for instant 0ms tab switching (Stale-While-Revalidate)
+let adminOverviewCache = {
+  metrics: null,
+  companies: null,
+  timestamp: 0,
+};
+
 export default function AdminOverviewPage() {
-  const [metrics, setMetrics] = useState(null);
-  const [companies, setCompanies] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [metrics, setMetrics] = useState(adminOverviewCache.metrics);
+  const [companies, setCompanies] = useState(adminOverviewCache.companies || []);
+  const [loading, setLoading] = useState(!adminOverviewCache.metrics && !adminOverviewCache.companies);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = async (isManual = false) => {
     try {
       const [m, c] = await Promise.all([
         getAdminMetrics(),
         getAdminCompanies({ limit: 10 }),
       ]);
+      const validCompanies = Array.isArray(c) ? c : [];
       setMetrics(m);
-      setCompanies(Array.isArray(c) ? c : []);
+      setCompanies(validCompanies);
+
+      // Save to in-memory cache
+      adminOverviewCache = {
+        metrics: m,
+        companies: validCompanies,
+        timestamp: Date.now(),
+      };
     } catch {
       // Handled in api layer
     } finally {
@@ -50,7 +65,7 @@ export default function AdminOverviewPage() {
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    fetchData();
+    fetchData(true);
   };
 
   const totalCompaniesCount =

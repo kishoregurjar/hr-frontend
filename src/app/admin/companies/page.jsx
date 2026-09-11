@@ -52,15 +52,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// Module-level in-memory cache for instant navigation (Stale-While-Revalidate)
+let adminCompaniesCache = {
+  companies: null,
+  timestamp: 0,
+};
+
 function AdminCompaniesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const autoOpenNewModal = searchParams.get("new") === "true";
 
-  const [companies, setCompanies] = useState([]);
+  const [companies, setCompanies] = useState(adminCompaniesCache.companies || []);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!adminCompaniesCache.companies);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Register New Company Modal State
@@ -79,7 +85,12 @@ function AdminCompaniesContent() {
   const fetchCompanies = async () => {
     try {
       const data = await getAdminCompanies();
-      setCompanies(Array.isArray(data) ? data : []);
+      const validData = Array.isArray(data) ? data : [];
+      setCompanies(validData);
+      adminCompaniesCache = {
+        companies: validData,
+        timestamp: Date.now(),
+      };
     } catch {
       toast.error("Failed to load company organizations.");
     } finally {
