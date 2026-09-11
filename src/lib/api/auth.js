@@ -214,35 +214,7 @@ export const loginApi = async ({ email, password }) => {
     res?.data?.refreshToken ||
     payload?.data?.refreshToken;
 
-  if (typeof window !== "undefined") {
-    localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, token);
-    localStorage.setItem("token", token);
-    localStorage.setItem("accessToken", token);
-    localStorage.setItem("jwt", token);
-    const companyId =
-      payload?.company?.id ||
-      payload?.companyId ||
-      res?.data?.company?.id ||
-      res?.company?.id ||
-      user?.companyId ||
-      user?.company?.id;
-
-    if (companyId) {
-      localStorage.setItem("companyId", companyId);
-      localStorage.setItem("active_company_id", companyId);
-    }
-    if (user?.companyName || user?.company) {
-      localStorage.setItem("companyName", user.companyName || user.company);
-    }
-    if (user?.companyLogo) {
-      localStorage.setItem("companyLogo", user.companyLogo);
-    }
-    if (refreshToken) {
-      localStorage.setItem("hirequest_refresh_token", refreshToken);
-      localStorage.setItem("refreshToken", refreshToken);
-    }
-    localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
-  }
+  setAuthSession(token, user, refreshToken);
 
   return { token, user };
 };
@@ -442,11 +414,15 @@ export const clearAllAuthStorage = () => {
     "active_company_id",
     "companyName",
     "companyLogo",
+    "companyRole",
+    "active_company_role",
     "hirequest_company_id",
     "hq_impersonated_company",
     "candidateSessionToken",
     "candidateAccessToken",
-    "hirequest_recruiter_inbox_config",
+    "cached_admin_companies",
+    "cached_admin_metrics",
+    "user_email",
   ];
 
   keysToRemove.forEach((key) => {
@@ -459,6 +435,56 @@ export const clearAllAuthStorage = () => {
   try {
     sessionStorage.clear();
   } catch {}
+};
+
+/**
+ * Single Source of Truth Auth Session Manager
+ * Saves primary keys (hirequest_token & hirequest_user) and purges redundant duplicate keys.
+ */
+export const setAuthSession = (token, user, refreshToken = null) => {
+  if (typeof window === "undefined") return;
+
+  // 1. Purge legacy duplicate keys from storage
+  const legacyKeys = [
+    "token",
+    "accessToken",
+    "jwt",
+    "hiremind_access_token",
+    "hiremind_refresh_token",
+    "refreshToken",
+    "hirequest_refresh_token",
+    "active_company_id",
+    "active_company_role",
+    "companyRole",
+    "hirequest_company_id",
+  ];
+
+  legacyKeys.forEach((key) => {
+    try {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    } catch {}
+  });
+
+  // 2. Store primary canonical keys
+  if (token) {
+    localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, token);
+  }
+
+  if (user) {
+    localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
+    const compId = user.companyId || user.activeCompany?.id;
+    const compName = user.companyName || user.company || user.activeCompany?.name;
+    const compLogo = user.companyLogo || user.activeCompany?.logoUrl;
+
+    if (compId) localStorage.setItem("companyId", compId);
+    if (compName) localStorage.setItem("companyName", compName);
+    if (compLogo) localStorage.setItem("companyLogo", compLogo);
+  }
+
+  if (refreshToken) {
+    localStorage.setItem("hirequest_refresh_token", refreshToken);
+  }
 };
 
 /**
@@ -538,17 +564,10 @@ export const activateOwnerApi = async ({ token, password }) => {
   });
   const data = res?.data?.data || res?.data || res;
   const refreshToken = data?.refreshToken || res?.refreshToken || res?.data?.refreshToken;
-  if (refreshToken && typeof window !== "undefined") {
-    localStorage.setItem("hirequest_refresh_token", refreshToken);
-    localStorage.setItem("refreshToken", refreshToken);
-  }
   const accessToken = data?.accessToken || data?.token || res?.accessToken;
-  if (accessToken && typeof window !== "undefined") {
-    localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, accessToken);
-    localStorage.setItem("token", accessToken);
-    localStorage.setItem("accessToken", accessToken);
-    localStorage.setItem("jwt", accessToken);
-  }
+  const user = normalizeUser(res);
+
+  setAuthSession(accessToken, user, refreshToken);
   return data;
 };
 

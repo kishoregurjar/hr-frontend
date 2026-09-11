@@ -29,7 +29,7 @@ import {
   verifyCompanyInvitation,
   acceptAndRegisterCompanyInvitation,
 } from "@/lib/api/company";
-import { loginApi } from "@/lib/api/auth";
+import { loginApi, setAuthSession } from "@/lib/api/auth";
 import { AUTH_STORAGE_KEYS } from "@/features/auth/constants";
 import { useAuth } from "@/features/auth/context";
 import { Button } from "@/components/ui/button";
@@ -108,28 +108,11 @@ function AcceptInvitationContent() {
       authPayload?.data?.user;
 
     if (typeof window !== "undefined" && accessToken) {
-      localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, accessToken);
-      localStorage.setItem("token", accessToken);
-      localStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("jwt", accessToken);
-      if (refreshToken) {
-        localStorage.setItem("hirequest_refresh_token", refreshToken);
-      }
-      if (userData) {
-        localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(userData));
-        if (userData.email) {
-          localStorage.setItem("user_email", userData.email);
-        }
-      } else if (invitationData?.email) {
-        localStorage.setItem("user_email", invitationData.email);
-      }
-      if (invitationData?.companyId) {
-        localStorage.setItem("companyId", invitationData.companyId);
-        localStorage.setItem("active_company_id", invitationData.companyId);
-      }
-      if (invitationData?.companyName) {
-        localStorage.setItem("companyName", invitationData.companyName);
-      }
+      const userToStore = userData || {};
+      if (invitationData?.companyId) userToStore.companyId = invitationData.companyId;
+      if (invitationData?.companyName) userToStore.companyName = invitationData.companyName;
+
+      setAuthSession(accessToken, userToStore, refreshToken);
     }
   };
 

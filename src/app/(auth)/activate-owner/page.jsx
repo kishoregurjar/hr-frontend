@@ -16,7 +16,7 @@ import {
   Building2,
   Sparkles,
 } from "lucide-react";
-import { activateOwnerApi, normalizeUser } from "@/lib/api/auth";
+import { activateOwnerApi, normalizeUser, setAuthSession } from "@/lib/api/auth";
 import { AUTH_STORAGE_KEYS } from "@/features/auth/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,14 +113,6 @@ function ActivateOwnerContent() {
       const primaryCompany = (Array.isArray(companies) && companies[0]) || payload?.company;
 
       if (typeof window !== "undefined" && accessToken) {
-        localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, accessToken);
-        localStorage.setItem("token", accessToken);
-        localStorage.setItem("accessToken", accessToken);
-        localStorage.setItem("jwt", accessToken);
-        if (refreshToken) {
-          localStorage.setItem("hirequest_refresh_token", refreshToken);
-        }
-
         const normalizedUser = normalizeUser(response) || userData || {};
         if (primaryCompany?.role === "OWNER" || primaryCompany?.role === "COMPANY_OWNER" || !normalizedUser.companyRole) {
           normalizedUser.isOwner = true;
@@ -137,22 +129,11 @@ function ActivateOwnerContent() {
             normalizedUser.activeCompany.role = "OWNER";
           }
         }
-        localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(normalizedUser));
-        localStorage.setItem("active_company_role", "OWNER");
-        localStorage.setItem("companyRole", "OWNER");
+        if (primaryCompany?.id) normalizedUser.companyId = primaryCompany.id;
+        if (primaryCompany?.name) normalizedUser.companyName = primaryCompany.name;
+        if (primaryCompany?.logoUrl || primaryCompany?.logo) normalizedUser.companyLogo = primaryCompany.logoUrl || primaryCompany.logo;
 
-        if (normalizedUser.email) localStorage.setItem("user_email", normalizedUser.email);
-
-        if (primaryCompany?.id) {
-          localStorage.setItem("companyId", primaryCompany.id);
-          localStorage.setItem("active_company_id", primaryCompany.id);
-        }
-        if (primaryCompany?.name) {
-          localStorage.setItem("companyName", primaryCompany.name);
-        }
-        if (primaryCompany?.logoUrl || primaryCompany?.logo) {
-          localStorage.setItem("companyLogo", primaryCompany.logoUrl || primaryCompany.logo);
-        }
+        setAuthSession(accessToken, normalizedUser, refreshToken);
       }
 
       setIsSuccess(true);
