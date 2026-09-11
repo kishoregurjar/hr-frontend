@@ -42,16 +42,20 @@ const AdminHeader = ({
   };
 
   const resolveAdminName = (u) => {
-    if (!u) return "Platform Admin";
-    if (typeof u === "string") return u;
-    if (typeof u.name === "string" && u.name.trim()) return u.name.trim();
-    if (typeof u.fullName === "string" && u.fullName.trim()) return u.fullName.trim();
-    if (typeof u.firstName === "string" || typeof u.lastName === "string") {
-      const full = `${u.firstName || ""} ${u.lastName || ""}`.trim();
-      if (full) return full;
+    if (!u) return "Super Admin";
+    if (typeof u === "string") {
+      if (u === "Platform Super Admin" || u === "Platform Admin") return "Super Admin";
+      return u;
     }
-    if (typeof u.email === "string" && u.email.trim()) return u.email.split("@")[0];
-    return "Platform Admin";
+    const rawName =
+      (typeof u.name === "string" ? u.name : "") ||
+      (typeof u.fullName === "string" ? u.fullName : "") ||
+      (u.firstName || u.lastName ? `${u.firstName || ""} ${u.lastName || ""}`.trim() : "") ||
+      "";
+    if (rawName.trim() && rawName !== "Platform Super Admin" && rawName !== "Platform Admin") {
+      return rawName.trim();
+    }
+    return "Super Admin";
   };
 
   const adminName = resolveAdminName(user);
