@@ -419,114 +419,133 @@ function AdminCompaniesContent() {
 
         {/* ── 3. Register New Company Modal ── */}
         <Dialog open={isRegisterModalOpen} onOpenChange={setIsRegisterModalOpen}>
-          <DialogContent className="sm:max-w-lg rounded-3xl p-6 sm:p-8 font-sans">
-            <DialogHeader className="space-y-2">
-              <div className="inline-flex items-center justify-center h-10 w-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
-                <Building2 className="h-5 w-5" />
+          <DialogContent className="sm:max-w-2xl rounded-3xl p-6 sm:p-8 font-sans border border-slate-200/90 shadow-2xl">
+            <DialogHeader className="space-y-3 pb-2 border-b border-slate-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center h-11 w-11 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20">
+                    <Building2 className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+                      Onboard New Client Organization
+                    </DialogTitle>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      Provision enterprise tenant workspace & dispatch automated setup credentials.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <DialogTitle className="text-xl font-black text-slate-900">
-                Onboard New Client Organization
-              </DialogTitle>
-              <DialogDescription className="text-xs text-slate-500">
-                Create a tenant account and dispatch an automated owner onboarding activation email.
-              </DialogDescription>
             </DialogHeader>
 
-            <form onSubmit={handleRegisterCompany} className="space-y-4 pt-2">
-              {/* Company Name */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                  Organization Name <span className="text-rose-500">*</span>
-                </Label>
-                <div className="relative">
-                  <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    value={companyForm.name}
-                    onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
-                    placeholder="Enter company workspace name"
-                    required
-                    className="pl-10 h-10 rounded-xl text-xs"
-                  />
+            <form onSubmit={handleRegisterCompany} className="space-y-5 pt-2">
+              {/* 2-Column Responsive Form Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                {/* Organization Name */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1">
+                    Organization Name <span className="text-rose-500 font-black">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                    <Input
+                      value={companyForm.name}
+                      onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
+                      placeholder="e.g. GammaStack Technologies"
+                      required
+                      className="pl-10 h-11 rounded-xl text-xs sm:text-sm font-medium border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600 shadow-2xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Domain / Website */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Company Domain / Website <span className="text-slate-400 font-normal lowercase text-[11px]">(optional)</span>
+                  </Label>
+                  <div className="relative">
+                    <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                    <Input
+                      value={companyForm.domain}
+                      onChange={(e) => setCompanyForm({ ...companyForm, domain: e.target.value })}
+                      placeholder="e.g. gammastack.com"
+                      className="pl-10 h-11 rounded-xl text-xs sm:text-sm font-medium border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600 shadow-2xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Owner Work Email */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1">
+                    Owner Work Email Address <span className="text-rose-500 font-black">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                    <Input
+                      type="email"
+                      value={companyForm.ownerEmail}
+                      onChange={(e) => setCompanyForm({ ...companyForm, ownerEmail: e.target.value })}
+                      placeholder="owner@gammastack.com"
+                      required
+                      className="pl-10 h-11 rounded-xl text-xs sm:text-sm font-medium border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600 shadow-2xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Owner Name */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Owner Full Name <span className="text-slate-400 font-normal lowercase text-[11px]">(optional)</span>
+                  </Label>
+                  <div className="relative">
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                    <Input
+                      value={companyForm.ownerName}
+                      onChange={(e) => setCompanyForm({ ...companyForm, ownerName: e.target.value })}
+                      placeholder="e.g. John Doe"
+                      className="pl-10 h-11 rounded-xl text-xs sm:text-sm font-medium border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600 shadow-2xs"
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Owner Work Email */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                  Owner Work Email Address <span className="text-rose-500">*</span>
-                </Label>
-                <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    type="email"
-                    value={companyForm.ownerEmail}
-                    onChange={(e) => setCompanyForm({ ...companyForm, ownerEmail: e.target.value })}
-                    placeholder="owner@company.com"
-                    required
-                    className="pl-10 h-10 rounded-xl text-xs"
-                  />
+              {/* Informative Callout Banner */}
+              <div className="rounded-2xl bg-blue-50/70 border border-blue-100 p-3.5 flex items-start gap-3 text-xs text-blue-900">
+                <div className="h-6 w-6 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                  <Mail className="h-3.5 w-3.5" />
                 </div>
-                <p className="text-[11px] text-slate-500">
-                  The initial workspace invitation & activation link will be sent to this email.
-                </p>
-              </div>
-
-              {/* Owner Name */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                  Owner Full Name (Optional)
-                </Label>
-                <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    value={companyForm.ownerName}
-                    onChange={(e) => setCompanyForm({ ...companyForm, ownerName: e.target.value })}
-                    placeholder="Enter owner full name"
-                    className="pl-10 h-10 rounded-xl text-xs"
-                  />
-                </div>
-              </div>
-
-              {/* Domain / Website */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                  Company Domain / Website (Optional)
-                </Label>
-                <div className="relative">
-                  <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    value={companyForm.domain}
-                    onChange={(e) => setCompanyForm({ ...companyForm, domain: e.target.value })}
-                    placeholder="company.com"
-                    className="pl-10 h-10 rounded-xl text-xs"
-                  />
+                <div className="space-y-0.5">
+                  <p className="font-bold text-blue-950">Automated Setup Link Delivery</p>
+                  <p className="text-[11.5px] text-blue-800/90 leading-relaxed">
+                    A secure onboarding activation invitation will be immediately emailed to the owner with a direct token link to configure their workspace password.
+                  </p>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setIsRegisterModalOpen(false)}
-                  className="h-10 text-xs font-semibold rounded-xl"
+                  className="h-11 px-5 text-xs sm:text-sm font-semibold rounded-xl border-slate-200 hover:bg-slate-50 text-slate-700 cursor-pointer"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={isSubmitting || !companyForm.name.trim() || !companyForm.ownerEmail.trim()}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs h-10 px-5 rounded-xl shadow-md cursor-pointer gap-1.5"
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm h-11 px-6 rounded-xl shadow-md shadow-blue-500/20 cursor-pointer gap-2 transition-all"
                 >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Creating Tenant...</span>
+                      <span>Provisioning Workspace...</span>
                     </>
                   ) : (
                     <>
                       <Send className="h-4 w-4" />
-                      <span>Create & Send Activation</span>
+                      <span>Create & Dispatch Activation</span>
                     </>
                   )}
                 </Button>
