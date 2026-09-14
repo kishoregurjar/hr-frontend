@@ -50,12 +50,22 @@ const LoginForm = () => {
     e.preventDefault();
     setErrorType(null);
     setErrorMessage("");
+
+    const targetEmail = (email || e.target.email?.value || "").trim();
+    const targetPassword = password || e.target.password?.value || "";
+
+    if (!targetEmail || !targetPassword) {
+      setErrorType("INVALID_CREDENTIALS");
+      setErrorMessage("Please enter both your email address and password.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const authRes = await login({ email: email.trim(), password });
+      const authRes = await login({ email: targetEmail, password: targetPassword });
       if (typeof window !== "undefined") {
-        localStorage.setItem("user_email", email.trim());
+        localStorage.setItem("user_email", targetEmail);
       }
       const loggedUser = authRes?.user || authRes;
       const userName =
@@ -248,8 +258,8 @@ const LoginForm = () => {
       {/* Primary Submit Button */}
       <Button
         type="submit"
-        disabled={isSubmitting || !email.trim() || !password}
-        className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-300 disabled:to-slate-300 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all mt-2 cursor-pointer"
+        disabled={isSubmitting}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all mt-2 cursor-pointer"
       >
         {isSubmitting ? (
           <>
