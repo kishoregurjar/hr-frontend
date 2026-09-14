@@ -316,16 +316,29 @@ export const getCurrentUserApi = async () => {
   }
 
   try {
-    const isSuperAdmin = parsedUser?.role === "SUPER_ADMIN";
+    const userRoleStr = String(parsedUser?.role || parsedUser?.rawRole || "").toUpperCase();
+    const isSuperAdmin =
+      userRoleStr === "SUPER_ADMIN" ||
+      userRoleStr === "SUPER ADMIN" ||
+      parsedUser?.isSuperAdmin === true;
 
     // For Super Admin or fast session check, fetch /auth/me
     const meRes = await axiosClient.get("/auth/me", { timeout: 8000 });
     const meData = meRes?.data?.data || meRes?.data || meRes;
 
+    const liveRoleStr = String(
+      meData?.user?.role || meData?.role || meData?.user?.rawRole || userRoleStr
+    ).toUpperCase();
+    const isSuperAdminUser =
+      isSuperAdmin ||
+      liveRoleStr === "SUPER_ADMIN" ||
+      liveRoleStr === "SUPER ADMIN" ||
+      meData?.user?.isSuperAdmin === true;
+
     let combinedPayload = { ...(meData || {}) };
 
     // Only query company endpoints for non-superadmin users if companies are missing
-    if (!isSuperAdmin && !combinedPayload?.companies && !combinedPayload?.company) {
+    if (!isSuperAdminUser && !combinedPayload?.companies && !combinedPayload?.company) {
       try {
         const [compRes, profileRes] = await Promise.allSettled([
           axiosClient.get("/auth/me/companies", { timeout: 5000 }),

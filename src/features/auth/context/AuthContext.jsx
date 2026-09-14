@@ -60,7 +60,13 @@ export const AuthProvider = ({ children }) => {
         if (session?.token) {
           setToken(session.token);
           let currentUser = session.user;
-          if (currentUser && currentUser.role !== "SUPER_ADMIN") {
+          const userRole = String(currentUser?.role || currentUser?.rawRole || "").toUpperCase();
+          const isSuperAdmin =
+            userRole === "SUPER_ADMIN" ||
+            userRole === "SUPER ADMIN" ||
+            currentUser?.isSuperAdmin === true;
+
+          if (currentUser && !isSuperAdmin) {
             try {
               let compName = currentUser.companyName || currentUser.company;
               let compId = currentUser.companyId;

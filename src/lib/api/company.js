@@ -5,6 +5,19 @@ import axiosClient from "./axiosClient";
  * Endpoints: GET /api/v1/auth/me/companies, GET /api/v1/company/me, GET /api/v1/companies/me
  */
 export const getCompanyProfile = async () => {
+  if (typeof window !== "undefined") {
+    try {
+      const storedUser = localStorage.getItem("hirequest_user") || localStorage.getItem("user");
+      if (storedUser) {
+        const u = JSON.parse(storedUser);
+        const role = String(u?.role || u?.rawRole || "").toUpperCase();
+        if (role === "SUPER_ADMIN" || role === "SUPER ADMIN" || u?.isSuperAdmin === true) {
+          return null;
+        }
+      }
+    } catch {}
+  }
+
   let storedCompanyId =
     typeof window !== "undefined"
       ? localStorage.getItem("companyId") ||
