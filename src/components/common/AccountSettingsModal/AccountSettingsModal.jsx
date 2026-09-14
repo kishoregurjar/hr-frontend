@@ -297,22 +297,6 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
                     {userRole}
                   </p>
                 </div>
-
-                <div className="p-3.5 rounded-2xl border border-slate-200/90 bg-white space-y-1 hover:border-blue-200 transition-colors">
-                  <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                    <Shield className="h-3.5 w-3.5 text-emerald-600" />
-                    Security Verification
-                  </span>
-                  <p className="font-bold text-slate-800 text-sm">Brevo OTP Verified</p>
-                </div>
-
-                <div className="p-3.5 rounded-2xl border border-slate-200/90 bg-white space-y-1 hover:border-blue-200 transition-colors">
-                  <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                    <Lock className="h-3.5 w-3.5 text-indigo-600" />
-                    Encryption
-                  </span>
-                  <p className="font-bold text-slate-800 text-sm">256-Bit SSL Protected</p>
-                </div>
               </div>
 
               <div className="flex items-center justify-between pt-3 border-t border-slate-100">
