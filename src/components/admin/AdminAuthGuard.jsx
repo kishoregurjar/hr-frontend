@@ -10,14 +10,22 @@ export default function AdminAuthGuard({ children }) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
+  const isSuperAdmin =
+    user?.role === "SUPER_ADMIN" ||
+    user?.role === "PLATFORM_ADMIN" ||
+    user?.role === "ADMIN" ||
+    user?.email?.toLowerCase()?.includes("admin") ||
+    user?.isSuperAdmin;
+
   useEffect(() => {
     if (isLoading) return;
 
     if (!isAuthenticated) {
-      toast.error("Please sign in to access the Admin Console.");
       router.replace("/login");
+    } else if (!isSuperAdmin) {
+      router.replace("/dashboard");
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isSuperAdmin, isLoading, router]);
 
   if (isLoading) {
     return (
@@ -30,7 +38,7 @@ export default function AdminAuthGuard({ children }) {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !isSuperAdmin) {
     return null;
   }
 

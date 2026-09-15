@@ -183,26 +183,17 @@ const AssessmentBuilder = ({
   };
 
   const handleGamesContinue = () => {
-    if (assessment.selectedGameIds.length === 0) {
-      setSelectionErrors((previous) => ({
-        ...previous,
-        games: "Select at least one game to continue.",
-      }));
-      return;
-    }
-
     setSelectionErrors((previous) => ({
       ...previous,
       games: "",
     }));
-
     nextStep();
   };
 
   const handleQuestionSelectionChange = (selectedIds) => {
     updateAssessment({ selectedQuestionIds: selectedIds });
 
-    if (selectedIds.length > 0) {
+    if (selectedIds.length > 0 || (assessment.selectedGameIds?.length || 0) > 0) {
       setSelectionErrors((previous) => ({
         ...previous,
         questions: "",
@@ -211,10 +202,13 @@ const AssessmentBuilder = ({
   };
 
   const handleQuestionsContinue = () => {
-    if (assessment.selectedQuestionIds.length === 0) {
+    const hasGames = (assessment.selectedGameIds?.length || 0) > 0;
+    const hasQuestions = (assessment.selectedQuestionIds?.length || 0) > 0;
+
+    if (!hasGames && !hasQuestions) {
       setSelectionErrors((previous) => ({
         ...previous,
-        questions: "Select at least one question to continue.",
+        questions: "Select at least one game OR at least one question to continue.",
       }));
       return;
     }
@@ -378,6 +372,7 @@ const AssessmentBuilder = ({
         <QuestionSelectionStep
           questions={selectableQuestions}
           selectedQuestionIds={assessment.selectedQuestionIds}
+          selectedGameIds={assessment.selectedGameIds}
           onSelectionChange={handleQuestionSelectionChange}
           onBack={previousStep}
           onContinue={handleQuestionsContinue}
