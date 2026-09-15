@@ -22,8 +22,17 @@ if (typeof window !== "undefined") {
 }
 
 const GAME_CATALOG_MAP = gamesCatalog.reduce((acc, g) => {
-  acc[g.id] = g;
-  acc[g.slug] = g;
+  if (g.id) acc[g.id] = g;
+  if (g.slug) {
+    acc[g.slug] = g;
+    acc[String(g.slug).toLowerCase()] = g;
+    acc[String(g.slug).replace(/-/g, "_")] = g;
+    acc[`game_${String(g.slug).replace(/-/g, "_")}`] = g;
+  }
+  if (g.code) {
+    acc[g.code] = g;
+    acc[String(g.code).toLowerCase()] = g;
+  }
   return acc;
 }, {});
 
@@ -235,9 +244,9 @@ export const buildRuntimeSections = (assessment) => {
   const gameSections = rawGames.map((gameItem, index) => {
     const rawIdOrSlug = typeof gameItem === "string"
       ? gameItem
-      : (gameItem?.gameId || gameItem?.slug || gameItem?.id || gameItem?.game?.id || gameItem?.game?.slug || `game-${index + 1}`);
-    const catalogInfo = GAME_CATALOG_MAP[rawIdOrSlug] || {};
-    const title = (typeof gameItem === "object" && (gameItem?.title || gameItem?.game?.title)) || catalogInfo.title || `Module ${index + 1}: ${catalogInfo.name || "Game Challenge"}`;
+      : (gameItem?.game?.code || gameItem?.game?.slug || gameItem?.slug || gameItem?.code || gameItem?.gameId || gameItem?.id || `game-${index + 1}`);
+    const catalogInfo = GAME_CATALOG_MAP[rawIdOrSlug] || GAME_CATALOG_MAP[String(rawIdOrSlug).toLowerCase()] || {};
+    const title = (typeof gameItem === "object" && (gameItem?.title || gameItem?.game?.title || gameItem?.game?.name)) || catalogInfo.title || `Module ${index + 1}: ${catalogInfo.name || "Game Challenge"}`;
 
     return {
       id: `sec-game-${index + 1}`,
