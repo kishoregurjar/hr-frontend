@@ -17,26 +17,28 @@ export const invitationService = {
       assessment = await getAssessmentById(assignment.assessmentId).catch(() => null);
     }
 
-    // Ensure questions and games are populated for smooth runtime
-    let questions = assessment?.questions || [];
-    if (!Array.isArray(questions) || questions.length === 0) {
-      const qRes = await getQuestions().catch(() => ({ data: [] }));
-      const qList = Array.isArray(qRes?.data) ? qRes.data : Array.isArray(qRes) ? qRes : [];
-      questions = qList.length > 0 ? qList : [];
-    }
+    const questions = Array.isArray(assessment?.questions) ? assessment.questions : [];
+    const games = Array.isArray(assessment?.games)
+      ? assessment.games
+      : Array.isArray(assessment?.selectedGameIds)
+      ? assessment.selectedGameIds
+      : Array.isArray(assessment?.AssessmentGames)
+      ? assessment.AssessmentGames
+      : [];
 
-    const rawGames =
-      assessment?.games ||
-      assessment?.selectedGameIds ||
-      assessment?.AssessmentGames ||
-      [];
-    const games = Array.isArray(rawGames) ? rawGames : [];
+    const companyName =
+      assessment?.companyName ||
+      assignment?.companyName ||
+      candidate?.companyName ||
+      candidate?.company?.name ||
+      "";
 
     const hydratedAssessment = {
       ...assessment,
-      title: assessment?.title || "Full Stack & Cognitive Developer Assessment",
+      title: assessment?.title || "Candidate Assessment",
       durationMinutes: assessment?.durationMinutes || assessment?.duration || 60,
       passingScore: assessment?.passingScore || 70,
+      companyName,
       questions,
       games,
       totalQuestions: questions.length,
@@ -53,7 +55,8 @@ export const invitationService = {
         id: candidate?.id || assignment?.candidateId,
         name: candidateName,
         email: candidate?.email || assignment?.email || assignment?.candidateEmail || "",
-        phone: candidate?.phone || "",
+        phone: candidate?.phone || assignment?.phone || "",
+        companyName,
       },
       assessment: hydratedAssessment,
     };
