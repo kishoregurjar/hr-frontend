@@ -32,16 +32,16 @@ axiosClient.interceptors.request.use(
   (config) => {
     config.headers["ngrok-skip-browser-warning"] = "true";
     if (typeof window !== "undefined") {
+      // Specific candidate assessment test-taking endpoints (passwordless/OTP candidate session)
+      const url = config.url || "";
       const isCandidateEndpoint =
-        config.url?.includes("/attempts/candidate") ||
-        config.url?.includes("/attempts/start-by-token") ||
-        config.url?.includes("/attempts/save-answer") ||
-        config.url?.includes("/invitations/") ||
-        config.url?.includes("/attempts/verify") ||
-        config.url?.includes("/attempts/invitations/") ||
-        config.url?.includes("/attempts/token/") ||
-        config.url?.includes("/attempts/candidate-session") ||
-        config.url?.includes("/take-test");
+        url.includes("/attempts/candidate/send-otp") ||
+        url.includes("/attempts/candidate/verify-otp") ||
+        url.includes("/attempts/start-by-token") ||
+        url.includes("/attempts/save-answer") ||
+        url.includes("/attempts/submit") ||
+        url.includes("/attempts/candidate-session") ||
+        url.includes("/take-test");
 
       const candidateToken =
         sessionStorage.getItem("candidateSessionToken") ||
@@ -55,7 +55,7 @@ axiosClient.interceptors.request.use(
         localStorage.getItem("accessToken") ||
         localStorage.getItem("jwt");
 
-      // Candidate endpoints ONLY use candidateToken (NEVER fall back to stale HR admin token)
+      // Candidate test taking endpoints use candidateToken, all HR management endpoints use adminToken
       const tokenToUse = isCandidateEndpoint
         ? candidateToken
         : adminToken || candidateToken;

@@ -77,6 +77,19 @@ const AssessmentPreStart = ({
     return () => clearInterval(timer);
   }, [countdown]);
 
+  // Sync candidate prop if loaded asynchronously
+  useEffect(() => {
+    if (candidate?.name && !candidateName) {
+      setCandidateName(candidate.name);
+    }
+    if (candidate?.email && !email) {
+      setEmail(candidate.email);
+    }
+    if (candidate?.phone && !mobileNumber) {
+      setMobileNumber(candidate.phone);
+    }
+  }, [candidate]);
+
   const durationMinutes =
     assessment?.durationMinutes ??
     assessment?.duration ??
@@ -94,11 +107,11 @@ const AssessmentPreStart = ({
     0;
 
   const totalGames =
+    (Array.isArray(assessment?.games) ? assessment.games.length : null) ??
     (Array.isArray(assessment?.selectedGameIds) ? assessment.selectedGameIds.length : null) ??
     (Array.isArray(assessment?.AssessmentGames) ? assessment.AssessmentGames.length : null) ??
     (Array.isArray(assessment?.assessmentGames) ? assessment.assessmentGames.length : null) ??
     (Array.isArray(assessment?.gameIds) ? assessment.gameIds.length : null) ??
-    (Array.isArray(assessment?.games) ? assessment.games.length : null) ??
     assessment?.gameCount ??
     assessment?.totalGames ??
     0;
