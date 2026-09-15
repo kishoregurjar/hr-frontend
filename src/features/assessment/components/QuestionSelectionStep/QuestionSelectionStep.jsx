@@ -18,6 +18,7 @@ import QuestionSelectionCard from "../QuestionSelectionCard";
 const QuestionSelectionStep = ({
   questions = [],
   selectedQuestionIds = [],
+  selectedGameIds = [],
   onSelectionChange,
   onBack,
   onContinue,
@@ -81,6 +82,12 @@ const QuestionSelectionStep = ({
           Choose questions from your question bank for this assessment.
         </p>
       </div>
+
+      {selectedGameIds.length > 0 && (
+        <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-primary font-medium">
+          💡 Questions are optional since you have already selected Cognitive Games in Step 2.
+        </div>
+      )}
 
       {/* Search + Filters */}
       <div className="grid gap-3 lg:grid-cols-[1fr_200px_200px]">

@@ -14,12 +14,10 @@ export const assessmentSchema = z.object({
     .optional(),
 
   selectedGameIds: z
-    .array(z.union([z.string(), z.number()]))
-    .min(1, "Select at least one game"),
+    .array(z.union([z.string(), z.number()])),
 
   selectedQuestionIds: z
-    .array(z.union([z.string(), z.number()]))
-    .min(1, "Select at least one question"),
+    .array(z.union([z.string(), z.number()])),
 
   duration: z.coerce
     .number()
@@ -40,4 +38,12 @@ export const assessmentSchema = z.object({
   shuffleQuestions: z.boolean(),
 
   showResultToCandidate: z.boolean(),
-});
+}).refine(
+  (data) =>
+    (data.selectedGameIds && data.selectedGameIds.length > 0) ||
+    (data.selectedQuestionIds && data.selectedQuestionIds.length > 0),
+  {
+    message: "Select at least one game OR at least one question",
+    path: ["selectedQuestionIds"],
+  }
+);
