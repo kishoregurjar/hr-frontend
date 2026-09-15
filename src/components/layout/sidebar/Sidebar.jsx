@@ -267,6 +267,7 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
               <Link
                 key={item.title}
                 href={item.href}
+                prefetch={false}
                 onClick={onClose}
                 className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                   active
