@@ -43,23 +43,7 @@ export const getAssessments = async (rawParams = {}) => {
     const res = await axiosClient.get("/assessments", {
       params: cleanParams,
     });
-    let list = extractAssessmentsList(res);
-
-    // If list is empty and no specific status was requested, also try fetching DRAFT assessments
-    if ((!Array.isArray(list) || list.length === 0) && !cleanParams.status) {
-      try {
-        const draftRes = await axiosClient.get("/assessments", {
-          params: { ...cleanParams, status: "DRAFT" },
-        });
-        const draftList = extractAssessmentsList(draftRes);
-        if (Array.isArray(draftList) && draftList.length > 0) {
-          list = draftList;
-        }
-      } catch {
-        // Ignore fallback error
-      }
-    }
-
+    const list = extractAssessmentsList(res);
     return Array.isArray(list) ? list : [];
   } catch (error) {
     console.warn("Notice fetching backend assessments:", error.message);
