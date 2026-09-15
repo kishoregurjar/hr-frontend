@@ -29,35 +29,26 @@ export const getAssignmentByToken = async (rawToken) => {
   let inv = null;
 
   for (const t of tokenVariants) {
-    // 1. Try GET /attempts/verify/:token
+    // 1. Primary fast endpoint: GET /attempts/verify/:token
     try {
       const res = await axiosClient.get(`/attempts/verify/${t}`);
       inv = res?.data?.data || res?.data || res;
       if (inv && (inv.id || inv.assessmentId || inv.token)) break;
     } catch {}
 
-    // 2. Try GET /invitations/verify/:token
-    if (!inv) {
-      try {
-        const res = await axiosClient.get(`/invitations/verify/${t}`);
-        inv = res?.data?.data || res?.data || res;
-        if (inv && (inv.id || inv.assessmentId || inv.token)) break;
-      } catch {}
-    }
-
-    // 3. Try POST /attempts/verify with { token }
-    if (!inv) {
-      try {
-        const res = await axiosClient.post("/attempts/verify", { token: t });
-        inv = res?.data?.data || res?.data || res;
-        if (inv && (inv.id || inv.assessmentId || inv.token)) break;
-      } catch {}
-    }
-
-    // 4. Try GET /invitations/:token
+    // 2. Secondary endpoint: GET /invitations/:token
     if (!inv) {
       try {
         const res = await axiosClient.get(`/invitations/${t}`);
+        inv = res?.data?.data || res?.data || res;
+        if (inv && (inv.id || inv.assessmentId || inv.token)) break;
+      } catch {}
+    }
+
+    // 3. Fallback: POST /attempts/verify
+    if (!inv) {
+      try {
+        const res = await axiosClient.post("/attempts/verify", { token: t });
         inv = res?.data?.data || res?.data || res;
         if (inv && (inv.id || inv.assessmentId || inv.token)) break;
       } catch {}
@@ -66,42 +57,6 @@ export const getAssignmentByToken = async (rawToken) => {
 
   let liveAssessment = inv?.assessment || inv?.Assessment || {};
   const assessmentId = inv?.assessmentId || liveAssessment?.id || liveAssessment?._id;
-
-  // Hydrate full live Assessment details from database if title or questions are missing
-  if (assessmentId && (!liveAssessment?.title || !liveAssessment?.questions || !liveAssessment?.questions?.length)) {
-    try {
-      const assRes = await axiosClient.get(`/assessments/${assessmentId}`);
-      const fetched = assRes?.data?.data || assRes?.data || assRes;
-      if (fetched && (fetched.title || fetched.id)) {
-        liveAssessment = { ...liveAssessment, ...fetched };
-      }
-    } catch (err) {
-      console.warn("Notice hydrating assessment details:", err?.message);
-    }
-  }
-
-  // If questions don't have full options populated, hydrate them from questions API
-  const rawQList = liveAssessment?.AssessmentQuestions || liveAssessment?.questions || liveAssessment?.questionIds;
-  if (Array.isArray(rawQList) && rawQList.length > 0) {
-    try {
-      const qRes = await axiosClient.get("/questions");
-      const allQuestions = qRes?.data?.items || qRes?.data?.data || qRes?.data || [];
-      if (Array.isArray(allQuestions) && allQuestions.length > 0) {
-        liveAssessment.questions = rawQList.map((qItem) => {
-          const targetId = String(
-            (typeof qItem === "object" ? qItem?.questionId || qItem?.id || qItem?._id : qItem) || ""
-          );
-          const targetTitle = String(typeof qItem === "object" ? qItem?.question || qItem?.title || "" : "");
-          const match = allQuestions.find(
-            (q) => (targetId && String(q.id || q._id) === targetId) || (targetTitle && String(q.title || q.question) === targetTitle)
-          );
-          return match || (typeof qItem === "object" ? qItem?.question || qItem : { id: targetId });
-        });
-      }
-    } catch (e) {
-      console.warn("Notice hydrating question options:", e?.message);
-    }
-  }
 
   if (inv && typeof inv === "object") {
     const candidate = inv.candidate || inv.user || inv.User || {};
@@ -116,6 +71,51 @@ export const getAssignmentByToken = async (rawToken) => {
     const candidateEmail = inv.email || candidate?.email || "";
     const candidatePhone = inv.phone || inv.phoneNumber || candidate?.phone || candidate?.phoneNumber || "";
 
+    const rawGames =
+      liveAssessment?.games ||
+      liveAssessment?.selectedGameIds ||
+      liveAssessment?.AssessmentGames ||
+      liveAssessment?.assessmentGames ||
+      liveAssessment?.gameIds ||
+      inv?.games ||
+      [];
+    const games = Array.isArray(rawGames) ? rawGames : [];
+
+    const rawQuestions =
+      liveAssessment?.questions ||
+      liveAssessment?.AssessmentQuestions ||
+      liveAssessment?.assessmentQuestions ||
+      liveAssessment?.questionIds ||
+      inv?.questions ||
+      [];
+    const questions = Array.isArray(rawQuestions) ? rawQuestions : [];
+
+    const companyName =
+      inv?.companyName ||
+      inv?.company?.name ||
+      liveAssessment?.companyName ||
+      liveAssessment?.company?.name ||
+      liveAssessment?.createdBy?.company?.name ||
+      candidate?.company?.name ||
+      candidate?.companyName ||
+      "";
+
+    const normalizedAssessment = {
+      ...liveAssessment,
+      id: assessmentId || liveAssessment?.id,
+      title: liveAssessment?.title || "Candidate Assessment",
+      description: liveAssessment?.description || "",
+      durationMinutes: liveAssessment?.durationMinutes ?? liveAssessment?.duration ?? 60,
+      passingScore: liveAssessment?.passingScore ?? 70,
+      companyName,
+      games,
+      questions,
+      totalGames: games.length,
+      totalQuestions: questions.length,
+      gameCount: games.length,
+      questionCount: questions.length,
+    };
+
     return {
       id: inv.id || `inv-${Date.now()}`,
       assignmentId: inv.id || `inv-${Date.now()}`,
@@ -126,17 +126,19 @@ export const getAssignmentByToken = async (rawToken) => {
       candidateEmail,
       phone: candidatePhone,
       candidatePhone,
+      companyName,
       status: inv.status || "Invited",
       token: inv.token || rawToken,
       invitationToken: inv.token || rawToken,
       expiresAt: inv.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       isExpired: inv.expiresAt ? new Date(inv.expiresAt).getTime() <= Date.now() : false,
-      assessment: liveAssessment,
+      assessment: normalizedAssessment,
       candidate: {
         id: inv.candidateId || candidate?.id || inv.id,
         name: candidateName,
         email: candidateEmail,
         phone: candidatePhone,
+        companyName,
       },
     };
   }
