@@ -31,7 +31,6 @@ export default function AdminLayoutClient({ children }) {
   useEffect(() => {
     if (!isLoading) {
       if (!isAuthenticated) {
-        toast.error("Please sign in as Super Admin to access this console.");
         router.push("/login");
       } else if (!isSuperAdmin) {
         toast.error("Access restricted: Super Administrator credentials required.");
