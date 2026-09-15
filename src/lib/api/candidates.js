@@ -99,16 +99,16 @@ export const getCandidates = async (params = {}) => {
   // 1. Primary dedicated GET /candidates endpoint
   try {
     const candRes = await axiosClient.get("/candidates", { params: cleanParams });
-    const cItems = candRes?.data?.items || candRes?.data?.data || candRes?.items || candRes?.data || (Array.isArray(candRes) ? candRes : []);
-    if (Array.isArray(cItems) && cItems.length > 0) {
+    const cItems = candRes?.data?.items || candRes?.data?.data || candRes?.items || candRes?.data || (Array.isArray(candRes) ? candRes : null);
+    if (Array.isArray(cItems)) {
       backendItems = cItems;
     }
   } catch (err) {
     // 2. Fallback only if /candidates fails
     try {
       const res = await axiosClient.get("/attempts/candidates", { params: cleanParams });
-      const items = res?.data?.items || res?.data?.data || res?.items || res?.data || (Array.isArray(res) ? res : []);
-      if (Array.isArray(items) && items.length > 0) {
+      const items = res?.data?.items || res?.data?.data || res?.items || res?.data || (Array.isArray(res) ? res : null);
+      if (Array.isArray(items)) {
         backendItems = items;
       }
     } catch {}
