@@ -29,23 +29,14 @@ export const getAssignmentByToken = async (rawToken) => {
   let inv = null;
 
   for (const t of tokenVariants) {
-    // 1. Primary fast endpoint: GET /attempts/verify/:token
+    // 1. Primary candidate verify endpoint: GET /attempts/verify/:token
     try {
       const res = await axiosClient.get(`/attempts/verify/${t}`);
       inv = res?.data?.data || res?.data || res;
       if (inv && (inv.id || inv.assessmentId || inv.token)) break;
     } catch {}
 
-    // 2. Secondary endpoint: GET /invitations/:token
-    if (!inv) {
-      try {
-        const res = await axiosClient.get(`/invitations/${t}`);
-        inv = res?.data?.data || res?.data || res;
-        if (inv && (inv.id || inv.assessmentId || inv.token)) break;
-      } catch {}
-    }
-
-    // 3. Fallback: POST /attempts/verify
+    // 2. Fallback POST /attempts/verify with { token }
     if (!inv) {
       try {
         const res = await axiosClient.post("/attempts/verify", { token: t });
@@ -60,6 +51,24 @@ export const getAssignmentByToken = async (rawToken) => {
 
   if (inv && typeof inv === "object") {
     const candidate = inv.candidate || inv.user || inv.User || {};
+    const companyName =
+      inv.companyName ||
+      inv.company?.name ||
+      liveAssessment.companyName ||
+      liveAssessment.company?.name ||
+      liveAssessment.createdBy?.company?.name ||
+      candidate.companyName ||
+      candidate.company?.name ||
+      "HireQuest Partner Company";
+
+    const companyLogo =
+      inv.companyLogo ||
+      inv.company?.logoUrl ||
+      liveAssessment.companyLogo ||
+      liveAssessment.company?.logoUrl ||
+      candidate.companyLogo ||
+      null;
+
     const candidateName =
       inv.candidateName ||
       candidate?.name ||
@@ -68,52 +77,42 @@ export const getAssignmentByToken = async (rawToken) => {
       inv.email ||
       candidate?.email ||
       "Candidate";
+
     const candidateEmail = inv.email || candidate?.email || "";
     const candidatePhone = inv.phone || inv.phoneNumber || candidate?.phone || candidate?.phoneNumber || "";
 
     const rawGames =
-      liveAssessment?.games ||
-      liveAssessment?.selectedGameIds ||
-      liveAssessment?.AssessmentGames ||
-      liveAssessment?.assessmentGames ||
-      liveAssessment?.gameIds ||
-      inv?.games ||
+      liveAssessment.games ||
+      liveAssessment.selectedGameIds ||
+      liveAssessment.AssessmentGames ||
+      liveAssessment.assessmentGames ||
+      inv.selectedGameIds ||
+      inv.games ||
       [];
-    const games = Array.isArray(rawGames) ? rawGames : [];
 
     const rawQuestions =
-      liveAssessment?.questions ||
-      liveAssessment?.AssessmentQuestions ||
-      liveAssessment?.assessmentQuestions ||
-      liveAssessment?.questionIds ||
-      inv?.questions ||
+      liveAssessment.questions ||
+      liveAssessment.AssessmentQuestion ||
+      liveAssessment.AssessmentQuestions ||
+      liveAssessment.assessmentQuestion ||
+      liveAssessment.assessmentQuestions ||
+      inv.selectedQuestionIds ||
+      inv.questions ||
       [];
-    const questions = Array.isArray(rawQuestions) ? rawQuestions : [];
 
-    const companyName =
-      inv?.companyName ||
-      inv?.company?.name ||
-      liveAssessment?.companyName ||
-      liveAssessment?.company?.name ||
-      liveAssessment?.createdBy?.company?.name ||
-      candidate?.company?.name ||
-      candidate?.companyName ||
-      "";
-
-    const normalizedAssessment = {
+    const hydratedAssessment = {
       ...liveAssessment,
-      id: assessmentId || liveAssessment?.id,
-      title: liveAssessment?.title || "Candidate Assessment",
-      description: liveAssessment?.description || "",
-      durationMinutes: liveAssessment?.durationMinutes ?? liveAssessment?.duration ?? 60,
-      passingScore: liveAssessment?.passingScore ?? 70,
+      id: assessmentId || liveAssessment.id,
+      title: liveAssessment.title || "Candidate Assessment",
+      description: liveAssessment.description || "Assessment session for role evaluation.",
+      durationMinutes: liveAssessment.durationMinutes || liveAssessment.duration || 60,
+      passingScore: liveAssessment.passingScore || 60,
       companyName,
-      games,
-      questions,
-      totalGames: games.length,
-      totalQuestions: questions.length,
-      gameCount: games.length,
-      questionCount: questions.length,
+      companyLogo,
+      games: Array.isArray(rawGames) ? rawGames : [],
+      questions: Array.isArray(rawQuestions) ? rawQuestions : [],
+      selectedGameIds: Array.isArray(rawGames) ? rawGames : [],
+      selectedQuestionIds: Array.isArray(rawQuestions) ? rawQuestions : [],
     };
 
     return {
@@ -127,19 +126,21 @@ export const getAssignmentByToken = async (rawToken) => {
       phone: candidatePhone,
       candidatePhone,
       companyName,
+      companyLogo,
       status: inv.status || "Invited",
       token: inv.token || rawToken,
       invitationToken: inv.token || rawToken,
       expiresAt: inv.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       isExpired: inv.expiresAt ? new Date(inv.expiresAt).getTime() <= Date.now() : false,
-      assessment: normalizedAssessment,
       candidate: {
         id: inv.candidateId || candidate?.id || inv.id,
         name: candidateName,
         email: candidateEmail,
         phone: candidatePhone,
         companyName,
+        companyLogo,
       },
+      assessment: hydratedAssessment,
     };
   }
 
