@@ -96,41 +96,23 @@ export const getCandidates = async (params = {}) => {
 
   let backendItems = [];
 
-  // 1. Try dedicated GET /candidates endpoint
+  // 1. Primary dedicated GET /candidates endpoint
   try {
     const candRes = await axiosClient.get("/candidates", { params: cleanParams });
     const cItems = candRes?.data?.items || candRes?.data?.data || candRes?.items || candRes?.data || (Array.isArray(candRes) ? candRes : []);
     if (Array.isArray(cItems) && cItems.length > 0) {
-      backendItems = [...backendItems, ...cItems];
+      backendItems = cItems;
     }
-  } catch {}
-
-  // 2. Try GET /attempts/candidates
-  try {
-    const res = await axiosClient.get("/attempts/candidates", { params: cleanParams });
-    const items = res?.data?.items || res?.data?.data || res?.items || res?.data || (Array.isArray(res) ? res : []);
-    if (Array.isArray(items) && items.length > 0) {
-      backendItems = [...backendItems, ...items];
-    }
-  } catch {}
-
-  // 3. Try GET /invitations & GET /attempts/invitations
-  try {
-    const invRes = await axiosClient.get("/invitations", { params: cleanParams });
-    const invItems = invRes?.data?.items || invRes?.data?.data || invRes?.items || invRes?.data || (Array.isArray(invRes) ? invRes : []);
-    if (Array.isArray(invItems) && invItems.length > 0) {
-      backendItems = [...backendItems, ...invItems];
-    }
-  } catch {}
-
-  // 4. Try GET /attempts
-  try {
-    const res = await axiosClient.get("/attempts", { params: cleanParams });
-    const items = res?.data?.items || res?.data?.data || res?.items || res?.data || (Array.isArray(res) ? res : []);
-    if (Array.isArray(items) && items.length > 0) {
-      backendItems = [...backendItems, ...items];
-    }
-  } catch {}
+  } catch (err) {
+    // 2. Fallback only if /candidates fails
+    try {
+      const res = await axiosClient.get("/attempts/candidates", { params: cleanParams });
+      const items = res?.data?.items || res?.data?.data || res?.items || res?.data || (Array.isArray(res) ? res : []);
+      if (Array.isArray(items) && items.length > 0) {
+        backendItems = items;
+      }
+    } catch {}
+  }
 
   // Map backend database records
   const mappedBackend = backendItems.map((att, idx) => {
