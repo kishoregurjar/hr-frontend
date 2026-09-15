@@ -11,6 +11,8 @@ const RecentResultsTable = () => {
   const { data: attempts = [] } = useQuery({
     queryKey: ["attempts", "recent"],
     queryFn: () => getAttempts(),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const submittedAttempts = useMemo(() => {
