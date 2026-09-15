@@ -299,30 +299,5 @@ export const buildRuntimeSections = (assessment) => {
   }
 
   const combinedSections = [...gameSections, ...quizSections];
-  
-  // Safe default: if both game and quiz sections are somehow empty, provide default games
-  if (combinedSections.length === 0) {
-    return [
-      {
-        id: "sec-game-zip",
-        type: "game",
-        gameId: "zip",
-        slug: "zip",
-        gameType: "zip",
-        title: "Module 1: Zip Grid Pathfinder",
-        description: "Connect sequential numbered checkpoints across the maze grid without crossing wall barriers.",
-      },
-      {
-        id: "sec-game-tango",
-        type: "game",
-        gameId: "tango",
-        slug: "tango",
-        gameType: "tango",
-        title: "Module 2: Tango Spatial Deduction",
-        description: "Solve the Sun and Moon deduction matrix adhering to row/col balance and constraint rules.",
-      },
-    ];
-  }
-
   return combinedSections;
 };

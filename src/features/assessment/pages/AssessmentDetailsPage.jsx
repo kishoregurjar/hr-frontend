@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Pencil } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { games as staticGames } from "@/features/games/data";
+import { useGamesQuery } from "@/features/games/hooks";
 import { useQuestionsQuery } from "@/features/question-bank/hooks";
 
 import { ASSESSMENT_STATUS } from "../constants";
@@ -27,6 +27,11 @@ const AssessmentDetailsPage = ({ assessmentId }) => {
     isError: isAssessmentError,
     error,
   } = useAssessmentQuery(assessmentId);
+
+  const {
+    data: games = [],
+    isLoading: isGamesLoading,
+  } = useGamesQuery();
 
   const {
     data: questions = [],
@@ -115,7 +120,7 @@ const AssessmentDetailsPage = ({ assessmentId }) => {
 
       <AssessmentDetails
         assessment={assessment}
-        games={staticGames}
+        games={games}
         questions={questions}
         actions={
           <>

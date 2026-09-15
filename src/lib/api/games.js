@@ -1,5 +1,4 @@
 import axiosClient from "./axiosClient";
-import { games as fallbackGames } from "@/features/games/data";
 
 /**
  * Fetch all cognitive games available on the platform
@@ -9,12 +8,12 @@ export const getGames = async () => {
   try {
     const res = await axiosClient.get("/games");
     const data = res?.data?.data || res?.data || res;
-    if (Array.isArray(data) && data.length > 0) return data;
-    if (Array.isArray(data?.games) && data.games.length > 0) return data.games;
-    return fallbackGames;
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.games)) return data.games;
+    return [];
   } catch (err) {
-    console.warn("Falling back to local games catalog:", err?.message);
-    return fallbackGames;
+    console.error("Failed to fetch games from API:", err);
+    return [];
   }
 };
 

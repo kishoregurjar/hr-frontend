@@ -2,7 +2,6 @@ import { getAssignmentByToken } from "@/lib/api/assignments";
 import { getCandidateById } from "@/lib/api/candidates";
 import { getAssessmentById } from "@/lib/api/assessments";
 import { getQuestions } from "@/lib/api/questions";
-import { games as staticGames } from "@/features/games/data";
 
 export const invitationService = {
   getByToken: async (token) => {
@@ -26,10 +25,12 @@ export const invitationService = {
       questions = qList.length > 0 ? qList : [];
     }
 
-    let games = assessment?.games || [];
-    if (!Array.isArray(games) || games.length === 0) {
-      games = Array.isArray(staticGames) ? staticGames : [];
-    }
+    const rawGames =
+      assessment?.games ||
+      assessment?.selectedGameIds ||
+      assessment?.AssessmentGames ||
+      [];
+    const games = Array.isArray(rawGames) ? rawGames : [];
 
     const hydratedAssessment = {
       ...assessment,
