@@ -20,8 +20,11 @@ export const getAssignmentByToken = async (rawToken) => {
     throw new Error("Assessment invitation token is missing.");
   }
 
-  const cleanToken = String(rawToken).startsWith("inv_") ? String(rawToken).slice(4) : String(rawToken);
-  const tokenVariants = [rawToken, cleanToken].filter(Boolean);
+  const rawStr = String(rawToken).trim();
+  const cleanToken = rawStr.toLowerCase().startsWith("inv_") ? rawStr.slice(4) : rawStr;
+  const tokenVariants = Array.from(
+    new Set([rawStr, cleanToken, `inv_${cleanToken}`, `Inv_${cleanToken}`])
+  ).filter(Boolean);
 
   let inv = null;
 

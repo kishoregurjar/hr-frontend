@@ -57,16 +57,16 @@ const AssessmentReview = ({
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
-              Review & Launch Assessment
+              Review & Create Assessment
             </h2>
             <p className="mt-0.5 text-xs sm:text-sm text-slate-500 font-medium">
-              Review the module configurations, question pool, and grading settings before publishing.
+              Review the module configurations, question pool, and grading settings before saving.
             </p>
           </div>
 
           <Badge className="bg-emerald-50 text-emerald-700 border-emerald-300 text-xs font-bold gap-1 px-3 py-1">
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-            Ready for Deployment
+            Ready for Creation
           </Badge>
         </div>
 
@@ -75,7 +75,7 @@ const AssessmentReview = ({
           <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 space-y-1 text-rose-700 text-xs">
             <p className="font-bold flex items-center gap-1.5">
               <TriangleAlert className="h-4 w-4 text-rose-600" />
-              Please resolve the following issues before publishing:
+              Please resolve the following issues before creating:
             </p>
             <ul className="list-disc pl-6 space-y-0.5 font-medium">
               {Object.entries(validationErrors).map(([key, msg]) => (
@@ -276,12 +276,12 @@ const AssessmentReview = ({
               {isSubmitting && submitAction === "publish" ? (
                 <span className="flex items-center gap-1.5">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Publishing Assessment...
+                  Creating Assessment...
                 </span>
               ) : (
                 <span className="flex items-center gap-1.5">
                   <Send className="h-3.5 w-3.5" />
-                  Publish Assessment
+                  Create Assessment
                 </span>
               )}
             </Button>
