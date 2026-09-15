@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { games } from "@/features/games/data";
+import { useGamesQuery } from "@/features/games/hooks";
 import { useQuestionsQuery } from "@/features/question-bank/hooks";
 import { QUESTION_STATUS } from "@/features/question-bank/constants";
 
@@ -30,10 +30,6 @@ import AssessmentSettingsForm from "../AssessmentSettingsForm";
 import AssessmentReview from "../AssessmentReview";
 import AssessmentDraftRecovery from "../AssessmentDraftRecovery";
 
-// Static games data — swap with useGamesQuery() when real API is connected
-const isGamesLoading = false;
-const isGamesError = false;
-
 const AssessmentBuilder = ({
   mode = "create",
   assessmentId = null,
@@ -41,6 +37,16 @@ const AssessmentBuilder = ({
 }) => {
   const router = useRouter();
   const [submitAction, setSubmitAction] = useState(null);
+
+  const {
+    data: allGames = [],
+    isLoading: isGamesLoading,
+    isError: isGamesError,
+  } = useGamesQuery();
+
+  const games = (Array.isArray(allGames) ? allGames : []).filter(
+    (g) => g.isActive !== false && g.status !== "INACTIVE"
+  );
 
   const [selectionErrors, setSelectionErrors] = useState({
     games: "",

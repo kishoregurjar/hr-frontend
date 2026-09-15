@@ -260,8 +260,11 @@ export const getAdminGames = async () => {
   try {
     const res = await axiosClient.get("/super-admin/games");
     const data = res?.data?.data || res?.data || res;
-    return Array.isArray(data) ? data : data?.games || [];
-  } catch {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.games)) return data.games;
+    return [];
+  } catch (err) {
+    console.error("Failed to fetch super-admin games:", err);
     return [];
   }
 };
@@ -270,14 +273,19 @@ export const getAdminGames = async () => {
  * 11. Toggle Cognitive Game Status
  * Endpoint: PATCH /api/v1/super-admin/games/:id/status
  */
-export const toggleGameStatus = async (gameId, newStatus) => {
+export const toggleGameStatus = async (gameId, isActiveOrStatus) => {
+  const isActive = typeof isActiveOrStatus === "boolean" 
+    ? isActiveOrStatus 
+    : isActiveOrStatus === "ACTIVE" || isActiveOrStatus === true;
+
   try {
     const res = await axiosClient.patch(`/super-admin/games/${gameId}/status`, {
-      status: newStatus,
+      isActive,
     });
     return res?.data?.data || res?.data || res;
-  } catch {
-    return { success: true, gameId, status: newStatus };
+  } catch (err) {
+    console.error(`Failed to toggle status for game ${gameId}:`, err);
+    throw err;
   }
 };
 
