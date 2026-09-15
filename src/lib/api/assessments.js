@@ -72,6 +72,7 @@ export const createAssessment = async (payload) => {
   const res = await axiosClient.post("/assessments", finalPayload);
   const created = res?.data?.data || res?.data || res;
   const createdId = created?.id || created?._id;
+  const createdStatus = String(created?.status || "").toUpperCase();
 
   if (createdId) {
     if (Array.isArray(payload?.questionIds) && payload.questionIds.length > 0) {
@@ -82,7 +83,7 @@ export const createAssessment = async (payload) => {
       }
     }
 
-    if (requestStatus === "PUBLISHED") {
+    if (requestStatus === "PUBLISHED" && createdStatus !== "PUBLISHED") {
       try {
         await publishAssessment(createdId);
       } catch (e) {
