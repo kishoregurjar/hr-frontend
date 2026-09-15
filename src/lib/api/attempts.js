@@ -48,43 +48,63 @@ export const getAttempts = async () => {
 };
 
 export const getAttemptById = async (attemptId) => {
-  // 0. If current or candidate session recovery, try /attempts/current
-  if (attemptId === "current" || !attemptId) {
-    try {
-      const token =
-        typeof window !== "undefined"
-          ? sessionStorage.getItem("invitationToken") ||
-            localStorage.getItem("invitationToken")
-          : null;
-      const candidateToken =
-        typeof window !== "undefined"
-          ? sessionStorage.getItem("candidateSessionToken") ||
-            localStorage.getItem("candidateSessionToken") ||
-            sessionStorage.getItem("candidateAccessToken") ||
-            localStorage.getItem("candidateAccessToken")
-          : null;
+  const candidateToken =
+    typeof window !== "undefined"
+      ? sessionStorage.getItem("candidateSessionToken") ||
+        localStorage.getItem("candidateSessionToken") ||
+        sessionStorage.getItem("candidateAccessToken") ||
+        localStorage.getItem("candidateAccessToken")
+      : null;
 
-      const current = await getCurrentAttempt(token, candidateToken);
+  const invitationToken =
+    typeof window !== "undefined"
+      ? sessionStorage.getItem("invitationToken") ||
+        localStorage.getItem("invitationToken")
+      : null;
+
+  // 0. Check local memory & persistent storage cache first for instant resolution
+  const cached = getCachedAttempts();
+  if (cached.length > 0) attempts = cached;
+  const matchInCache = attempts.find(
+    (a) => String(a.id) === String(attemptId) || String(a._id) === String(attemptId)
+  );
+
+  // 1. If candidate session is active or attemptId === "current", fetch candidate current attempt first
+  if (candidateToken || attemptId === "current" || !attemptId) {
+    try {
+      const current = await getCurrentAttempt(invitationToken, candidateToken);
       if (current && (current.id || current.assessmentId)) {
-        return {
+        const merged = {
+          ...(matchInCache || {}),
           ...current,
+          id: current.id || attemptId,
           status: current.status || "In Progress",
           durationMinutes: current.durationMinutes || 60,
           responses: current.responses || {},
           gameResults: current.gameResults || {},
         };
+        const idx = attempts.findIndex((a) => String(a.id) === String(merged.id));
+        if (idx >= 0) attempts[idx] = merged;
+        else attempts.unshift(merged);
+        saveCachedAttempts(attempts);
+        return merged;
       }
     } catch (err) {
       console.warn("Live /attempts/current notice:", err?.message);
     }
   }
 
-  // 1. Try Live Backend GET /attempts/:id
+  // 2. If match found in local cache with questions/games/assessment, return it immediately
+  if (matchInCache && (matchInCache.questions?.length > 0 || matchInCache.games?.length > 0 || matchInCache.assessment)) {
+    return matchInCache;
+  }
+
+  // 3. Try HR Admin endpoint GET /attempts/:id
   try {
     const res = await axiosClient.get(`/attempts/${attemptId}`);
     const liveAttempt = res?.data?.data || res?.data || res;
     if (liveAttempt && (liveAttempt.id || liveAttempt.assessmentId)) {
-      return {
+      const formatted = {
         ...liveAttempt,
         id: liveAttempt.id || attemptId,
         status: liveAttempt.status || "In Progress",
@@ -92,63 +112,21 @@ export const getAttemptById = async (attemptId) => {
         responses: liveAttempt.responses || {},
         gameResults: liveAttempt.gameResults || {},
       };
+      const idx = attempts.findIndex((a) => String(a.id) === String(formatted.id));
+      if (idx >= 0) attempts[idx] = formatted;
+      else attempts.unshift(formatted);
+      saveCachedAttempts(attempts);
+      return formatted;
     }
   } catch (err) {
     console.warn("Live attempt fetch notice:", err?.message);
   }
 
-  // 2. Check local memory & persistent storage
-  const cached = getCachedAttempts();
-  if (cached.length > 0) attempts = cached;
-
-  const attempt = attempts.find(
-    (a) => String(a.id) === String(attemptId)
-  );
-
-  if (attempt) {
-    if (attempt.assessmentId) {
-      try {
-        const freshAssessment = await getAssessmentById(attempt.assessmentId);
-        if (freshAssessment) {
-          attempt.assessment = freshAssessment;
-          const freshQuestions =
-            freshAssessment.questions ||
-            freshAssessment.AssessmentQuestion ||
-            freshAssessment.AssessmentQuestions ||
-            freshAssessment.assessmentQuestion ||
-            freshAssessment.assessmentQuestions;
-          if (Array.isArray(freshQuestions) && freshQuestions.length > 0) {
-            attempt.questions = freshQuestions;
-          }
-        }
-      } catch {}
-    }
-
-    try {
-      const qRes = await axiosClient.get("/questions");
-      const allQuestions = qRes?.data?.items || qRes?.data?.data || qRes?.data || [];
-      if (Array.isArray(allQuestions) && allQuestions.length > 0) {
-        attempt.questions = (attempt.questions || []).map((qItem) => {
-          const targetId = String(
-            (typeof qItem === "object" ? qItem?.questionId || qItem?.id || qItem?._id : qItem) || ""
-          );
-          const targetTitle = String(
-            typeof qItem === "object" ? qItem?.question || qItem?.title || "" : ""
-          );
-          const match = allQuestions.find(
-            (q) =>
-              (targetId && String(q.id || q._id) === targetId) ||
-              (targetTitle && String(q.title || q.question) === targetTitle)
-          );
-          return match || qItem;
-        });
-      }
-    } catch {}
-
-    return { ...attempt };
+  if (matchInCache) {
+    return matchInCache;
   }
 
-  // 3. Graceful Auto-Recovery of active attempt session
+  // 4. Graceful Auto-Recovery of active attempt session
   const defaultAssessmentId = "cmtjpcxzw0001vd0glu1856";
   const recoveredAttempt = {
     id: attemptId,
@@ -738,7 +716,27 @@ export const startAttemptByToken = async (token, candidateAccessToken = null) =>
       token ? { token } : {},
       { headers }
     );
-    return res?.data?.data || res?.data || res;
+    const data = res?.data?.data || res?.data || res;
+    const attemptObj = data?.attempt || data;
+    if (attemptObj && (attemptObj.id || attemptObj.assessmentId)) {
+      const formatted = {
+        ...attemptObj,
+        id: attemptObj.id || attemptObj._id,
+        status: attemptObj.status || "In Progress",
+        durationMinutes: attemptObj.durationMinutes || attemptObj.assessment?.durationMinutes || 60,
+        questions: attemptObj.questions || attemptObj.assessment?.questions || [],
+        games: attemptObj.games || attemptObj.assessment?.games || attemptObj.selectedGameIds || [],
+      };
+      const existingIdx = attempts.findIndex((a) => String(a.id) === String(formatted.id));
+      if (existingIdx >= 0) {
+        attempts[existingIdx] = formatted;
+      } else {
+        attempts.unshift(formatted);
+      }
+      saveCachedAttempts(attempts);
+      return { attempt: formatted, ...data };
+    }
+    return data;
   } catch (err) {
     console.warn("Live startAttemptByToken API:", err.message);
     throw err;
