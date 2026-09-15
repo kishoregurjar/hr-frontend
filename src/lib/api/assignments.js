@@ -57,15 +57,20 @@ export const getAssignmentByToken = async (rawToken) => {
       liveAssessment.companyName ||
       liveAssessment.company?.name ||
       liveAssessment.createdBy?.company?.name ||
+      liveAssessment.createdBy?.companyMembers?.[0]?.company?.name ||
+      inv.assessment?.companyName ||
+      inv.assessment?.company?.name ||
       candidate.companyName ||
       candidate.company?.name ||
-      "HireQuest Partner Company";
+      "HireQuest Verified Assessment";
 
     const companyLogo =
       inv.companyLogo ||
       inv.company?.logoUrl ||
       liveAssessment.companyLogo ||
       liveAssessment.company?.logoUrl ||
+      liveAssessment.createdBy?.company?.logoUrl ||
+      liveAssessment.createdBy?.companyMembers?.[0]?.company?.logoUrl ||
       candidate.companyLogo ||
       null;
 

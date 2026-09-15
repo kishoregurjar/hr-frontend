@@ -44,8 +44,22 @@ export const invitationService = {
     const hydratedAssessment = {
       ...assessment,
       title: assessment?.title || "Candidate Assessment",
-      companyName: assessment?.companyName || assignment?.companyName || "HireQuest Partner Company",
-      companyLogo: assessment?.companyLogo || assignment?.companyLogo || null,
+      companyName:
+        assessment?.companyName ||
+        assessment?.company?.name ||
+        assessment?.createdBy?.company?.name ||
+        assessment?.createdBy?.companyMembers?.[0]?.company?.name ||
+        assignment?.companyName ||
+        assignment?.candidate?.company?.name ||
+        "Company Assessment",
+      companyLogo:
+        assessment?.companyLogo ||
+        assessment?.company?.logoUrl ||
+        assessment?.createdBy?.company?.logoUrl ||
+        assessment?.createdBy?.companyMembers?.[0]?.company?.logoUrl ||
+        assignment?.companyLogo ||
+        assignment?.candidate?.company?.logoUrl ||
+        null,
       durationMinutes: assessment?.durationMinutes || assessment?.duration || 60,
       passingScore: assessment?.passingScore || 60,
       questions,

@@ -119,13 +119,17 @@ const AssessmentPreStart = ({
   const companyName =
     assessment?.companyName ||
     assessment?.company?.name ||
+    assessment?.createdBy?.company?.name ||
+    assessment?.createdBy?.companyMembers?.[0]?.company?.name ||
     candidate?.companyName ||
     candidate?.company?.name ||
-    "HireQuest Partner Company";
+    "Company Assessment";
 
   const companyLogo =
     assessment?.companyLogo ||
     assessment?.company?.logoUrl ||
+    assessment?.createdBy?.company?.logoUrl ||
+    assessment?.createdBy?.companyMembers?.[0]?.company?.logoUrl ||
     candidate?.companyLogo ||
     null;
 
