@@ -35,7 +35,13 @@ axiosClient.interceptors.request.use(
       const isCandidateEndpoint =
         config.url?.includes("/attempts/candidate") ||
         config.url?.includes("/attempts/start-by-token") ||
-        config.url?.includes("/attempts/save-answer");
+        config.url?.includes("/attempts/save-answer") ||
+        config.url?.includes("/invitations/") ||
+        config.url?.includes("/attempts/verify") ||
+        config.url?.includes("/attempts/invitations/") ||
+        config.url?.includes("/attempts/token/") ||
+        config.url?.includes("/attempts/candidate-session") ||
+        config.url?.includes("/take-test");
 
       const candidateToken =
         sessionStorage.getItem("candidateSessionToken") ||
@@ -49,8 +55,9 @@ axiosClient.interceptors.request.use(
         localStorage.getItem("accessToken") ||
         localStorage.getItem("jwt");
 
+      // Candidate endpoints ONLY use candidateToken (NEVER fall back to stale HR admin token)
       const tokenToUse = isCandidateEndpoint
-        ? candidateToken || adminToken
+        ? candidateToken
         : adminToken || candidateToken;
 
       if (tokenToUse) {
@@ -76,8 +83,11 @@ axiosClient.interceptors.request.use(
       if (
         companyId &&
         !isSuperAdmin &&
+        !isCandidateEndpoint &&
         !config.url?.includes("/companies/invitations/accept") &&
-        !config.url?.includes("/super-admin/")
+        !config.url?.includes("/super-admin/") &&
+        !config.url?.includes("/invitations/") &&
+        !config.url?.includes("/attempts/verify")
       ) {
         config.headers["X-Company-Id"] = companyId;
         config.headers["x-company-id"] = companyId;
@@ -127,8 +137,8 @@ axiosClient.interceptors.response.use(
       message = "No account found with this email. Please register first or check your email.";
     }
 
-    // Only skip refresh on purely public auth endpoints
-    const isAuthEndpoint =
+    // Skip refresh on public auth and candidate test endpoints
+    const isAuthOrCandidateEndpoint =
       originalRequest?.url?.includes("/auth/login") ||
       originalRequest?.url?.includes("/auth/register") ||
       originalRequest?.url?.includes("/auth/refresh-token") ||
@@ -136,9 +146,14 @@ axiosClient.interceptors.response.use(
       originalRequest?.url?.includes("/auth/reset-password") ||
       originalRequest?.url?.includes("/auth/owner/activate") ||
       originalRequest?.url?.includes("/companies/invitations/accept") ||
-      originalRequest?.url?.includes("/auth/accept-invitation");
+      originalRequest?.url?.includes("/auth/accept-invitation") ||
+      originalRequest?.url?.includes("/invitations/") ||
+      originalRequest?.url?.includes("/attempts/verify") ||
+      originalRequest?.url?.includes("/attempts/invitations/") ||
+      originalRequest?.url?.includes("/attempts/candidate") ||
+      originalRequest?.url?.includes("/attempts/start-by-token");
 
-    const isTokenExpired = status === 401 && originalRequest && !originalRequest._retry && !isAuthEndpoint;
+    const isTokenExpired = status === 401 && originalRequest && !originalRequest._retry && !isAuthOrCandidateEndpoint;
 
     if (isTokenExpired) {
       if (isRefreshing) {
@@ -217,7 +232,12 @@ axiosClient.interceptors.response.use(
             currentPath.includes("/register") ||
             currentPath.includes("/forgot-password") ||
             currentPath.includes("/reset-password") ||
-            currentPath.includes("/verify-email");
+            currentPath.includes("/verify-email") ||
+            currentPath.includes("/take-test") ||
+            currentPath.includes("/assessment/attempt") ||
+            currentPath.includes("/test/room") ||
+            currentPath.includes("/test/") ||
+            currentPath.includes("/candidate/");
 
           if (!isExemptFromExpiredRedirect) {
             localStorage.removeItem(AUTH_STORAGE_KEYS.TOKEN);
