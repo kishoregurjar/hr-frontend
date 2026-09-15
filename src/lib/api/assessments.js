@@ -79,9 +79,10 @@ export const getAssessmentById = async (id) => {
  * 3. Create Assessment — POST /api/v1/assessments (Auto-Published)
  */
 export const createAssessment = async (payload) => {
+  const requestStatus = String(payload?.status || "PUBLISHED").toUpperCase();
   const finalPayload = {
     ...payload,
-    status: "PUBLISHED",
+    status: requestStatus === "DRAFT" ? "DRAFT" : "PUBLISHED",
   };
 
   const res = await axiosClient.post("/assessments", finalPayload);
@@ -89,7 +90,6 @@ export const createAssessment = async (payload) => {
   const createdId = created?.id || created?._id;
 
   if (createdId) {
-    // 1. Assign questions if selected
     if (Array.isArray(payload?.questionIds) && payload.questionIds.length > 0) {
       try {
         await assignAssessmentQuestions(createdId, payload.questionIds);
@@ -98,11 +98,12 @@ export const createAssessment = async (payload) => {
       }
     }
 
-    // 2. Immediately execute publish to ensure it is 100% PUBLISHED in database
-    try {
-      await publishAssessment(createdId);
-    } catch (e) {
-      console.warn("Auto-publish on create:", e.message);
+    if (requestStatus === "PUBLISHED") {
+      try {
+        await publishAssessment(createdId);
+      } catch (e) {
+        console.warn("Auto-publish on create:", e?.message);
+      }
     }
   }
 
