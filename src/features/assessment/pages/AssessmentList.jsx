@@ -77,6 +77,29 @@ const AssessmentList = () => {
     });
   }, [assessments, search]);
 
+  const statsSummary = useMemo(() => {
+    const total = filteredAssessments.length;
+    const publishedCount = filteredAssessments.filter(
+      (a) =>
+        String(a.status || "").toUpperCase() === "PUBLISHED" ||
+        String(a.status || "").toUpperCase() === "ACTIVE"
+    ).length;
+    const draftCount = filteredAssessments.filter(
+      (a) =>
+        String(a.status || "").toUpperCase() === "DRAFT" ||
+        !a.status
+    ).length;
+
+    if (total === 0) return "0 assessments configured";
+    if (publishedCount > 0 && draftCount > 0) {
+      return `${total} total (${publishedCount} Published, ${draftCount} Draft)`;
+    }
+    if (draftCount > 0 && publishedCount === 0) {
+      return `${total} ${total === 1 ? "assessment" : "assessments"} (${draftCount} Draft)`;
+    }
+    return `${total} ${total === 1 ? "assessment" : "assessments"} (${publishedCount} Published)`;
+  }, [filteredAssessments]);
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
       {/* ── 1. TOP ACTION TOOLBAR ── */}
@@ -85,7 +108,7 @@ const AssessmentList = () => {
           <span className="text-xs font-bold text-slate-800">Test Modules</span>
           <span className="text-slate-300">•</span>
           <span className="text-xs text-slate-500 font-medium">
-            {filteredAssessments.length} {filteredAssessments.length === 1 ? "assessment" : "assessments"} published
+            {statsSummary}
           </span>
         </div>
 
