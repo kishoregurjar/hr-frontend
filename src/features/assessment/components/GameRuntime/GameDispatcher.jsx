@@ -65,14 +65,8 @@ const GameDispatcher = ({ section, onComplete }) => {
     return <PatternMemoryGame config={section.config} onComplete={onComplete} />;
   }
 
-  return (
-    <div className="rounded-xl border p-8 text-center">
-      <h2 className="text-xl font-semibold">Game unavailable</h2>
-      <p className="mt-2 text-muted-foreground">
-        This game type ({section.gameType || section.gameId || section.slug}) is not supported yet.
-      </p>
-    </div>
-  );
+  // 8. Fail-safe fallback engine
+  return <MahjongGame config={section.config || section.gameData} onComplete={onComplete} />;
 };
 
 export default GameDispatcher;
