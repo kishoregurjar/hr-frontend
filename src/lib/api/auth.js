@@ -368,21 +368,6 @@ export const getCurrentUserApi = async () => {
     const liveUser = normalizeUser(combinedPayload) || parsedUser;
 
     if (liveUser) {
-      const storedCompName = localStorage.getItem("companyName");
-      const storedCompId = localStorage.getItem("companyId");
-      const storedCompLogo = localStorage.getItem("companyLogo");
-
-      if (!liveUser.companyName && storedCompName) {
-        liveUser.companyName = storedCompName;
-        liveUser.company = storedCompName;
-      }
-      if (!liveUser.companyId && storedCompId) {
-        liveUser.companyId = storedCompId;
-      }
-      if (!liveUser.companyLogo && storedCompLogo) {
-        liveUser.companyLogo = storedCompLogo;
-      }
-
       localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(liveUser));
       if (liveUser.companyId) {
         localStorage.setItem("companyId", liveUser.companyId);
@@ -393,6 +378,8 @@ export const getCurrentUserApi = async () => {
       }
       if (liveUser.companyLogo) {
         localStorage.setItem("companyLogo", liveUser.companyLogo);
+      } else {
+        localStorage.removeItem("companyLogo");
       }
       if (liveUser.companyRole) {
         localStorage.setItem("active_company_role", liveUser.companyRole);
@@ -436,6 +423,8 @@ export const clearAllAuthStorage = () => {
     "cached_admin_companies",
     "cached_admin_metrics",
     "user_email",
+    "hirequest_attempts_cache",
+    "invitationToken",
   ];
 
   keysToRemove.forEach((key) => {

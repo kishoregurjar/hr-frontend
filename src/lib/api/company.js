@@ -38,7 +38,11 @@ export const getCompanyProfile = async () => {
           localStorage.setItem("active_company_id", comp.id);
         }
         if (comp.name) localStorage.setItem("companyName", comp.name);
-        if (comp.logoUrl || comp.logo) localStorage.setItem("companyLogo", comp.logoUrl || comp.logo);
+        if (comp.logoUrl || comp.logo) {
+          localStorage.setItem("companyLogo", comp.logoUrl || comp.logo);
+        } else {
+          localStorage.removeItem("companyLogo");
+        }
       }
       return comp;
     }
@@ -58,7 +62,11 @@ export const getCompanyProfile = async () => {
           localStorage.setItem("active_company_id", companyData.id);
         }
         if (companyData.name) localStorage.setItem("companyName", companyData.name);
-        if (companyData.logoUrl || companyData.logo) localStorage.setItem("companyLogo", companyData.logoUrl || companyData.logo);
+        if (companyData.logoUrl || companyData.logo) {
+          localStorage.setItem("companyLogo", companyData.logoUrl || companyData.logo);
+        } else {
+          localStorage.removeItem("companyLogo");
+        }
       }
       return companyData;
     }
@@ -78,7 +86,11 @@ export const getCompanyProfile = async () => {
           localStorage.setItem("active_company_id", companyData.id);
         }
         if (companyData.name) localStorage.setItem("companyName", companyData.name);
-        if (companyData.logoUrl || companyData.logo) localStorage.setItem("companyLogo", companyData.logoUrl || companyData.logo);
+        if (companyData.logoUrl || companyData.logo) {
+          localStorage.setItem("companyLogo", companyData.logoUrl || companyData.logo);
+        } else {
+          localStorage.removeItem("companyLogo");
+        }
       }
       return companyData;
     }
