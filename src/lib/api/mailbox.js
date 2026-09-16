@@ -35,13 +35,8 @@ export const getGoogleConnectUrl = async () => {
  */
 export const syncMailboxNow = async () => {
   const options = { timeout: 120000 }; // 2 minutes for heavy attachments
-  try {
-    const res = await axiosClient.post("/mailbox/sync", {}, options);
-    return res?.data?.data || res?.data || res;
-  } catch (err) {
-    const res = await axiosClient.post("/mailbox/sync-now", {}, options);
-    return res?.data?.data || res?.data || res;
-  }
+  const res = await axiosClient.post("/mailbox/sync", {}, options);
+  return res?.data?.data || res?.data || res;
 };
 
 /**
