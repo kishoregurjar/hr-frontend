@@ -51,19 +51,9 @@ const CandidateTable = ({
 
   const someSelected = selectedVisibleCount > 0 && !allSelected;
 
-  const getSourceBadge = (source, index) => {
+  const getSourceBadge = (source) => {
     const raw = String(source || "").toUpperCase();
-    if (raw.includes("EMAIL") || index % 3 === 0) {
-      return (
-        <Badge
-          variant="outline"
-          className="bg-indigo-50 text-indigo-700 border-indigo-200/80 font-bold uppercase text-[10px] tracking-wider px-2 py-0.5"
-        >
-          Email Extraction
-        </Badge>
-      );
-    }
-    if (raw.includes("CSV") || index % 3 === 1) {
+    if (raw.includes("CSV") || raw.includes("EXCEL") || raw.includes("IMPORT")) {
       return (
         <Badge
           variant="outline"
@@ -73,12 +63,22 @@ const CandidateTable = ({
         </Badge>
       );
     }
+    if (raw.includes("MANUAL") || raw.includes("DIRECT")) {
+      return (
+        <Badge
+          variant="outline"
+          className="bg-slate-100 text-slate-700 border-slate-200 font-bold uppercase text-[10px] tracking-wider px-2 py-0.5"
+        >
+          Manual
+        </Badge>
+      );
+    }
     return (
       <Badge
         variant="outline"
-        className="bg-slate-100 text-slate-700 border-slate-200 font-bold uppercase text-[10px] tracking-wider px-2 py-0.5"
+        className="bg-indigo-50 text-indigo-700 border-indigo-200/80 font-bold uppercase text-[10px] tracking-wider px-2 py-0.5"
       >
-        Manual
+        Email Extraction
       </Badge>
     );
   };
@@ -257,7 +257,7 @@ const CandidateTable = ({
 
                   {/* Source */}
                   <TableCell className="py-3.5 px-4">
-                    {getSourceBadge(candidate.source, idx)}
+                    {getSourceBadge(candidate.source)}
                   </TableCell>
 
                   {/* Skills / Tags */}
