@@ -247,37 +247,63 @@ const CandidateList = () => {
           <div className="text-xs">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-bold text-slate-900">Recruiter Mailbox:</span>
-              <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-xs py-0.5 px-2.5 flex items-center gap-1.5 font-semibold">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                {user?.email || mailboxStatus?.email || "Connected"}
-              </Badge>
+              {mailboxStatus?.connected ? (
+                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-xs py-0.5 px-2.5 flex items-center gap-1.5 font-semibold">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  {mailboxStatus?.email || user?.email || "Connected"}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs py-0.5 px-2.5 flex items-center gap-1.5 font-semibold">
+                  <span className="h-2 w-2 rounded-full bg-amber-500"></span>
+                  Not Connected
+                </Badge>
+              )}
             </div>
             <p className="text-slate-500 text-[11px] mt-0.5 hidden sm:block">
-              Incoming candidate applications & resumes from this email are parsed into your directory.
+              {mailboxStatus?.connected
+                ? "Incoming candidate applications & resumes from this email are parsed into your directory."
+                : "Connect your recruiter Google Mailbox to auto-sync resumes from LinkedIn, Indeed, and Naukri."}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 shrink-0 self-start md:self-auto">
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => syncMailboxMutation.mutate()}
-            disabled={syncMailboxMutation.isPending}
-            className="text-xs h-8 px-3 gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-xs cursor-pointer"
-          >
-            {syncMailboxMutation.isPending ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <RefreshCw className="h-3.5 w-3.5" />
-            )}
-            Sync Mailbox
-          </Button>
+          {mailboxStatus?.connected ? (
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => syncMailboxMutation.mutate()}
+              disabled={syncMailboxMutation.isPending}
+              className="text-xs h-8 px-3 gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-xs cursor-pointer"
+            >
+              {syncMailboxMutation.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5" />
+              )}
+              Sync Mailbox
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => connectGoogleMutation.mutate()}
+              disabled={connectGoogleMutation.isPending}
+              className="text-xs h-8 px-3 gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-xs cursor-pointer"
+            >
+              {connectGoogleMutation.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Mail className="h-3.5 w-3.5" />
+              )}
+              Connect Mailbox
+            </Button>
+          )}
 
           <button
             type="button"
             onClick={() => {
-              const emailToCopy = user?.email || mailboxStatus?.email || "";
+              const emailToCopy = mailboxStatus?.email || user?.email || "";
               if (emailToCopy) {
                 navigator.clipboard.writeText(emailToCopy);
                 toast.success(`Email copied: ${emailToCopy}`);
