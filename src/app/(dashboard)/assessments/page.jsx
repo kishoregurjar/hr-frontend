@@ -1,3 +1,5 @@
+"use client";
+
 import { AssessmentList } from "@/features/assessment";
 
 const AssessmentsPage = () => {
