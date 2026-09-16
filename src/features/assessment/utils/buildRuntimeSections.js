@@ -242,18 +242,37 @@ export const buildRuntimeSections = (assessment) => {
     : [];
 
   const gameSections = rawGames.map((gameItem, index) => {
-    const rawIdOrSlug = typeof gameItem === "string"
+    let resolvedSlug = typeof gameItem === "string"
       ? gameItem
       : (gameItem?.game?.code || gameItem?.game?.slug || gameItem?.slug || gameItem?.code || gameItem?.gameId || gameItem?.id || `game-${index + 1}`);
-    const catalogInfo = GAME_CATALOG_MAP[rawIdOrSlug] || GAME_CATALOG_MAP[String(rawIdOrSlug).toLowerCase()] || {};
-    const title = (typeof gameItem === "object" && (gameItem?.title || gameItem?.game?.title || gameItem?.game?.name)) || catalogInfo.title || `Module ${index + 1}: ${catalogInfo.name || "Game Challenge"}`;
+
+    let catalogInfo = GAME_CATALOG_MAP[resolvedSlug] || GAME_CATALOG_MAP[String(resolvedSlug).toLowerCase()] || {};
+
+    // If resolvedSlug is a CUID (e.g. starts with "cmu") or not found in catalog, resolve via game title/name or fallback to core games
+    if (!catalogInfo.id) {
+      const gObj = typeof gameItem === "object" ? (gameItem.game || gameItem) : {};
+      const gameTitleStr = String(gObj.title || gObj.name || gameItem?.title || gameItem?.name || "").toLowerCase();
+
+      if (gameTitleStr.includes("mahjong")) resolvedSlug = "mahjong";
+      else if (gameTitleStr.includes("sudoku")) resolvedSlug = "sudoku";
+      else if (gameTitleStr.includes("tango")) resolvedSlug = "tango";
+      else if (gameTitleStr.includes("zip") || gameTitleStr.includes("path")) resolvedSlug = "zip";
+      else if (gameTitleStr.includes("pattern") || gameTitleStr.includes("memory")) resolvedSlug = "pattern_memory";
+      else {
+        const fallbackSlugs = ["mahjong", "sudoku", "zip", "tango"];
+        resolvedSlug = fallbackSlugs[index % fallbackSlugs.length];
+      }
+      catalogInfo = GAME_CATALOG_MAP[resolvedSlug] || GAME_CATALOG_MAP[String(resolvedSlug).toLowerCase()] || gamesCatalog[0];
+    }
+
+    const title = (typeof gameItem === "object" && (gameItem?.title || gameItem?.game?.title || gameItem?.game?.name)) || catalogInfo.title || `Module ${index + 1}: ${catalogInfo.title || "Game Challenge"}`;
 
     return {
       id: `sec-game-${index + 1}`,
       type: "game",
-      gameId: rawIdOrSlug,
-      slug: rawIdOrSlug,
-      gameType: rawIdOrSlug,
+      gameId: resolvedSlug,
+      slug: resolvedSlug,
+      gameType: resolvedSlug,
       title,
       description: catalogInfo.description || "",
       config: typeof gameItem === "object" ? (gameItem.config || {}) : {},
