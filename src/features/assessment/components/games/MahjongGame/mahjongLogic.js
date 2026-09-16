@@ -203,3 +203,59 @@ export function getPushChain(currentBoard, r, c, dr, dc) {
 
   return { canPush: false, chain: [], emptyCount: 0 };
 }
+
+export function hasAnyValidMovesOrMatches(board) {
+  if (!board || board.length === 0) return false;
+  if (getAvailablePair(board)) return true;
+
+  const rows = board.length;
+  const cols = board[0]?.length || 0;
+  const directions = [
+    { dr: -1, dc: 0 },
+    { dr: 1, dc: 0 },
+    { dr: 0, dc: -1 },
+    { dr: 0, dc: 1 },
+  ];
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (!board[r][c]) continue;
+
+      for (const { dr, dc } of directions) {
+        const pushInfo = getPushChain(board, r, c, dr, dc);
+        if (pushInfo.canPush && pushInfo.emptyCount > 0) {
+          for (let step = 1; step <= pushInfo.emptyCount; step++) {
+            const testBoard = board.map((row) => [...row]);
+            for (const t of pushInfo.chain) {
+              testBoard[t.startR][t.startC] = null;
+            }
+            const movedCoords = [];
+            for (const t of pushInfo.chain) {
+              const tr = t.startR + dr * step;
+              const tc = t.startC + dc * step;
+              testBoard[tr][tc] = { ...t, row: tr, col: tc };
+              movedCoords.push({ r: tr, c: tc, designId: t.design.id });
+            }
+
+            for (const moved of movedCoords) {
+              for (let tr = 0; tr < rows; tr++) {
+                for (let tc = 0; tc < cols; tc++) {
+                  if (tr === moved.r && tc === moved.c) continue;
+                  const other = testBoard[tr][tc];
+                  if (other && other.design.id === moved.designId) {
+                    if (canTilesMatch(testBoard, { row: moved.r, col: moved.c }, { row: tr, col: tc })) {
+                      return true;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
