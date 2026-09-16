@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Send,
   RefreshCw,
@@ -35,7 +35,19 @@ export default function InvitationsPage() {
 
   const [assessmentFilter, setAssessmentFilter] = useState("ALL");
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [preselectedAssessmentId, setPreselectedAssessmentId] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const targetAssessmentId = params.get("assessmentId");
+      if (targetAssessmentId) {
+        setPreselectedAssessmentId(targetAssessmentId);
+        setIsAssignDialogOpen(true);
+      }
+    }
+  }, []);
 
   const { data: assessments = [] } = useAssessmentsQuery();
   const { data: candidates = [] } = useCandidatesQuery();
@@ -298,10 +310,15 @@ export default function InvitationsPage() {
       {/* ── 4. Modals ── */}
       <AssignAssessmentDialog
         open={isAssignDialogOpen}
-        onOpenChange={setIsAssignDialogOpen}
+        onOpenChange={(next) => {
+          setIsAssignDialogOpen(next);
+          if (!next) setPreselectedAssessmentId(null);
+        }}
         candidates={candidates}
+        preselectedAssessmentId={preselectedAssessmentId}
         onSuccess={() => {
           setIsAssignDialogOpen(false);
+          setPreselectedAssessmentId(null);
           refetch();
         }}
       />

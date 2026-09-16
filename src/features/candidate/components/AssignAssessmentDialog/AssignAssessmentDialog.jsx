@@ -21,6 +21,8 @@ const AssignAssessmentDialog = ({
   open,
   onOpenChange,
   candidates = [],
+  preselectedAssessmentId = null,
+  defaultAssessmentId = null,
   onAssigned,
   onSuccess,
 }) => {
@@ -35,22 +37,28 @@ const AssignAssessmentDialog = ({
   const assignAssessment = useAssignAssessment();
 
   const availableAssessments = useMemo(() => {
-    const list = Array.isArray(assessments) ? assessments : [];
+    const list = Array.isArray(assessments) ? [...assessments] : [];
 
-    const published = list.filter((assessment) => {
-      const s = String(assessment?.status || "").toLowerCase();
-      return s === "published" || s === "active";
+    // Sort so PUBLISHED assessments come first, followed by DRAFT
+    return list.sort((a, b) => {
+      const aIsPub = String(a?.status || "").toUpperCase() === "PUBLISHED" || String(a?.status || "").toUpperCase() === "ACTIVE";
+      const bIsPub = String(b?.status || "").toUpperCase() === "PUBLISHED" || String(b?.status || "").toUpperCase() === "ACTIVE";
+      if (aIsPub && !bIsPub) return -1;
+      if (!aIsPub && bIsPub) return 1;
+      return 0;
     });
-
-    return published.length > 0 ? published : list;
   }, [assessments]);
 
-  // Set default selection when dialog opens
+  // Set default selection when dialog opens or preselectedAssessmentId changes
   useEffect(() => {
-    if (open && availableAssessments.length > 0 && !assessmentId) {
+    if (!open) return;
+    const targetId = preselectedAssessmentId || defaultAssessmentId;
+    if (targetId) {
+      setAssessmentId(String(targetId));
+    } else if (availableAssessments.length > 0 && !assessmentId) {
       setAssessmentId(String(availableAssessments[0].id));
     }
-  }, [open, availableAssessments, assessmentId]);
+  }, [open, availableAssessments, assessmentId, preselectedAssessmentId, defaultAssessmentId]);
 
   const handleOpenChange = (nextOpen) => {
     onOpenChange(nextOpen);
@@ -159,15 +167,20 @@ const AssignAssessmentDialog = ({
               disabled={assignAssessment.isPending}
               className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 shadow-2xs transition cursor-pointer"
             >
-              {availableAssessments.map((assessment) => (
-                <option
-                  key={assessment.id}
-                  value={String(assessment.id)}
-                  className="font-medium text-slate-800 py-1"
-                >
-                  {assessment.title} {assessment.durationMinutes ? `(${assessment.durationMinutes}m)` : ""}
-                </option>
-              ))}
+              {availableAssessments.map((assessment) => {
+                const isPub =
+                  String(assessment?.status || "").toUpperCase() === "PUBLISHED" ||
+                  String(assessment?.status || "").toUpperCase() === "ACTIVE";
+                return (
+                  <option
+                    key={assessment.id}
+                    value={String(assessment.id)}
+                    className="font-medium text-slate-800 py-1"
+                  >
+                    {assessment.title} {assessment.durationMinutes ? `(${assessment.durationMinutes}m)` : ""} {isPub ? "• [Published]" : "• [Draft]"}
+                  </option>
+                );
+              })}
             </select>
           </div>
 

@@ -1,7 +1,16 @@
-"use client";
-
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { CheckCircle2, Copy, Send, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 import { useGamesQuery } from "@/features/games/hooks";
 import { useQuestionsQuery } from "@/features/question-bank/hooks";
@@ -37,6 +46,7 @@ const AssessmentBuilder = ({
 }) => {
   const router = useRouter();
   const [submitAction, setSubmitAction] = useState(null);
+  const [publishedSuccessData, setPublishedSuccessData] = useState(null);
 
   const {
     data: allGames = [],
@@ -253,9 +263,21 @@ const AssessmentBuilder = ({
     }
 
     createAssessment.mutate(payload, {
-      onSuccess: () => {
+      onSuccess: (res) => {
         clearAssessmentDraft();
-        router.push("/assessments");
+        const createdItem = res?.data || res || {};
+        const createdId = createdItem.id || assessmentId;
+
+        if (status === ASSESSMENT_STATUS.PUBLISHED || action === "publish") {
+          toast.success("Assessment created and published successfully!");
+          setPublishedSuccessData({
+            id: createdId,
+            title: payload.title || assessment.title,
+          });
+        } else {
+          toast.success("Assessment saved as draft successfully!");
+          router.push("/assessments");
+        }
       },
       onSettled: () => {
         setSubmitAction(null);
@@ -404,6 +426,92 @@ const AssessmentBuilder = ({
           error={submitError}
           validationErrors={finalValidationErrors}
         />
+      )}
+
+      {/* ── Post-Publish Quick Actions Dialog ── */}
+      {publishedSuccessData && (
+        <Dialog
+          open={Boolean(publishedSuccessData)}
+          onOpenChange={(nextOpen) => {
+            if (!nextOpen) {
+              setPublishedSuccessData(null);
+              router.push("/assessments");
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-2xl border border-slate-200/90 shadow-2xl font-sans bg-white">
+            <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 p-6 text-white text-center relative">
+              <div className="mx-auto w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center mb-3">
+                <CheckCircle2 className="h-6 w-6 text-emerald-400" />
+              </div>
+              <DialogTitle className="text-xl font-black text-white">
+                Assessment Published!
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-300 mt-1">
+                <span className="font-bold text-white">{publishedSuccessData.title}</span> is now live and ready for candidate evaluations.
+              </DialogDescription>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Copy Test Link */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Direct Candidate Test Link
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    readOnly
+                    value={`${typeof window !== "undefined" ? window.location.origin : ""}/take-test?assessmentId=${publishedSuccessData.id || ""}`}
+                    className="flex-1 h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 select-all"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        `${window.location.origin}/take-test?assessmentId=${publishedSuccessData.id || ""}`
+                      );
+                      toast.success("Test link copied to clipboard!");
+                    }}
+                    className="h-10 px-3.5 rounded-xl border-slate-200 font-bold text-xs gap-1.5 cursor-pointer hover:bg-slate-50"
+                  >
+                    <Copy className="h-3.5 w-3.5 text-slate-600" />
+                    Copy
+                  </Button>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setPublishedSuccessData(null);
+                    router.push("/assessments");
+                  }}
+                  className="h-11 rounded-xl border-slate-200 font-bold text-xs text-slate-700 hover:bg-slate-50 cursor-pointer"
+                >
+                  All Assessments
+                </Button>
+
+                <Button
+                  type="button"
+                  onClick={() => {
+                    const targetId = publishedSuccessData.id;
+                    setPublishedSuccessData(null);
+                    router.push(`/invitations?assessmentId=${targetId || ""}`);
+                  }}
+                  className="h-11 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  Invite Candidates
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

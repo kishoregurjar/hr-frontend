@@ -188,20 +188,48 @@ const AssessmentCard = ({
         </p>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleCopyLink}
-            className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
-            title="Copy Candidate Link"
-          >
-            <Copy className="h-4 w-4" />
-          </button>
+          {!isPublished && onPublish && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onPublish(assessment.id)}
+              disabled={isPending}
+              className="h-8 px-2.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs border border-emerald-200 cursor-pointer"
+            >
+              <CheckCircle2 className="h-3 w-3 mr-1 text-emerald-600" />
+              Publish
+            </Button>
+          )}
+
+          {isPublished && (
+            <>
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                title="Copy Candidate Link"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+
+              <Link href={`/invitations?assessmentId=${assessment.id}`}>
+                <Button
+                  size="sm"
+                  className="h-8 px-2.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs border border-indigo-200/80 shadow-none cursor-pointer"
+                >
+                  <Send className="h-3 w-3 mr-1 text-indigo-600" />
+                  Invite
+                </Button>
+              </Link>
+            </>
+          )}
 
           <Link href={`/assessments/${assessment.id}`}>
             <Button
               variant="outline"
               size="sm"
-              className="h-8 px-3 rounded-lg bg-blue-50/80 hover:bg-blue-100 text-blue-700 font-bold text-xs border border-blue-200/70"
+              className="h-8 px-3 rounded-lg bg-blue-50/80 hover:bg-blue-100 text-blue-700 font-bold text-xs border border-blue-200/70 cursor-pointer"
             >
               Edit / Modules
             </Button>

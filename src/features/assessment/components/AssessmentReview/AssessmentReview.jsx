@@ -251,16 +251,16 @@ const AssessmentReview = ({
               size="sm"
               onClick={onSaveDraft}
               disabled={isSubmitting}
-              className="h-10 px-4 rounded-xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50"
+              className="h-10 px-4 rounded-xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
             >
               {isSubmitting && submitAction === "draft" ? (
                 <span className="flex items-center gap-1.5">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-500" />
                   Saving Draft...
                 </span>
               ) : (
                 <span className="flex items-center gap-1.5">
-                  <Save className="h-3.5 w-3.5" />
+                  <Save className="h-3.5 w-3.5 text-slate-500" />
                   Save as Draft
                 </span>
               )}
@@ -276,12 +276,12 @@ const AssessmentReview = ({
               {isSubmitting && submitAction === "publish" ? (
                 <span className="flex items-center gap-1.5">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Creating Assessment...
+                  Publishing Assessment...
                 </span>
               ) : (
                 <span className="flex items-center gap-1.5">
-                  <Send className="h-3.5 w-3.5" />
-                  Create Assessment
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Create & Publish Assessment
                 </span>
               )}
             </Button>
