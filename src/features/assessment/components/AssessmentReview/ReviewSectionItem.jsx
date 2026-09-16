@@ -23,7 +23,7 @@ const ReviewSectionItem = ({ item, onReview }) => {
 
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Section {index + 1}
+            Module {index + 1}
           </p>
           <h3 className="mt-0.5 font-semibold text-slate-900">
             {section.title}
@@ -46,27 +46,14 @@ const ReviewSectionItem = ({ item, onReview }) => {
           {isComplete ? "Completed" : "Incomplete"}
         </div>
 
-        {section.type === "quiz" && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => onReview?.(index)}
-          >
-            Review
-          </Button>
-        )}
-
-        {section.type === "game" && !isComplete && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => onReview?.(index)}
-          >
-            Complete
-          </Button>
-        )}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onReview?.(index)}
+        >
+          {isComplete ? "Review" : "Play / Complete"}
+        </Button>
       </div>
     </div>
   );

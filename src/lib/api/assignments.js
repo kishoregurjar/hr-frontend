@@ -362,11 +362,63 @@ export const getRoundAssignments = async ({ hiringProcessId, roundId }) => {
 };
 
 export const assignAssessment = async ({ assessmentId, candidateIds, email, firstName, lastName, candidates = [] }) => {
-  const targetEmail = email || candidates?.[0]?.email;
-  const targetFirstName = firstName || candidates?.[0]?.name?.split(" ")?.[0] || candidates?.[0]?.firstName || "Candidate";
-  const targetLastName = lastName || candidates?.[0]?.name?.split(" ")?.slice(1)?.join(" ") || candidates?.[0]?.lastName || "";
+  if (!assessmentId) {
+    throw new Error("Assessment is required.");
+  }
 
-  // 1. Primary Unified Endpoint: POST /api/v1/attempts/assessments/:assessmentId/invitations
+  // 1. Bulk Invitations for Multiple Candidates
+  const candidateList = (candidates && candidates.length > 0)
+    ? candidates
+    : (candidateIds && candidateIds.length > 0)
+      ? candidateIds.map(id => ({ candidateId: id }))
+      : email
+        ? [{ email, firstName, lastName }]
+        : [];
+
+  const isBulk = candidateList.length > 1 || (candidateIds && candidateIds.length > 1);
+
+  if (isBulk && assessmentId) {
+    try {
+      const validCandidateIds = candidateIds && candidateIds.length > 0
+        ? [...new Set(candidateIds.filter(Boolean))]
+        : undefined;
+
+      const formattedCandidates = candidateList.map((c) => {
+        if (typeof c === "string") return c;
+        const cEmail = c.email || "";
+        const cFirstName = c.firstName || c.name?.split(" ")?.[0] || "Candidate";
+        const cLastName = c.lastName || c.name?.split(" ")?.slice(1)?.join(" ") || "";
+        return {
+          email: cEmail,
+          firstName: cFirstName,
+          lastName: cLastName,
+        };
+      }).filter((c) => (typeof c === "string" ? Boolean(c) : Boolean(c.email)));
+
+      const bulkPayload = {};
+      if (validCandidateIds && validCandidateIds.length > 0) {
+        bulkPayload.candidateIds = validCandidateIds;
+      }
+      if (formattedCandidates.length > 0) {
+        bulkPayload.candidates = formattedCandidates;
+      }
+
+      const res = await axiosClient.post(
+        `/attempts/assessments/${assessmentId}/invitations/bulk`,
+        bulkPayload
+      );
+      const data = res?.data?.data || res?.data || res;
+      return Array.isArray(data?.results) ? data.results : Array.isArray(data) ? data : [data];
+    } catch (bulkErr) {
+      console.warn("Unified bulk invitation attempt error:", bulkErr?.message);
+    }
+  }
+
+  // 2. Single Candidate Invitation
+  const targetEmail = email || candidateList[0]?.email;
+  const targetFirstName = firstName || candidateList[0]?.firstName || candidateList[0]?.name?.split(" ")?.[0] || "Candidate";
+  const targetLastName = lastName || candidateList[0]?.lastName || candidateList[0]?.name?.split(" ")?.slice(1)?.join(" ") || "";
+
   if (assessmentId && targetEmail) {
     try {
       const res = await axiosClient.post(`/attempts/assessments/${assessmentId}/invitations`, {
@@ -381,7 +433,7 @@ export const assignAssessment = async ({ assessmentId, candidateIds, email, firs
     }
   }
 
-  // 2. Secondary fallback: /invitations
+  // 3. Secondary fallback: /invitations
   try {
     const res = await axiosClient.post("/invitations", {
       assessmentId,

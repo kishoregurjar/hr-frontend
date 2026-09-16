@@ -1,12 +1,10 @@
 /**
- * Normalizes an assessment object into a flat list of runtime sections.
+ * Normalizes an assessment object into a structured list of runtime modules.
  *
- * Priority:
- *  1. assessment.sections[]  — structured model
- *  2. Real database questions & selected games:
- *     - assessment.questions / assessment.AssessmentQuestions / assessment.quizzes
- *     - assessment.games / assessment.gameIds / assessment.selectedGameIds / assessment.AssessmentGames
- *  3. Dynamic fallback if no sections defined
+ * Standard 2-Module Architecture:
+ *  - Module 1: Cognitive & Behavioral Games (bundle of all selected games)
+ *  - Module 2: Technical & Domain MCQ Quiz (bundle of all selected questions)
+ *  - Future modules (Coding, Video, etc.) can seamlessly append as Module 3, Module 4...
  */
 
 import { games as gamesCatalog } from "@/features/games/data";
@@ -108,7 +106,6 @@ const normalizeRuntimeOptions = (rawOptions, rawParent = {}) => {
       rawParent?.choices;
   }
 
-  // If stringified JSON, parse it
   if (typeof list === "string") {
     try {
       list = JSON.parse(list);
@@ -242,14 +239,13 @@ export const buildRuntimeSections = (assessment) => {
     ? assessment.games
     : [];
 
-  const gameSections = rawGames.map((gameItem, index) => {
+  const parsedGames = rawGames.map((gameItem, index) => {
     let resolvedSlug = typeof gameItem === "string"
       ? gameItem
       : (gameItem?.game?.code || gameItem?.game?.slug || gameItem?.slug || gameItem?.code || gameItem?.gameId || gameItem?.id || `game-${index + 1}`);
 
     let catalogInfo = GAME_CATALOG_MAP[resolvedSlug] || GAME_CATALOG_MAP[String(resolvedSlug).toLowerCase()] || {};
 
-    // If resolvedSlug is a CUID (e.g. starts with "cmu") or not found in catalog, resolve via game title/name or fallback to core games
     if (!catalogInfo.id) {
       const gObj = typeof gameItem === "object" ? (gameItem.game || gameItem) : {};
       const gameTitleStr = String(gObj.title || gObj.name || gameItem?.title || gameItem?.name || "").toLowerCase();
@@ -266,7 +262,7 @@ export const buildRuntimeSections = (assessment) => {
       catalogInfo = GAME_CATALOG_MAP[resolvedSlug] || GAME_CATALOG_MAP[String(resolvedSlug).toLowerCase()] || gamesCatalog[0];
     }
 
-    const title = (typeof gameItem === "object" && (gameItem?.title || gameItem?.game?.title || gameItem?.game?.name)) || catalogInfo.title || `Module ${index + 1}: ${catalogInfo.title || "Game Challenge"}`;
+    const title = (typeof gameItem === "object" && (gameItem?.title || gameItem?.game?.title || gameItem?.game?.name)) || catalogInfo.title || `Game ${index + 1}: ${catalogInfo.title || "Challenge"}`;
 
     const itemConfig = typeof gameItem === "object" ? (gameItem.config || {}) : {};
     const effectiveConfig = getEffectiveGameRuntimeConfig(resolvedSlug, {
@@ -275,18 +271,20 @@ export const buildRuntimeSections = (assessment) => {
     });
 
     return {
-      id: `sec-game-${index + 1}`,
-      type: "game",
+      id: `game-${index + 1}`,
       gameId: resolvedSlug,
       slug: resolvedSlug,
       gameType: resolvedSlug,
       title,
       description: catalogInfo.description || "",
+      category: catalogInfo.category || "Cognitive Assessment",
+      duration: catalogInfo.duration || 7,
+      skill: catalogInfo.skill || "Problem Solving",
       config: effectiveConfig,
     };
   });
 
-  // 2. Extract real questions from Question Bank / Assessment Creator / Prisma AssessmentQuestion relations
+  // 2. Extract questions
   const rawQuestions =
     (Array.isArray(assessment.questions) && assessment.questions.length > 0 ? assessment.questions : null) ||
     (Array.isArray(assessment.AssessmentQuestion) && assessment.AssessmentQuestion.length > 0 ? assessment.AssessmentQuestion : null) ||
@@ -299,23 +297,41 @@ export const buildRuntimeSections = (assessment) => {
 
   const parsedQuestions = rawQuestions.map(normalizeRuntimeQuestion).filter(Boolean);
 
-  const quizSections = [];
+  // ── Build Unified 2-Module Structure ───────────────────────────
+  const runtimeModules = [];
+
+  // MODULE 1: Cognitive Games Challenge (Bundle of all selected games)
+  if (parsedGames.length > 0) {
+    runtimeModules.push({
+      id: "module-cognitive-games",
+      type: "game",
+      title: "Cognitive & Behavioral Games",
+      description: `Interactive problem-solving challenge consisting of ${parsedGames.length} cognitive ${parsedGames.length === 1 ? "game" : "games"}.`,
+      games: parsedGames,
+      // Default to first game config for backward compatibility
+      slug: parsedGames[0].slug,
+      gameId: parsedGames[0].gameId,
+      config: parsedGames[0].config,
+    });
+  }
+
+  // MODULE 2: Technical & Domain MCQ Quiz
   if (parsedQuestions.length > 0) {
     const quizTitle = assessment.title
-      ? `${assessment.title} - Quiz`
-      : `Technical & Domain Knowledge Assessment`;
+      ? `${assessment.title} - Technical Quiz`
+      : "Technical & Domain Knowledge";
 
-    quizSections.push({
-      id: "sec-quiz-main",
+    runtimeModules.push({
+      id: "module-technical-quiz",
       type: "quiz",
-      title: gameSections.length > 0 ? `Module ${gameSections.length + 1}: ${quizTitle}` : quizTitle,
-      description: "Answer the multiple choice questions to evaluate your domain knowledge.",
+      title: quizTitle,
+      description: `Multiple choice questions (${parsedQuestions.length} questions) evaluating domain knowledge and core concepts.`,
       questions: parsedQuestions,
     });
   }
 
-  // 3. Fallback to structured sections array if no rawQuestions found
-  if (quizSections.length === 0 && Array.isArray(assessment.sections) && assessment.sections.length > 0) {
+  // 3. Fallback to structured sections array if no rawGames or rawQuestions found
+  if (runtimeModules.length === 0 && Array.isArray(assessment.sections) && assessment.sections.length > 0) {
     return assessment.sections.map((section, index) => {
       const slug = section.slug || section.gameSlug || section.gameId || section.id;
       const questions = Array.isArray(section.questions)
@@ -324,15 +340,14 @@ export const buildRuntimeSections = (assessment) => {
 
       return {
         ...section,
-        id: section.id ?? `section-${index + 1}`,
+        id: section.id ?? `module-${index + 1}`,
         type: section.type ?? (questions.length > 0 ? "quiz" : "game"),
         slug: slug,
-        title: section.title ?? `Section ${index + 1}`,
+        title: section.title ?? `Module ${index + 1}`,
         questions: questions.length > 0 ? questions : undefined,
       };
     });
   }
 
-  const combinedSections = [...gameSections, ...quizSections];
-  return combinedSections;
+  return runtimeModules;
 };

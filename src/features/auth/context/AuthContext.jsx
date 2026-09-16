@@ -107,7 +107,11 @@ export const AuthProvider = ({ children }) => {
                 };
                 if (typeof window !== "undefined") {
                   if (compName) localStorage.setItem("companyName", compName);
-                  if (compLogo) localStorage.setItem("companyLogo", compLogo);
+                  if (compLogo) {
+                    localStorage.setItem("companyLogo", compLogo);
+                  } else {
+                    localStorage.removeItem("companyLogo");
+                  }
                   if (compId) {
                     localStorage.setItem("companyId", compId);
                     localStorage.setItem("active_company_id", compId);
