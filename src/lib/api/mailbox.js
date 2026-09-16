@@ -6,7 +6,9 @@ import axiosClient from "./axiosClient";
  */
 export const getMailboxStatus = async () => {
   try {
-    const res = await axiosClient.get("/mailbox/status");
+    const res = await axiosClient.get(`/mailbox/status?_t=${Date.now()}`, {
+      headers: { "Cache-Control": "no-cache, no-store" },
+    });
     return res?.data?.data || res?.data || res;
   } catch (error) {
     return {

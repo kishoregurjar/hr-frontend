@@ -81,6 +81,12 @@ export const useDisconnectMailbox = () => {
     mutationFn: disconnectMailbox,
     onSuccess: () => {
       toast.info("Google Mailbox disconnected.");
+      queryClient.setQueryData(MAILBOX_QUERY_KEY, {
+        connected: false,
+        email: null,
+        isSyncActive: false,
+        lastSyncedAt: null,
+      });
       queryClient.invalidateQueries({ queryKey: MAILBOX_QUERY_KEY });
     },
     onError: (err) => {
