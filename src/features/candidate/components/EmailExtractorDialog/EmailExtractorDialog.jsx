@@ -236,8 +236,8 @@ const EmailExtractorDialog = ({ triggerText = "Extract from Emails" }) => {
                 <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
                 <span className="text-xs font-medium">Checking Mailbox Status...</span>
               </div>
-            ) : (
-              /* ACTIVE LOGGED-IN EMAIL RECRUITER CARD */
+            ) : mailboxStatus?.connected ? (
+              /* ACTIVE LOGGED-IN EMAIL RECRUITER CARD (CONNECTED) */
               <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 space-y-3.5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-emerald-200/60">
                   <div className="flex items-center gap-3">
@@ -247,7 +247,7 @@ const EmailExtractorDialog = ({ triggerText = "Extract from Emails" }) => {
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-bold text-slate-900">
-                          {user?.email || mailboxStatus?.email || "Recruiter Mailbox"}
+                          {mailboxStatus?.email || user?.email || "Recruiter Mailbox"}
                         </span>
                         <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-[10px] py-0 px-2 font-medium">
                           Active Account
@@ -287,7 +287,11 @@ const EmailExtractorDialog = ({ triggerText = "Extract from Emails" }) => {
                       disabled={disconnectMailboxMutation.isPending}
                       className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 text-xs h-8 px-2.5 rounded-lg cursor-pointer"
                     >
-                      <PowerOff className="h-3.5 w-3.5 mr-1" />
+                      {disconnectMailboxMutation.isPending ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                      ) : (
+                        <PowerOff className="h-3.5 w-3.5 mr-1" />
+                      )}
                       Disconnect
                     </Button>
                   </div>
@@ -302,6 +306,44 @@ const EmailExtractorDialog = ({ triggerText = "Extract from Emails" }) => {
                     <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
                     <span>Structured candidate profiles auto-saved</span>
                   </div>
+                </div>
+              </div>
+            ) : (
+              /* CONNECT GOOGLE MAILBOX CARD (DISCONNECTED) */
+              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-11 w-11 rounded-xl bg-slate-200/80 text-slate-700 flex items-center justify-center shrink-0">
+                      <Mail className="h-5 w-5 text-slate-600" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-bold text-slate-900">
+                          {user?.email || "Recruiter Mailbox"}
+                        </span>
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] py-0 px-2 font-medium">
+                          Not Connected
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1 max-w-md leading-relaxed">
+                        Connect your recruiter Google Mailbox to automatically extract applicant resumes from LinkedIn, Indeed, and Naukri emails.
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    onClick={handleGoogleConnect}
+                    disabled={connectGoogleMutation.isPending}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-9 px-4 rounded-lg font-semibold shadow-xs cursor-pointer shrink-0"
+                  >
+                    {connectGoogleMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Mail className="h-4 w-4 mr-2" />
+                    )}
+                    Connect Google Mailbox
+                  </Button>
                 </div>
               </div>
             )}
