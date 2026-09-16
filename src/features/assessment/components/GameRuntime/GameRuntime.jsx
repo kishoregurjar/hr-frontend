@@ -11,6 +11,7 @@ import { useSaveGameResult } from "../../hooks";
 
 const GameRuntime = ({ section, attempt, onComplete }) => {
   const existingResult = attempt?.gameResults?.[section.id];
+  const [currentSection, setCurrentSection] = useState(section);
 
   const [completedResult, setCompletedResult] = useState(
     existingResult ?? null
@@ -22,7 +23,15 @@ const GameRuntime = ({ section, attempt, onComplete }) => {
 
   const saveGameResult = useSaveGameResult();
 
-  const handleStart = () => {
+  const handleStart = (selectedSlug) => {
+    if (selectedSlug && selectedSlug !== currentSection.slug) {
+      setCurrentSection((prev) => ({
+        ...prev,
+        slug: selectedSlug,
+        gameId: selectedSlug,
+        gameType: selectedSlug,
+      }));
+    }
     setGameState(GAME_STATE.PLAYING);
   };
 
@@ -30,13 +39,13 @@ const GameRuntime = ({ section, attempt, onComplete }) => {
     saveGameResult.mutate(
       {
         attemptId: attempt.id,
-        sectionId: section.id,
+        sectionId: currentSection.id,
         result,
       },
       {
         onSuccess: (updatedAttempt) => {
           setCompletedResult(
-            updatedAttempt.gameResults?.[section.id] ?? result
+            updatedAttempt?.gameResults?.[currentSection.id] ?? result
           );
           setGameState(GAME_STATE.COMPLETED);
         },
@@ -45,12 +54,12 @@ const GameRuntime = ({ section, attempt, onComplete }) => {
   };
 
   if (gameState === GAME_STATE.READY) {
-    return <GameReady section={section} onStart={handleStart} />;
+    return <GameReady section={currentSection} onStart={handleStart} />;
   }
 
   if (gameState === GAME_STATE.PLAYING) {
     return (
-      <GameDispatcher section={section} onComplete={handleGameComplete} />
+      <GameDispatcher section={currentSection} onComplete={handleGameComplete} />
     );
   }
 
