@@ -301,13 +301,6 @@ export default function TangoGame({ config = {}, onComplete }) {
         </div>
       </div>
 
-      {/* Error / Feedback Banner */}
-      {messages.length > 0 && (
-        <div className="mb-3 w-full max-w-md rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-2 text-center text-xs font-semibold text-destructive animate-in fade-in duration-200">
-          {messages[0].text}
-        </div>
-      )}
-
       {/* Board Container */}
       <div
         className="relative mx-auto rounded-2xl border-2 border-slate-900 bg-card p-1 shadow-xl"
@@ -323,7 +316,6 @@ export default function TangoGame({ config = {}, onComplete }) {
             const key = `${r}-${c}`;
             const isInitial = Boolean(initial[key]);
             const val = grid[key];
-            const isBad = bad.has(key);
 
             return (
               <button
@@ -331,11 +323,11 @@ export default function TangoGame({ config = {}, onComplete }) {
                 type="button"
                 onClick={() => handleCellClick(key)}
                 style={{ width: cellSize, height: cellSize }}
-                className={`relative flex items-center justify-center border border-slate-200 dark:border-slate-800 text-2xl transition-all cursor-pointer font-bold ${
+                className={`relative flex items-center justify-center border border-slate-200 dark:border-slate-800 text-2xl transition-all font-bold select-none ${
                   isInitial
-                    ? "bg-muted/60 text-foreground cursor-not-allowed"
-                    : "hover:bg-accent/40 active:scale-95"
-                } ${isBad ? "bg-destructive/15 border-destructive/50" : ""}`}
+                    ? "bg-slate-100/80 text-foreground cursor-not-allowed"
+                    : "hover:bg-slate-50 active:scale-95 bg-white cursor-pointer"
+                }`}
               >
                 {val === "O" && <span className="drop-shadow-xs">🟡</span>}
                 {val === "X" && <span className="drop-shadow-xs">🌙</span>}
