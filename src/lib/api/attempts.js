@@ -543,51 +543,82 @@ export const saveGameResult = async ({
   sectionId,
   result,
 }) => {
-  await delay(400);
-
   const index = attempts.findIndex(
     (attempt) => String(attempt.id) === String(attemptId)
   );
 
-  if (index === -1) {
-    throw new Error("Assessment attempt not found.");
-  }
-
-  const attempt = attempts[index];
-
-  if (attempt.status !== "In Progress") {
-    throw new Error("This assessment attempt is not active.");
-  }
-
+  const attempt = index !== -1 ? attempts[index] : { id: attemptId, gameResults: {} };
   const currentGameResults = attempt.gameResults ?? {};
 
-  attempts[index] = {
-    ...attempt,
-    gameResults: {
-      ...currentGameResults,
-      [sectionId]: {
-        ...result,
-        completedAt: new Date().toISOString(),
-      },
+  const updatedGameResults = {
+    ...currentGameResults,
+    [sectionId]: {
+      ...result,
+      completedAt: new Date().toISOString(),
     },
-    lastSavedAt: new Date().toISOString(),
   };
 
-  return { ...attempts[index] };
+  if (index !== -1) {
+    attempts[index] = {
+      ...attempt,
+      gameResults: updatedGameResults,
+      lastSavedAt: new Date().toISOString(),
+    };
+    saveCachedAttempts(attempts);
+  }
+
+  // Real-time progressive sync of game score to backend
+  try {
+    const candidateToken =
+      typeof window !== "undefined"
+        ? sessionStorage.getItem("candidateSessionToken") ||
+          localStorage.getItem("candidateSessionToken") ||
+          sessionStorage.getItem("candidateAccessToken") ||
+          localStorage.getItem("candidateAccessToken")
+        : null;
+
+    const invitationToken =
+      typeof window !== "undefined"
+        ? sessionStorage.getItem("invitationToken") ||
+          localStorage.getItem("invitationToken")
+        : null;
+
+    const headers = candidateToken
+      ? { Authorization: `Bearer ${candidateToken}` }
+      : {};
+
+    await axiosClient.post(
+      "/attempts/save-answer",
+      {
+        attemptId,
+        questionId: sectionId,
+        attemptQuestionId: sectionId,
+        selectedOptionIds: [],
+        answerText: JSON.stringify({
+          type: "GAME_RESULT",
+          sectionId,
+          score: result.score,
+          accuracy: result.accuracy,
+          metrics: result,
+        }),
+        ...(invitationToken ? { token: invitationToken, invitationToken } : {}),
+        ...(candidateToken ? { candidateAccessToken: candidateToken, candidateSessionToken: candidateToken } : {}),
+      },
+      { headers }
+    );
+  } catch (_e) {
+    // Non-blocking autosave
+  }
+
+  return index !== -1 ? { ...attempts[index] } : { id: attemptId, gameResults: updatedGameResults };
 };
 
 export const completeAttempt = async ({ attemptId, assessment, responses }) => {
-  await delay(500);
-
   const index = attempts.findIndex(
     (attempt) => String(attempt.id) === String(attemptId)
   );
 
-  if (index === -1) {
-    throw new Error("Assessment attempt not found.");
-  }
-
-  const attempt = attempts[index];
+  const attempt = index !== -1 ? attempts[index] : { id: attemptId, responses: {}, gameResults: {} };
 
   if (attempt.status === "Completed") {
     return { ...attempt };
@@ -602,15 +633,51 @@ export const completeAttempt = async ({ attemptId, assessment, responses }) => {
     console.warn("Scoring calculation notice:", err?.message);
   }
 
-  // Attempt live backend submission if endpoint available
-  try {
-    await axiosClient.post(`/attempts/${attemptId}/submit`, {
-      responses: responses || attempt.responses,
-      score: scoringResult.score,
-    });
-  } catch {}
+  const candidateToken =
+    typeof window !== "undefined"
+      ? sessionStorage.getItem("candidateSessionToken") ||
+        localStorage.getItem("candidateSessionToken") ||
+        sessionStorage.getItem("candidateAccessToken") ||
+        localStorage.getItem("candidateAccessToken")
+      : null;
 
-  attempts[index] = {
+  const invitationToken =
+    typeof window !== "undefined"
+      ? sessionStorage.getItem("invitationToken") ||
+        localStorage.getItem("invitationToken")
+      : null;
+
+  const headers = candidateToken
+    ? { Authorization: `Bearer ${candidateToken}` }
+    : {};
+
+  const payload = {
+    token: invitationToken || undefined,
+    invitationToken: invitationToken || undefined,
+    candidateAssessmentId: attemptId,
+    attemptId,
+    responses: responses || attempt.responses || {},
+    gameResults: attempt.gameResults || {},
+    score: scoringResult.score,
+  };
+
+  // 1. Submit to authoritative backend endpoint: POST /api/v1/attempts/submit
+  try {
+    const res = await axiosClient.post("/attempts/submit", payload, { headers });
+    const liveData = res?.data?.data || res?.data;
+    if (liveData?.score !== undefined) {
+      scoringResult.score = Number(liveData.score);
+    }
+  } catch (err1) {
+    // 2. Fallback endpoint
+    try {
+      await axiosClient.post(`/assessment-attempts/${attemptId}/submit`, payload, { headers });
+    } catch (err2) {
+      console.warn("Live backend submission notice:", err1?.message || err2?.message);
+    }
+  }
+
+  const completedRecord = {
     ...attempt,
     ...(responses ? { responses: Array.isArray(responses) ? [...responses] : responses } : {}),
     status: "Completed",
@@ -621,8 +688,14 @@ export const completeAttempt = async ({ attemptId, assessment, responses }) => {
     submittedAt: new Date().toISOString(),
   };
 
+  if (index !== -1) {
+    attempts[index] = completedRecord;
+  } else {
+    attempts.unshift(completedRecord);
+  }
+
   saveCachedAttempts(attempts);
-  return { ...attempts[index] };
+  return completedRecord;
 };
 
 export const submitAttempt = async ({ attemptId, assessment, responses }) => {
