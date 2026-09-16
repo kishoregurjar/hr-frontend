@@ -57,7 +57,7 @@ const AssessmentReview = ({
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
-              Review & Create Assessment
+              Review & Publish Assessment
             </h2>
             <p className="mt-0.5 text-xs sm:text-sm text-slate-500 font-medium">
               Review the module configurations, question pool, and grading settings before saving.
@@ -66,7 +66,7 @@ const AssessmentReview = ({
 
           <Badge className="bg-emerald-50 text-emerald-700 border-emerald-300 text-xs font-bold gap-1 px-3 py-1">
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-            Ready for Creation
+            Ready to Publish
           </Badge>
         </div>
 
@@ -281,7 +281,7 @@ const AssessmentReview = ({
               ) : (
                 <span className="flex items-center gap-1.5">
                   <Sparkles className="h-3.5 w-3.5" />
-                  Create & Publish Assessment
+                  Publish Assessment
                 </span>
               )}
             </Button>
