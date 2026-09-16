@@ -83,15 +83,6 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
           attempt={attempt}
         />
 
-        {/* Section label */}
-        <div className="flex items-center justify-between text-sm">
-          <p className="font-semibold text-foreground">
-            Module {currentIndex + 1} of {sections.length}: <span className="text-blue-600 dark:text-blue-400">{currentSection?.title || "Assessment Section"}</span>
-          </p>
-          <span className="text-xs text-muted-foreground">
-            Click tabs above or Next to switch modules
-          </span>
-        </div>
 
         {/* Section content */}
         <AssessmentSection

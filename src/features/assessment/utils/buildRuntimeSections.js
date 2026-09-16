@@ -10,6 +10,7 @@
  */
 
 import { games as gamesCatalog } from "@/features/games/data";
+import { getEffectiveGameRuntimeConfig } from "@/features/games/utils/gameConfigStore";
 
 // Automatically clear stale attempt cache from localStorage if found with placeholder options
 if (typeof window !== "undefined") {
@@ -267,6 +268,12 @@ export const buildRuntimeSections = (assessment) => {
 
     const title = (typeof gameItem === "object" && (gameItem?.title || gameItem?.game?.title || gameItem?.game?.name)) || catalogInfo.title || `Module ${index + 1}: ${catalogInfo.title || "Game Challenge"}`;
 
+    const itemConfig = typeof gameItem === "object" ? (gameItem.config || {}) : {};
+    const effectiveConfig = getEffectiveGameRuntimeConfig(resolvedSlug, {
+      ...itemConfig,
+      difficulty: itemConfig.difficulty || assessment?.difficulty || "easy",
+    });
+
     return {
       id: `sec-game-${index + 1}`,
       type: "game",
@@ -275,7 +282,7 @@ export const buildRuntimeSections = (assessment) => {
       gameType: resolvedSlug,
       title,
       description: catalogInfo.description || "",
-      config: typeof gameItem === "object" ? (gameItem.config || {}) : {},
+      config: effectiveConfig,
     };
   });
 

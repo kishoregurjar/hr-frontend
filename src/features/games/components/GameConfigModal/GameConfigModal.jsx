@@ -16,18 +16,21 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+import { saveCompanyGameConfig, getCompanyGameConfig } from "../../utils/gameConfigStore";
+
 const GameConfigModal = ({ game, open, onOpenChange, onSave }) => {
-  const [difficulty, setDifficulty] = useState("Medium");
+  const [difficulty, setDifficulty] = useState("Easy");
   const [duration, setDuration] = useState(10);
   const [passingScore, setPassingScore] = useState(70);
   const [status, setStatus] = useState("Active");
 
   useEffect(() => {
     if (game) {
-      setDifficulty(game.difficulty || "Medium");
-      setDuration(game.duration || 10);
-      setPassingScore(game.passingScore || 70);
-      setStatus(game.status || "Active");
+      const saved = getCompanyGameConfig(game.slug || game.id || game.code);
+      setDifficulty(saved.difficulty || game.difficulty || "Easy");
+      setDuration(saved.duration || game.duration || 10);
+      setPassingScore(saved.passingScore || game.passingScore || 70);
+      setStatus(saved.status || game.status || "Active");
     }
   }, [game, open]);
 
@@ -35,13 +38,15 @@ const GameConfigModal = ({ game, open, onOpenChange, onSave }) => {
 
   const handleSave = (e) => {
     e.preventDefault();
-    onSave?.({
+    const updated = {
       ...game,
       difficulty,
       duration: Number(duration),
       passingScore: Number(passingScore),
       status,
-    });
+    };
+    saveCompanyGameConfig(game.slug || game.id || game.code, updated);
+    onSave?.(updated);
     toast.success("Configuration updated successfully!", {
       description: `${game.title} calibrated with ${difficulty} difficulty (${duration} mins).`,
     });

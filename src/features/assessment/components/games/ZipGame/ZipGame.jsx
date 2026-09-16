@@ -202,9 +202,11 @@ function buildWalls(path, size, wallCount, seed = 764201) {
 }
 
 export default function ZipGame({ config = {}, onComplete }) {
-  const size = Number(config?.size) || 8;
-  const clueCount = Number(config?.clueCount) || 11;
-  const wallCount = Number(config?.wallCount) || (size === 8 ? 24 : 12);
+  const diff = String(config?.difficulty || "easy").toLowerCase();
+  const defaultSize = diff === "easy" ? 5 : diff === "hard" ? 8 : 6;
+  const size = Number(config?.size) || defaultSize;
+  const clueCount = Number(config?.clueCount) || (size <= 5 ? 6 : size === 6 ? 8 : 11);
+  const wallCount = Number(config?.wallCount) || (size <= 5 ? 6 : size === 6 ? 12 : 24);
 
   // Generate 100% mathematically guaranteed solvable puzzle with actual Hamiltonian solution
   const generatedPuzzle = useMemo(() => {

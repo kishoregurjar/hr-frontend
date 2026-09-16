@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 
 import { GameStats, GameCard, GamePreviewModal, GameConfigModal } from "../components";
 import { useGamesQuery } from "../hooks";
+import { getCompanyGameConfig } from "../utils/gameConfigStore";
 
 const GameList = () => {
   const { user } = useAuth();
@@ -28,24 +29,28 @@ const GameList = () => {
 
   const [previewGame, setPreviewGame] = useState(null);
   const [configGame, setConfigGame] = useState(null);
+  const [configVersion, setConfigVersion] = useState(0);
 
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState("all");
   const [status, setStatus] = useState("all");
   const [sortBy, setSortBy] = useState("popular");
 
-  // Normalize games from backend API
+  // Normalize games from backend API + merge company calibration
   const gamesList = useMemo(() => {
     if (!Array.isArray(rawGames)) return [];
 
     return rawGames.map((game, index) => {
       const id = String(game.id || game.slug || game.code || `game-${index + 1}`);
+      const slug = game.slug || id;
+      const savedConfig = getCompanyGameConfig(slug || id || game.code);
+
       const title = game.title || game.name || "Cognitive Game";
       const description = game.description || "Interactive cognitive assessment simulation.";
       const category = game.category || "Cognitive Reasoning";
-      const difficulty = game.difficulty || "Medium";
-      const duration = game.duration || 6;
-      const isActive = game.isActive !== undefined ? Boolean(game.isActive) : game.status === "ACTIVE";
+      const difficulty = savedConfig?.difficulty || game.difficulty || "Easy";
+      const duration = savedConfig?.duration || game.duration || 6;
+      const isActive = savedConfig?.status === "Active" || (game.isActive !== undefined ? Boolean(game.isActive) : game.status === "ACTIVE");
       const statusText = isActive ? "Active" : "Inactive";
       const skill = game.skill || "Logical Problem Solving";
       const usedIn = game.usedIn || game.assessmentsUsedIn || 0;
@@ -53,7 +58,7 @@ const GameList = () => {
       return {
         ...game,
         id,
-        slug: game.slug || id,
+        slug,
         title,
         name: game.name || title,
         description,
@@ -66,7 +71,7 @@ const GameList = () => {
         usedIn,
       };
     });
-  }, [rawGames]);
+  }, [rawGames, configVersion]);
 
   const filteredGames = useMemo(() => {
     return gamesList
@@ -256,6 +261,7 @@ const GameList = () => {
             if (!open) setConfigGame(null);
           }}
           onSave={() => {
+            setConfigVersion((v) => v + 1);
             refetch();
           }}
         />

@@ -337,8 +337,8 @@ const customStyles = `
 `;
 
 export default function MahjongGame({ config = {}, onComplete }) {
-  const difficulty = config?.difficulty || "medium";
-  const dimConfig = DIFFICULTIES[difficulty] || DIFFICULTIES.medium;
+  const difficulty = (config?.difficulty || "easy").toLowerCase();
+  const dimConfig = DIFFICULTIES[difficulty] || DIFFICULTIES.easy;
 
   const [board, setBoard] = useState(() => config?.board || createBoard(difficulty));
   const [selected, setSelected] = useState(null); // { row, col }
@@ -853,7 +853,7 @@ export default function MahjongGame({ config = {}, onComplete }) {
   };
 
   const shuffleBoard = (customBoard = null, isAuto = false) => {
-    const currentBoard = customBoard || board;
+    const currentBoard = (Array.isArray(customBoard) ? customBoard : null) || board;
     const occupiedCoords = [];
     const tilesToShuffle = [];
 
@@ -876,6 +876,7 @@ export default function MahjongGame({ config = {}, onComplete }) {
 
     const hasRemainingPairs = checkRemainingPairsExist(tilesToShuffle);
     let finalBoard = currentBoard;
+    let fallbackBoard = null;
     let attempts = 0;
 
     if (hasRemainingPairs) {
@@ -894,11 +895,20 @@ export default function MahjongGame({ config = {}, onComplete }) {
           };
         });
 
+        if (!fallbackBoard) {
+          fallbackBoard = testBoard;
+        }
+
         if (hasAnyValidMovesOrMatches(testBoard)) {
           finalBoard = testBoard;
           break;
         }
         attempts += 1;
+      }
+
+      // If no instant match detected in 150 attempts, still use randomized fallback board
+      if (finalBoard === currentBoard && fallbackBoard) {
+        finalBoard = fallbackBoard;
       }
     }
 
@@ -960,7 +970,7 @@ export default function MahjongGame({ config = {}, onComplete }) {
           <Button
             variant="outline"
             size="sm"
-            onClick={showHint}
+            onClick={() => showHint()}
             disabled={hintsLeft <= 0 || win}
             className="flex items-center gap-1.5 rounded-full font-medium"
           >
@@ -970,7 +980,7 @@ export default function MahjongGame({ config = {}, onComplete }) {
           <Button
             variant="outline"
             size="sm"
-            onClick={shuffleBoard}
+            onClick={() => shuffleBoard()}
             disabled={shufflesLeft <= 0 || win}
             className="flex items-center gap-1.5 rounded-full font-medium"
           >
