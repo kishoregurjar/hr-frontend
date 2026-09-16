@@ -27,6 +27,7 @@ import {
   shuffle,
   getAvailablePair,
   checkRemainingPairsExist,
+  hasAnyValidMovesOrMatches,
 } from "./mahjongLogic";
 
 // Authentic Classic Mahjong SVG Tile Face Renderer (100% pure responsive SVG)
@@ -560,6 +561,20 @@ export default function MahjongGame({ config = {}, onComplete }) {
     setTimeout(() => {
       setFloatingTexts((prev) => prev.filter((f) => Date.now() - f.id < 800));
     }, 850);
+
+    // Deadlock detection: Check if remaining tiles have any possible moves or matches
+    const remainingTiles = [];
+    for (let r = 0; r < dimConfig.rows; r++) {
+      for (let c = 0; c < dimConfig.cols; c++) {
+        if (nextBoard[r][c]) remainingTiles.push(nextBoard[r][c]);
+      }
+    }
+
+    if (remainingTiles.length > 0 && !hasAnyValidMovesOrMatches(nextBoard)) {
+      setTimeout(() => {
+        shuffleBoard(nextBoard, true);
+      }, 550);
+    }
   };
 
   // Check Win condition
@@ -575,7 +590,7 @@ export default function MahjongGame({ config = {}, onComplete }) {
 
   // Click handler matching minderWorld: 1-click auto-match if exactly 1 match
   const handleTileClick = (r, c) => {
-    const tile = board[r][c];
+    const tile = board[r]?.[c];
     if (!tile || win) return;
 
     const matches = findAllMatchesForTile(board, r, c);
@@ -587,7 +602,7 @@ export default function MahjongGame({ config = {}, onComplete }) {
         return;
       }
 
-      const selectedTile = board[selected.row][selected.col];
+      const selectedTile = board[selected.row]?.[selected.col];
       if (
         selectedTile &&
         selectedTile.design.id === tile.design.id &&
@@ -634,12 +649,14 @@ export default function MahjongGame({ config = {}, onComplete }) {
     }
   };
 
-  // Dragging gesture handlers matching minderWorld
+  // Dragging gesture handlers with smooth snapback and chain pushing
   const handlePointerDown = (e, r, c) => {
-    if (win || dragChainIds.size > 0) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
+    if (win) return;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
 
-    const tile = board[r][c];
+    const tile = board[r]?.[c];
     if (tile) setActiveTileId(tile.id);
 
     dragStateRef.current = {
@@ -722,9 +739,16 @@ export default function MahjongGame({ config = {}, onComplete }) {
 
   const handlePointerUp = (e) => {
     const state = dragStateRef.current;
-    if (!state.isActive) return;
+    if (!state.isActive) {
+      setDragChainIds(new Set());
+      setActiveTileId(null);
+      return;
+    }
 
-    e.currentTarget.releasePointerCapture(e.pointerId);
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {}
+
     state.isActive = false;
     setActiveTileId(null);
 
@@ -738,27 +762,23 @@ export default function MahjongGame({ config = {}, onComplete }) {
       if (offsetCells > state.emptyCount) offsetCells = state.emptyCount;
 
       if (offsetCells > 0) {
+        // 1. Build simulated test board
         const testBoard = board.map((row) => [...row]);
+        // Clear original positions of all chain tiles
+        for (const tile of state.chain) {
+          testBoard[tile.startR][tile.startC] = null;
+        }
+        // Place chain tiles at shifted target positions
         const movedTiles = [];
-
-        for (let i = state.chain.length - 1; i >= 0; i--) {
-          const tile = state.chain[i];
+        for (const tile of state.chain) {
           const targetR = tile.startR + state.dr * offsetCells;
           const targetC = tile.startC + state.dc * offsetCells;
           testBoard[targetR][targetC] = { ...tile, row: targetR, col: targetC };
           movedTiles.push({ row: targetR, col: targetC, tile: testBoard[targetR][targetC] });
-
-          if (i < offsetCells) {
-            testBoard[tile.startR][tile.startC] = null;
-          }
         }
 
-        setBoard(testBoard);
-        playSynthSound("move");
-        setMoves((m) => m + 1);
-
-        // Check if moved tile triggers an immediate match
-        let foundMatch = false;
+        // 2. Check if the move triggers an immediate valid straight-line or adjacent match
+        let matchedPair = null;
         for (const moved of movedTiles) {
           for (let tr = 0; tr < dimConfig.rows; tr++) {
             for (let tc = 0; tc < dimConfig.cols; tc++) {
@@ -766,15 +786,35 @@ export default function MahjongGame({ config = {}, onComplete }) {
               const other = testBoard[tr][tc];
               if (other && other.design.id === moved.tile.design.id) {
                 if (canTilesMatch(testBoard, { row: moved.row, col: moved.col }, { row: tr, col: tc })) {
-                  executeMatch(moved.row, moved.col, tr, tc, testBoard);
-                  foundMatch = true;
+                  matchedPair = {
+                    r1: moved.row,
+                    c1: moved.col,
+                    r2: tr,
+                    c2: tc,
+                  };
                   break;
                 }
               }
             }
-            if (foundMatch) break;
+            if (matchedPair) break;
           }
-          if (foundMatch) break;
+          if (matchedPair) break;
+        }
+
+        if (matchedPair) {
+          // Valid move -> Commit new board state and execute match
+          setBoard(testBoard);
+          setMoves((m) => m + 1);
+          executeMatch(matchedPair.r1, matchedPair.c1, matchedPair.r2, matchedPair.c2, testBoard);
+        } else {
+          // Invalid move (No match) -> Snap back to initial state with error feedback!
+          playSynthSound("error");
+          const activeTile = board[state.tileR]?.[state.tileC];
+          if (activeTile) {
+            setShakingDesignId(activeTile.design.id);
+            setTimeout(() => setShakingDesignId(null), 350);
+          }
+          setMessage("No match made. Tile returned to position!");
         }
       }
     } else if (!state.direction) {
@@ -798,40 +838,28 @@ export default function MahjongGame({ config = {}, onComplete }) {
   const showHint = () => {
     if (hintsLeft <= 0 || win) {
       setMessage("No hints left!");
-      playSynthSound("error");
       return;
     }
 
     const pair = getAvailablePair(board);
-    if (!pair) {
-      setMessage("No direct matches! Slide tiles into empty slots to align matching symbols.");
-      playSynthSound("error");
-      return;
+    if (pair) {
+      setHintPair(pair);
+      setHintsLeft((prev) => prev - 1);
+      setMessage("Matching pair highlighted!");
+      setTimeout(() => setHintPair(null), 3500);
+    } else {
+      setMessage("No direct match visible — try sliding a tile or shuffling!");
     }
-
-    setHintsLeft((prev) => prev - 1);
-    setHintPair(pair);
-    setMessage("Highlighted available match!");
-    playSynthSound("move");
-
-    setTimeout(() => {
-      setHintPair(null);
-    }, 3000);
   };
 
-  const shuffleBoard = () => {
-    if (shufflesLeft <= 0 || win) {
-      setMessage("No shuffles left!");
-      playSynthSound("error");
-      return;
-    }
-
+  const shuffleBoard = (customBoard = null, isAuto = false) => {
+    const currentBoard = customBoard || board;
     const occupiedCoords = [];
     const tilesToShuffle = [];
 
     for (let r = 0; r < dimConfig.rows; r++) {
       for (let c = 0; c < dimConfig.cols; c++) {
-        const tile = board[r][c];
+        const tile = currentBoard[r]?.[c];
         if (tile) {
           occupiedCoords.push({ r, c });
           tilesToShuffle.push(tile);
@@ -841,15 +869,17 @@ export default function MahjongGame({ config = {}, onComplete }) {
 
     if (tilesToShuffle.length === 0) return;
 
-    setShufflesLeft((prev) => prev - 1);
+    if (!isAuto) {
+      setShufflesLeft((prev) => Math.max(0, prev - 1));
+    }
     playSynthSound("shuffle");
 
     const hasRemainingPairs = checkRemainingPairsExist(tilesToShuffle);
-    let finalBoard = board;
+    let finalBoard = currentBoard;
     let attempts = 0;
 
     if (hasRemainingPairs) {
-      while (attempts < 100) {
+      while (attempts < 150) {
         const testCoords = shuffle([...occupiedCoords]);
         const testBoard = Array.from({ length: dimConfig.rows }, () =>
           Array.from({ length: dimConfig.cols }, () => null)
@@ -864,7 +894,7 @@ export default function MahjongGame({ config = {}, onComplete }) {
           };
         });
 
-        if (getAvailablePair(testBoard)) {
+        if (hasAnyValidMovesOrMatches(testBoard)) {
           finalBoard = testBoard;
           break;
         }
@@ -877,8 +907,8 @@ export default function MahjongGame({ config = {}, onComplete }) {
     setMultiMatches([]);
     setHintPair(null);
     setCombo(1);
-    setMoves((m) => m + 1);
-    setMessage("Board shuffled successfully! Keep matching!");
+    if (!isAuto) setMoves((m) => m + 1);
+    setMessage(isAuto ? "No moves left — Auto-shuffled board!" : "Board shuffled! Keep matching!");
   };
 
   const handleReset = () => {
