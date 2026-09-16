@@ -73,16 +73,25 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
       />
 
       <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-        {/* Progress */}
+        {/* Interactive Progress & Game Tabs Bar */}
         <AssessmentProgress
           current={currentIndex + 1}
           total={sections.length}
+          sections={sections}
+          currentIndex={currentIndex}
+          onSelectSection={changeSection}
+          attempt={attempt}
         />
 
         {/* Section label */}
-        <p className="text-sm font-medium text-muted-foreground">
-          Section {currentIndex + 1} of {sections.length}
-        </p>
+        <div className="flex items-center justify-between text-sm">
+          <p className="font-semibold text-foreground">
+            Module {currentIndex + 1} of {sections.length}: <span className="text-blue-600 dark:text-blue-400">{currentSection?.title || "Assessment Section"}</span>
+          </p>
+          <span className="text-xs text-muted-foreground">
+            Click tabs above or Next to switch modules
+          </span>
+        </div>
 
         {/* Section content */}
         <AssessmentSection
@@ -100,16 +109,14 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
           </div>
         )}
 
-        {/* Navigation — Quiz and Game runtimes handle their own internal navigation */}
-        {!handlesOwnNavigation && (
-          <AssessmentNavigation
-            isFirst={isFirst}
-            isLast={isLast}
-            onPrevious={handlePrevious}
-            onNext={handleNext}
-            isUpdating={updateProgress.isPending}
-          />
-        )}
+        {/* Navigation Bar — Enabled across all sections so candidate can move freely */}
+        <AssessmentNavigation
+          isFirst={isFirst}
+          isLast={isLast}
+          onPrevious={handlePrevious}
+          onNext={handleNext}
+          isUpdating={updateProgress.isPending}
+        />
       </main>
     </div>
   );
