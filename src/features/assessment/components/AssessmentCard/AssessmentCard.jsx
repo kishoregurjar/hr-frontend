@@ -39,72 +39,57 @@ const AssessmentCard = ({
 
   const passingScore = assessment.passingScore ?? 70;
 
-  // Extract or generate module breakdown
+  // Extract or generate module breakdown in 2-Module structure
   const rawModules = [];
 
   const gamesList =
     assessment.games ||
     assessment.AssessmentGames ||
     assessment.assessmentGames ||
+    assessment.selectedGameIds ||
     [];
 
   const questionsList =
     assessment.questions ||
     assessment.AssessmentQuestions ||
     assessment.assessmentQuestions ||
+    assessment.selectedQuestionIds ||
     [];
 
   if (Array.isArray(gamesList) && gamesList.length > 0) {
-    gamesList.forEach((g, idx) => {
-      rawModules.push({
-        id: `game-${idx}`,
-        title: `Module ${idx + 1}: ${g.game?.name || g.name || "Visual Logic & Pattern Matrix"}`,
-        type: "game",
-        weight: Math.round(50 / gamesList.length),
-      });
+    rawModules.push({
+      id: `mod-games`,
+      title: `Module 1: Cognitive & Behavioral Games (${gamesList.length} ${gamesList.length === 1 ? "Game" : "Games"})`,
+      type: "game",
+      weight: assessment.gameWeight ?? 60,
     });
   }
 
   if (Array.isArray(questionsList) && questionsList.length > 0) {
     rawModules.push({
-      id: `mcq-1`,
-      title: `Module ${rawModules.length + 1}: Core Technical & Engineering MCQ`,
+      id: `mod-quiz`,
+      title: `Module ${rawModules.length + 1}: Technical & Domain MCQ Quiz (${questionsList.length} ${questionsList.length === 1 ? "Question" : "Questions"})`,
       type: "quiz",
-      weight: 50,
+      weight: assessment.quizWeight ?? 40,
     });
   }
 
-  // Fallback realistic modules matching the reference screenshot
+  // Fallback realistic modules matching the standard structure
   const displayModules =
     rawModules.length > 0
       ? rawModules
-      : assessment.title?.toLowerCase().includes("architect")
-      ? [
-          {
-            id: "mod-1",
-            title: "Frontend Mastery Quiz",
-            type: "quiz",
-            weight: 100,
-          },
-        ]
       : [
           {
             id: "mod-1",
-            title: "Module 1: Visual Logic & Pattern Matrix",
+            title: "Module 1: Cognitive & Behavioral Games (4 Games)",
             type: "game",
-            weight: 30,
+            weight: 60,
           },
           {
             id: "mod-2",
-            title: "Module 2: Cognitive Memory Sequence Matrix",
-            type: "game",
-            weight: 20,
-          },
-          {
-            id: "mod-3",
-            title: "Module 3: Core Engineering & Architecture MCQ",
+            title: "Module 2: Technical & Domain MCQ Quiz (15 Questions)",
             type: "quiz",
-            weight: 50,
+            weight: 40,
           },
         ];
 

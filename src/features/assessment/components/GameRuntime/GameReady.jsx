@@ -87,7 +87,7 @@ const resolveGameBrief = (section) => {
   );
 };
 
-const GameReady = ({ section, onStart }) => {
+const GameReady = ({ section, gameIndex = 0, totalGames = 1, onStart }) => {
   const brief = resolveGameBrief(section);
 
   const handleLaunch = () => {
@@ -109,12 +109,12 @@ const GameReady = ({ section, onStart }) => {
                 <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600">
                   {brief.category}
                 </span>
-                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
-                  Active Module
+                <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                  {totalGames > 1 ? `Game ${gameIndex + 1} of ${totalGames}` : "Cognitive Module"}
                 </span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-0.5">
-                {brief.title}
+                {section?.title || brief.title}
               </h2>
             </div>
           </div>

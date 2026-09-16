@@ -24,7 +24,12 @@ export const getSectionCompletion = ({ section, attempt }) => {
         ? SECTION_STATUS.COMPLETED
         : SECTION_STATUS.INCOMPLETE,
       isComplete: game.isComplete,
-      label: game.isComplete ? "Game completed" : "Game not completed",
+      label:
+        game.totalCount > 1
+          ? `${game.completedCount} / ${game.totalCount} games completed`
+          : game.isComplete
+          ? "Game completed"
+          : "Game not completed",
       details: game,
     };
   }

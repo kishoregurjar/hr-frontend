@@ -31,6 +31,35 @@ export const calculateAssessmentScore = ({ assessment, attempt }) => {
       }
 
       if (section.type === "game") {
+        if (Array.isArray(section.games) && section.games.length > 0) {
+          const subGameScores = section.games.map((subGame) => {
+            const result =
+              attempt?.gameResults?.[subGame.id] ||
+              attempt?.gameResults?.[subGame.slug] ||
+              attempt?.gameResults?.[section.id];
+            return calculateGameScore({
+              section: subGame,
+              result,
+            });
+          });
+
+          const avgScore =
+            subGameScores.reduce((acc, r) => acc + (r.score || 0), 0) /
+            subGameScores.length;
+          const avgAccuracy =
+            subGameScores.reduce((acc, r) => acc + (r.accuracy || 0), 0) /
+            subGameScores.length;
+
+          return {
+            id: section.id,
+            type: "game",
+            title: section.title,
+            score: roundScore(avgScore),
+            rawScore: avgScore,
+            accuracy: roundScore(avgAccuracy),
+          };
+        }
+
         const gameResult = calculateGameScore({
           section,
           result: attempt?.gameResults?.[section.id],
