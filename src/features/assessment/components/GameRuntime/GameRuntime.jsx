@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Gamepad2 } from "lucide-react";
+import { CheckCircle2, Gamepad2, Lock } from "lucide-react";
 
 import GameReady from "./GameReady";
 import GameDispatcher from "./GameDispatcher";
@@ -43,7 +43,7 @@ const GameRuntime = ({ section, attempt, onComplete }) => {
 
   const saveGameResult = useSaveGameResult();
 
-  const handleStart = (selectedSlug) => {
+  const handleStart = () => {
     setGameState(GAME_STATE.PLAYING);
   };
 
@@ -86,21 +86,9 @@ const GameRuntime = ({ section, attempt, onComplete }) => {
     }
   };
 
-  const handleSelectGame = (idx) => {
-    if (idx === activeGameIndex) return;
-    const targetGame = games[idx];
-    const targetResult =
-      attempt?.gameResults?.[targetGame.id] ||
-      attempt?.gameResults?.[targetGame.slug];
-
-    setActiveGameIndex(idx);
-    setCompletedResult(targetResult ?? null);
-    setGameState(targetResult ? GAME_STATE.COMPLETED : GAME_STATE.READY);
-  };
-
   return (
     <div className="space-y-6">
-      {/* ── Sub-Games Navigation Strip (when multiple games in Module 1) ── */}
+      {/* ── Sub-Games Navigation Strip (Strict Sequential Stepper) ── */}
       {games.length > 1 && (
         <div className="rounded-2xl border border-slate-200/90 bg-white p-3 shadow-2xs font-sans">
           <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5 mb-2.5 px-2">
@@ -111,7 +99,7 @@ const GameRuntime = ({ section, attempt, onComplete }) => {
               </span>
             </div>
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Module 1 Sequence
+              Sequential Round Lock
             </span>
           </div>
 
@@ -123,30 +111,44 @@ const GameRuntime = ({ section, attempt, onComplete }) => {
                 (idx === activeGameIndex && completedResult)
               );
               const isActive = idx === activeGameIndex;
+              const isLocked = !isFinished && !isActive;
 
               return (
-                <button
+                <div
                   key={game.id || game.slug || idx}
-                  type="button"
-                  onClick={() => handleSelectGame(idx)}
-                  className={`flex items-center justify-between gap-2 p-2.5 rounded-xl text-left border transition-all text-xs font-bold cursor-pointer ${
+                  className={`flex items-center justify-between gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all select-none ${
                     isActive
-                      ? "bg-blue-50/80 border-blue-300 text-blue-800 shadow-2xs"
+                      ? "bg-blue-50/90 border-blue-400 text-blue-900 shadow-2xs ring-1 ring-blue-300/60"
                       : isFinished
-                      ? "bg-emerald-50/40 border-emerald-200/80 text-emerald-800 hover:bg-emerald-50"
-                      : "bg-slate-50/50 border-slate-200 text-slate-600 hover:bg-slate-100/80"
+                      ? "bg-emerald-50/50 border-emerald-300/80 text-emerald-800"
+                      : "bg-slate-50/40 border-slate-200/80 text-slate-400 opacity-65"
                   }`}
                 >
                   <div className="flex items-center gap-2 truncate">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white border text-[10px] font-black">
+                    <span
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[10px] font-black ${
+                        isActive
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : isFinished
+                          ? "bg-emerald-600 text-white border-emerald-600"
+                          : "bg-slate-100 text-slate-400 border-slate-200"
+                      }`}
+                    >
                       {idx + 1}
                     </span>
                     <span className="truncate">{game.title || `Game ${idx + 1}`}</span>
                   </div>
-                  {isFinished && (
+                  {isFinished ? (
                     <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                  ) : isActive ? (
+                    <span className="flex items-center gap-1 text-[9px] font-black text-blue-700 bg-blue-100/90 px-1.5 py-0.5 rounded-full uppercase shrink-0">
+                      <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
+                      Active
+                    </span>
+                  ) : (
+                    <Lock className="h-3 w-3 shrink-0 text-slate-400" />
                   )}
-                </button>
+                </div>
               );
             })}
           </div>
