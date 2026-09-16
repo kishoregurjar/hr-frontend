@@ -7,6 +7,7 @@ const AssessmentSection = ({ section, attempt, onSectionComplete }) => {
   if (section.type === "quiz") {
     return (
       <QuizRenderer
+        key={section.id || `quiz-${section.slug || "main"}`}
         section={section}
         attempt={attempt}
         onComplete={onSectionComplete}
@@ -17,6 +18,7 @@ const AssessmentSection = ({ section, attempt, onSectionComplete }) => {
   if (section.type === "game") {
     return (
       <GameRuntime
+        key={section.id || `game-${section.slug || section.gameId || "1"}`}
         section={section}
         attempt={attempt}
         onComplete={onSectionComplete}
