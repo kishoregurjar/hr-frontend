@@ -137,6 +137,17 @@ axiosClient.interceptors.response.use(
       message = "No account found with this email. Please register first or check your email.";
     }
 
+    if (
+      status === 502 ||
+      status === 503 ||
+      status === 504 ||
+      error?.code === "ERR_BAD_RESPONSE" ||
+      error?.code === "ERR_NETWORK" ||
+      (typeof message === "string" && message.includes("Request failed with status code 50"))
+    ) {
+      message = "Server is temporarily updating. Please try again in a few seconds.";
+    }
+
     // Skip refresh on public auth and candidate test endpoints
     const isAuthOrCandidateEndpoint =
       originalRequest?.url?.includes("/auth/login") ||
