@@ -1,3 +1,6 @@
+import axiosClient from "./axiosClient";
+import { getAttempts } from "./attempts";
+
 const results = [
   {
     id: "result-1",
@@ -203,16 +206,44 @@ export const getAllResults = async () => {
     console.warn("Live results fetch notice:", err?.message);
   }
 
+  // Fallback to getAttempts() from attempts.js if /attempts API returns empty
+  if (!Array.isArray(attemptsList) || attemptsList.length === 0) {
+    try {
+      const fallbackList = await getAttempts();
+      if (Array.isArray(fallbackList) && fallbackList.length > 0) {
+        attemptsList = fallbackList;
+      }
+    } catch (e) {
+      console.warn("getAttempts fallback notice:", e?.message);
+    }
+  }
+
+  // Fallback to hirequest_attempts_cache if still empty
+  if (!Array.isArray(attemptsList) || attemptsList.length === 0) {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("hirequest_attempts_cache");
+        if (raw) {
+          const cached = JSON.parse(raw);
+          if (Array.isArray(cached) && cached.length > 0) {
+            attemptsList = cached;
+          }
+        }
+      } catch {}
+    }
+  }
+
   if (Array.isArray(attemptsList) && attemptsList.length > 0) {
     return attemptsList.map((item, idx) => {
       const candidateName =
         item.candidateName ||
         (item.candidate ? `${item.candidate.firstName || ""} ${item.candidate.lastName || ""}`.trim() : "") ||
+        item.candidate?.name ||
         item.candidate?.email ||
         item.candidateEmail ||
         `Candidate ${idx + 1}`;
 
-      const email = item.candidateEmail || item.candidate?.email || item.email || "";
+      const email = item.candidateEmail || item.candidate?.email || item.email || "candidate@hirequest.com";
 
       const assessmentTitle =
         item.assessmentTitle ||
@@ -231,13 +262,13 @@ export const getAllResults = async () => {
       const isPass = item.result === "PASS" || item.result === "PASSED" || scoreNum >= 60;
       const statusLabel = isPass ? "QUALIFIED" : scoreNum > 0 ? "FAILED" : "IN_REVIEW";
 
-      const formattedDate = item.submittedAt
-        ? new Date(item.submittedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      const formattedDate = (item.submittedAt || item.completedAt || item.updatedAt)
+        ? new Date(item.submittedAt || item.completedAt || item.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })
         : "Today";
 
       return {
-        id: item.id || item._id || `res-${idx}`,
-        attemptId: item.id || item._id,
+        id: item.id || item._id || item.attemptId || `res-${idx}`,
+        attemptId: item.id || item._id || item.attemptId,
         assessmentId: item.assessmentId || item.assessment?.id,
         candidateName,
         email,
@@ -251,12 +282,12 @@ export const getAllResults = async () => {
           id: item.assessment?.id || item.assessmentId,
           title: assessmentTitle,
         },
-        score: Math.round(item.score || scoreNum),
+        score: Math.round(item.score ?? scoreNum),
         maxScore: item.maxScore || 100,
         percentage: scoreNum,
         status: statusLabel,
         rawStatus: String(item.status || "SUBMITTED").toUpperCase(),
-        timeSpent: item.timeTaken ? `${Math.round(item.timeTaken / 60)}m` : "24m 10s",
+        timeSpent: item.timeSpent || (item.timeTaken ? `${Math.round(item.timeTaken / 60)}m` : "24m 10s"),
         completedAt: formattedDate,
         integrityScore: item.integrityScore || 100,
         cognitiveTraits: item.cognitiveTraits || { problemSolving: Math.min(95, scoreNum + 10), memoryRecall: Math.max(70, scoreNum - 5), processingSpeed: Math.min(90, scoreNum + 5) },
