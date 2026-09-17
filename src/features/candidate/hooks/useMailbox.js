@@ -68,6 +68,15 @@ export const useSyncMailboxNow = () => {
       queryClient.invalidateQueries({ queryKey: MAILBOX_QUERY_KEY });
     },
     onError: (err) => {
+      const status = err?.response?.status;
+      if (status === 409) {
+        toast.info("Mailbox sync is already running in background. Refreshing candidate list...");
+        queryClient.invalidateQueries({ queryKey: CANDIDATE_QUERY_KEYS.all });
+        queryClient.invalidateQueries({ queryKey: ["candidates"] });
+        queryClient.invalidateQueries({ queryKey: ["dashboardOverview"] });
+        queryClient.invalidateQueries({ queryKey: MAILBOX_QUERY_KEY });
+        return;
+      }
       const msg = err?.response?.data?.message || err?.message || "Failed to sync mailbox.";
       toast.error(msg);
     },
