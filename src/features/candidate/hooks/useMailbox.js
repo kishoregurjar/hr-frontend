@@ -68,9 +68,15 @@ export const useSyncMailboxNow = () => {
       queryClient.invalidateQueries({ queryKey: MAILBOX_QUERY_KEY });
     },
     onError: (err) => {
-      const status = err?.response?.status;
-      if (status === 409) {
-        toast.info("Mailbox sync is already running in background. Refreshing candidate list...");
+      const status = err?.status || err?.response?.status;
+      const isAlreadyInProgress =
+        status === 409 ||
+        (typeof err?.message === "string" &&
+          (err.message.toLowerCase().includes("already in progress") ||
+            err.message.toLowerCase().includes("sync_in_progress")));
+
+      if (isAlreadyInProgress) {
+        toast.info("Mailbox sync is running in background. Refreshing candidate list...");
         queryClient.invalidateQueries({ queryKey: CANDIDATE_QUERY_KEYS.all });
         queryClient.invalidateQueries({ queryKey: ["candidates"] });
         queryClient.invalidateQueries({ queryKey: ["dashboardOverview"] });
