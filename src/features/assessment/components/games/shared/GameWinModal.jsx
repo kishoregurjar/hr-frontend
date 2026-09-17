@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Trophy, Clock, CheckCircle2 } from "lucide-react";
+import { Trophy, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function GameWinModal({
@@ -16,42 +16,46 @@ export default function GameWinModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in-0 duration-200">
-      <div className="w-full max-w-sm rounded-3xl border border-amber-500/20 bg-card p-7 text-center shadow-2xl animate-in zoom-in-95 duration-300">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-tr from-amber-500 to-yellow-400 text-3xl shadow-lg shadow-amber-500/25">
-          🏆
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in-0 duration-200">
+      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 sm:p-7 text-center shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="mx-auto mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 shadow-sm">
+          <Trophy className="h-7 w-7 text-blue-600" />
         </div>
 
-        <h2 className="text-2xl font-black tracking-tight text-foreground">
+        <h2 className="text-xl font-bold tracking-tight text-slate-900">
           Challenge Completed!
         </h2>
 
         {message ? (
-          <p className="mt-2 text-sm text-muted-foreground font-medium">{message}</p>
+          <p className="mt-1.5 text-xs text-slate-500 font-medium leading-relaxed max-w-xs mx-auto">
+            {message}
+          </p>
         ) : (
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1.5 text-xs text-slate-500 font-medium leading-relaxed">
             You successfully solved the assessment puzzle!
           </p>
         )}
 
         {(score !== undefined || time !== undefined) && (
-          <div className="my-6 flex justify-center gap-3">
+          <div className="my-5 flex justify-center gap-3">
             {score !== undefined && (
-              <div className="flex flex-col items-center justify-center rounded-2xl bg-amber-500/10 border border-amber-500/20 px-5 py-2.5 min-w-24">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+              <div className="flex flex-col items-center justify-center rounded-xl bg-slate-50 border border-slate-200/80 px-4 py-2.5 min-w-24">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                   Score
                 </span>
-                <span className="text-lg font-black text-amber-600 dark:text-amber-400">
+                <span className="text-base font-extrabold text-blue-600">
                   {score}%
                 </span>
               </div>
             )}
             {time !== undefined && (
-              <div className="flex flex-col items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 px-5 py-2.5 min-w-24">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+              <div className="flex flex-col items-center justify-center rounded-xl bg-slate-50 border border-slate-200/80 px-4 py-2.5 min-w-24">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                   Time
                 </span>
-                <span className="text-lg font-black text-primary">{time}</span>
+                <span className="text-base font-extrabold text-slate-800">
+                  {time}
+                </span>
               </div>
             )}
           </div>
@@ -59,21 +63,23 @@ export default function GameWinModal({
 
         {children}
 
-        <div className="mt-4 flex flex-col gap-2">
+        <div className="mt-3 flex flex-col gap-2">
           {onContinue && (
             <Button
               onClick={onContinue}
-              className="w-full font-bold uppercase tracking-wider py-6 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-md shadow-amber-500/20"
+              className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs uppercase tracking-wider shadow-md shadow-blue-500/20 transition-all active:scale-[0.98] gap-1.5"
             >
-              Continue Next Section
+              <span>Continue Next Section</span>
+              <ArrowRight className="h-4 w-4" />
             </Button>
           )}
         </div>
 
         {metaText && (
-          <p className="mt-4 text-xs text-muted-foreground">{metaText}</p>
+          <p className="mt-3 text-xs text-slate-400 font-medium">{metaText}</p>
         )}
       </div>
     </div>
   );
 }
+

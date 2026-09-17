@@ -126,6 +126,7 @@ const SubmitAssessmentDialog = ({
             type="button"
             disabled={isSubmitting}
             onClick={onConfirm}
+            className="rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold shadow-md shadow-blue-500/20 transition-all active:scale-[0.98]"
           >
             {isSubmitting
               ? "Submitting..."

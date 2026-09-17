@@ -30,7 +30,7 @@ const SubmitAssessmentDialog = ({
         </AlertDialogHeader>
 
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isSubmitting}>
+          <AlertDialogCancel disabled={isSubmitting} className="rounded-xl border-slate-200 text-slate-700 font-medium hover:bg-slate-100">
             Cancel
           </AlertDialogCancel>
 
@@ -40,6 +40,7 @@ const SubmitAssessmentDialog = ({
               onConfirm();
             }}
             disabled={isSubmitting}
+            className="rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold shadow-md shadow-blue-500/20 transition-all active:scale-[0.98]"
           >
             {isSubmitting ? (
               <>
