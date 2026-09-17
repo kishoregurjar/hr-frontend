@@ -14,20 +14,34 @@ import {
 } from "@/components/ui/table";
 
 const getCandidateName = (candidate) => {
+  let name = "";
   if (
     typeof candidate?.name === "string" &&
     candidate.name.trim() &&
     candidate.name !== "[object Object]"
   ) {
-    return candidate.name;
+    name = candidate.name.trim();
+  } else if (candidate?.firstName || candidate?.lastName) {
+    const fName = (candidate.firstName || "").trim();
+    const lName = (candidate.lastName || "").trim();
+    if (lName.toLowerCase() === "user") {
+      name = fName;
+    } else {
+      name = `${fName} ${lName}`.trim();
+    }
+  } else if (typeof candidate?.name === "object" && candidate.name) {
+    name = candidate.name.name || candidate.name.fullName || "";
   }
-  if (candidate?.firstName || candidate?.lastName) {
-    return `${candidate.firstName || ""} ${candidate.lastName || ""}`.trim();
+
+  if (!name && candidate?.email) {
+    name = candidate.email.split("@")[0];
   }
-  if (typeof candidate?.name === "object" && candidate.name) {
-    return candidate.name.name || candidate.name.fullName || "Candidate";
+
+  if (name.endsWith(" User") && name.length > 5) {
+    name = name.replace(/\s+User$/i, "");
   }
-  return candidate?.email ? candidate.email.split("@")[0] : "Candidate";
+
+  return name || "Candidate";
 };
 
 const CandidateTable = ({

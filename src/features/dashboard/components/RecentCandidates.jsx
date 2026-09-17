@@ -99,11 +99,15 @@ const RecentCandidates = () => {
         ) : (
           <div className="divide-y">
             {candidatesList.map((candidate) => {
-              const displayName =
+              const lName = (candidate.lastName || "").toLowerCase() === "user" ? "" : (candidate.lastName || "");
+              let displayName =
                 candidate.name ||
                 (candidate.firstName
-                  ? `${candidate.firstName} ${candidate.lastName || ""}`.trim()
+                  ? `${candidate.firstName} ${lName}`.trim()
                   : candidate.email);
+              if (displayName && displayName.endsWith(" User") && displayName.length > 5) {
+                displayName = displayName.replace(/\s+User$/i, "");
+              }
               const subtitle = candidate.assessment || candidate.email || "Candidate";
               const candidateStatus = candidate.status || "New";
 
