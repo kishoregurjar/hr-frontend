@@ -917,12 +917,12 @@ const AssessmentPreStart = ({
                 {isStarting ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Entering Assessment Room...</span>
+                    <span>Starting Test...</span>
                   </>
                 ) : (
                   <>
                     <Rocket className="h-5 w-5" />
-                    <span>🚀 Launch Assessment (Fullscreen)</span>
+                    <span>Start Test</span>
                   </>
                 )}
               </Button>

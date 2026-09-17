@@ -95,7 +95,7 @@ export const getAssignmentByToken = async (rawToken) => {
       inv.games ||
       [];
 
-    let rawQuestions =
+    const rawQuestions =
       liveAssessment.questions ||
       liveAssessment.AssessmentQuestion ||
       liveAssessment.AssessmentQuestions ||
@@ -104,17 +104,6 @@ export const getAssignmentByToken = async (rawToken) => {
       inv.selectedQuestionIds ||
       inv.questions ||
       [];
-
-    let finalQuestions = Array.isArray(rawQuestions) ? rawQuestions : [];
-    const hasShallowQuestions = finalQuestions.length > 0 && finalQuestions.every(q => !q.options || q.options.length === 0);
-    if ((finalQuestions.length === 0 || hasShallowQuestions) && assessmentId) {
-      try {
-        const fullAss = await getAssessmentById(assessmentId);
-        if (fullAss?.questions?.length > 0) {
-          finalQuestions = fullAss.questions;
-        }
-      } catch {}
-    }
 
     const hydratedAssessment = {
       ...liveAssessment,
@@ -126,9 +115,9 @@ export const getAssignmentByToken = async (rawToken) => {
       companyName,
       companyLogo,
       games: Array.isArray(rawGames) ? rawGames : [],
-      questions: finalQuestions,
+      questions: Array.isArray(rawQuestions) ? rawQuestions : [],
       selectedGameIds: Array.isArray(rawGames) ? rawGames : [],
-      selectedQuestionIds: finalQuestions.map(q => q.id || q.questionId || q),
+      selectedQuestionIds: Array.isArray(rawQuestions) ? rawQuestions : [],
     };
 
     return {
