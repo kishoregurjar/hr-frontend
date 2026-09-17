@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   Gamepad2,
   CheckCircle2,
@@ -11,7 +12,12 @@ import {
 const GameStats = ({ games = [] }) => {
   const total = games.length;
   const active = games.filter((g) => g.status === "Active").length;
-  const draft = games.filter((g) => g.status === "Draft").length;
+  const draft = games.filter((g) => g.status === "Draft" || g.status === "Inactive").length;
+
+  const uniqueSkillsCount = useMemo(() => {
+    const skills = new Set(games.map((g) => g.skill || g.category).filter(Boolean));
+    return skills.size || total;
+  }, [games, total]);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-sans">
@@ -72,7 +78,7 @@ const GameStats = ({ games = [] }) => {
             {draft}
           </p>
           <p className="text-xs text-purple-600 font-semibold flex items-center gap-1 mt-1">
-            Adaptive calibration
+            Customizable calibration
           </p>
         </div>
       </div>
@@ -81,7 +87,7 @@ const GameStats = ({ games = [] }) => {
       <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs space-y-3 hover:shadow-md transition-shadow">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-            Neuro Competencies
+            Cognitive Competencies
           </span>
           <div className="h-9 w-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
             <Brain className="h-4 w-4" />
@@ -89,10 +95,10 @@ const GameStats = ({ games = [] }) => {
         </div>
         <div>
           <p className="text-3xl font-black text-slate-900 tracking-tight">
-            5 Traits
+            {uniqueSkillsCount} {uniqueSkillsCount === 1 ? "Trait" : "Traits"}
           </p>
           <p className="text-xs text-amber-700 font-semibold flex items-center gap-1 mt-1">
-            PRD Section 15 Calibrated
+            {active} Active Cognitive Modules
           </p>
         </div>
       </div>

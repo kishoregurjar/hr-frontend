@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 
 import { GameStats, GameCard, GamePreviewModal, GameConfigModal } from "../components";
 import { useGamesQuery } from "../hooks";
+import { useAssessmentsQuery } from "@/features/assessment/hooks";
 import { getCompanyGameConfig } from "../utils/gameConfigStore";
 
 const GameList = () => {
@@ -26,6 +27,7 @@ const GameList = () => {
   const userName = String(rawName).replace(/\s+user$/i, "").trim() || "HR Manager";
 
   const { data: rawGames = [], isLoading, isError, refetch, isFetching } = useGamesQuery();
+  const { data: assessments = [] } = useAssessmentsQuery();
 
   const [previewGame, setPreviewGame] = useState(null);
   const [configGame, setConfigGame] = useState(null);
@@ -35,6 +37,28 @@ const GameList = () => {
   const [difficulty, setDifficulty] = useState("all");
   const [status, setStatus] = useState("all");
   const [sortBy, setSortBy] = useState("popular");
+
+  // Dynamic live game usage map calculated from company assessments
+  const gameUsageMap = useMemo(() => {
+    const map = {};
+    if (Array.isArray(assessments)) {
+      assessments.forEach((assessment) => {
+        const gameList =
+          assessment.selectedGameIds ||
+          assessment.games ||
+          assessment.AssessmentGames ||
+          assessment.assessmentGames ||
+          [];
+        gameList.forEach((g) => {
+          const gameKey = String(
+            typeof g === "object" ? g.slug || g.gameId || g.id || g.code || g.title : g
+          ).toLowerCase();
+          map[gameKey] = (map[gameKey] || 0) + 1;
+        });
+      });
+    }
+    return map;
+  }, [assessments]);
 
   // Normalize games from backend API + merge company calibration
   const gamesList = useMemo(() => {
@@ -53,7 +77,13 @@ const GameList = () => {
       const isActive = savedConfig?.status === "Active" || (game.isActive !== undefined ? Boolean(game.isActive) : game.status === "ACTIVE");
       const statusText = isActive ? "Active" : "Inactive";
       const skill = game.skill || "Logical Problem Solving";
-      const usedIn = game.usedIn || game.assessmentsUsedIn || 0;
+
+      const slugKey = String(slug || id).toLowerCase();
+      const titleKey = String(title).toLowerCase();
+      const usedIn =
+        gameUsageMap[slugKey] ||
+        gameUsageMap[titleKey] ||
+        (game.usedIn !== undefined ? game.usedIn : game.assessmentsUsedIn || 0);
 
       return {
         ...game,
@@ -71,7 +101,7 @@ const GameList = () => {
         usedIn,
       };
     });
-  }, [rawGames, configVersion]);
+  }, [rawGames, gameUsageMap, configVersion]);
 
   const filteredGames = useMemo(() => {
     return gamesList
