@@ -35,13 +35,11 @@ axiosClient.interceptors.request.use(
       // Specific candidate assessment test-taking endpoints (passwordless/OTP candidate session)
       const url = config.url || "";
       const isCandidateEndpoint =
-        url.includes("/attempts/candidate/send-otp") ||
-        url.includes("/attempts/candidate/verify-otp") ||
-        url.includes("/attempts/start-by-token") ||
-        url.includes("/attempts/save-answer") ||
-        url.includes("/attempts/submit") ||
-        url.includes("/attempts/candidate-session") ||
-        url.includes("/take-test");
+        url.includes("/attempts") ||
+        url.includes("/invitations") ||
+        url.includes("/take-test") ||
+        url.includes("/assessment") ||
+        url.includes("/game");
 
       const candidateToken =
         sessionStorage.getItem("candidateSessionToken") ||
@@ -161,11 +159,11 @@ axiosClient.interceptors.response.use(
       originalRequest?.url?.includes("/auth/owner/activate") ||
       originalRequest?.url?.includes("/companies/invitations/accept") ||
       originalRequest?.url?.includes("/auth/accept-invitation") ||
-      originalRequest?.url?.includes("/invitations/") ||
-      originalRequest?.url?.includes("/attempts/verify") ||
-      originalRequest?.url?.includes("/attempts/invitations/") ||
-      originalRequest?.url?.includes("/attempts/candidate") ||
-      originalRequest?.url?.includes("/attempts/start-by-token");
+      originalRequest?.url?.includes("/invitations") ||
+      originalRequest?.url?.includes("/attempts") ||
+      originalRequest?.url?.includes("/take-test") ||
+      originalRequest?.url?.includes("/assessment") ||
+      originalRequest?.url?.includes("/game");
 
     const isTokenExpired = status === 401 && originalRequest && !originalRequest._retry && !isAuthOrCandidateEndpoint;
 
