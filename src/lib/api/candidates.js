@@ -117,12 +117,20 @@ export const getCandidates = async (params = {}) => {
   // Map backend database records
   const mappedBackend = backendItems.map((att, idx) => {
     const user = att.candidate || att.user || {};
-    const fullName =
+    let candLastName = (user.lastName || att.lastName || "").trim();
+    if (candLastName.toLowerCase() === "user") candLastName = "";
+    const candFirstName = (user.firstName || att.firstName || "").trim();
+
+    let fullName =
       att.name ||
       att.candidateName ||
       user.name ||
-      `${user.firstName || att.firstName || ""} ${user.lastName || att.lastName || ""}`.trim() ||
+      `${candFirstName} ${candLastName}`.trim() ||
       (att.email ? att.email.split("@")[0] : `Candidate ${idx + 1}`);
+
+    if (fullName.endsWith(" User") && fullName.length > 5) {
+      fullName = fullName.replace(/\s+User$/i, "");
+    }
     const email = att.email || att.candidateEmail || user.email || `candidate${idx + 1}@example.com`;
     
     return {
