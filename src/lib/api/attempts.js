@@ -135,8 +135,50 @@ export const getAttemptById = async (attemptId) => {
     (a) => String(a.id) === String(attemptId) || String(a._id) === String(attemptId)
   );
 
-  // 1. If candidate session is active or attemptId === "current", fetch candidate current attempt first
-  if (candidateToken || attemptId === "current" || !attemptId) {
+  // If cached item has valid questions or games or assessment, return it immediately
+  if (matchInCache && (matchInCache.questions?.length > 0 || matchInCache.games?.length > 0 || matchInCache.assessment?.questions?.length > 0)) {
+    return matchInCache;
+  }
+
+  // 1. Direct candidate attempt retrieval endpoint (No HR auth required!)
+  if (attemptId && attemptId !== "current") {
+    try {
+      const res = await axiosClient.get(`/attempts/candidate/${attemptId}`);
+      const liveData = res?.data?.data || res?.data || res;
+      if (liveData && (liveData.id || liveData.assessmentId)) {
+        const liveQuestions =
+          (Array.isArray(liveData.questions) && liveData.questions.length > 0 ? liveData.questions : null) ||
+          (Array.isArray(liveData.assessment?.questions) && liveData.assessment.questions.length > 0 ? liveData.assessment.questions : null) ||
+          [];
+        const liveGames =
+          (Array.isArray(liveData.games) && liveData.games.length > 0 ? liveData.games : null) ||
+          (Array.isArray(liveData.assessment?.games) && liveData.assessment.games.length > 0 ? liveData.assessment.games : null) ||
+          [];
+
+        const formatted = {
+          ...liveData,
+          id: liveData.id || attemptId,
+          assessment: liveData.assessment || {},
+          questions: liveQuestions,
+          games: liveGames,
+          status: liveData.status || "In Progress",
+          durationMinutes: liveData.durationMinutes || liveData.assessment?.durationMinutes || 60,
+          responses: liveData.responses || {},
+          gameResults: liveData.gameResults || {},
+        };
+        const idx = attempts.findIndex((a) => String(a.id) === String(formatted.id));
+        if (idx >= 0) attempts[idx] = formatted;
+        else attempts.unshift(formatted);
+        saveCachedAttempts(attempts);
+        return formatted;
+      }
+    } catch (e) {
+      console.warn("Direct candidate attempt retrieval notice:", e?.message);
+    }
+  }
+
+  // 2. If candidate session is active or attemptId === "current", fetch candidate current attempt
+  if (candidateToken || attemptId === "current" || !attemptId || invitationToken) {
     try {
       const current = await getCurrentAttempt(invitationToken, candidateToken);
       if (current && (current.id || current.assessmentId)) {
@@ -160,11 +202,6 @@ export const getAttemptById = async (attemptId) => {
     }
   }
 
-  // 2. If match found in local cache with questions/games/assessment, return it immediately
-  if (matchInCache && (matchInCache.questions?.length > 0 || matchInCache.games?.length > 0 || matchInCache.assessment)) {
-    return matchInCache;
-  }
-
   // 3. Try HR Admin endpoint GET /attempts/:id
   try {
     const res = await axiosClient.get(`/attempts/${attemptId}`);
@@ -184,6 +221,7 @@ export const getAttemptById = async (attemptId) => {
         questions: (liveAttempt.questions && liveAttempt.questions.length > 0)
           ? liveAttempt.questions
           : (assessmentData?.questions || assessmentData?.AssessmentQuestion || []),
+        games: liveAttempt.games || assessmentData?.games || [],
         id: liveAttempt.id || attemptId,
         status: liveAttempt.status || "In Progress",
         durationMinutes: liveAttempt.durationMinutes || assessmentData?.durationMinutes || 60,
@@ -200,38 +238,34 @@ export const getAttemptById = async (attemptId) => {
     console.warn("Live attempt fetch notice:", err?.message);
   }
 
+  // 4. Fallback Session Storage Recovery (Preserves hydrated questions & games from invitation)
+  if (typeof window !== "undefined") {
+    try {
+      const storedAssRaw = sessionStorage.getItem("current_assessment_data") || localStorage.getItem("current_assessment_data");
+      if (storedAssRaw) {
+        const storedAss = JSON.parse(storedAssRaw);
+        if (storedAss && (storedAss.questions?.length > 0 || storedAss.games?.length > 0)) {
+          return {
+            id: attemptId,
+            assessmentId: storedAss.id,
+            assessment: storedAss,
+            questions: storedAss.questions || [],
+            games: storedAss.games || storedAss.selectedGameIds || [],
+            status: "In Progress",
+            durationMinutes: storedAss.durationMinutes || 60,
+            responses: {},
+            gameResults: {},
+          };
+        }
+      }
+    } catch {}
+  }
+
   if (matchInCache) {
     return matchInCache;
   }
 
-  // 4. Graceful Auto-Recovery of active attempt session
-  const defaultAssessmentId = "cmtjpcxzw0001vd0glu1856";
-  const recoveredAttempt = {
-    id: attemptId,
-    assignmentId: `inv-${Date.now()}`,
-    candidateId: "cand-active-01",
-    assessmentId: defaultAssessmentId,
-    status: "In Progress",
-    durationMinutes: 60,
-    startedAt: new Date().toISOString(),
-    submittedAt: null,
-    currentSection: 0,
-    currentItemIndex: 0,
-    responses: {},
-    gameResults: {},
-    score: null,
-    lastSavedAt: new Date().toISOString(),
-    integrity: {
-      tabSwitchCount: 0,
-      windowBlurCount: 0,
-      fullscreenExitCount: 0,
-      events: [],
-    },
-  };
-
-  attempts = [recoveredAttempt, ...attempts.filter((a) => a.id !== attemptId)];
-  saveCachedAttempts(attempts);
-  return recoveredAttempt;
+  return null;
 };
 
 export const getAttemptByAssignmentId = async (assignmentId) => {
