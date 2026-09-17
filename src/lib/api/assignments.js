@@ -28,21 +28,29 @@ export const getAssignmentByToken = async (rawToken) => {
 
   let inv = null;
 
-  for (const t of tokenVariants) {
-    // 1. Primary candidate verify endpoint: GET /attempts/verify/:token
-    try {
-      const res = await axiosClient.get(`/attempts/verify/${t}`);
-      inv = res?.data?.data || res?.data || res;
-      if (inv && (inv.id || inv.assessmentId || inv.token)) break;
-    } catch {}
+  // 1. Fast path: Direct verify call with exact raw token string
+  try {
+    const res = await axiosClient.get(`/attempts/verify/${encodeURIComponent(rawStr)}`);
+    inv = res?.data?.data || res?.data || res;
+  } catch {}
 
-    // 2. Fallback POST /attempts/verify with { token }
-    if (!inv) {
+  // 2. Secondary fallback loop for token variants if direct verify missed
+  if (!inv || (!inv.id && !inv.assessmentId && !inv.token)) {
+    for (const t of tokenVariants) {
+      if (t === rawStr) continue;
       try {
-        const res = await axiosClient.post("/attempts/verify", { token: t });
+        const res = await axiosClient.get(`/attempts/verify/${encodeURIComponent(t)}`);
         inv = res?.data?.data || res?.data || res;
         if (inv && (inv.id || inv.assessmentId || inv.token)) break;
       } catch {}
+
+      if (!inv) {
+        try {
+          const res = await axiosClient.post("/attempts/verify", { token: t });
+          inv = res?.data?.data || res?.data || res;
+          if (inv && (inv.id || inv.assessmentId || inv.token)) break;
+        } catch {}
+      }
     }
   }
 

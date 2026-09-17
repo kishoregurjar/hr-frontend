@@ -360,6 +360,28 @@ export default function MahjongGame({ config = {}, onComplete }) {
   const [showHelp, setShowHelp] = useState(false);
   const [isShuffleHighlighted, setIsShuffleHighlighted] = useState(false);
 
+  const handleContinue = () => {
+    const finalResult = {
+      rawScore: 100,
+      score: 100,
+      normalizedScore: 100,
+      accuracy: 100,
+      moves,
+      timeTaken: formatted,
+      timeSeconds: time || 0,
+      timeSpent: time || 0,
+      finalScore: score,
+      finalState: { cleared: true, score },
+    };
+    if (typeof onComplete === "function") {
+      onComplete(finalResult);
+    } else if (typeof onNext === "function") {
+      onNext(finalResult);
+    } else if (typeof onFinish === "function") {
+      onFinish(finalResult);
+    }
+  };
+
   const boardRef = useRef(null);
   const lastMatchTimeRef = useRef(0);
   const solvedRef = useRef(false);
@@ -935,18 +957,6 @@ export default function MahjongGame({ config = {}, onComplete }) {
     playSynthSound("shuffle");
   };
 
-  const handleContinue = () => {
-    const rawScore = 100;
-    onComplete?.({
-      rawScore,
-      score: rawScore,
-      normalizedScore: rawScore,
-      accuracy: 100,
-      timeSpent: time,
-      finalScore: score,
-      finalState: { cleared: true, score },
-    });
-  };
 
   const isSelectedTile = (r, c) => selected?.row === r && selected?.col === c;
   const isHintedTile = (r, c) => hintPair?.some((p) => p.row === r && p.col === c);
