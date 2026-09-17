@@ -8,8 +8,9 @@ const useCandidatesQuery = (options = {}) => {
   return useQuery({
     queryKey: CANDIDATE_QUERY_KEYS.lists(),
     queryFn: () => candidateService.getAll(),
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
     ...options,
   });
 };
