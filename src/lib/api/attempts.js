@@ -202,40 +202,48 @@ export const getAttemptById = async (attemptId) => {
     }
   }
 
-  // 3. Try HR Admin endpoint GET /attempts/:id
-  try {
-    const res = await axiosClient.get(`/attempts/${attemptId}`);
-    const liveAttempt = res?.data?.data || res?.data || res;
-    if (liveAttempt && (liveAttempt.id || liveAttempt.assessmentId)) {
-      let assessmentData = liveAttempt.assessment;
-      const targetAssessmentId = liveAttempt.assessmentId || liveAttempt.assessment?.id;
-      if ((!assessmentData || !assessmentData.questions || assessmentData.questions.length === 0) && targetAssessmentId) {
-        try {
-          assessmentData = await getAssessmentById(targetAssessmentId);
-        } catch {}
-      }
+  // 3. Try HR Admin endpoint GET /attempts/:id (Only for HR Admin Dashboard users, never on Candidate Test pages!)
+  const isCandidatePage =
+    typeof window !== "undefined" &&
+    (window.location.pathname.includes("/take-test") ||
+      window.location.pathname.includes("/assessment/attempt") ||
+      window.location.pathname.includes("/test/"));
 
-      const formatted = {
-        ...liveAttempt,
-        assessment: assessmentData || liveAttempt.assessment,
-        questions: (liveAttempt.questions && liveAttempt.questions.length > 0)
-          ? liveAttempt.questions
-          : (assessmentData?.questions || assessmentData?.AssessmentQuestion || []),
-        games: liveAttempt.games || assessmentData?.games || [],
-        id: liveAttempt.id || attemptId,
-        status: liveAttempt.status || "In Progress",
-        durationMinutes: liveAttempt.durationMinutes || assessmentData?.durationMinutes || 60,
-        responses: liveAttempt.responses || {},
-        gameResults: liveAttempt.gameResults || {},
-      };
-      const idx = attempts.findIndex((a) => String(a.id) === String(formatted.id));
-      if (idx >= 0) attempts[idx] = formatted;
-      else attempts.unshift(formatted);
-      saveCachedAttempts(attempts);
-      return formatted;
+  if (!isCandidatePage && !candidateToken) {
+    try {
+      const res = await axiosClient.get(`/attempts/${attemptId}`);
+      const liveAttempt = res?.data?.data || res?.data || res;
+      if (liveAttempt && (liveAttempt.id || liveAttempt.assessmentId)) {
+        let assessmentData = liveAttempt.assessment;
+        const targetAssessmentId = liveAttempt.assessmentId || liveAttempt.assessment?.id;
+        if ((!assessmentData || !assessmentData.questions || assessmentData.questions.length === 0) && targetAssessmentId) {
+          try {
+            assessmentData = await getAssessmentById(targetAssessmentId);
+          } catch {}
+        }
+
+        const formatted = {
+          ...liveAttempt,
+          assessment: assessmentData || liveAttempt.assessment,
+          questions: (liveAttempt.questions && liveAttempt.questions.length > 0)
+            ? liveAttempt.questions
+            : (assessmentData?.questions || assessmentData?.AssessmentQuestion || []),
+          games: liveAttempt.games || assessmentData?.games || [],
+          id: liveAttempt.id || attemptId,
+          status: liveAttempt.status || "In Progress",
+          durationMinutes: liveAttempt.durationMinutes || assessmentData?.durationMinutes || 60,
+          responses: liveAttempt.responses || {},
+          gameResults: liveAttempt.gameResults || {},
+        };
+        const idx = attempts.findIndex((a) => String(a.id) === String(formatted.id));
+        if (idx >= 0) attempts[idx] = formatted;
+        else attempts.unshift(formatted);
+        saveCachedAttempts(attempts);
+        return formatted;
+      }
+    } catch (err) {
+      console.warn("Live attempt fetch notice:", err?.message);
     }
-  } catch (err) {
-    console.warn("Live attempt fetch notice:", err?.message);
   }
 
   // 4. Fallback Session Storage Recovery (Preserves hydrated questions & games from invitation)
