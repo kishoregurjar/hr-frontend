@@ -120,6 +120,13 @@ export const getAssignmentByToken = async (rawToken) => {
       selectedQuestionIds: Array.isArray(rawQuestions) ? rawQuestions : [],
     };
 
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem("current_assessment_data", JSON.stringify(hydratedAssessment));
+        sessionStorage.setItem("invitationToken", inv.token || rawToken);
+      } catch {}
+    }
+
     return {
       id: inv.id || `inv-${Date.now()}`,
       assignmentId: inv.id || `inv-${Date.now()}`,

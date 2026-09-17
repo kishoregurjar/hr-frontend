@@ -86,7 +86,17 @@ const AssessmentAttempt = ({ attemptId }) => {
   }
 
   // ── 3. Direct Assessment Resolution from Attempt Context ──
-  const assessmentObj = attempt?.assessment || {};
+  let fallbackSessionAssessment = null;
+  if (typeof window !== "undefined") {
+    try {
+      const stored = sessionStorage.getItem("current_assessment_data");
+      if (stored) fallbackSessionAssessment = JSON.parse(stored);
+    } catch {}
+  }
+
+  const assessmentObj = (attempt?.assessment && Object.keys(attempt.assessment).length > 0)
+    ? attempt.assessment
+    : fallbackSessionAssessment || {};
 
   const rawCandidateQuestions =
     (attempt?.questions?.length ? attempt.questions : null) ||
@@ -95,6 +105,7 @@ const AssessmentAttempt = ({ attemptId }) => {
     (assessmentObj?.AssessmentQuestions?.length ? assessmentObj.AssessmentQuestions : null) ||
     (assessmentObj?.assessmentQuestion?.length ? assessmentObj.assessmentQuestion : null) ||
     (assessmentObj?.assessmentQuestions?.length ? assessmentObj.assessmentQuestions : null) ||
+    (fallbackSessionAssessment?.questions?.length ? fallbackSessionAssessment.questions : null) ||
     [];
 
   const hydratedQuestions = rawCandidateQuestions.map((qItem) => {
@@ -141,14 +152,23 @@ const AssessmentAttempt = ({ attemptId }) => {
     };
   });
 
+  const rawCandidateGames =
+    (assessmentObj?.selectedGameIds?.length ? assessmentObj.selectedGameIds : null) ||
+    (assessmentObj?.AssessmentGames?.length ? assessmentObj.AssessmentGames : null) ||
+    (assessmentObj?.games?.length ? assessmentObj.games : null) ||
+    (attempt?.games?.length ? attempt.games : null) ||
+    (fallbackSessionAssessment?.games?.length ? fallbackSessionAssessment.games : null) ||
+    (fallbackSessionAssessment?.selectedGameIds?.length ? fallbackSessionAssessment.selectedGameIds : null) ||
+    [];
+
   const effectiveAssessment = {
-    id: assessmentObj?.id || attempt?.assessmentId,
-    title: assessmentObj?.title || attempt?.assessmentTitle || attempt?.assessment?.title || "Candidate Assessment",
-    description: assessmentObj?.description || attempt?.assessmentDescription || attempt?.assessment?.description || "Assessment session in progress.",
-    durationMinutes: assessmentObj?.durationMinutes || attempt?.durationMinutes || 60,
-    passingScore: assessmentObj?.passingScore || attempt?.passingScore || 70,
+    id: assessmentObj?.id || attempt?.assessmentId || fallbackSessionAssessment?.id,
+    title: assessmentObj?.title || attempt?.assessmentTitle || attempt?.assessment?.title || fallbackSessionAssessment?.title || "Candidate Assessment",
+    description: assessmentObj?.description || attempt?.assessmentDescription || attempt?.assessment?.description || fallbackSessionAssessment?.description || "Assessment session in progress.",
+    durationMinutes: assessmentObj?.durationMinutes || attempt?.durationMinutes || fallbackSessionAssessment?.durationMinutes || 60,
+    passingScore: assessmentObj?.passingScore || attempt?.passingScore || fallbackSessionAssessment?.passingScore || 70,
     questions: hydratedQuestions,
-    games: assessmentObj?.selectedGameIds || assessmentObj?.AssessmentGames || assessmentObj?.games || attempt?.games || [],
+    games: rawCandidateGames,
   };
 
   // ── 4. Completed State ──────────────────────────────────────
