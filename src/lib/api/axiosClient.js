@@ -143,7 +143,10 @@ axiosClient.interceptors.response.use(
       status === 504 ||
       error?.code === "ERR_BAD_RESPONSE" ||
       error?.code === "ERR_NETWORK" ||
-      (typeof message === "string" && message.includes("Request failed with status code 50"))
+      (typeof message === "string" &&
+        (message.includes("Request failed with status code 502") ||
+          message.includes("Request failed with status code 503") ||
+          message.includes("Request failed with status code 504")))
     ) {
       message = "Server is temporarily updating. Please try again in a few seconds.";
     }
