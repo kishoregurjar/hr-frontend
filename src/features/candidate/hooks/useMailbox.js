@@ -20,6 +20,7 @@ export const useMailboxStatus = () => {
     queryKey: MAILBOX_QUERY_KEY,
     queryFn: getMailboxStatus,
     staleTime: 10000,
+    retry: 2,
     refetchOnWindowFocus: true,
   });
 };
