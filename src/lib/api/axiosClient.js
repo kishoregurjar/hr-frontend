@@ -164,19 +164,22 @@ axiosClient.interceptors.response.use(
     }
 
     // Skip refresh on public auth and candidate test endpoints
+    const currentPath = typeof window !== "undefined" ? window.location.pathname || "" : "";
+    const isCandidatePage =
+      currentPath.includes("/take-test") ||
+      currentPath.includes("/assessment/attempt") ||
+      currentPath.includes("/test/");
+
     const isAuthOrCandidateEndpoint =
-      originalRequest?.url?.includes("/auth/login") ||
-      originalRequest?.url?.includes("/auth/register") ||
-      originalRequest?.url?.includes("/auth/refresh-token") ||
-      originalRequest?.url?.includes("/auth/forgot-password") ||
-      originalRequest?.url?.includes("/auth/reset-password") ||
-      originalRequest?.url?.includes("/auth/owner/activate") ||
+      isCandidatePage ||
+      originalRequest?.url?.includes("/auth/") ||
       originalRequest?.url?.includes("/companies/invitations/accept") ||
-      originalRequest?.url?.includes("/auth/accept-invitation") ||
       originalRequest?.url?.includes("/invitations/verify") ||
       originalRequest?.url?.includes("/attempts/start-by-token") ||
       originalRequest?.url?.includes("/attempts/save-answer") ||
       originalRequest?.url?.includes("/attempts/submit") ||
+      originalRequest?.url?.includes("/attempts/verify") ||
+      originalRequest?.url?.includes("/attempts/candidate/") ||
       originalRequest?.url?.includes("/take-test");
 
     const isTokenExpired = status === 401 && originalRequest && !originalRequest._retry && !isAuthOrCandidateEndpoint;
