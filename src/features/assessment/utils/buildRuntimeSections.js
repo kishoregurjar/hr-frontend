@@ -36,25 +36,26 @@ const GAME_CATALOG_MAP = gamesCatalog.reduce((acc, g) => {
 }, {});
 
 const extractTextFromOption = (opt) => {
-  if (!opt) return "";
+  if (opt === null || opt === undefined) return "";
   if (typeof opt === "string") return opt.trim();
+  if (typeof opt === "number" || typeof opt === "boolean") return String(opt);
+
   const directText =
-    opt.optionText ||
-    opt.text ||
-    opt.option_text ||
-    opt.content ||
-    opt.value ||
-    opt.name;
+    opt.optionText ??
+    opt.text ??
+    opt.option_text ??
+    opt.content ??
+    opt.value ??
+    opt.name ??
+    opt.label ??
+    opt.title;
 
-  if (directText && typeof directText === "string" && directText.trim().length > 0) {
-    return directText.trim();
+  if (directText !== undefined && directText !== null) {
+    const trimmed = String(directText).trim();
+    if (trimmed.length > 0) return trimmed;
   }
 
-  if (opt.label && !/^Option\s+[A-Z]$/i.test(String(opt.label).trim())) {
-    return String(opt.label).trim();
-  }
-
-  return String(opt.label || opt.title || "").trim();
+  return "";
 };
 
 /**
@@ -81,6 +82,7 @@ const normalizeRuntimeOptions = (rawOptions, rawParent = {}) => {
         id: `opt_${k}`,
         label: val.trim(),
         text: val.trim(),
+        optionText: val.trim(),
         isCorrect: qObj.correctAnswer === `option${k}` || rawParent.correctAnswer === `option${k}`,
       });
     }
@@ -120,7 +122,7 @@ const normalizeRuntimeOptions = (rawOptions, rawParent = {}) => {
       const letter = String.fromCharCode(65 + idx);
       const optionKey = `opt_${letter}`;
       if (typeof opt === "string") {
-        return { id: optionKey, label: opt, text: opt };
+        return { id: optionKey, label: opt, text: opt, optionText: opt };
       }
       const optionId = String(
         opt.id ||
@@ -136,15 +138,12 @@ const normalizeRuntimeOptions = (rawOptions, rawParent = {}) => {
         id: optionId,
         label: optionText,
         text: optionText,
+        optionText,
         isCorrect: Boolean(opt.isCorrect || opt.is_correct),
       };
     });
 
-    const hasMeaningfulText = parsedList.some(
-      (opt, idx) => opt.text && opt.text !== `Option ${String.fromCharCode(65 + idx)}`
-    );
-
-    if (hasMeaningfulText) {
+    if (parsedList.length > 0) {
       return parsedList;
     }
   }
@@ -156,10 +155,10 @@ const normalizeRuntimeOptions = (rawOptions, rawParent = {}) => {
 
   // 5. Fallback 4 standard options if none found
   return [
-    { id: "opt_A", label: "Option A", text: "Option A" },
-    { id: "opt_B", label: "Option B", text: "Option B" },
-    { id: "opt_C", label: "Option C", text: "Option C" },
-    { id: "opt_D", label: "Option D", text: "Option D" },
+    { id: "opt_A", label: "Option A", text: "Option A", optionText: "Option A" },
+    { id: "opt_B", label: "Option B", text: "Option B", optionText: "Option B" },
+    { id: "opt_C", label: "Option C", text: "Option C", optionText: "Option C" },
+    { id: "opt_D", label: "Option D", text: "Option D", optionText: "Option D" },
   ];
 };
 
@@ -183,16 +182,22 @@ const normalizeRuntimeQuestion = (rawQ, index) => {
   );
 
   const title =
+    (qObj.content && qObj.content.trim() && !/^Question\s+\d+$/i.test(qObj.content.trim()) ? qObj.content.trim() : null) ||
+    (qObj.question && qObj.question.trim() && !/^Question\s+\d+$/i.test(qObj.question.trim()) ? qObj.question.trim() : null) ||
+    (qObj.title && qObj.title.trim() && !/^Question\s+\d+$/i.test(qObj.title.trim()) ? qObj.title.trim() : null) ||
+    (qObj.text && qObj.text.trim() ? qObj.text.trim() : null) ||
+    (rawQ.content && rawQ.content.trim() && !/^Question\s+\d+$/i.test(rawQ.content.trim()) ? rawQ.content.trim() : null) ||
+    (rawQ.question && rawQ.question.trim() && !/^Question\s+\d+$/i.test(rawQ.question.trim()) ? rawQ.question.trim() : null) ||
+    (rawQ.title && rawQ.title.trim() && !/^Question\s+\d+$/i.test(rawQ.title.trim()) ? rawQ.title.trim() : null) ||
+    qObj.content ||
     qObj.title ||
     qObj.question ||
-    qObj.content ||
-    qObj.text ||
     rawQ.title ||
     rawQ.question ||
     `Question ${index + 1}`;
   
   let options = normalizeRuntimeOptions(
-    qObj.options || qObj.Option || qObj.QuestionOption || qObj.questionOptions,
+    qObj.options || qObj.Option || qObj.QuestionOption || qObj.questionOptions || rawQ.options || rawQ.Option,
     qObj
   );
 
@@ -217,6 +222,9 @@ const normalizeRuntimeQuestion = (rawQ, index) => {
     id,
     question: title,
     title,
+    content: qObj.content || rawQ.content || title,
+    codeSnippet: qObj.codeSnippet || rawQ.codeSnippet || null,
+    explanation: qObj.explanation || rawQ.explanation || null,
     description: cleanDescription,
     options,
     type: qObj.type || rawQ.type || "MCQ",

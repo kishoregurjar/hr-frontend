@@ -170,11 +170,23 @@ export const getAttemptById = async (attemptId) => {
     const res = await axiosClient.get(`/attempts/${attemptId}`);
     const liveAttempt = res?.data?.data || res?.data || res;
     if (liveAttempt && (liveAttempt.id || liveAttempt.assessmentId)) {
+      let assessmentData = liveAttempt.assessment;
+      const targetAssessmentId = liveAttempt.assessmentId || liveAttempt.assessment?.id;
+      if ((!assessmentData || !assessmentData.questions || assessmentData.questions.length === 0) && targetAssessmentId) {
+        try {
+          assessmentData = await getAssessmentById(targetAssessmentId);
+        } catch {}
+      }
+
       const formatted = {
         ...liveAttempt,
+        assessment: assessmentData || liveAttempt.assessment,
+        questions: (liveAttempt.questions && liveAttempt.questions.length > 0)
+          ? liveAttempt.questions
+          : (assessmentData?.questions || assessmentData?.AssessmentQuestion || []),
         id: liveAttempt.id || attemptId,
         status: liveAttempt.status || "In Progress",
-        durationMinutes: liveAttempt.durationMinutes || 60,
+        durationMinutes: liveAttempt.durationMinutes || assessmentData?.durationMinutes || 60,
         responses: liveAttempt.responses || {},
         gameResults: liveAttempt.gameResults || {},
       };
