@@ -171,19 +171,6 @@ const LoginPage = () => {
           <div className="rounded-3xl border border-slate-200/90 bg-white p-7 sm:p-8 shadow-xl shadow-slate-200/60">
             <LoginForm />
           </div>
-
-          {/* Trust Badges Footer */}
-          <div className="flex items-center justify-center gap-4 text-[11px] font-semibold text-slate-500">
-            <span className="flex items-center gap-1">
-              <Lock className="h-3 w-3 text-emerald-600" />
-              256-Bit Encrypted
-            </span>
-            <span>•</span>
-            <span className="flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3 text-blue-600" />
-              Multi-Tenant Secure
-            </span>
-          </div>
         </div>
       </div>
     </div>
