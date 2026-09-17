@@ -358,6 +358,7 @@ export default function MahjongGame({ config = {}, onComplete }) {
   const [activeTileId, setActiveTileId] = useState(null);
   const [win, setWin] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [isShuffleHighlighted, setIsShuffleHighlighted] = useState(false);
 
   const boardRef = useRef(null);
   const lastMatchTimeRef = useRef(0);
@@ -572,8 +573,9 @@ export default function MahjongGame({ config = {}, onComplete }) {
 
     if (remainingTiles.length > 0 && !hasAnyValidMovesOrMatches(nextBoard)) {
       setTimeout(() => {
-        shuffleBoard(nextBoard, true);
-      }, 550);
+        setIsShuffleHighlighted(true);
+        setMessage("No direct matches visible — Click 'Shuffle' button to reshuffle tiles!");
+      }, 350);
     }
   };
 
@@ -872,6 +874,7 @@ export default function MahjongGame({ config = {}, onComplete }) {
     if (!isAuto) {
       setShufflesLeft((prev) => Math.max(0, prev - 1));
     }
+    setIsShuffleHighlighted(false);
     playSynthSound("shuffle");
 
     const hasRemainingPairs = checkRemainingPairsExist(tilesToShuffle);
@@ -982,7 +985,9 @@ export default function MahjongGame({ config = {}, onComplete }) {
             size="sm"
             onClick={() => shuffleBoard()}
             disabled={shufflesLeft <= 0 || win}
-            className="flex items-center gap-1.5 rounded-full font-medium"
+            className={`flex items-center gap-1.5 rounded-full font-medium transition-all ${
+              isShuffleHighlighted ? "animate-pulse ring-2 ring-emerald-500 bg-emerald-50 text-emerald-700 font-semibold" : ""
+            }`}
           >
             <Shuffle size={15} className="text-emerald-600" />
             Shuffle ({shufflesLeft})
