@@ -39,7 +39,8 @@ export const useConnectGoogleMailbox = () => {
       }
     },
     onError: (err) => {
-      toast.error(err?.message || "Failed to initiate Google OAuth.");
+      const msg = err?.response?.data?.message || err?.message || "Failed to initiate Google OAuth.";
+      toast.error(msg);
     },
   });
 };
@@ -66,7 +67,8 @@ export const useSyncMailboxNow = () => {
       queryClient.invalidateQueries({ queryKey: MAILBOX_QUERY_KEY });
     },
     onError: (err) => {
-      toast.error(err?.message || "Failed to sync mailbox.");
+      const msg = err?.response?.data?.message || err?.message || "Failed to sync mailbox.";
+      toast.error(msg);
     },
   });
 };
@@ -90,7 +92,8 @@ export const useDisconnectMailbox = () => {
       queryClient.invalidateQueries({ queryKey: MAILBOX_QUERY_KEY });
     },
     onError: (err) => {
-      toast.error(err?.message || "Failed to disconnect mailbox.");
+      const msg = err?.response?.data?.message || err?.message || "Failed to disconnect mailbox.";
+      toast.error(msg);
     },
   });
 };
