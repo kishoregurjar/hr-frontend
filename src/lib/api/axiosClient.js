@@ -37,9 +37,7 @@ axiosClient.interceptors.request.use(
       const isCandidateEndpoint =
         url.includes("/attempts") ||
         url.includes("/invitations") ||
-        url.includes("/take-test") ||
-        url.includes("/assessment") ||
-        url.includes("/game");
+        url.includes("/take-test");
 
       const candidateToken =
         sessionStorage.getItem("candidateSessionToken") ||
@@ -55,7 +53,7 @@ axiosClient.interceptors.request.use(
 
       // Candidate test taking endpoints use candidateToken, all HR management endpoints use adminToken
       const tokenToUse = isCandidateEndpoint
-        ? candidateToken
+        ? candidateToken || adminToken
         : adminToken || candidateToken;
 
       if (tokenToUse) {
@@ -161,9 +159,7 @@ axiosClient.interceptors.response.use(
       originalRequest?.url?.includes("/auth/accept-invitation") ||
       originalRequest?.url?.includes("/invitations") ||
       originalRequest?.url?.includes("/attempts") ||
-      originalRequest?.url?.includes("/take-test") ||
-      originalRequest?.url?.includes("/assessment") ||
-      originalRequest?.url?.includes("/game");
+      originalRequest?.url?.includes("/take-test");
 
     const isTokenExpired = status === 401 && originalRequest && !originalRequest._retry && !isAuthOrCandidateEndpoint;
 
