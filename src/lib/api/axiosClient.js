@@ -267,7 +267,10 @@ axiosClient.interceptors.response.use(
       }
     }
 
-    return Promise.reject(new Error(message));
+    const finalErr = new Error(message);
+    finalErr.status = status;
+    finalErr.response = error?.response;
+    return Promise.reject(finalErr);
   }
 );
 
