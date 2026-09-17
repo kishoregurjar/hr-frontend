@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Gamepad2, Lock } from "lucide-react";
+import { CheckCircle2, Gamepad2, Lock, SkipForward } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 import GameReady from "./GameReady";
 import GameDispatcher from "./GameDispatcher";
@@ -70,6 +71,26 @@ const GameRuntime = ({ section, attempt, onComplete }) => {
     );
   };
 
+  const handleSkipGame = () => {
+    const isConfirmed = window.confirm(
+      "Are you sure you want to skip this challenge? You will receive 0 marks for this game and proceed to the next challenge."
+    );
+    if (!isConfirmed) return;
+
+    const skippedResult = {
+      score: 0,
+      rawScore: 0,
+      accuracy: 0,
+      moves: 0,
+      timeTaken: 0,
+      skipped: true,
+      status: "SKIPPED",
+      completedAt: new Date().toISOString(),
+    };
+
+    handleGameComplete(skippedResult);
+  };
+
   const handleNextGame = () => {
     if (activeGameIndex < games.length - 1) {
       const nextIdx = activeGameIndex + 1;
@@ -105,13 +126,10 @@ const GameRuntime = ({ section, attempt, onComplete }) => {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {games.map((game, idx) => {
-              const isFinished = Boolean(
-                attempt?.gameResults?.[game.id] ||
-                attempt?.gameResults?.[game.slug] ||
-                (idx === activeGameIndex && completedResult)
-              );
+              const res = attempt?.gameResults?.[game.id] || attempt?.gameResults?.[game.slug];
+              const isFinished = Boolean(res || (idx === activeGameIndex && completedResult));
+              const isSkipped = Boolean(res?.skipped || (idx === activeGameIndex && completedResult?.skipped));
               const isActive = idx === activeGameIndex;
-              const isLocked = !isFinished && !isActive;
 
               return (
                 <div
@@ -120,7 +138,9 @@ const GameRuntime = ({ section, attempt, onComplete }) => {
                     isActive
                       ? "bg-blue-50/90 border-blue-400 text-blue-900 shadow-2xs ring-1 ring-blue-300/60"
                       : isFinished
-                      ? "bg-emerald-50/50 border-emerald-300/80 text-emerald-800"
+                      ? isSkipped
+                        ? "bg-amber-50/50 border-amber-300/80 text-amber-800"
+                        : "bg-emerald-50/50 border-emerald-300/80 text-emerald-800"
                       : "bg-slate-50/40 border-slate-200/80 text-slate-400 opacity-65"
                   }`}
                 >
@@ -130,7 +150,9 @@ const GameRuntime = ({ section, attempt, onComplete }) => {
                         isActive
                           ? "bg-blue-600 text-white border-blue-600"
                           : isFinished
-                          ? "bg-emerald-600 text-white border-emerald-600"
+                          ? isSkipped
+                            ? "bg-amber-600 text-white border-amber-600"
+                            : "bg-emerald-600 text-white border-emerald-600"
                           : "bg-slate-100 text-slate-400 border-slate-200"
                       }`}
                     >
@@ -139,7 +161,11 @@ const GameRuntime = ({ section, attempt, onComplete }) => {
                     <span className="truncate">{game.title || `Game ${idx + 1}`}</span>
                   </div>
                   {isFinished ? (
-                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                    isSkipped ? (
+                      <span className="text-[9px] font-extrabold text-amber-600 uppercase">Skip</span>
+                    ) : (
+                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                    )
                   ) : isActive ? (
                     <span className="flex items-center gap-1 text-[9px] font-black text-blue-700 bg-blue-100/90 px-1.5 py-0.5 rounded-full uppercase shrink-0">
                       <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
@@ -162,11 +188,29 @@ const GameRuntime = ({ section, attempt, onComplete }) => {
           gameIndex={activeGameIndex}
           totalGames={games.length}
           onStart={handleStart}
+          onSkip={handleSkipGame}
         />
       )}
 
       {gameState === GAME_STATE.PLAYING && (
-        <GameDispatcher section={currentGame} onComplete={handleGameComplete} />
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs font-bold text-slate-500">
+              Round {activeGameIndex + 1}: <strong className="text-slate-800">{currentGame.title}</strong>
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleSkipGame}
+              className="h-8 px-3 text-xs font-bold text-slate-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg gap-1.5 cursor-pointer border-slate-200"
+            >
+              <SkipForward className="h-3.5 w-3.5 text-slate-400" />
+              Skip Game
+            </Button>
+          </div>
+          <GameDispatcher section={currentGame} onComplete={handleGameComplete} />
+        </div>
       )}
 
       {gameState === GAME_STATE.COMPLETED && (

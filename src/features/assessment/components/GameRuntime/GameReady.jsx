@@ -1,4 +1,4 @@
-import { Gamepad2, Play, Clock, Award, Sparkles, LayoutGrid, CheckCircle2 } from "lucide-react";
+import { Gamepad2, Play, Clock, Award, Sparkles, LayoutGrid, CheckCircle2, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const GAME_BRIEFS = {
@@ -87,7 +87,7 @@ const resolveGameBrief = (section) => {
   );
 };
 
-const GameReady = ({ section, gameIndex = 0, totalGames = 1, onStart }) => {
+const GameReady = ({ section, gameIndex = 0, totalGames = 1, onStart, onSkip }) => {
   const brief = resolveGameBrief(section);
 
   const handleLaunch = () => {
@@ -169,15 +169,30 @@ const GameReady = ({ section, gameIndex = 0, totalGames = 1, onStart }) => {
             Timer will begin automatically once you click <strong className="text-slate-800">Start Game Challenge</strong>.
           </div>
 
-          <Button
-            type="button"
-            size="lg"
-            onClick={handleLaunch}
-            className="w-full sm:w-auto h-11 px-8 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs gap-2 shadow-md shadow-blue-500/20 cursor-pointer"
-          >
-            <Play className="h-4 w-4 fill-white" />
-            Start Game Challenge
-          </Button>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            {onSkip && (
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                onClick={onSkip}
+                className="w-full sm:w-auto h-11 px-5 rounded-xl border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs gap-1.5 cursor-pointer"
+              >
+                <SkipForward className="h-4 w-4 text-slate-500" />
+                Skip Challenge
+              </Button>
+            )}
+
+            <Button
+              type="button"
+              size="lg"
+              onClick={handleLaunch}
+              className="w-full sm:w-auto h-11 px-8 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs gap-2 shadow-md shadow-blue-500/20 cursor-pointer"
+            >
+              <Play className="h-4 w-4 fill-white" />
+              Start Game Challenge
+            </Button>
+          </div>
         </div>
       </div>
     </div>

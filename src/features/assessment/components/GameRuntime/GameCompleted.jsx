@@ -1,4 +1,4 @@
-import { CheckCircle2, Loader2, Trophy, Target, ArrowRight, Gamepad2, Sparkles } from "lucide-react";
+import { CheckCircle2, Loader2, Trophy, Target, ArrowRight, Gamepad2, Sparkles, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const GameCompleted = ({
@@ -25,28 +25,58 @@ const GameCompleted = ({
     );
   }
 
+  const isSkipped = Boolean(result?.skipped || result?.status === "SKIPPED");
   const gameTitle = currentGame?.title || section?.title || "Cognitive Challenge";
 
   return (
     <div className="rounded-2xl border border-slate-200/90 bg-white p-8 sm:p-10 text-center shadow-2xs font-sans space-y-6">
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600">
-        <CheckCircle2 className="h-8 w-8" />
+      <div
+        className={`mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border ${
+          isSkipped
+            ? "bg-amber-50 border-amber-200 text-amber-600"
+            : "bg-emerald-50 border-emerald-200 text-emerald-600"
+        }`}
+      >
+        {isSkipped ? (
+          <SkipForward className="h-8 w-8" />
+        ) : (
+          <CheckCircle2 className="h-8 w-8" />
+        )}
       </div>
 
       <div className="space-y-1.5">
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 px-3 py-0.5 text-[11px] font-bold text-emerald-700">
-          <Sparkles className="h-3 w-3 text-emerald-600" />
-          {totalGames > 1
-            ? `Game ${gameIndex + 1} of ${totalGames} Completed`
-            : "Challenge Completed"}
+        <div
+          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-0.5 text-[11px] font-bold ${
+            isSkipped
+              ? "bg-amber-50 border-amber-200/80 text-amber-700"
+              : "bg-emerald-50 border-emerald-200/80 text-emerald-700"
+          }`}
+        >
+          {isSkipped ? (
+            <>
+              <SkipForward className="h-3 w-3 text-amber-600" />
+              Round Skipped (0 pts)
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-3 w-3 text-emerald-600" />
+              {totalGames > 1
+                ? `Game ${gameIndex + 1} of ${totalGames} Completed`
+                : "Challenge Completed"}
+            </>
+          )}
         </div>
         <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-          {isLastGame && totalGames > 1
+          {isSkipped
+            ? `${gameTitle} Skipped`
+            : isLastGame && totalGames > 1
             ? "Cognitive Games Module Completed!"
             : `${gameTitle} Completed!`}
         </h2>
         <p className="text-xs text-slate-500 font-medium max-w-md mx-auto">
-          {isLastGame && totalGames > 1
+          {isSkipped
+            ? "This game round was skipped. 0 points recorded for this challenge."
+            : isLastGame && totalGames > 1
             ? `All ${totalGames} cognitive challenges finished. Your performance data has been synchronized.`
             : `Performance data for ${gameTitle} has been recorded successfully.`}
         </p>
