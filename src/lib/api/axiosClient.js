@@ -34,10 +34,26 @@ axiosClient.interceptors.request.use(
     if (typeof window !== "undefined") {
       // Specific candidate assessment test-taking endpoints (passwordless/OTP candidate session)
       const url = config.url || "";
-      const isCandidateEndpoint =
-        url.includes("/attempts") ||
-        url.includes("/invitations") ||
+      const currentPath = typeof window !== "undefined" ? window.location.pathname || "" : "";
+
+      const isCandidatePage =
+        currentPath.includes("/take-test") ||
+        currentPath.includes("/assessment/attempt") ||
+        currentPath.includes("/test/room") ||
+        currentPath.includes("/test/");
+
+      const isCandidateApiRoute =
+        url.includes("/start-by-token") ||
+        url.includes("/save-answer") ||
+        url.includes("/attempts/submit") ||
+        url.includes("/attempts/verify") ||
+        url.includes("/attempts/candidate/") ||
+        url.includes("/attempts/current") ||
+        url.includes("/invitations/verify") ||
+        url.includes("/invitations/take-test") ||
         url.includes("/take-test");
+
+      const isCandidateEndpoint = isCandidatePage || isCandidateApiRoute;
 
       const candidateToken =
         sessionStorage.getItem("candidateSessionToken") ||
@@ -54,7 +70,7 @@ axiosClient.interceptors.request.use(
       // Candidate test taking endpoints use candidateToken, all HR management endpoints use adminToken
       const tokenToUse = isCandidateEndpoint
         ? candidateToken || adminToken
-        : adminToken || candidateToken;
+        : adminToken;
 
       if (tokenToUse) {
         config.headers.Authorization = `Bearer ${tokenToUse}`;
@@ -157,8 +173,10 @@ axiosClient.interceptors.response.use(
       originalRequest?.url?.includes("/auth/owner/activate") ||
       originalRequest?.url?.includes("/companies/invitations/accept") ||
       originalRequest?.url?.includes("/auth/accept-invitation") ||
-      originalRequest?.url?.includes("/invitations") ||
-      originalRequest?.url?.includes("/attempts") ||
+      originalRequest?.url?.includes("/invitations/verify") ||
+      originalRequest?.url?.includes("/attempts/start-by-token") ||
+      originalRequest?.url?.includes("/attempts/save-answer") ||
+      originalRequest?.url?.includes("/attempts/submit") ||
       originalRequest?.url?.includes("/take-test");
 
     const isTokenExpired = status === 401 && originalRequest && !originalRequest._retry && !isAuthOrCandidateEndpoint;
