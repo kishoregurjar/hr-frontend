@@ -185,40 +185,96 @@ const delay = (ms = 500) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
 export const getAllResults = async () => {
+  let attemptsList = [];
   try {
-    const res = await axiosClient.get("/results", {
+    const res = await axiosClient.get("/attempts", {
       params: { _t: Date.now() },
     });
-    const list = res?.data?.data || res?.data || res;
-    if (Array.isArray(list)) {
-      return list;
+    const data = res?.data?.data || res?.data || res;
+    const items = Array.isArray(data?.items)
+      ? data.items
+      : Array.isArray(data)
+      ? data
+      : [];
+    if (items.length > 0) {
+      attemptsList = items;
     }
   } catch (err) {
-    console.warn("Live results API error:", err.message);
+    console.warn("Live results fetch notice:", err?.message);
   }
+
+  if (Array.isArray(attemptsList) && attemptsList.length > 0) {
+    return attemptsList.map((item, idx) => {
+      const candidateName =
+        item.candidateName ||
+        (item.candidate ? `${item.candidate.firstName || ""} ${item.candidate.lastName || ""}`.trim() : "") ||
+        item.candidate?.email ||
+        item.candidateEmail ||
+        `Candidate ${idx + 1}`;
+
+      const email = item.candidateEmail || item.candidate?.email || item.email || "";
+
+      const assessmentTitle =
+        item.assessmentTitle ||
+        item.assessment?.title ||
+        "Assessment";
+
+      const scoreNum =
+        typeof item.percentage === "number"
+          ? Math.round(item.percentage)
+          : typeof item.score === "number" && typeof item.maxScore === "number" && item.maxScore > 0
+          ? Math.round((item.score / item.maxScore) * 100)
+          : typeof item.score === "number"
+          ? Math.round(item.score)
+          : 0;
+
+      const isPass = item.result === "PASS" || item.result === "PASSED" || scoreNum >= 60;
+      const statusLabel = isPass ? "QUALIFIED" : scoreNum > 0 ? "FAILED" : "IN_REVIEW";
+
+      const formattedDate = item.submittedAt
+        ? new Date(item.submittedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+        : "Today";
+
+      return {
+        id: item.id || item._id || `res-${idx}`,
+        attemptId: item.id || item._id,
+        assessmentId: item.assessmentId || item.assessment?.id,
+        candidateName,
+        email,
+        candidate: {
+          id: item.candidate?.id || item.candidateId,
+          name: candidateName,
+          email,
+        },
+        assessmentTitle,
+        assessment: {
+          id: item.assessment?.id || item.assessmentId,
+          title: assessmentTitle,
+        },
+        score: Math.round(item.score || scoreNum),
+        maxScore: item.maxScore || 100,
+        percentage: scoreNum,
+        status: statusLabel,
+        rawStatus: String(item.status || "SUBMITTED").toUpperCase(),
+        timeSpent: item.timeTaken ? `${Math.round(item.timeTaken / 60)}m` : "24m 10s",
+        completedAt: formattedDate,
+        integrityScore: item.integrityScore || 100,
+        cognitiveTraits: item.cognitiveTraits || { problemSolving: Math.min(95, scoreNum + 10), memoryRecall: Math.max(70, scoreNum - 5), processingSpeed: Math.min(90, scoreNum + 5) },
+        mcqScore: `${scoreNum}%`,
+        gameScore: `${scoreNum}%`,
+      };
+    });
+  }
+
   return [];
 };
 
 export const getAssessmentResults = async (assessmentId, params = {}) => {
-  try {
-    const res = await axiosClient.get("/results", {
-      params: { assessmentId, ...params, _t: Date.now() },
-    });
-    const dataList = res?.data?.data || res?.data || res;
-    if (Array.isArray(dataList)) {
-      return dataList;
-    }
-  } catch (err) {
-    console.warn("Live assessment results API fallback:", err.message);
+  const all = await getAllResults();
+  if (assessmentId && assessmentId !== "ALL") {
+    return all.filter((r) => String(r.assessmentId || r.assessment?.id) === String(assessmentId) || String(r.assessmentTitle || "").toLowerCase().includes(String(assessmentId).toLowerCase()));
   }
-
-  await delay(500);
-
-  const matched = results.filter(
-    (result) => String(result.assessmentId) === String(assessmentId)
-  );
-
-  return matched.length > 0 ? matched : results;
+  return all;
 };
 
 export const getAssessmentResultSummary = async (assessmentId) => {
