@@ -61,11 +61,13 @@ export const useSyncMailboxNow = () => {
           ? `Synced & extracted ${count} candidate resume(s) from inbox!`
           : "Mailbox synced successfully! New resumes processed."
       );
-      // Revalidate all related queries instantly
+      // Revalidate and force instant active re-fetch of on-screen candidate table without page refresh
       queryClient.invalidateQueries({ queryKey: CANDIDATE_QUERY_KEYS.all });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
       queryClient.invalidateQueries({ queryKey: ["dashboardOverview"] });
       queryClient.invalidateQueries({ queryKey: MAILBOX_QUERY_KEY });
+      queryClient.refetchQueries({ queryKey: CANDIDATE_QUERY_KEYS.all, type: "active" });
+      queryClient.refetchQueries({ queryKey: ["candidates"], type: "active" });
     },
     onError: (err) => {
       const status = err?.status || err?.response?.status;
@@ -81,6 +83,8 @@ export const useSyncMailboxNow = () => {
         queryClient.invalidateQueries({ queryKey: ["candidates"] });
         queryClient.invalidateQueries({ queryKey: ["dashboardOverview"] });
         queryClient.invalidateQueries({ queryKey: MAILBOX_QUERY_KEY });
+        queryClient.refetchQueries({ queryKey: CANDIDATE_QUERY_KEYS.all, type: "active" });
+        queryClient.refetchQueries({ queryKey: ["candidates"], type: "active" });
         return;
       }
       const msg = err?.response?.data?.message || err?.message || "Failed to sync mailbox.";
