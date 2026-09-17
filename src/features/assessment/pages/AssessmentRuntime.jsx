@@ -103,13 +103,41 @@ const AssessmentAttempt = ({ attemptId }) => {
       (typeof qItem === "object" && qItem?.Question && typeof qItem.Question === "object" ? qItem.Question : null) ||
       (typeof qItem === "object" ? qItem : {});
 
+    const resolvedOptions =
+      (Array.isArray(qObj?.options) && qObj.options.length > 0 ? qObj.options : null) ||
+      (Array.isArray(qItem?.options) && qItem.options.length > 0 ? qItem.options : null) ||
+      (Array.isArray(qObj?.Option) && qObj.Option.length > 0 ? qObj.Option : null) ||
+      (Array.isArray(qItem?.Option) && qItem.Option.length > 0 ? qItem.Option : null) ||
+      (Array.isArray(qObj?.questionOptions) && qObj.questionOptions.length > 0 ? qObj.questionOptions : null) ||
+      (Array.isArray(qItem?.questionOptions) && qItem.questionOptions.length > 0 ? qItem.questionOptions : null) ||
+      [];
+
+    const questionTitle = String(
+      (qObj?.content && qObj.content.trim() && !/^Question\s+\d+$/i.test(qObj.content.trim()) ? qObj.content : null) ||
+      (qObj?.title && qObj.title.trim() && !/^Question\s+\d+$/i.test(qObj.title.trim()) ? qObj.title : null) ||
+      (qObj?.question && qObj.question.trim() && !/^Question\s+\d+$/i.test(qObj.question.trim()) ? qObj.question : null) ||
+      (qItem?.content && qItem.content.trim() && !/^Question\s+\d+$/i.test(qItem.content.trim()) ? qItem.content : null) ||
+      (qItem?.title && qItem.title.trim() && !/^Question\s+\d+$/i.test(qItem.title.trim()) ? qItem.title : null) ||
+      (qItem?.question && qItem.question.trim() && !/^Question\s+\d+$/i.test(qItem.question.trim()) ? qItem.question : null) ||
+      qObj?.content ||
+      qObj?.title ||
+      qObj?.question ||
+      qItem?.content ||
+      qItem?.title ||
+      qItem?.question ||
+      ""
+    );
+
     return {
       ...qObj,
       ...qItem,
       id: String(qObj?.id || qObj?._id || qItem?.id || qItem?._id || qItem?.questionId || ""),
-      title: String(qObj?.title || qObj?.question || qItem?.title || qItem?.question || ""),
-      content: qObj?.content || qItem?.content || qObj?.title || "",
-      options: qObj?.options || qItem?.options || [],
+      title: questionTitle,
+      question: questionTitle,
+      content: qObj?.content || qItem?.content || questionTitle,
+      codeSnippet: qObj?.codeSnippet || qItem?.codeSnippet || null,
+      explanation: qObj?.explanation || qItem?.explanation || null,
+      options: resolvedOptions,
     };
   });
 

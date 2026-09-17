@@ -170,10 +170,28 @@ const QuizRenderer = ({ section, attempt, onComplete }) => {
       <div className="rounded-2xl border bg-card p-6 sm:p-8 shadow-sm space-y-6">
         <div>
           <h3 className="text-lg sm:text-xl font-bold leading-relaxed text-slate-900 whitespace-pre-wrap">
-            {currentQuestion.description && currentQuestion.description.includes("\n")
-              ? currentQuestion.description
-              : currentQuestion.question || currentQuestion.title || "Question"}
+            {(() => {
+              const q = currentQuestion;
+              const text =
+                (q.content && q.content.trim() && !/^Question\s+\d+$/i.test(q.content.trim()) ? q.content.trim() : null) ||
+                (q.question && q.question.trim() && !/^Question\s+\d+$/i.test(q.question.trim()) ? q.question.trim() : null) ||
+                (q.title && q.title.trim() && !/^Question\s+\d+$/i.test(q.title.trim()) ? q.title.trim() : null) ||
+                (q.description && q.description.trim() ? q.description.trim() : null) ||
+                q.content ||
+                q.question ||
+                q.title ||
+                `Question ${currentQuestionIndex + 1}`;
+              return text;
+            })()}
           </h3>
+
+          {currentQuestion.codeSnippet && (
+            <div className="mt-3.5 rounded-xl bg-slate-950 p-4 border border-slate-800 text-slate-100 font-mono text-xs sm:text-sm overflow-x-auto shadow-inner">
+              <pre className="whitespace-pre">
+                <code>{currentQuestion.codeSnippet}</code>
+              </pre>
+            </div>
+          )}
         </div>
 
         <RadioGroup
@@ -185,10 +203,11 @@ const QuizRenderer = ({ section, attempt, onComplete }) => {
             const letter = String.fromCharCode(65 + idx);
             const optionId = String(option.id ?? option.rawId ?? `opt_${letter}`);
             const rawLabel =
-              option.optionText ||
-              option.text ||
-              option.content ||
-              (option.label && !/^Option\s+[A-Z]$/i.test(option.label.trim()) ? option.label : null) ||
+              (option.optionText && String(option.optionText).trim() ? String(option.optionText).trim() : null) ||
+              (option.text && String(option.text).trim() ? String(option.text).trim() : null) ||
+              (option.content && String(option.content).trim() ? String(option.content).trim() : null) ||
+              (option.value && String(option.value).trim() ? String(option.value).trim() : null) ||
+              (option.label && !/^Option\s+[A-Z]$/i.test(String(option.label).trim()) ? String(option.label).trim() : null) ||
               option.label ||
               option.title ||
               `Option ${letter}`;
@@ -219,7 +238,7 @@ const QuizRenderer = ({ section, attempt, onComplete }) => {
                 </div>
                 <Label
                   htmlFor={inputId}
-                  className="flex-1 cursor-pointer font-normal text-sm sm:text-base leading-relaxed pt-0.5"
+                  className="flex-1 cursor-pointer font-normal text-sm sm:text-base leading-relaxed pt-0.5 text-slate-900"
                 >
                   {rawLabel}
                 </Label>
