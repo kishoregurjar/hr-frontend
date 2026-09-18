@@ -489,9 +489,15 @@ const AssessmentBuilder = ({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     setPublishedSuccessData(null);
-                    router.push("/assessments");
+                    if (typeof window !== "undefined") {
+                      window.location.href = "/assessments";
+                    } else {
+                      router.push("/assessments");
+                    }
                   }}
                   className="h-11 rounded-xl border-slate-200 font-bold text-xs text-slate-700 hover:bg-slate-50 cursor-pointer"
                 >
@@ -500,10 +506,17 @@ const AssessmentBuilder = ({
 
                 <Button
                   type="button"
-                  onClick={() => {
-                    const targetId = publishedSuccessData.id;
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const targetId = publishedSuccessData?.id || publishedSuccessData?._id || "";
                     setPublishedSuccessData(null);
-                    router.push(`/invitations?assessmentId=${targetId || ""}`);
+                    const targetUrl = targetId ? `/invitations?assessmentId=${targetId}` : "/invitations";
+                    if (typeof window !== "undefined") {
+                      window.location.href = targetUrl;
+                    } else {
+                      router.push(targetUrl);
+                    }
                   }}
                   className="h-11 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer"
                 >
