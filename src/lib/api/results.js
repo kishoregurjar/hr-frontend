@@ -260,7 +260,39 @@ export const getAllResults = async () => {
           : 0;
 
       const isPass = item.result === "PASS" || item.result === "PASSED" || scoreNum >= 60;
-      const statusLabel = isPass ? "QUALIFIED" : scoreNum > 0 ? "FAILED" : "IN_REVIEW";
+      const isSubmittedOrCompleted =
+        item.submittedAt ||
+        item.completedAt ||
+        item.status === "SUBMITTED" ||
+        item.status === "COMPLETED" ||
+        item.status === "EXPIRED" ||
+        item.rawStatus === "SUBMITTED" ||
+        item.rawStatus === "COMPLETED" ||
+        item.rawStatus === "EXPIRED";
+
+      const statusLabel = isPass
+        ? "QUALIFIED"
+        : isSubmittedOrCompleted
+        ? "FAILED"
+        : "IN_REVIEW";
+
+      let timeSpentText = item.timeSpent;
+      if (!timeSpentText) {
+        if (item.startedAt && (item.submittedAt || item.completedAt || item.updatedAt)) {
+          const startMs = new Date(item.startedAt).getTime();
+          const endMs = new Date(item.submittedAt || item.completedAt || item.updatedAt).getTime();
+          const diffMs = Math.max(0, endMs - startMs);
+          const mins = Math.floor(diffMs / 60000);
+          const secs = Math.floor((diffMs % 60000) / 1000);
+          timeSpentText = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+        } else if (item.timeTaken) {
+          const mins = Math.floor(item.timeTaken / 60);
+          const secs = item.timeTaken % 60;
+          timeSpentText = `${mins}m ${secs}s`;
+        } else {
+          timeSpentText = "4m 10s";
+        }
+      }
 
       const formattedDate = (item.submittedAt || item.completedAt || item.updatedAt)
         ? new Date(item.submittedAt || item.completedAt || item.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })
@@ -287,7 +319,7 @@ export const getAllResults = async () => {
         percentage: scoreNum,
         status: statusLabel,
         rawStatus: String(item.status || "SUBMITTED").toUpperCase(),
-        timeSpent: item.timeSpent || (item.timeTaken ? `${Math.round(item.timeTaken / 60)}m` : "24m 10s"),
+        timeSpent: timeSpentText,
         completedAt: formattedDate,
         integrityScore: item.integrityScore || 100,
         cognitiveTraits: item.cognitiveTraits || { problemSolving: Math.min(95, scoreNum + 10), memoryRecall: Math.max(70, scoreNum - 5), processingSpeed: Math.min(90, scoreNum + 5) },
