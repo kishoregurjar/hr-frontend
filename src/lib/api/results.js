@@ -259,22 +259,14 @@ export const getAllResults = async () => {
           ? Math.round(item.score)
           : 0;
 
-      const isPass = item.result === "PASS" || item.result === "PASSED" || scoreNum >= 60;
-      const isSubmittedOrCompleted =
-        item.submittedAt ||
-        item.completedAt ||
-        item.status === "SUBMITTED" ||
-        item.status === "COMPLETED" ||
-        item.status === "EXPIRED" ||
-        item.rawStatus === "SUBMITTED" ||
-        item.rawStatus === "COMPLETED" ||
-        item.rawStatus === "EXPIRED";
+      const isPass = item.result === "PASS" || item.result === "PASSED" || item.passed === true || scoreNum >= 60;
+      const isInProgress = (item.status === "IN_PROGRESS" || item.rawStatus === "IN_PROGRESS") && !item.submittedAt;
 
       const statusLabel = isPass
         ? "QUALIFIED"
-        : isSubmittedOrCompleted
-        ? "FAILED"
-        : "IN_REVIEW";
+        : isInProgress
+        ? "IN_REVIEW"
+        : "FAILED";
 
       let timeSpentText = item.timeSpent;
       if (!timeSpentText) {
