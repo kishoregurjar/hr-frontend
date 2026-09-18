@@ -75,7 +75,8 @@ export const createAssessment = async (payload) => {
   const createdStatus = String(created?.status || "").toUpperCase();
 
   if (createdId) {
-    if (Array.isArray(payload?.questionIds) && payload.questionIds.length > 0) {
+    const hasQuestions = Array.isArray(created?.questions) && created.questions.length > 0;
+    if (!hasQuestions && Array.isArray(payload?.questionIds) && payload.questionIds.length > 0) {
       try {
         await assignAssessmentQuestions(createdId, payload.questionIds);
       } catch (e) {
@@ -106,10 +107,14 @@ export const updateAssessment = async (id, payload) => {
   const updated = res?.data?.data || res?.data || res;
 
   if (id && Array.isArray(targetQuestionIds) && targetQuestionIds.length > 0) {
-    try {
-      await assignAssessmentQuestions(id, targetQuestionIds);
-    } catch (e) {
-      console.warn("Auto-assign questions on update:", e?.message);
+    const existingQIds = new Set((updated?.questions || []).map((q) => q.questionId || q.id || q));
+    const newQIds = targetQuestionIds.filter((qId) => !existingQIds.has(typeof qId === "object" ? qId?.id || qId?.questionId : qId));
+    if (newQIds.length > 0) {
+      try {
+        await assignAssessmentQuestions(id, newQIds);
+      } catch (e) {
+        console.warn("Auto-assign questions on update:", e?.message);
+      }
     }
   }
 
