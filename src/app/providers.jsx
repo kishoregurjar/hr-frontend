@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
+import { CheckCircle2, AlertCircle, AlertTriangle, Info, Loader2 } from "lucide-react";
 import { AuthProvider } from "@/features/auth/context";
 
 const Providers = ({ children }) => {
@@ -28,9 +29,26 @@ const Providers = ({ children }) => {
         {children}
         <Toaster
           position="top-right"
-          richColors
+          expand={true}
           closeButton
-          duration={3500}
+          duration={4000}
+          theme="dark"
+          icons={{
+            success: <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />,
+            error: <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />,
+            warning: <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />,
+            info: <Info className="w-5 h-5 text-sky-400 shrink-0" />,
+            loading: <Loader2 className="w-5 h-5 text-indigo-400 animate-spin shrink-0" />,
+          }}
+          toastOptions={{
+            className: "hirequest-toast",
+            classNames: {
+              toast: "hirequest-toast",
+              title: "hirequest-toast-title",
+              description: "hirequest-toast-description",
+              closeButton: "hirequest-toast-close",
+            },
+          }}
         />
       </AuthProvider>
     </QueryClientProvider>
