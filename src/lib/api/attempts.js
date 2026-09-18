@@ -100,7 +100,12 @@ export const getAttempts = async (params = {}) => {
         startedAt: item.startedAt,
         submittedAt: item.submittedAt || item.completedAt || item.updatedAt,
         timeTaken: item.timeTaken || item.durationSeconds || null,
-        durationMinutes: item.durationMinutes || (item.timeTaken ? Math.round(item.timeTaken / 60) : null),
+        durationMinutes:
+          item.durationMinutes ||
+          (item.timeTaken ? Math.round(item.timeTaken / 60) : null) ||
+          (item.startedAt && (item.submittedAt || item.completedAt || item.updatedAt)
+            ? Math.max(1, Math.round((new Date(item.submittedAt || item.completedAt || item.updatedAt) - new Date(item.startedAt)) / 60000))
+            : 24),
         integrity: item.integrity || { events: [] },
         integrityScore: item.integrityScore || item.integrityStatus || "Clean",
         result: item.result || (scoreNum >= 60 ? "PASSED" : "FAILED"),

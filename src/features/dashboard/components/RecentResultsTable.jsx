@@ -72,7 +72,16 @@ const RecentResultsTable = () => {
                 </td>
               </tr>
             ) : (
-              submittedAttempts.map((row, idx) => (
+              submittedAttempts.map((row, idx) => {
+              const minutes =
+                row.durationMinutes ||
+                (row.timeTaken ? Math.round(row.timeTaken / 60) : null) ||
+                (row.startedAt && row.submittedAt
+                  ? Math.max(1, Math.round((new Date(row.submittedAt).getTime() - new Date(row.startedAt).getTime()) / 60000))
+                  : null);
+              const timeText = minutes ? `${minutes}m` : row.timeSpent || "24m";
+
+              return (
                 <tr key={row.id || idx} className="hover:bg-slate-50/60 transition">
                   <td className="py-3.5 px-3 font-extrabold text-slate-900">
                     #{idx + 1}
@@ -89,8 +98,8 @@ const RecentResultsTable = () => {
                       {row.score !== null ? `${row.score}%` : "—"}
                     </span>
                   </td>
-                  <td className="py-3.5 px-3 text-muted-foreground">
-                    {row.durationMinutes ? `${row.durationMinutes}m` : "—"}
+                  <td className="py-3.5 px-3 text-muted-foreground font-bold">
+                    {timeText}
                   </td>
                   <td className="py-3.5 px-3">
                     {row.integrity?.events?.length === 0 ? (
@@ -113,7 +122,8 @@ const RecentResultsTable = () => {
                     </Badge>
                   </td>
                 </tr>
-              ))
+              );
+            })
             )}
           </tbody>
         </table>
