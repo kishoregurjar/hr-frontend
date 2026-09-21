@@ -231,9 +231,19 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
       </header>
 
       {/* ── 2. Main 2-Column Split Workspace ── */}
-      <main className="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <main
+        className={`flex-1 max-w-[1600px] w-full mx-auto p-3 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-5 ${
+          isQuizSection ? "items-start" : "lg:h-[calc(100vh-68px)] lg:overflow-hidden items-stretch"
+        }`}
+      >
         {/* ── LEFT PANEL: Question & Options Workspace (70%) ── */}
-        <section className="lg:col-span-8 xl:col-span-9 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between min-h-[620px] p-6 sm:p-8">
+        <section
+          className={`lg:col-span-8 xl:col-span-9 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between ${
+            isQuizSection
+              ? "min-h-[620px] p-6 sm:p-8"
+              : "p-3 sm:p-5 lg:h-full lg:overflow-hidden"
+          }`}
+        >
           {isQuizSection ? (
             <div className="space-y-6">
               {/* Question Header & Title */}
@@ -331,8 +341,8 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
               </RadioGroup>
             </div>
           ) : (
-            /* Game Section View */
-            <div className="flex-1">
+            /* Game Section View - Zero-Scroll Viewport Fitted */
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col justify-center">
               <GameRuntime
                 key={currentSection.id || `game-${currentSection.slug}`}
                 section={currentSection}
@@ -343,7 +353,11 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
           )}
 
           {/* ── Bottom Action & Navigation Footer ── */}
-          <div className="mt-8 border-t border-slate-200 pt-5 space-y-4">
+          <div
+            className={`border-t border-slate-200 ${
+              isQuizSection ? "mt-8 pt-5 space-y-4" : "mt-2 pt-2.5"
+            }`}
+          >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 {isQuizSection && (
@@ -376,12 +390,12 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
                 )}
               </div>
 
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2.5 ml-auto">
                 <Button
                   type="button"
                   onClick={handlePreviousQuestion}
                   disabled={currentSectionIndex === 0 && currentQuestionIndex === 0}
-                  className="h-10 px-5 font-bold text-xs bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-sm disabled:opacity-40"
+                  className="h-9 sm:h-10 px-5 font-bold text-xs bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-sm disabled:opacity-40"
                 >
                   <ArrowLeft className="mr-1.5 h-4 w-4" />
                   Previous
@@ -390,7 +404,7 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
                 <Button
                   type="button"
                   onClick={handleNextQuestion}
-                  className="h-10 px-6 font-bold text-xs bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-sm"
+                  className="h-9 sm:h-10 px-6 font-bold text-xs bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-sm"
                 >
                   {currentQuestionIndex === questions.length - 1 && currentSectionIndex === sections.length - 1
                     ? "Review Test"
@@ -401,7 +415,7 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
                 <Button
                   type="button"
                   onClick={onReview}
-                  className="h-10 px-6 font-bold text-xs bg-[#16a34a] hover:bg-[#15803d] text-white shadow-sm"
+                  className="h-9 sm:h-10 px-6 font-bold text-xs bg-[#16a34a] hover:bg-[#15803d] text-white shadow-sm"
                 >
                   <Send className="mr-1.5 h-3.5 w-3.5" />
                   Submit Test
@@ -409,29 +423,31 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
               </div>
             </div>
 
-            {/* ── Legend Footer (Exact Screenshot Colors) ── */}
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-6 gap-y-2 pt-2 border-t border-slate-100 text-xs font-semibold text-slate-600">
-              <span className="flex items-center gap-2">
-                <span className="h-3.5 w-3.5 rounded-full bg-[#2563eb]" />
-                Current
-              </span>
-              <span className="flex items-center gap-2">
-                <span className="h-3.5 w-3.5 rounded-full bg-slate-200 border border-slate-300" />
-                Not Attempted
-              </span>
-              <span className="flex items-center gap-2">
-                <span className="h-3.5 w-3.5 rounded-full bg-[#16a34a]" />
-                Answered
-              </span>
-              <span className="flex items-center gap-2">
-                <span className="h-3.5 w-3.5 rounded-full bg-[#ea580c]" />
-                Not Answered
-              </span>
-              <span className="flex items-center gap-2">
-                <span className="h-3.5 w-3.5 rounded-full bg-[#8b0000]" />
-                Review
-              </span>
-            </div>
+            {/* ── Legend Footer (Only shown for Quiz MCQ Mode) ── */}
+            {isQuizSection && (
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-6 gap-y-2 pt-2 border-t border-slate-100 text-xs font-semibold text-slate-600">
+                <span className="flex items-center gap-2">
+                  <span className="h-3.5 w-3.5 rounded-full bg-[#2563eb]" />
+                  Current
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="h-3.5 w-3.5 rounded-full bg-slate-200 border border-slate-300" />
+                  Not Attempted
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="h-3.5 w-3.5 rounded-full bg-[#16a34a]" />
+                  Answered
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="h-3.5 w-3.5 rounded-full bg-[#ea580c]" />
+                  Not Answered
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="h-3.5 w-3.5 rounded-full bg-[#8b0000]" />
+                  Review
+                </span>
+              </div>
+            )}
           </div>
         </section>
 

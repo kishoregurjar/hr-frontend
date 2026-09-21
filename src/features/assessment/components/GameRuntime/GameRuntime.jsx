@@ -108,23 +108,23 @@ const GameRuntime = ({ section, attempt, onComplete }) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="w-full flex-1 flex flex-col justify-between overflow-hidden">
       {/* ── Sub-Games Navigation Strip (Strict Sequential Stepper) ── */}
       {games.length > 1 && (
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-3 shadow-2xs font-sans">
-          <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5 mb-2.5 px-2">
-            <div className="flex items-center gap-2">
-              <Gamepad2 className="h-4 w-4 text-blue-600" />
+        <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-2 shadow-2xs font-sans mb-1 shrink-0">
+          <div className="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1.5 mb-1.5 px-1">
+            <div className="flex items-center gap-1.5">
+              <Gamepad2 className="h-3.5 w-3.5 text-blue-600" />
               <span className="text-xs font-bold text-slate-800">
                 Cognitive Challenges ({activeGameIndex + 1} of {games.length})
               </span>
             </div>
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Sequential Round Lock
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
             {games.map((game, idx) => {
               const res = attempt?.gameResults?.[game.id] || attempt?.gameResults?.[game.slug];
               const isFinished = Boolean(res || (idx === activeGameIndex && completedResult));
@@ -134,45 +134,45 @@ const GameRuntime = ({ section, attempt, onComplete }) => {
               return (
                 <div
                   key={game.id || game.slug || idx}
-                  className={`flex items-center justify-between gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all select-none ${
+                  className={`flex items-center justify-between gap-1.5 p-1.5 sm:p-2 rounded-lg border text-xs font-bold transition-all select-none ${
                     isActive
                       ? "bg-blue-50/90 border-blue-400 text-blue-900 shadow-2xs ring-1 ring-blue-300/60"
                       : isFinished
                       ? isSkipped
                         ? "bg-amber-50/50 border-amber-300/80 text-amber-800"
                         : "bg-emerald-50/50 border-emerald-300/80 text-emerald-800"
-                      : "bg-slate-50/40 border-slate-200/80 text-slate-400 opacity-65"
+                      : "bg-slate-100/50 border-slate-200/60 text-slate-400 opacity-60"
                   }`}
                 >
-                  <div className="flex items-center gap-2 truncate">
+                  <div className="flex items-center gap-1.5 truncate">
                     <span
-                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[10px] font-black ${
+                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded text-[9px] font-black ${
                         isActive
-                          ? "bg-blue-600 text-white border-blue-600"
+                          ? "bg-blue-600 text-white"
                           : isFinished
                           ? isSkipped
-                            ? "bg-amber-600 text-white border-amber-600"
-                            : "bg-emerald-600 text-white border-emerald-600"
-                          : "bg-slate-100 text-slate-400 border-slate-200"
+                            ? "bg-amber-600 text-white"
+                            : "bg-emerald-600 text-white"
+                          : "bg-slate-200 text-slate-500"
                       }`}
                     >
                       {idx + 1}
                     </span>
-                    <span className="truncate">{game.title || `Game ${idx + 1}`}</span>
+                    <span className="truncate text-[11px]">{game.title || `Game ${idx + 1}`}</span>
                   </div>
                   {isFinished ? (
                     isSkipped ? (
                       <span className="text-[9px] font-extrabold text-amber-600 uppercase">Skip</span>
                     ) : (
-                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                      <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-600" />
                     )
                   ) : isActive ? (
-                    <span className="flex items-center gap-1 text-[9px] font-black text-blue-700 bg-blue-100/90 px-1.5 py-0.5 rounded-full uppercase shrink-0">
-                      <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
+                    <span className="flex items-center gap-1 text-[8px] font-black text-blue-700 bg-blue-100/90 px-1 py-0.2 rounded uppercase shrink-0">
+                      <span className="h-1 w-1 rounded-full bg-blue-600 animate-pulse" />
                       Active
                     </span>
                   ) : (
-                    <Lock className="h-3 w-3 shrink-0 text-slate-400" />
+                    <Lock className="h-2.5 w-2.5 shrink-0 text-slate-400" />
                   )}
                 </div>
               );

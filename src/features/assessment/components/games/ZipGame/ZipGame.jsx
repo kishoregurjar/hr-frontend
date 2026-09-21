@@ -273,9 +273,12 @@ export default function ZipGame({ config = {}, onComplete }) {
 
   useEffect(() => {
     const handleResize = () => {
-      const maxDim = typeof window !== "undefined" ? Math.min(window.innerWidth - 48, 480) : 400;
+      const maxDim =
+        typeof window !== "undefined"
+          ? Math.min(window.innerWidth - 48, window.innerHeight - 250, 440)
+          : 380;
       const calculated = Math.floor(maxDim / size);
-      setCellSize(Math.max(34, Math.min(calculated, 54)));
+      setCellSize(Math.max(28, Math.min(calculated, 54)));
     };
 
     handleResize();
