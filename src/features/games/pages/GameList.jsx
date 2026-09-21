@@ -60,6 +60,22 @@ const GameList = () => {
     return map;
   }, [assessments]);
 
+  useEffect(() => {
+    const handleGameStatusChange = () => {
+      try {
+        refetch();
+      } catch {}
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("gameStatusChanged", handleGameStatusChange);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("gameStatusChanged", handleGameStatusChange);
+      }
+    };
+  }, [refetch]);
+
   // Normalize games from backend API + merge company calibration
   const gamesList = useMemo(() => {
     if (!Array.isArray(rawGames)) return [];
