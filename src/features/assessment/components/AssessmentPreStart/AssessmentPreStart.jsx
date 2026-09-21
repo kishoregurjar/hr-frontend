@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import {
   Clock,
   FileText,
-  ShieldAlert,
   Building2,
   User,
   Mail,
@@ -22,7 +21,8 @@ import {
   ArrowLeft,
   Rocket,
   Check,
-  Award,
+  Layers,
+  AlertCircle,
   HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,7 @@ const AssessmentPreStart = ({
   isStarting = false,
   onStart,
 }) => {
-  // ── 4 Dedicated Steps: 1: Company Welcome, 2: Candidate Details, 3: OTP Verification, 4: Rules & Launch ──
+  // ── 4 Dedicated Steps: 1: Company Info, 2: Candidate Profile, 3: OTP Security, 4: Rules & Start ──
   const [step, setStep] = useState(1);
 
   const [candidateName, setCandidateName] = useState(
@@ -53,9 +53,9 @@ const AssessmentPreStart = ({
     candidate?.experience || "0-1 Years (Fresher)"
   );
   const [accepted, setAccepted] = useState(false);
-  const [phoneError, setPhoneError] = useState("");
   const [nameError, setNameError] = useState("");
   const [emailError, setEmailError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
 
   // ── OTP Verification State ──────────────────────────────────────
   const [isEmailVerified, setIsEmailVerified] = useState(false);
@@ -83,15 +83,9 @@ const AssessmentPreStart = ({
 
   // Sync candidate prop if loaded asynchronously
   useEffect(() => {
-    if (candidate?.name && !candidateName) {
-      setCandidateName(candidate.name);
-    }
-    if (candidate?.email && !email) {
-      setEmail(candidate.email);
-    }
-    if (candidate?.phone && !mobileNumber) {
-      setMobileNumber(candidate.phone);
-    }
+    if (candidate?.name && !candidateName) setCandidateName(candidate.name);
+    if (candidate?.email && !email) setEmail(candidate.email);
+    if (candidate?.phone && !mobileNumber) setMobileNumber(candidate.phone);
   }, [candidate]);
 
   const durationMinutes =
@@ -120,8 +114,6 @@ const AssessmentPreStart = ({
     assessment?.totalGames ??
     0;
 
-  const passingScore = assessment?.passingScore ?? 60;
-
   const companyName =
     assessment?.companyName ||
     assessment?.company?.name ||
@@ -129,7 +121,7 @@ const AssessmentPreStart = ({
     assessment?.createdBy?.companyMembers?.[0]?.company?.name ||
     candidate?.companyName ||
     candidate?.company?.name ||
-    "Company Assessment";
+    "Cognizant";
 
   const companyLogo =
     assessment?.companyLogo ||
@@ -139,7 +131,19 @@ const AssessmentPreStart = ({
     candidate?.companyLogo ||
     null;
 
-  const jobPosition = assessment?.title || "Candidate Assessment";
+  const jobPosition = assessment?.title || "Competitive Programmer";
+  const aboutDescription =
+    assessment?.description ||
+    assessment?.about ||
+    "Official candidate skill & cognitive aptitude evaluation.";
+
+  // Monogram initials for fallback logo (e.g. CG)
+  const monogram = companyName
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() || "CG";
 
   // ── Handle Send OTP ─────────────────────────────────────────────
   const handleSendOtp = async (targetEmail = email) => {
@@ -190,7 +194,6 @@ const AssessmentPreStart = ({
       otpInputRefs.current[index + 1]?.focus();
     }
 
-    // Auto-verify if all 6 digits are entered
     if (value && index === 5 && newDigits.every((d) => d.length === 1)) {
       triggerVerifyWithDigits(newDigits);
     }
@@ -233,8 +236,7 @@ const AssessmentPreStart = ({
         res?.sessionToken ||
         res?.token ||
         res?.data?.candidateAccessToken ||
-        res?.data?.candidateSessionToken ||
-        res?.data?.token;
+        res?.data?.candidateSessionToken;
 
       if (tokenVal) {
         setCandidateAccessToken(tokenVal);
@@ -246,7 +248,7 @@ const AssessmentPreStart = ({
         }
       }
       toast.success("Email verified successfully!");
-      setStep(4); // Auto advance to Step 4 (Rules & Launch)
+      setStep(4);
     } catch (err) {
       setOtpError(err?.message || "Invalid verification code. Please check and try again.");
       toast.error(err?.message || "Verification failed.");
@@ -255,7 +257,6 @@ const AssessmentPreStart = ({
     }
   };
 
-  // ── Handle Verify OTP Button ────────────────────────────────────
   const handleVerifyOtp = async () => {
     await triggerVerifyWithDigits(otpDigits);
   };
@@ -278,13 +279,11 @@ const AssessmentPreStart = ({
     }
     setEmailError("");
 
-    // If already verified, move directly to Step 4
     if (isEmailVerified) {
       setStep(4);
       return;
     }
 
-    // Advance to Step 3 (OTP) and dispatch OTP email
     setStep(3);
     if (!otpSent) {
       await handleSendOtp(email);
@@ -299,7 +298,6 @@ const AssessmentPreStart = ({
     setStep(4);
   };
 
-  // ── Handle Final Start Launch ──────────────────────────────────
   const handleStartClick = () => {
     if (!candidateName.trim()) {
       setNameError("Please enter your full name.");
@@ -314,7 +312,7 @@ const AssessmentPreStart = ({
     }
 
     if (!accepted) {
-      toast.error("Please accept the assessment guidelines & integrity honor code.");
+      toast.error("Please accept the assessment guidelines & honor code.");
       return;
     }
 
@@ -328,608 +326,609 @@ const AssessmentPreStart = ({
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 py-8 px-4 sm:px-6 font-sans">
-      {/* ── 1. Company & Job Branding Header Card ── */}
-      <div className="rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
+    <div className="min-h-screen bg-[#ffffff] font-sans text-slate-900 flex flex-col items-center py-8 px-4 sm:px-8">
+      {/* ── Outer Full-Width Container ── */}
+      <div className="w-full max-w-5xl space-y-6">
+        {/* ── 1. Top Header: Minimal Plain Header (Style 1) ── */}
+        <header className="pb-5 border-b-2 border-[#303331]/90">
+          <div className="flex items-center gap-4">
             {companyLogo ? (
               <img
                 src={companyLogo}
                 alt={companyName}
-                className="h-14 w-14 rounded-2xl object-contain bg-white/10 p-1.5 border border-white/20 shadow-md"
+                className="h-14 w-14 rounded-2xl object-contain bg-slate-50 p-2 border border-slate-200 shadow-xs"
               />
             ) : (
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 font-bold text-xl text-white shadow-lg shadow-blue-500/30">
-                <Building2 className="h-7 w-7" />
+              <div className="h-13 w-13 rounded-xl bg-[#303331] text-white flex items-center justify-center font-black text-base shadow-xs shrink-0 tracking-wide">
+                {monogram}
               </div>
             )}
+
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-widest text-blue-400">
-                  {companyName}
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-500">
+                <span>{companyName}</span>
+                <span>•</span>
+                <span className="text-emerald-700 font-extrabold flex items-center gap-1">
+                  VERIFIED
                 </span>
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
               </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-0.5">
+
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#303331] tracking-tight mt-0.5">
                 {jobPosition}
               </h1>
             </div>
           </div>
+        </header>
 
-          <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 px-3.5 py-1.5 text-xs font-semibold gap-1.5 rounded-full">
-            <Sparkles className="h-3.5 w-3.5" />
-            Verified Assessment Invitation
-          </Badge>
-        </div>
-      </div>
-
-      {/* ── 2. Stepped Wizard 4-Step Breadcrumb Navigation ── */}
-      <div className="grid grid-cols-4 gap-1.5 sm:gap-2 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200 text-xs font-bold text-slate-600 shadow-xs">
-        {/* Step 1: Company Welcome */}
-        <button
-          type="button"
-          onClick={() => setStep(1)}
-          className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl transition cursor-pointer ${
-            step === 1
-              ? "bg-white text-blue-700 shadow-xs border border-slate-200 font-extrabold"
-              : "text-slate-600 hover:bg-slate-200/60"
-          }`}
-        >
-          <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-extrabold ${
-            step === 1 ? "bg-blue-100 text-blue-700" : "bg-slate-200 text-slate-600"
-          }`}>
-            1
-          </span>
-          <span className="hidden md:inline">Company Info</span>
-          <span className="md:hidden">Step 1</span>
-        </button>
-
-        {/* Step 2: Candidate Details */}
-        <button
-          type="button"
-          onClick={() => setStep(2)}
-          className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl transition cursor-pointer ${
-            step === 2
-              ? "bg-white text-blue-700 shadow-xs border border-slate-200 font-extrabold"
-              : "text-slate-600 hover:bg-slate-200/60"
-          }`}
-        >
-          <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-extrabold ${
-            step === 2 ? "bg-blue-100 text-blue-700" : "bg-slate-200 text-slate-600"
-          }`}>
-            2
-          </span>
-          <span className="hidden md:inline">Candidate Profile</span>
-          <span className="md:hidden">Step 2</span>
-        </button>
-
-        {/* Step 3: OTP Verification */}
-        <button
-          type="button"
-          onClick={() => candidateName && email && setStep(3)}
-          className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl transition cursor-pointer ${
-            step === 3
-              ? "bg-white text-blue-700 shadow-xs border border-slate-200 font-extrabold"
-              : isEmailVerified
-              ? "text-emerald-700 hover:bg-slate-200/60"
-              : "text-slate-600 hover:bg-slate-200/60"
-          }`}
-        >
-          {isEmailVerified ? (
-            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-          ) : (
-            <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-extrabold ${
-              step === 3 ? "bg-blue-100 text-blue-700" : "bg-slate-200 text-slate-600"
-            }`}>
-              3
-            </span>
-          )}
-          <span className="hidden md:inline">OTP Security</span>
-          <span className="md:hidden">Step 3</span>
-        </button>
-
-        {/* Step 4: Rules & Launch */}
-        <button
-          type="button"
-          onClick={() => isEmailVerified && setStep(4)}
-          disabled={!isEmailVerified}
-          className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl transition ${
-            step === 4
-              ? "bg-white text-blue-700 shadow-xs border border-slate-200 font-extrabold"
-              : "disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-200/60 cursor-pointer"
-          }`}
-        >
-          <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-extrabold ${
-            step === 4 ? "bg-blue-100 text-blue-700" : "bg-slate-200 text-slate-600"
-          }`}>
-            4
-          </span>
-          <span className="hidden md:inline">Rules & Start</span>
-          <span className="md:hidden">Step 4</span>
-        </button>
-      </div>
-
-      {/* ── STEP 1: COMPANY DETAILS & WELCOME ── */}
-      {step === 1 && (
-        <div className="rounded-2xl border bg-card p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in-50 duration-200">
-          <div className="flex items-center gap-3 pb-4 border-b">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-              <Building2 className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="font-bold text-slate-900 text-lg">
-                Step 1: Welcome to {companyName}
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                You have been selected to complete the official evaluation for the role of <strong>{jobPosition}</strong>.
-              </p>
-            </div>
-          </div>
-
-          {/* Assessment Key Highlights */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-            <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-4 flex items-center gap-3.5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm shadow-blue-500/20">
-                <Clock className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground font-semibold">Total Duration</p>
-                <p className="text-base font-extrabold text-slate-900">{durationMinutes} Minutes</p>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-4 flex items-center gap-3.5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-500/20">
-                <FileText className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground font-semibold">Technical Questions</p>
-                <p className="text-base font-extrabold text-slate-900">{totalQuestions} MCQs</p>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-purple-100 bg-purple-50/40 p-4 flex items-center gap-3.5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-purple-600 text-white shadow-sm shadow-purple-500/20">
-                <Gamepad2 className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground font-semibold">Cognitive Modules</p>
-                <p className="text-base font-extrabold text-slate-900">{totalGames} Games</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Company Brief & Overview Box */}
-          <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-5 space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-              <Award className="h-4 w-4 text-blue-600" />
-              About This Assessment
-            </h3>
-            <p className="text-sm text-slate-600 leading-relaxed">
-              {assessment?.description ||
-                `This online assessment is designed by the hiring team at ${companyName} to assess your problem-solving capabilities, technical domain understanding, and cognitive agility. Please make sure you are in a quiet environment before proceeding.`}
-            </p>
-          </div>
-
-          {/* Proceed CTA */}
-          <div className="pt-2 flex justify-end">
-            <Button
-              type="button"
-              onClick={handleStep1ToStep2}
-              className="h-11 px-7 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer gap-2"
+        {/* ── 2. Stepper Bar (Plain Minimalist Pills) ── */}
+        <nav aria-label="Progress" className="flex flex-wrap items-center gap-2.5 pt-1">
+          {/* Step 1: Company Info */}
+          <button
+            type="button"
+            onClick={() => setStep(1)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              step === 1
+                ? "bg-[#303331] text-white shadow-xs"
+                : "bg-[#f1f5f9] text-[#64748b] hover:bg-slate-200/80"
+            }`}
+          >
+            <span
+              className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-black ${
+                step === 1 ? "bg-white text-[#303331]" : "bg-slate-300 text-slate-700"
+              }`}
             >
-              <span>Continue to Candidate Profile</span>
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+              1
+            </span>
+            <span>Company Info</span>
+          </button>
 
-      {/* ── STEP 2: CANDIDATE PROFILE DETAILS ── */}
-      {step === 2 && (
-        <div className="rounded-2xl border bg-card p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in-50 duration-200">
-          <div className="flex items-center justify-between pb-4 border-b">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                <User className="h-5 w-5" />
+          {/* Step 2: Candidate Profile */}
+          <button
+            type="button"
+            onClick={() => setStep(2)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              step === 2
+                ? "bg-[#303331] text-white shadow-xs"
+                : "bg-[#f1f5f9] text-[#64748b] hover:bg-slate-200/80"
+            }`}
+          >
+            <span
+              className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-black ${
+                step === 2 ? "bg-white text-[#303331]" : "bg-slate-300 text-slate-700"
+              }`}
+            >
+              2
+            </span>
+            <span>Candidate Profile</span>
+          </button>
+
+          {/* Step 3: OTP Security */}
+          <button
+            type="button"
+            onClick={() => candidateName && email && setStep(3)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              step === 3
+                ? "bg-[#303331] text-white shadow-xs"
+                : isEmailVerified
+                ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                : "bg-[#f1f5f9] text-[#64748b] hover:bg-slate-200/80"
+            }`}
+          >
+            {isEmailVerified ? (
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            ) : (
+              <span
+                className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-black ${
+                  step === 3 ? "bg-white text-[#303331]" : "bg-slate-300 text-slate-700"
+                }`}
+              >
+                3
+              </span>
+            )}
+            <span>OTP Security</span>
+          </button>
+
+          {/* Step 4: Rules & Start */}
+          <button
+            type="button"
+            onClick={() => isEmailVerified && setStep(4)}
+            disabled={!isEmailVerified}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all ${
+              step === 4
+                ? "bg-[#303331] text-white shadow-xs"
+                : "bg-[#f1f5f9] text-[#64748b] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-200/80 cursor-pointer"
+            }`}
+          >
+            <span
+              className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-black ${
+                step === 4 ? "bg-white text-[#303331]" : "bg-slate-300 text-slate-700"
+              }`}
+            >
+              4
+            </span>
+            <span>Rules & Start</span>
+          </button>
+        </nav>
+
+        {/* ── 3. Step Content Card (Minimalist Clean Container) ── */}
+        <main className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-9 shadow-xs space-y-7">
+          {/* ══════════════════════════════════════════════════════════════
+              STEP 1: COMPANY INFO & WELCOME (EXACT SCREENSHOT MATCH)
+             ══════════════════════════════════════════════════════════════ */}
+          {step === 1 && (
+            <div className="space-y-6">
+              {/* Step Header */}
+              <div className="flex items-start gap-3.5">
+                <div className="h-11 w-11 rounded-xl bg-[#f1f5f9] border border-slate-200/70 flex items-center justify-center text-[#303331] shrink-0 mt-0.5">
+                  <Building2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-black text-[#303331] tracking-tight">
+                    Step 1: Welcome to {companyName}
+                  </h2>
+                  <p className="text-sm font-medium text-slate-600 mt-0.5">
+                    You've been selected to complete the evaluation for{" "}
+                    <strong className="text-slate-900 font-bold">{jobPosition}</strong>.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="font-bold text-slate-900 text-lg">
-                  Step 2: Candidate Profile Details
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Confirm your personal details and contact info for {companyName}'s hiring records.
+
+              {/* 3 Minimal Stat Metric Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+                {/* Duration Card */}
+                <div className="flex items-center gap-3.5 rounded-xl border border-slate-200 p-4 bg-white shadow-xs">
+                  <div className="h-11 w-11 rounded-xl bg-[#303331] text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <Clock className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold text-slate-500 block">
+                      Total Duration
+                    </span>
+                    <span className="text-base font-extrabold text-[#303331]">
+                      {durationMinutes} Minutes
+                    </span>
+                  </div>
+                </div>
+
+                {/* Technical Questions Card */}
+                <div className="flex items-center gap-3.5 rounded-xl border border-slate-200 p-4 bg-white shadow-xs">
+                  <div className="h-11 w-11 rounded-xl bg-[#303331] text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold text-slate-500 block">
+                      Technical Questions
+                    </span>
+                    <span className="text-base font-extrabold text-[#303331]">
+                      {totalQuestions} {totalQuestions === 1 ? "MCQ" : "MCQs"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Cognitive Games Card */}
+                <div className="flex items-center gap-3.5 rounded-xl border border-slate-200 p-4 bg-white shadow-xs">
+                  <div className="h-11 w-11 rounded-xl bg-[#303331] text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <Gamepad2 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold text-slate-500 block">
+                      Cognitive Modules
+                    </span>
+                    <span className="text-base font-extrabold text-[#303331]">
+                      {totalGames} {totalGames === 1 ? "Game" : "Games"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* ABOUT THIS ASSESSMENT Box */}
+              <div className="rounded-xl border border-slate-200 bg-[#f8fafc] p-4 sm:p-5 space-y-1.5">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 block">
+                  ABOUT THIS ASSESSMENT
+                </span>
+                <p className="text-sm font-medium text-slate-800 leading-relaxed whitespace-pre-wrap">
+                  {aboutDescription}
                 </p>
               </div>
+
+              {/* Action Button */}
+              <div className="flex justify-end pt-2">
+                <Button
+                  type="button"
+                  onClick={handleStep1ToStep2}
+                  className="h-11 px-7 font-bold text-xs bg-[#303331] hover:bg-[#424644] text-white rounded-xl shadow-xs transition-all gap-2"
+                >
+                  <span>Continue to Candidate Profile</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
+          )}
 
-            {isEmailVerified && (
-              <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 font-semibold gap-1 text-xs py-1">
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-                Verified
-              </Badge>
-            )}
-          </div>
+          {/* ══════════════════════════════════════════════════════════════
+              STEP 2: CANDIDATE PROFILE FORM
+             ══════════════════════════════════════════════════════════════ */}
+          {step === 2 && (
+            <div className="space-y-6">
+              <div className="flex items-start gap-3.5">
+                <div className="h-11 w-11 rounded-xl bg-[#f1f5f9] border border-slate-200/70 flex items-center justify-center text-[#303331] shrink-0 mt-0.5">
+                  <User className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-black text-[#303331] tracking-tight">
+                    Step 2: Candidate Profile Details
+                  </h2>
+                  <p className="text-sm font-medium text-slate-600 mt-0.5">
+                    Confirm your personal details and contact info for {companyName}'s hiring records.
+                  </p>
+                </div>
+              </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            {/* Full Name */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                <User className="h-3.5 w-3.5 text-slate-400" />
-                Candidate Full Name <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={candidateName}
-                onChange={(e) => {
-                  setCandidateName(e.target.value);
-                  if (nameError) setNameError("");
-                }}
-                placeholder="e.g. Rahul Sharma"
-                className={`w-full h-11 px-3.5 rounded-xl border bg-background text-sm font-medium focus:outline-none focus:ring-2 transition ${
-                  nameError
-                    ? "border-rose-500 ring-rose-500/30"
-                    : "focus:ring-blue-500/40 focus:border-blue-500"
-                }`}
-              />
-              {nameError && (
-                <p className="text-xs text-rose-500 font-medium">{nameError}</p>
-              )}
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
+                {/* Full Name */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">
+                    Candidate Full Name <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="e.g. Rohit Panchal"
+                      value={candidateName}
+                      onChange={(e) => {
+                        setCandidateName(e.target.value);
+                        setNameError("");
+                      }}
+                      className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 bg-white text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#303331]/20 focus:border-[#303331]"
+                    />
+                  </div>
+                  {nameError && <p className="text-xs font-semibold text-rose-600">{nameError}</p>}
+                </div>
 
-            {/* Email Address */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <Mail className="h-3.5 w-3.5 text-slate-400" />
-                  Email Address <span className="text-rose-500">*</span>
-                </span>
-                {isEmailVerified && (
-                  <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3" /> Verified
-                  </span>
-                )}
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => {
-                  if (!isEmailVerified) setEmail(e.target.value);
-                  if (emailError) setEmailError("");
-                }}
-                disabled={isEmailVerified || Boolean(candidate?.email && candidate.email.length > 0)}
-                placeholder="candidate@example.com"
-                className={`w-full h-11 px-3.5 rounded-xl border text-sm font-medium transition ${
-                  isEmailVerified
-                    ? "bg-emerald-50/50 border-emerald-200 text-slate-800"
-                    : emailError
-                    ? "border-rose-500 ring-rose-500/30"
-                    : "bg-background focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
-                }`}
-              />
-              {emailError && (
-                <p className="text-xs text-rose-500 font-medium">{emailError}</p>
-              )}
-            </div>
+                {/* Email Address */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">
+                    Email Address <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+                    <input
+                      type="email"
+                      placeholder="e.g. rohit@example.com"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setEmailError("");
+                        setIsEmailVerified(false);
+                      }}
+                      className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 bg-white text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#303331]/20 focus:border-[#303331]"
+                    />
+                  </div>
+                  {emailError && <p className="text-xs font-semibold text-rose-600">{emailError}</p>}
+                </div>
 
-            {/* Mobile Number */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                <Phone className="h-3.5 w-3.5 text-slate-400" />
-                Mobile / Contact Number
-              </label>
-              <input
-                type="tel"
-                value={mobileNumber}
-                onChange={(e) => {
-                  setMobileNumber(e.target.value);
-                  if (phoneError) setPhoneError("");
-                }}
-                placeholder="+91 98765 43210"
-                className={`w-full h-11 px-3.5 rounded-xl border bg-background text-sm font-medium focus:outline-none focus:ring-2 transition ${
-                  phoneError
-                    ? "border-rose-500 ring-rose-500/30"
-                    : "focus:ring-blue-500/40 focus:border-blue-500"
-                }`}
-              />
-            </div>
+                {/* Mobile Number */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">
+                    Mobile / Contact Number
+                  </label>
+                  <div className="relative">
+                    <Phone className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+                    <input
+                      type="tel"
+                      placeholder="e.g. +91 98765 43210"
+                      value={mobileNumber}
+                      onChange={(e) => setMobileNumber(e.target.value)}
+                      className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 bg-white text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#303331]/20 focus:border-[#303331]"
+                    />
+                  </div>
+                </div>
 
-            {/* Experience Level */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                <GraduationCap className="h-3.5 w-3.5 text-slate-400" />
-                Experience Level
-              </label>
-              <select
-                value={experience}
-                onChange={(e) => setExperience(e.target.value)}
-                className="w-full h-11 px-3.5 rounded-xl border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition cursor-pointer"
-              >
-                <option value="0-1 Years (Fresher)">0-1 Years (Fresher / Student)</option>
-                <option value="1-3 Years">1-3 Years (Junior Professional)</option>
-                <option value="3-5 Years">3-5 Years (Mid-Level)</option>
-                <option value="5+ Years">5+ Years (Senior / Lead)</option>
-              </select>
-            </div>
-          </div>
+                {/* Experience Level */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">
+                    Experience Level
+                  </label>
+                  <div className="relative">
+                    <GraduationCap className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+                    <select
+                      value={experience}
+                      onChange={(e) => setExperience(e.target.value)}
+                      className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 bg-white text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#303331]/20 focus:border-[#303331] cursor-pointer"
+                    >
+                      <option value="0-1 Years (Fresher / Student)">0-1 Years (Fresher / Student)</option>
+                      <option value="1-3 Years (Junior)">1-3 Years (Junior Professional)</option>
+                      <option value="3-5 Years (Mid-Level)">3-5 Years (Mid-Level Developer)</option>
+                      <option value="5+ Years (Senior)">5+ Years (Senior Engineer)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
 
-          {/* Navigation Actions */}
-          <div className="pt-2 flex items-center justify-between gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setStep(1)}
-              className="h-11 px-5 rounded-xl text-xs font-bold gap-2 cursor-pointer"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back to Company Info</span>
-            </Button>
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setStep(1)}
+                  className="h-11 px-6 font-bold text-xs border-slate-300 text-slate-700 hover:bg-slate-50 rounded-xl"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Company Info
+                </Button>
 
-            <Button
-              type="button"
-              onClick={handleStep2ToStep3}
-              disabled={isSendingOtp}
-              className="h-11 px-6 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer gap-2"
-            >
-              {isSendingOtp ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Sending Verification Code...</span>
-                </>
-              ) : (
-                <>
+                <Button
+                  type="button"
+                  onClick={handleStep2ToStep3}
+                  className="h-11 px-7 font-bold text-xs bg-[#303331] hover:bg-[#424644] text-white rounded-xl shadow-xs transition-all gap-2"
+                >
                   <span>Proceed to OTP Verification</span>
                   <ArrowRight className="h-4 w-4" />
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* ── STEP 3: SECURITY & OTP VERIFICATION ── */}
-      {step === 3 && (
-        <div className="rounded-2xl border bg-card p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in-50 duration-200">
-          <div className="flex items-center justify-between pb-4 border-b">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                <KeyRound className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="font-bold text-slate-900 text-lg">
-                  Step 3: Email OTP Verification
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  A 6-digit passcode has been dispatched to authenticate your identity.
-                </p>
+                </Button>
               </div>
             </div>
+          )}
 
-            {isEmailVerified ? (
-              <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 font-semibold gap-1 text-xs py-1">
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-                Verified
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="text-amber-700 bg-amber-50 border-amber-200 text-xs py-1 gap-1">
-                <Lock className="h-3 w-3 text-amber-600" />
-                OTP Gate
-              </Badge>
-            )}
-          </div>
+          {/* ══════════════════════════════════════════════════════════════
+              STEP 3: EMAIL OTP VERIFICATION (EXACT SCREENSHOT MATCH)
+             ══════════════════════════════════════════════════════════════ */}
+          {step === 3 && (
+            <div className="space-y-6">
+              {/* Step 3 Header */}
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3.5">
+                  <div className="h-11 w-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0 mt-0.5">
+                    <KeyRound className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-black text-[#303331] tracking-tight">
+                      Step 3: Email OTP Verification
+                    </h2>
+                    <p className="text-sm font-medium text-slate-600 mt-0.5">
+                      A 6-digit passcode has been dispatched to authenticate your identity.
+                    </p>
+                  </div>
+                </div>
 
-          <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-5 sm:p-6 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
-                <Lock className="h-3.5 w-3.5 text-blue-600" />
-                Enter 6-Digit Passcode
-              </span>
-              <span className="text-xs text-slate-600">
-                Sent to <strong className="text-blue-900">{email}</strong>
-              </span>
-            </div>
+                {/* OTP Gate Badge */}
+                <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0 mt-1">
+                  <Lock className="h-3.5 w-3.5" />
+                  <span>OTP Gate</span>
+                </div>
+              </div>
 
-            {/* OTP Input Boxes */}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 py-1" onPaste={handleOtpPaste}>
-              {otpDigits.map((digit, idx) => (
-                <input
-                  key={idx}
-                  ref={(el) => (otpInputRefs.current[idx] = el)}
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete={idx === 0 ? "one-time-code" : "off"}
-                  pattern="[0-9]*"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleOtpChange(idx, e.target.value)}
-                  onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                  className="h-12 w-11 sm:w-12 text-center font-mono text-xl font-extrabold rounded-xl border border-blue-200 bg-white text-slate-900 shadow-xs focus:border-blue-600 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition"
-                />
-              ))}
+              {/* OTP Passcode Card */}
+              <div className="rounded-2xl border border-blue-200/80 bg-blue-50/20 p-5 sm:p-7 space-y-4">
+                {/* Header row inside card */}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
+                    <Lock className="h-3.5 w-3.5 text-[#303331]" />
+                    <span>ENTER 6-DIGIT PASSCODE</span>
+                  </div>
+                  <div className="text-xs text-slate-500 font-medium">
+                    Sent to <strong className="text-slate-900 font-bold">{email}</strong>
+                  </div>
+                </div>
 
-              <Button
-                type="button"
-                onClick={handleVerifyOtp}
-                disabled={isVerifyingOtp || otpDigits.join("").length !== 6}
-                className="h-12 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition shrink-0 cursor-pointer"
-              >
-                {isVerifyingOtp ? (
-                  <>
-                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                    Verifying...
-                  </>
-                ) : (
-                  "Verify Code"
+                {/* Inputs & Verify Button Row */}
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <div className="flex items-center gap-2 sm:gap-2.5" onPaste={handleOtpPaste}>
+                    {otpDigits.map((digit, idx) => (
+                      <input
+                        key={idx}
+                        ref={(el) => (otpInputRefs.current[idx] = el)}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleOtpChange(idx, e.target.value)}
+                        onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                        className={`h-11 w-9 sm:h-12 sm:w-11 text-center text-lg sm:text-xl font-black rounded-xl border bg-white text-slate-900 transition-all focus:outline-none focus:ring-2 focus:ring-[#303331]/20 ${
+                          digit
+                            ? "border-[#303331] ring-1 ring-[#303331]/20"
+                            : "border-slate-300"
+                        }`}
+                      />
+                    ))}
+                  </div>
+
+                  <Button
+                    type="button"
+                    onClick={handleVerifyOtp}
+                    disabled={isVerifyingOtp || otpDigits.some((d) => !d)}
+                    className="h-11 sm:h-12 px-6 font-bold text-xs bg-[#303331] hover:bg-[#424644] text-white rounded-xl shadow-xs transition-all gap-2 disabled:opacity-50 shrink-0"
+                  >
+                    {isVerifyingOtp ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <span>Verify Code</span>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Error & Dev Hint */}
+                {otpError && (
+                  <p className="text-xs font-semibold text-rose-600">{otpError}</p>
                 )}
-              </Button>
-            </div>
 
-            {otpError && (
-              <p className="text-xs text-rose-600 font-semibold">{otpError}</p>
-            )}
-
-            {/* Resend OTP Bar */}
-            <div className="flex items-center justify-between pt-2 border-t border-blue-200/60 text-xs">
-              <span className="text-slate-500">Didn't receive the passcode?</span>
-              <button
-                type="button"
-                onClick={() => handleSendOtp(email)}
-                disabled={isSendingOtp || countdown > 0}
-                className="font-bold text-blue-700 hover:text-blue-900 disabled:text-slate-400 cursor-pointer disabled:cursor-not-allowed transition"
-              >
-                {countdown > 0 ? `Resend in ${countdown}s` : "Resend OTP"}
-              </button>
-            </div>
-
-            {devHint && (
-              <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-2.5 text-xs text-emerald-800">
-                🧪 <strong>Dev Passcode:</strong> {devHint}
-              </div>
-            )}
-          </div>
-
-          {/* Navigation Actions */}
-          <div className="pt-2 flex items-center justify-between gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setStep(2)}
-              className="h-11 px-5 rounded-xl text-xs font-bold gap-2 cursor-pointer"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back to Profile</span>
-            </Button>
-
-            <Button
-              type="button"
-              onClick={handleStep3ToStep4}
-              disabled={!isEmailVerified}
-              className="h-11 px-6 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer gap-2 disabled:opacity-40"
-            >
-              <span>Continue to Rules & Start</span>
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* ── STEP 4: ASSESSMENT INSTRUCTIONS, RULES & LAUNCH ── */}
-      {step === 4 && (
-        <div className="space-y-6 animate-in fade-in-50 duration-200">
-          {/* Rules Card */}
-          <div className="rounded-2xl border bg-card p-6 sm:p-8 shadow-sm space-y-5">
-            <div className="flex items-center gap-3 pb-4 border-b">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-                <ShieldAlert className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="font-bold text-slate-900 text-lg">
-                  Step 4: Assessment Instructions & Integrity Rules
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Review the guidelines carefully before launching your secure test session.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2 text-xs">
-              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 flex items-start gap-3">
-                <Clock className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
-                <span className="text-slate-700 leading-relaxed font-medium">
-                  The <strong>{durationMinutes}-minute countdown timer</strong> starts the moment you launch the test.
-                </span>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 flex items-start gap-3">
-                <RotateCw className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span className="text-slate-700 leading-relaxed font-medium">
-                  All your question choices and game milestones are <strong>auto-saved in real time</strong>.
-                </span>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 flex items-start gap-3">
-                <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-                <span className="text-slate-700 leading-relaxed font-medium">
-                  Closing or refreshing your browser window will <strong>not pause</strong> the countdown clock.
-                </span>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 flex items-start gap-3">
-                <Lock className="h-4 w-4 text-indigo-600 shrink-0 mt-0.5" />
-                <span className="text-slate-700 leading-relaxed font-medium">
-                  The test runs in <strong>mandatory fullscreen mode</strong>. Tab switching is logged for HR review.
-                </span>
-              </div>
-            </div>
-
-            {/* Candidate Summary Verification Box */}
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-2 text-xs">
-              <div className="flex justify-between border-b pb-1.5">
-                <span className="text-slate-500">Candidate:</span>
-                <span className="font-bold text-slate-900">{candidateName}</span>
-              </div>
-              <div className="flex justify-between border-b pb-1.5">
-                <span className="text-slate-500">Verified Email:</span>
-                <span className="font-bold text-slate-900">{email}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Hiring Organization:</span>
-                <span className="font-bold text-slate-900">{companyName}</span>
-              </div>
-            </div>
-
-            {/* Honor Code Agreement Checkbox */}
-            <div className="pt-1">
-              <label className="flex items-start gap-3 p-4 rounded-xl border border-blue-200 bg-blue-50/50 cursor-pointer hover:bg-blue-50 transition">
-                <input
-                  type="checkbox"
-                  checked={accepted}
-                  onChange={(e) => setAccepted(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
-                />
-                <span className="text-xs font-semibold text-slate-800 leading-relaxed">
-                  I confirm that I am taking this assessment independently, my details are accurate, and I agree to the proctoring guidelines.
-                </span>
-              </label>
-            </div>
-
-            {/* Launch Actions */}
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setStep(3)}
-                className="h-11 w-full sm:w-auto px-5 text-xs font-bold gap-2 cursor-pointer"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span>Back to Verification</span>
-              </Button>
-
-              <Button
-                type="button"
-                onClick={handleStartClick}
-                disabled={isStarting || !accepted}
-                className="h-12 w-full sm:w-auto px-8 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-sm shadow-lg shadow-emerald-500/20 transition-all cursor-pointer gap-2 disabled:opacity-40"
-              >
-                {isStarting ? (
-                  <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Starting Test...</span>
-                  </>
-                ) : (
-                  <>
-                    <Rocket className="h-5 w-5" />
-                    <span>Start Test</span>
-                  </>
+                {devHint && (
+                  <p className="text-xs font-mono text-emerald-700 bg-emerald-50 py-1.5 px-3 rounded-lg border border-emerald-200 inline-block">
+                    Dev Code: <strong>{devHint}</strong>
+                  </p>
                 )}
-              </Button>
+
+                {/* Footer row: Didn't receive? / Resend OTP */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-xs">
+                  <span className="font-medium text-slate-500">
+                    Didn't receive the passcode?
+                  </span>
+
+                  {countdown > 0 ? (
+                    <span className="font-semibold text-slate-500">
+                      Resend OTP in <strong className="text-slate-800">{countdown}s</strong>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleSendOtp(email)}
+                      disabled={isSendingOtp}
+                      className="font-bold text-[#303331] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <RotateCw className={`h-3 w-3 ${isSendingOtp ? "animate-spin" : ""}`} />
+                      Resend OTP
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setStep(2)}
+                  className="h-11 px-6 font-bold text-xs border-slate-300 text-slate-700 hover:bg-slate-50 rounded-xl"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Profile
+                </Button>
+
+                <Button
+                  type="button"
+                  onClick={handleStep3ToStep4}
+                  disabled={!isEmailVerified}
+                  className={`h-11 px-7 font-bold text-xs rounded-xl shadow-xs transition-all gap-2 ${
+                    isEmailVerified
+                      ? "bg-[#303331] hover:bg-[#424644] text-white"
+                      : "bg-[#303331]/40 text-white/70 cursor-not-allowed"
+                  }`}
+                >
+                  <span>Continue to Rules & Start</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
+
+          {/* ══════════════════════════════════════════════════════════════
+              STEP 4: RULES & FINAL LAUNCH (FULLSCREEN READY)
+             ══════════════════════════════════════════════════════════════ */}
+          {step === 4 && (
+            <div className="space-y-6">
+              <div className="flex items-start gap-3.5">
+                <div className="h-11 w-11 rounded-xl bg-[#f1f5f9] border border-slate-200/70 flex items-center justify-center text-[#303331] shrink-0 mt-0.5">
+                  <Lock className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-black text-[#303331] tracking-tight">
+                    Step 4: Rules & System Readiness
+                  </h2>
+                  <p className="text-sm font-medium text-slate-600 mt-0.5">
+                    Please review the proctoring guidelines before launching the test.
+                  </p>
+                </div>
+              </div>
+
+              {/* Guidelines Checklist */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                <div className="rounded-xl border border-slate-200 p-4 bg-[#f8fafc] space-y-1">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    <span>Fullscreen Proctoring</span>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed pl-6">
+                    Test will run in secure fullscreen mode. Do not minimize or switch tabs.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 p-4 bg-[#f8fafc] space-y-1">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    <span>Real-time Autosave</span>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed pl-6">
+                    Answers and game scores are encrypted and autosaved in real-time.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 p-4 bg-[#f8fafc] space-y-1">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    <span>Strict Single Attempt</span>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed pl-6">
+                    Once submitted, re-attempts are strictly barred as per hiring policy.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 p-4 bg-[#f8fafc] space-y-1">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    <span>Stable Internet Connection</span>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed pl-6">
+                    Ensure an uninterrupted network connection during the entire {durationMinutes} mins.
+                  </p>
+                </div>
+              </div>
+
+              {/* Honor Code Acceptance */}
+              <div
+                onClick={() => setAccepted(!accepted)}
+                className={`flex items-start gap-3.5 rounded-xl border p-4 sm:p-5 transition-all cursor-pointer select-none ${
+                  accepted
+                    ? "border-emerald-600 bg-emerald-50/40 text-slate-900 shadow-xs"
+                    : "border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
+                }`}
+              >
+                <div
+                  className={`h-5 w-5 rounded-md border flex items-center justify-center transition-all mt-0.5 shrink-0 ${
+                    accepted ? "bg-emerald-600 border-emerald-600 text-white" : "border-slate-300 bg-white"
+                  }`}
+                >
+                  {accepted && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                </div>
+                <label className="text-xs sm:text-sm font-semibold text-slate-800 cursor-pointer leading-relaxed">
+                  I agree to the testing guidelines, affirm that all responses will be my own authentic work, and accept the proctoring honor code.
+                </label>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setStep(3)}
+                  className="h-11 px-6 font-bold text-xs border-slate-300 text-slate-700 hover:bg-slate-50 rounded-xl"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to OTP Security
+                </Button>
+
+                <Button
+                  type="button"
+                  onClick={handleStartClick}
+                  disabled={!accepted || isStarting}
+                  className="h-12 px-8 font-black text-xs sm:text-sm bg-[#303331] hover:bg-[#424644] text-white rounded-xl shadow-md transition-all gap-2.5 disabled:opacity-40"
+                >
+                  {isStarting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Initializing Test Environment...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Rocket className="h-4 w-4" />
+                      <span>Start Assessment Now</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   );
 };
