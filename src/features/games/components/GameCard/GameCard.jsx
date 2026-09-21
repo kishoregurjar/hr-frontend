@@ -102,8 +102,9 @@ const GameCard = ({ game, onPreview, onConfigure }) => {
           type="button"
           variant="outline"
           size="sm"
+          disabled={game.status === "Inactive" || game.isActive === false}
           onClick={() => onPreview?.(game)}
-          className="flex-1 h-9 rounded-xl border-slate-200 hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-bold gap-1.5 shadow-2xs cursor-pointer transition"
+          className="flex-1 h-9 rounded-xl border-slate-200 hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-bold gap-1.5 shadow-2xs cursor-pointer transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Play className="h-3.5 w-3.5 text-blue-600 fill-blue-600" />
           Test Preview
@@ -112,8 +113,9 @@ const GameCard = ({ game, onPreview, onConfigure }) => {
         <Button
           type="button"
           size="sm"
+          disabled={game.status === "Inactive" || game.isActive === false}
           onClick={() => onConfigure?.(game)}
-          className="flex-1 h-9 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold gap-1.5 shadow-sm shadow-blue-500/25 cursor-pointer transition"
+          className="flex-1 h-9 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold gap-1.5 shadow-sm shadow-blue-500/25 cursor-pointer transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Settings2 className="h-3.5 w-3.5" />
           Configure
