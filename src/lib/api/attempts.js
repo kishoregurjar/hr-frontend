@@ -366,7 +366,12 @@ export const startAttempt = async ({
       );
 
       const liveData = res?.data?.data || res?.data || res;
-      if (liveData?.id) {
+      const realId = liveData?.id || liveData?.attempt?.id;
+      if (realId) {
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("candidate_attempt_id", realId);
+          if (token) sessionStorage.setItem("invitationToken", token);
+        }
         const liveQuestions =
           liveData.questions ||
           liveData.AssessmentQuestion ||
@@ -377,7 +382,7 @@ export const startAttempt = async ({
           questions;
 
         const liveAttempt = {
-          id: liveData.id,
+          id: realId,
           assignmentId,
           candidateId,
           assessmentId: liveData.assessmentId || assessmentId,
@@ -739,13 +744,21 @@ export const saveGameResult = async ({
 };
 
 export const completeAttempt = async ({ attemptId, assessment, responses }) => {
+  let targetAttemptId = attemptId;
+  if ((!targetAttemptId || String(targetAttemptId).startsWith("att_")) && typeof window !== "undefined") {
+    const storedId = sessionStorage.getItem("candidate_attempt_id") || localStorage.getItem("candidate_attempt_id");
+    if (storedId && !String(storedId).startsWith("att_")) {
+      targetAttemptId = storedId;
+    }
+  }
+
   const index = attempts.findIndex(
-    (attempt) => String(attempt.id) === String(attemptId)
+    (attempt) => String(attempt.id) === String(targetAttemptId) || String(attempt.id) === String(attemptId)
   );
 
-  const attempt = index !== -1 ? attempts[index] : { id: attemptId, responses: {}, gameResults: {} };
+  const attempt = index !== -1 ? attempts[index] : { id: targetAttemptId || attemptId, responses: {}, gameResults: {} };
 
-  if (attempt.status === "Completed") {
+  if (attempt.status === "Completed" || attempt.status === "SUBMITTED") {
     return { ...attempt };
   }
 
@@ -779,31 +792,45 @@ export const completeAttempt = async ({ attemptId, assessment, responses }) => {
   const payload = {
     token: invitationToken || undefined,
     invitationToken: invitationToken || undefined,
-    candidateAssessmentId: attemptId,
-    attemptId,
+    candidateAssessmentId: targetAttemptId,
+    attemptId: targetAttemptId,
     responses: responses || attempt.responses || {},
     gameResults: attempt.gameResults || {},
     score: scoringResult.score,
   };
 
-  // 1. Submit to authoritative backend endpoint: POST /api/v1/attempts/submit
+  let submitSuccess = false;
+  let backendErr = null;
+
   try {
     const res = await axiosClient.post("/attempts/submit", payload, { headers });
     const liveData = res?.data?.data || res?.data;
     if (liveData?.score !== undefined) {
       scoringResult.score = Number(liveData.score);
     }
+    submitSuccess = true;
   } catch (err1) {
-    // 2. Fallback endpoint
+    backendErr = err1;
     try {
-      await axiosClient.post(`/assessment-attempts/${attemptId}/submit`, payload, { headers });
+      const res2 = await axiosClient.post(`/assessment-attempts/${targetAttemptId}/submit`, payload, { headers });
+      const liveData2 = res2?.data?.data || res2?.data;
+      if (liveData2?.score !== undefined) {
+        scoringResult.score = Number(liveData2.score);
+      }
+      submitSuccess = true;
     } catch (err2) {
-      console.warn("Live backend submission notice:", err1?.message || err2?.message);
+      console.error("Live backend submission error:", err1?.message || err2?.message);
+      backendErr = err1 || err2;
     }
+  }
+
+  if (!submitSuccess && backendErr) {
+    throw new Error(backendErr?.response?.data?.message || backendErr?.message || "Assessment submission failed. Please try again.");
   }
 
   const completedRecord = {
     ...attempt,
+    id: targetAttemptId || attempt.id,
     ...(responses ? { responses: Array.isArray(responses) ? [...responses] : responses } : {}),
     status: "Completed",
     score: scoringResult.score,
@@ -917,9 +944,14 @@ export const startAttemptByToken = async (token, candidateAccessToken = null) =>
     const data = res?.data?.data || res?.data || res;
     const attemptObj = data?.attempt || data;
     if (attemptObj && (attemptObj.id || attemptObj.assessmentId)) {
+      const realId = attemptObj.id || attemptObj._id;
+      if (realId && typeof window !== "undefined") {
+        sessionStorage.setItem("candidate_attempt_id", realId);
+        if (token) sessionStorage.setItem("invitationToken", token);
+      }
       const formatted = {
         ...attemptObj,
-        id: attemptObj.id || attemptObj._id,
+        id: realId,
         status: attemptObj.status || "In Progress",
         durationMinutes: attemptObj.durationMinutes || attemptObj.assessment?.durationMinutes || 60,
         questions: attemptObj.questions || attemptObj.assessment?.questions || [],
