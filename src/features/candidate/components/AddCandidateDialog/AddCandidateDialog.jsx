@@ -29,21 +29,24 @@ const AddCandidateDialog = ({ trigger }) => {
   };
 
   const handleSubmit = (values) => {
-    createCandidate.mutate(values, {
-      onSuccess: () => {
-        toast.success("Candidate added successfully!", {
-          description: `${values.name || "Candidate"} has been added to your candidate directory.`,
-        });
-        setOpen(false);
-      },
-      onError: (err) => {
-        toast.error(
-          err?.response?.data?.message ||
-            err?.message ||
-            "Failed to add candidate. Please try again."
-        );
-      },
-    });
+    createCandidate.mutate(
+      { ...values, source: "MANUAL" },
+      {
+        onSuccess: () => {
+          toast.success("Candidate added successfully!", {
+            description: `${values.name || "Candidate"} has been added to your candidate directory.`,
+          });
+          setOpen(false);
+        },
+        onError: (err) => {
+          toast.error(
+            err?.response?.data?.message ||
+              err?.message ||
+              "Failed to add candidate. Please try again."
+          );
+        },
+      }
+    );
   };
 
   return (

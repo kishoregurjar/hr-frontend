@@ -204,7 +204,7 @@ export const createCandidate = async (payload) => {
 
   const phone = payload?.phone || "";
 
-  const candidateSource = payload?.source || "Email Ingestion";
+  const candidateSource = payload?.source || "MANUAL";
 
   const creationBody = {
     email: cleanEmail,
@@ -257,7 +257,7 @@ export const createCandidate = async (payload) => {
       role: payload?.role || "Applicant",
       skills: Array.isArray(payload?.skills) ? payload.skills : ["General"],
       experience: payload?.experience || "1-2 Years",
-      source: "Manual Add",
+      source: candidateSource,
       status: "NEW",
       appliedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
