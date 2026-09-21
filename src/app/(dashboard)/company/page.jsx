@@ -218,13 +218,13 @@ export default function CompanySettingsPage() {
 
   useEffect(() => {
     fetchCompanyData();
-    fetchMembers();
-    fetchInvites(invitationStatusFilter);
+    if (initialTab === "members") fetchMembers();
+    if (initialTab === "invitations") fetchInvites(invitationStatusFilter);
   }, []);
 
   useEffect(() => {
-    if (activeTab === "members") fetchMembers();
-    if (activeTab === "invitations") fetchInvites(invitationStatusFilter);
+    if (activeTab === "members" && members.length === 0) fetchMembers();
+    if (activeTab === "invitations" && invitations.length === 0) fetchInvites(invitationStatusFilter);
   }, [activeTab]);
 
   const handleProfileSubmit = async (e) => {
