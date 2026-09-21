@@ -80,6 +80,11 @@ export default function AdminGamesPage() {
       await toggleGameStatus(gameId, nextIsActive);
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("gameStatusChanged"));
+        try {
+          const bc = new BroadcastChannel("hirequest_realtime");
+          bc.postMessage({ type: "GAME_STATUS_CHANGED" });
+          bc.close();
+        } catch {}
       }
       try {
         queryClient.invalidateQueries({ queryKey: ["games"] });

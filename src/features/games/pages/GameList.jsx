@@ -66,12 +66,28 @@ const GameList = () => {
         refetch();
       } catch {}
     };
+
+    let bc = null;
     if (typeof window !== "undefined") {
       window.addEventListener("gameStatusChanged", handleGameStatusChange);
+      try {
+        bc = new BroadcastChannel("hirequest_realtime");
+        bc.onmessage = (event) => {
+          if (event.data?.type === "GAME_STATUS_CHANGED") {
+            handleGameStatusChange();
+          }
+        };
+      } catch {}
     }
+
     return () => {
       if (typeof window !== "undefined") {
         window.removeEventListener("gameStatusChanged", handleGameStatusChange);
+      }
+      if (bc) {
+        try {
+          bc.close();
+        } catch {}
       }
     };
   }, [refetch]);

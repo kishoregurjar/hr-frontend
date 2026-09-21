@@ -12,7 +12,8 @@ export const useGamesQuery = (options = {}) => {
       const apiGames = await getGames();
       return Array.isArray(apiGames) ? apiGames : [];
     },
-    staleTime: 1000 * 60 * 2, // 2 minutes cache
+    staleTime: 5000,
+    refetchOnWindowFocus: true,
     ...options,
   });
 };
