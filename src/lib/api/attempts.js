@@ -782,7 +782,10 @@ export const completeAttempt = async ({ attemptId, assessment, responses }) => {
   const invitationToken =
     typeof window !== "undefined"
       ? sessionStorage.getItem("invitationToken") ||
-        localStorage.getItem("invitationToken")
+        localStorage.getItem("invitationToken") ||
+        sessionStorage.getItem("candidate_invitation_token") ||
+        new URLSearchParams(window.location.search).get("token") ||
+        new URLSearchParams(window.location.search).get("invitationToken")
       : null;
 
   const headers = candidateToken
