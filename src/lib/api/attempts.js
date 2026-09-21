@@ -601,7 +601,10 @@ export const saveQuizResponse = async ({
       token ||
       (typeof window !== "undefined"
         ? sessionStorage.getItem("invitationToken") ||
-          localStorage.getItem("invitationToken")
+          localStorage.getItem("invitationToken") ||
+          sessionStorage.getItem("candidate_invitation_token") ||
+          new URLSearchParams(window.location.search).get("token") ||
+          new URLSearchParams(window.location.search).get("invitationToken")
         : null);
 
     const opts = selectedOptionIds || (optionId ? [optionId] : []);
@@ -710,7 +713,10 @@ export const saveGameResult = async ({
     const invitationToken =
       typeof window !== "undefined"
         ? sessionStorage.getItem("invitationToken") ||
-          localStorage.getItem("invitationToken")
+          localStorage.getItem("invitationToken") ||
+          sessionStorage.getItem("candidate_invitation_token") ||
+          new URLSearchParams(window.location.search).get("token") ||
+          new URLSearchParams(window.location.search).get("invitationToken")
         : null;
 
     const headers = candidateToken
@@ -1021,7 +1027,10 @@ export const saveAttemptAnswer = async ({
       token ||
       (typeof window !== "undefined"
         ? sessionStorage.getItem("invitationToken") ||
-          localStorage.getItem("invitationToken")
+          localStorage.getItem("invitationToken") ||
+          sessionStorage.getItem("candidate_invitation_token") ||
+          new URLSearchParams(window.location.search).get("token") ||
+          new URLSearchParams(window.location.search).get("invitationToken")
         : null);
 
     const headers = candidateToken
