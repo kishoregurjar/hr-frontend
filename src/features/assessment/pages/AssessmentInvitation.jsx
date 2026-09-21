@@ -43,9 +43,21 @@ const AssessmentInvitation = ({ token }) => {
   const handleStart = async (candidateInfo = {}) => {
     await enterFullscreen().catch(() => {});
 
+    if (token && typeof window !== "undefined") {
+      sessionStorage.setItem("invitationToken", token);
+      sessionStorage.setItem("candidate_invitation_token", token);
+    }
+
     startAssessmentMutation.mutate(candidateInfo, {
       onSuccess: ({ attempt }) => {
-        router.push(`/assessment/attempt/${attempt?.id || attempt?._id}`);
+        const attemptId = attempt?.id || attempt?._id;
+        if (attemptId && !attemptId.startsWith("att_") && typeof window !== "undefined") {
+          sessionStorage.setItem("candidate_attempt_id", attemptId);
+        }
+        const targetPath = token
+          ? `/assessment/attempt/${attemptId}?token=${encodeURIComponent(token)}`
+          : `/assessment/attempt/${attemptId}`;
+        router.push(targetPath);
       },
     });
   };
@@ -142,7 +154,17 @@ const AssessmentInvitation = ({ token }) => {
 
   // ── 6. Fallback / Resume State ─────────────────────────────
   if (existingAttempt) {
-    router.push(`/assessment/attempt/${existingAttempt.id}`);
+    if (token && typeof window !== "undefined") {
+      sessionStorage.setItem("invitationToken", token);
+      sessionStorage.setItem("candidate_invitation_token", token);
+      if (existingAttempt.id && !existingAttempt.id.startsWith("att_")) {
+        sessionStorage.setItem("candidate_attempt_id", existingAttempt.id);
+      }
+    }
+    const targetPath = token
+      ? `/assessment/attempt/${existingAttempt.id}?token=${encodeURIComponent(token)}`
+      : `/assessment/attempt/${existingAttempt.id}`;
+    router.push(targetPath);
   }
 
   return (
