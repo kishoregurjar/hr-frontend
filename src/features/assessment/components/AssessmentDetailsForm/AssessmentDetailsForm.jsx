@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { ArrowRight } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -106,9 +107,10 @@ const AssessmentDetailsForm = ({
           <div className="flex justify-end border-t border-slate-100 pt-6">
             <Button
               type="submit"
-              className="h-10 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20"
+              className="h-10 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20 transition-all cursor-pointer"
             >
-              Continue ➔
+              <span>Continue</span>
+              <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </Button>
           </div>
         </form>

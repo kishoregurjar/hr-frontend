@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, ArrowLeft, ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,27 +100,31 @@ const GameSelectionStep = ({
         </p>
       )}
 
-      <div className="flex items-center justify-between border-t pt-6">
-        <p className="text-sm font-medium">
-          {selectedIds.length}{" "}
+      <div className="flex items-center justify-between border-t border-slate-100 pt-6">
+        <p className="text-xs font-semibold text-slate-500">
+          <span className="font-black text-slate-900">{selectedIds.length}</span>{" "}
           {selectedIds.length === 1 ? "game" : "games"}{" "}
           selected
         </p>
 
-        <div className="flex gap-3">
+        <div className="flex items-center gap-3">
           <Button
             type="button"
             variant="outline"
             onClick={onBack}
+            className="h-10 px-5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs gap-1.5 shadow-2xs transition-all cursor-pointer"
           >
+            <ArrowLeft className="h-3.5 w-3.5 mr-1" />
             Back
           </Button>
 
           <Button
             type="button"
             onClick={handleContinue}
+            className="h-10 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20 transition-all cursor-pointer"
           >
-            Continue
+            <span>Continue</span>
+            <ArrowRight className="h-3.5 w-3.5 ml-1" />
           </Button>
         </div>
       </div>

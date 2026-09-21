@@ -231,9 +231,8 @@ const AssessmentSettingsForm = ({
             <Button
               type="button"
               variant="outline"
-              size="sm"
               onClick={onBack}
-              className="h-10 px-4 rounded-xl border-slate-200 text-xs font-bold text-slate-700"
+              className="h-10 px-5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs gap-1.5 shadow-2xs transition-all cursor-pointer"
             >
               <ArrowLeft className="h-3.5 w-3.5 mr-1" />
               Back
@@ -241,9 +240,9 @@ const AssessmentSettingsForm = ({
 
             <Button
               type="submit"
-              className="h-10 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20 cursor-pointer"
+              className="h-10 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20 transition-all cursor-pointer"
             >
-              Continue
+              <span>Continue</span>
               <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </Button>
           </div>

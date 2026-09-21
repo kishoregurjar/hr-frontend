@@ -235,10 +235,9 @@ const AssessmentReview = ({
           <Button
             type="button"
             variant="outline"
-            size="sm"
             onClick={onBack}
             disabled={isSubmitting}
-            className="h-10 px-4 rounded-xl border-slate-200 text-xs font-bold text-slate-700"
+            className="h-10 px-5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs gap-1.5 shadow-2xs transition-all cursor-pointer"
           >
             <ArrowLeft className="h-3.5 w-3.5 mr-1" />
             Back to Settings
@@ -248,10 +247,9 @@ const AssessmentReview = ({
             <Button
               type="button"
               variant="outline"
-              size="sm"
               onClick={onSaveDraft}
               disabled={isSubmitting}
-              className="h-10 px-4 rounded-xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+              className="h-10 px-5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs gap-1.5 shadow-2xs transition-all cursor-pointer"
             >
               {isSubmitting && submitAction === "draft" ? (
                 <span className="flex items-center gap-1.5">
