@@ -38,7 +38,7 @@ export const getAssessments = async (rawParams = {}) => {
       }
     });
   }
-
+  try {
     if (!cleanParams.limit) {
       cleanParams.limit = 100;
     }
