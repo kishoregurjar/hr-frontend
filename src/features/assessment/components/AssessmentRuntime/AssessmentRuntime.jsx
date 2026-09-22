@@ -227,12 +227,11 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
 
             <Button
               type="button"
-              variant="outline"
-              size="sm"
               onClick={onReview}
-              className="text-xs font-semibold h-8 border-slate-300 hover:bg-slate-50"
+              className="h-8 px-3.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 shadow-sm shadow-emerald-600/20 cursor-pointer"
             >
-              Overview & Submit
+              <Send className="h-3 w-3" />
+              <span>Submit Test</span>
             </Button>
           </div>
         </div>
@@ -368,17 +367,28 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
               isQuizSection ? "mt-8 pt-5 space-y-4" : "mt-2 pt-2.5"
             }`}
           >
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-3">
+              {/* Left Controls: Previous Button (+ Review / Clear for quiz) */}
               <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  onClick={handlePreviousQuestion}
+                  disabled={currentSectionIndex === 0 && currentQuestionIndex === 0}
+                  className="h-9 sm:h-10 px-4 sm:px-5 font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 shadow-2xs disabled:opacity-40 cursor-pointer"
+                >
+                  <ArrowLeft className="mr-1.5 h-4 w-4" />
+                  Previous
+                </Button>
+
                 {isQuizSection && (
                   <>
                     <Button
                       type="button"
                       onClick={handleToggleReview}
-                      className={`h-10 px-4 text-xs font-bold transition-all ${
+                      className={`h-9 sm:h-10 px-3.5 text-xs font-bold transition-all cursor-pointer ${
                         isMarkedForReview
                           ? "bg-purple-700 hover:bg-purple-800 text-white shadow-sm"
-                          : "bg-[#8b0000] hover:bg-[#700000] text-white shadow-sm"
+                          : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 shadow-2xs"
                       }`}
                     >
                       <Bookmark className="mr-1.5 h-3.5 w-3.5 fill-current" />
@@ -390,7 +400,7 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
                         type="button"
                         variant="outline"
                         onClick={handleClearAnswer}
-                        className="h-10 px-3 text-xs font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50 border-slate-300"
+                        className="h-9 sm:h-10 px-3 text-xs font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50 border-slate-300 cursor-pointer"
                       >
                         <RotateCcw className="mr-1 h-3.5 w-3.5" />
                         Clear
@@ -400,35 +410,23 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
                 )}
               </div>
 
-              <div className="flex items-center gap-2.5 ml-auto">
-                <Button
-                  type="button"
-                  onClick={handlePreviousQuestion}
-                  disabled={currentSectionIndex === 0 && currentQuestionIndex === 0}
-                  className="h-9 sm:h-10 px-5 font-bold text-xs bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-sm disabled:opacity-40"
-                >
-                  <ArrowLeft className="mr-1.5 h-4 w-4" />
-                  Previous
-                </Button>
-
+              {/* Right Controls: Single Next / Review & Submit Action */}
+              <div>
                 <Button
                   type="button"
                   onClick={handleNextQuestion}
-                  className="h-9 sm:h-10 px-6 font-bold text-xs bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-sm"
+                  className={`h-9 sm:h-10 px-6 sm:px-7 font-bold text-xs shadow-sm cursor-pointer ${
+                    currentQuestionIndex === questions.length - 1 && currentSectionIndex === sections.length - 1
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20"
+                      : "bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-blue-600/20"
+                  }`}
                 >
-                  {currentQuestionIndex === questions.length - 1 && currentSectionIndex === sections.length - 1
-                    ? "Review Test"
-                    : "Next"}
+                  <span>
+                    {currentQuestionIndex === questions.length - 1 && currentSectionIndex === sections.length - 1
+                      ? "Review & Submit Test"
+                      : "Next"}
+                  </span>
                   <ArrowRight className="ml-1.5 h-4 w-4" />
-                </Button>
-
-                <Button
-                  type="button"
-                  onClick={onReview}
-                  className="h-9 sm:h-10 px-6 font-bold text-xs bg-[#16a34a] hover:bg-[#15803d] text-white shadow-sm"
-                >
-                  <Send className="mr-1.5 h-3.5 w-3.5" />
-                  Submit Test
                 </Button>
               </div>
             </div>
