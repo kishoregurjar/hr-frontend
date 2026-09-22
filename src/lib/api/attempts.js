@@ -721,7 +721,7 @@ export const saveGameResult = async ({
 
     const headers = candidateToken
       ? { Authorization: `Bearer ${candidateToken}` }
-      : {};
+      : (invitationToken ? { Authorization: `Bearer ${invitationToken}` } : {});
 
     await axiosClient.post(
       "/attempts/save-answer",
