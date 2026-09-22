@@ -1028,7 +1028,7 @@ export default function MahjongGame({ config = {}, onComplete }) {
           </div>
         </div>
 
-        {/* Right: Sound & Round Timer */}
+        {/* Right: Sound Control */}
         <div className="flex items-center gap-1.5 ml-auto sm:ml-0">
           <button
             type="button"
@@ -1038,12 +1038,6 @@ export default function MahjongGame({ config = {}, onComplete }) {
           >
             {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
           </button>
-          <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 shadow-2xs">
-            <Clock size={14} className="text-rose-500" />
-            <span className="font-mono text-xs font-black tracking-tight text-slate-900">
-              {formatted}
-            </span>
-          </div>
         </div>
       </div>
 

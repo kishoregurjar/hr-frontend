@@ -514,14 +514,6 @@ export default function ZipGame({ config = {}, onComplete }) {
             <RotateCcw size={16} />
           </Button>
         </div>
-
-        {/* Timer */}
-        <div className="flex items-center gap-2 rounded-full border bg-card px-4 py-1.5 shadow-sm">
-          <Clock size={15} className="text-orange-500" />
-          <span className="font-mono text-sm font-bold tracking-tight text-foreground">
-            {formatted}
-          </span>
-        </div>
       </div>
 
       {/* Target Checkpoint Badge */}

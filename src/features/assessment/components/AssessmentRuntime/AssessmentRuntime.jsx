@@ -14,6 +14,7 @@ import {
   HelpCircle,
   AlertTriangle,
   Layers,
+  Lock,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
     Math.min(Math.max(attempt?.currentSection ?? 0, 0), Math.max(sections.length - 1, 0))
   );
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [activeGameIndex, setActiveGameIndex] = useState(0);
 
   // Local answer selections & review tracking
   const [localSelections, setLocalSelections] = useState({});
@@ -355,6 +357,7 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
                 attempt={attempt}
                 onComplete={handleNextQuestion}
                 onTimeTick={setActiveGameSeconds}
+                onActiveGameChange={setActiveGameIndex}
               />
             </div>
           )}
@@ -497,30 +500,83 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
               const isSectionActive = sIdx === currentSectionIndex;
 
               if (sec.type === "game") {
+                const gameList = Array.isArray(sec.games) && sec.games.length > 0 ? sec.games : [sec];
                 return (
-                  <div key={sec.id || sIdx} className="space-y-3">
-                    <div className="flex items-center justify-between bg-slate-100 px-3.5 py-2 rounded-lg border border-slate-200 font-bold text-xs text-slate-800">
+                  <div key={sec.id || sIdx} className="space-y-2.5">
+                    <div className="flex items-center justify-between bg-slate-100 px-3.5 py-2 rounded-lg border border-slate-200 font-extrabold text-xs text-slate-800">
                       <span className="flex items-center gap-1.5">
-                        <Gamepad2 className="h-4 w-4 text-purple-600" />
-                        {sec.title || `Cognitive Game ${sIdx + 1}`}
+                        <Gamepad2 className="h-3.5 w-3.5 text-indigo-600" />
+                        {sec.title || "Cognitive Challenges"}
                       </span>
-                      <span className="text-[11px] text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
-                        Interactive
+                      <span className="text-[11px] text-slate-500 font-semibold">
+                        {gameList.length} {gameList.length === 1 ? "Game" : "Games"}
                       </span>
                     </div>
 
-                    <Button
-                      type="button"
-                      onClick={() => jumpToQuestion(sIdx, 0)}
-                      className={`w-full h-11 font-bold text-xs justify-between rounded-xl transition-all ${
-                        isSectionActive
-                          ? "bg-purple-600 hover:bg-purple-700 text-white shadow-sm"
-                          : "bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200"
-                      }`}
-                    >
-                      <span>Play {sec.title || "Game Module"}</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
+                    {/* Games Progress List in Right Panel */}
+                    <div className="space-y-1.5">
+                      {gameList.map((g, gIdx) => {
+                        const res = attempt?.gameResults?.[g.id] || attempt?.gameResults?.[g.slug];
+                        const isCompleted = Boolean(res);
+                        const isSkipped = Boolean(res?.skipped);
+                        const isCurrentActiveGame = isSectionActive && gIdx === activeGameIndex;
+
+                        return (
+                          <div
+                            key={g.id || g.slug || gIdx}
+                            onClick={() => {
+                              if (isSectionActive && isCompleted) return;
+                              jumpToQuestion(sIdx, 0);
+                            }}
+                            className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold transition-all select-none ${
+                              isCurrentActiveGame
+                                ? "bg-blue-50/90 border-blue-400 text-blue-900 shadow-2xs ring-1 ring-blue-300/60"
+                                : isCompleted
+                                ? isSkipped
+                                  ? "bg-amber-50/50 border-amber-300/80 text-amber-800"
+                                  : "bg-emerald-50/50 border-emerald-300/80 text-emerald-800"
+                                : "bg-slate-100/50 border-slate-200/60 text-slate-400 opacity-60"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 truncate">
+                              <span
+                                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-black ${
+                                  isCurrentActiveGame
+                                    ? "bg-blue-600 text-white shadow-xs"
+                                    : isCompleted
+                                    ? isSkipped
+                                      ? "bg-amber-600 text-white"
+                                      : "bg-emerald-600 text-white"
+                                    : "bg-slate-200 text-slate-500"
+                                }`}
+                              >
+                                {gIdx + 1}
+                              </span>
+                              <span className="truncate text-[11.5px]">
+                                {g.title || `Game ${gIdx + 1}`}
+                              </span>
+                            </div>
+
+                            {isCompleted ? (
+                              isSkipped ? (
+                                <span className="text-[9px] font-extrabold text-amber-600 uppercase bg-amber-100/80 px-1.5 py-0.5 rounded">
+                                  Skipped
+                                </span>
+                              ) : (
+                                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                              )
+                            ) : isCurrentActiveGame ? (
+                              <span className="flex items-center gap-1 text-[8.5px] font-black text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded-full uppercase shrink-0">
+                                <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
+                                Active
+                              </span>
+                            ) : (
+                              <Lock className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 );
               }
