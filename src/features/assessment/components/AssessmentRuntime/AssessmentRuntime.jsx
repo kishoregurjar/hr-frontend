@@ -178,11 +178,17 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
     });
   };
 
+  const [activeGameSeconds, setActiveGameSeconds] = useState(null);
+
   // Timer values calculation for 3 distinct digital boxes
-  const hours = String(Math.floor(remainingSeconds / 3600)).padStart(2, "0");
-  const minutes = String(Math.floor((remainingSeconds % 3600) / 60)).padStart(2, "0");
-  const seconds = String(remainingSeconds % 60).padStart(2, "0");
-  const isTimeCritical = remainingSeconds <= 5 * 60;
+  const displaySeconds = isQuizSection
+    ? remainingSeconds
+    : (activeGameSeconds ?? (remainingSeconds > 0 ? remainingSeconds : 600));
+
+  const hours = String(Math.floor(displaySeconds / 3600)).padStart(2, "0");
+  const minutes = String(Math.floor((displaySeconds % 3600) / 60)).padStart(2, "0");
+  const seconds = String(displaySeconds % 60).padStart(2, "0");
+  const isTimeCritical = displaySeconds <= 60;
 
   // Empty assessment fallback
   if (sections.length === 0) {
@@ -348,6 +354,7 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
                 section={currentSection}
                 attempt={attempt}
                 onComplete={handleNextQuestion}
+                onTimeTick={setActiveGameSeconds}
               />
             </div>
           )}
@@ -456,7 +463,7 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
           {/* ── 1. Digital Time Left Box ── */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs text-center space-y-3">
             <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400">
-              Time Left
+              {isQuizSection ? "Section Time Left" : "Challenge Time Left"}
             </span>
 
             <div className="grid grid-cols-3 gap-2.5 pt-1">
