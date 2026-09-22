@@ -4,11 +4,17 @@ import { getSectionCompletion } from "./getSectionCompletion";
 export const getAssessmentReview = ({ assessment, attempt }) => {
   const sections = buildRuntimeSections(assessment);
 
+  let totalUnansweredQuestions = 0;
+
   const sectionReviews = sections.map((section, index) => {
     const completion = getSectionCompletion({
       section,
       attempt,
     });
+
+    if (section.type === "quiz" && completion.details?.unansweredQuestions) {
+      totalUnansweredQuestions += completion.details.unansweredQuestions;
+    }
 
     return {
       section,
@@ -18,17 +24,19 @@ export const getAssessmentReview = ({ assessment, attempt }) => {
   });
 
   const completedSections = sectionReviews.filter(
-    (item) => item.isComplete
+    (item) => item.status === "completed" || item.isComplete
   ).length;
 
   const totalSections = sectionReviews.length;
-  const incompleteSections = totalSections - completedSections;
+  const incompleteSections = Math.max(0, totalSections - completedSections);
 
   return {
     sections: sectionReviews,
     totalSections,
     completedSections,
     incompleteSections,
-    isComplete: totalSections > 0 && incompleteSections === 0,
+    totalUnansweredQuestions,
+    // Assessments are always submittable from Review
+    isComplete: true,
   };
 };
