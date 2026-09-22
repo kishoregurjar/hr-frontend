@@ -43,24 +43,28 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
   const [visitedQuestions, setVisitedQuestions] = useState(() => new Set(["0-0"]));
 
   // Live Timer Countdown
-  const [remainingSeconds, setRemainingSeconds] = useState(() =>
-    getRemainingTime({
+  const getCalculatedRemaining = () => {
+    const calculated = getRemainingTime({
       startedAt: attempt?.startedAt,
       durationMinutes: assessment?.durationMinutes || 60,
-    })
-  );
+    });
+    if (!attempt?.startedAt && (!calculated || calculated <= 0)) {
+      return (Number(assessment?.durationMinutes) || 60) * 60;
+    }
+    return calculated;
+  };
+
+  const [remainingSeconds, setRemainingSeconds] = useState(getCalculatedRemaining);
 
   useEffect(() => {
+    setRemainingSeconds(getCalculatedRemaining());
     const timerInterval = setInterval(() => {
       setRemainingSeconds((prev) => {
         if (prev <= 1) {
           clearInterval(timerInterval);
           return 0;
         }
-        return getRemainingTime({
-          startedAt: attempt?.startedAt,
-          durationMinutes: assessment?.durationMinutes || 60,
-        });
+        return getCalculatedRemaining();
       });
     }, 1000);
 
@@ -349,7 +353,6 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
                 section={currentSection}
                 attempt={attempt}
                 onComplete={handleNextQuestion}
-                onTimeTick={setActiveGameSeconds}
                 onActiveGameChange={setActiveGameIndex}
               />
             </div>
