@@ -9,12 +9,16 @@ import { RESULT_QUERY_KEYS } from "../features/result/constants";
 import { CANDIDATE_QUERY_KEYS } from "../features/candidate/constants";
 import { HIRING_QUERY_KEYS } from "../features/hiring/constants";
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const SOCKET_URL =
+  process.env.NEXT_PUBLIC_SOCKET_URL ||
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://walkingdreamzhrmanagement.up.railway.app";
 
 export function SocketProvider({ children }) {
   const queryClient = useQueryClient();
   const { setSocket, setConnected } = useSocketStore();
-  
+
   const { token: accessToken, isAuthenticated } = useAuth();
 
   useEffect(() => {
