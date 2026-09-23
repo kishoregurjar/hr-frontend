@@ -54,7 +54,7 @@ axiosClient.interceptors.request.use(
         url.includes("/take-test") ||
         (isCandidatePage && url.includes("/attempts"));
 
-      const isCandidateEndpoint = isCandidatePage || isCandidateApiRoute;
+      const isCandidateEndpoint = isCandidateApiRoute;
 
       const candidateToken =
         sessionStorage.getItem("candidateSessionToken") ||
