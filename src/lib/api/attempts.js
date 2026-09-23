@@ -212,6 +212,8 @@ export const getAttemptById = async (attemptId) => {
     typeof window !== "undefined" &&
     (window.location.pathname.includes("/take-test") ||
       window.location.pathname.includes("/assessment/attempt") ||
+      window.location.pathname.includes("/assessment/invite") ||
+      window.location.pathname.includes("/invite") ||
       window.location.pathname.includes("/test/"));
 
   if (!isCandidatePage && !candidateToken) {
@@ -221,7 +223,7 @@ export const getAttemptById = async (attemptId) => {
       if (liveAttempt && (liveAttempt.id || liveAttempt.assessmentId)) {
         let assessmentData = liveAttempt.assessment;
         const targetAssessmentId = liveAttempt.assessmentId || liveAttempt.assessment?.id;
-        if ((!assessmentData || !assessmentData.questions || assessmentData.questions.length === 0) && targetAssessmentId) {
+        if (!isCandidatePage && (!assessmentData || !assessmentData.questions || assessmentData.questions.length === 0) && targetAssessmentId) {
           try {
             assessmentData = await getAssessmentById(targetAssessmentId);
           } catch {}
