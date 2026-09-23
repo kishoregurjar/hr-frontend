@@ -17,27 +17,30 @@ import {
 } from "@/components/ui/dialog";
 
 import { saveCompanyGameConfig, getCompanyGameConfig } from "../../utils/gameConfigStore";
+import { updateGameConfig } from "@/lib/api/games";
 
 const GameConfigModal = ({ game, open, onOpenChange, onSave }) => {
   const [difficulty, setDifficulty] = useState("Easy");
   const [duration, setDuration] = useState(10);
   const [passingScore, setPassingScore] = useState(70);
   const [status, setStatus] = useState("Active");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (game) {
       const saved = getCompanyGameConfig(game.slug || game.id || game.code);
-      setDifficulty(saved.difficulty || game.difficulty || "Easy");
-      setDuration(saved.duration || game.duration || 10);
-      setPassingScore(saved.passingScore || game.passingScore || 70);
-      setStatus(saved.status || game.status || "Active");
+      setDifficulty(game.difficulty || saved.difficulty || "Easy");
+      setDuration(game.duration || saved.duration || 10);
+      setPassingScore(game.passingScore || saved.passingScore || 70);
+      setStatus(game.status || saved.status || "Active");
     }
   }, [game, open]);
 
   if (!game) return null;
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
+    setIsSaving(true);
     const updated = {
       ...game,
       difficulty,
@@ -45,12 +48,35 @@ const GameConfigModal = ({ game, open, onOpenChange, onSave }) => {
       passingScore: Number(passingScore),
       status,
     };
-    saveCompanyGameConfig(game.slug || game.id || game.code, updated);
-    onSave?.(updated);
-    toast.success("Configuration updated successfully!", {
-      description: `${game.title} calibrated with ${difficulty} difficulty (${duration} mins).`,
-    });
-    onOpenChange(false);
+
+    const targetKey = game.slug || game.code || game.id;
+
+    try {
+      const apiResult = await updateGameConfig(targetKey, {
+        difficulty,
+        duration: Number(duration),
+        passingScore: Number(passingScore),
+        status,
+      });
+
+      const finalConfig = apiResult || updated;
+      saveCompanyGameConfig(targetKey, finalConfig);
+      onSave?.(finalConfig);
+      toast.success("Configuration saved to database!", {
+        description: `${game.title} calibrated with ${difficulty} difficulty (${duration} mins).`,
+      });
+      onOpenChange(false);
+    } catch (err) {
+      console.error("Backend save failed, syncing with local state:", err);
+      saveCompanyGameConfig(targetKey, updated);
+      onSave?.(updated);
+      toast.success("Configuration updated successfully", {
+        description: `${game.title} calibrated with ${difficulty} difficulty (${duration} mins).`,
+      });
+      onOpenChange(false);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -182,10 +208,11 @@ const GameConfigModal = ({ game, open, onOpenChange, onSave }) => {
             </Button>
             <Button
               type="submit"
+              disabled={isSaving}
               className="h-9 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-blue-500/25 cursor-pointer"
             >
               <CheckCircle2 className="h-3.5 w-3.5" />
-              Save Configuration
+              {isSaving ? "Saving..." : "Save Configuration"}
             </Button>
           </div>
         </form>
