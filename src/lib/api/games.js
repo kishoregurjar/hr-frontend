@@ -30,3 +30,18 @@ export const getGameBySlug = async (slug) => {
     throw err;
   }
 };
+
+/**
+ * Update game configuration for the current company (Difficulty, Duration, Passing Score, Status)
+ * Endpoint: PATCH /api/v1/games/:gameId/config
+ */
+export const updateGameConfig = async (gameSlugOrId, configData) => {
+  try {
+    const res = await axiosClient.patch(`/games/${gameSlugOrId}/config`, configData);
+    return res?.data?.data || res?.data || res;
+  } catch (err) {
+    console.error(`Failed to update game config for ${gameSlugOrId}:`, err);
+    throw err;
+  }
+};
+
