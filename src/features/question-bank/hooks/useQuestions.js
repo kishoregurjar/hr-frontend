@@ -34,9 +34,17 @@ const useQuestions = () => {
     }
 
     if (category !== "all") {
-      data = data.filter(
-        (item) => item.category === category || item.categoryName === category
-      );
+      const targetCat = String(category || "").toLowerCase().trim();
+      data = data.filter((item) => {
+        const itemCat = String(item.category || "").toLowerCase().trim();
+        const itemCatName = String(item.categoryName || "").toLowerCase().trim();
+        const itemCatId = String(item.categoryId || "").toLowerCase().trim();
+        return (
+          itemCat === targetCat ||
+          itemCatName === targetCat ||
+          itemCatId === targetCat
+        );
+      });
     }
 
     if (difficulty !== "all") {

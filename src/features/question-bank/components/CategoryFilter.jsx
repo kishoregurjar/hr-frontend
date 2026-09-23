@@ -31,11 +31,14 @@ const CategoryFilter = ({ value, onChange }) => {
 
       <SelectContent>
         <SelectItem value="all">Category: All</SelectItem>
-        {categories.map((cat) => (
-          <SelectItem key={cat.id} value={cat.id}>
-            {cat.name}
-          </SelectItem>
-        ))}
+        {categories.map((cat) => {
+          const catName = cat.name || cat.title || String(cat);
+          return (
+            <SelectItem key={cat.id || catName} value={catName}>
+              {catName}
+            </SelectItem>
+          );
+        })}
       </SelectContent>
     </Select>
   );
