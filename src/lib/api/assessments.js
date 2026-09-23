@@ -38,8 +38,11 @@ export const getAssessments = async (rawParams = {}) => {
       }
     });
   }
-
   try {
+    if (!cleanParams.limit) {
+      cleanParams.limit = 100;
+    }
+
     const res = await axiosClient.get("/assessments", {
       params: cleanParams,
     });

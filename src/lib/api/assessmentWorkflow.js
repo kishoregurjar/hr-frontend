@@ -16,7 +16,7 @@ export const startAssessmentWorkflow = async (token, candidateInfo = {}) => {
     throw new Error("Assessment has already been completed.");
   }
 
-  const assessment = (await getAssessmentById(assignment.assessmentId).catch(() => null)) || assignment.assessment;
+  const assessment = assignment.assessment || (await getAssessmentById(assignment.assessmentId).catch(() => null));
 
   const startedAssignment = await startAssignment(token);
 

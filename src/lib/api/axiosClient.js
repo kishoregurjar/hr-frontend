@@ -47,11 +47,12 @@ axiosClient.interceptors.request.use(
         url.includes("/save-answer") ||
         url.includes("/attempts/submit") ||
         url.includes("/attempts/verify") ||
-        url.includes("/attempts/candidate/") ||
+        url.includes("/attempts/candidate") ||
         url.includes("/attempts/current") ||
         url.includes("/invitations/verify") ||
         url.includes("/invitations/take-test") ||
-        url.includes("/take-test");
+        url.includes("/take-test") ||
+        (isCandidatePage && url.includes("/attempts"));
 
       const isCandidateEndpoint = isCandidateApiRoute;
 
@@ -59,7 +60,9 @@ axiosClient.interceptors.request.use(
         sessionStorage.getItem("candidateSessionToken") ||
         localStorage.getItem("candidateSessionToken") ||
         sessionStorage.getItem("candidateAccessToken") ||
-        localStorage.getItem("candidateAccessToken");
+        localStorage.getItem("candidateAccessToken") ||
+        sessionStorage.getItem("invitationToken") ||
+        localStorage.getItem("invitationToken");
 
       const adminToken =
         localStorage.getItem(AUTH_STORAGE_KEYS.TOKEN) ||
@@ -69,7 +72,7 @@ axiosClient.interceptors.request.use(
 
       // Candidate test taking endpoints use candidateToken, all HR management endpoints use adminToken
       const tokenToUse = isCandidateEndpoint
-        ? candidateToken || adminToken
+        ? candidateToken || null
         : adminToken;
 
       if (tokenToUse) {

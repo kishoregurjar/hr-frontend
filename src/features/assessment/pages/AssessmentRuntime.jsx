@@ -14,6 +14,7 @@ import {
   useSubmitAttempt,
   useUpdateAttemptProgress,
 } from "../hooks";
+import { getAssessmentReview } from "../utils";
 
 const AssessmentAttempt = ({ attemptId }) => {
   const [isReviewing, setIsReviewing] = useState(false);
@@ -180,6 +181,8 @@ const AssessmentAttempt = ({ attemptId }) => {
 
   // ── 5. Review Mode ──────────────────────────────────────────
   if (isReviewing) {
+    const reviewData = getAssessmentReview({ assessment: effectiveAssessment, attempt });
+
     return (
       <>
         <AssessmentReview
@@ -196,6 +199,7 @@ const AssessmentAttempt = ({ attemptId }) => {
           onOpenChange={setSubmitDialogOpen}
           onConfirm={handleSubmit}
           isSubmitting={submitAttempt.isPending}
+          unansweredCount={reviewData?.totalUnansweredQuestions || 0}
         />
       </>
     );

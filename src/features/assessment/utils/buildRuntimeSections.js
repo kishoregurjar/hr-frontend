@@ -278,6 +278,8 @@ export const buildRuntimeSections = (assessment) => {
       difficulty: itemConfig.difficulty || assessment?.difficulty || "easy",
     });
 
+    const gameDurationMinutes = 10;
+
     return {
       id: `game-${index + 1}`,
       gameId: resolvedSlug,
@@ -286,7 +288,9 @@ export const buildRuntimeSections = (assessment) => {
       title,
       description: catalogInfo.description || "",
       category: catalogInfo.category || "Cognitive Assessment",
-      duration: catalogInfo.duration || 7,
+      duration: gameDurationMinutes,
+      durationMinutes: gameDurationMinutes,
+      durationSeconds: gameDurationMinutes * 60,
       skill: catalogInfo.skill || "Problem Solving",
       config: effectiveConfig,
     };
@@ -310,12 +314,15 @@ export const buildRuntimeSections = (assessment) => {
 
   // MODULE 1: Cognitive Games Challenge (Bundle of all selected games)
   if (parsedGames.length > 0) {
+    const totalGameDurationMinutes = parsedGames.length * 10;
     runtimeModules.push({
       id: "module-cognitive-games",
       type: "game",
       title: "Cognitive & Behavioral Games",
-      description: `Interactive problem-solving challenge consisting of ${parsedGames.length} cognitive ${parsedGames.length === 1 ? "game" : "games"}.`,
+      description: `Interactive problem-solving challenge consisting of ${parsedGames.length} cognitive ${parsedGames.length === 1 ? "game" : "games"}. Each game has a dedicated 10-minute time limit.`,
       games: parsedGames,
+      durationMinutes: totalGameDurationMinutes,
+      durationSeconds: totalGameDurationMinutes * 60,
       // Default to first game config for backward compatibility
       slug: parsedGames[0].slug,
       gameId: parsedGames[0].gameId,
@@ -329,12 +336,18 @@ export const buildRuntimeSections = (assessment) => {
       ? `${assessment.title} - Technical Quiz`
       : "Technical & Domain Knowledge";
 
+    const totalAssessmentDuration = Number(assessment?.durationMinutes ?? assessment?.duration ?? 60);
+    const gameDurationTotal = parsedGames.length * 10;
+    const quizDurationMinutes = Math.max(10, totalAssessmentDuration - gameDurationTotal);
+
     runtimeModules.push({
       id: "module-technical-quiz",
       type: "quiz",
       title: quizTitle,
       description: `Multiple choice questions (${parsedQuestions.length} questions) evaluating domain knowledge and core concepts.`,
       questions: parsedQuestions,
+      durationMinutes: quizDurationMinutes,
+      durationSeconds: quizDurationMinutes * 60,
     });
   }
 

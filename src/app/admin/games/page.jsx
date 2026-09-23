@@ -78,6 +78,18 @@ export default function AdminGamesPage() {
 
     try {
       await toggleGameStatus(gameId, nextIsActive);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("gameStatusChanged"));
+        try {
+          const bc = new BroadcastChannel("hirequest_realtime");
+          bc.postMessage({ type: "GAME_STATUS_CHANGED" });
+          bc.close();
+        } catch {}
+      }
+      try {
+        queryClient.invalidateQueries({ queryKey: ["games"] });
+        queryClient.invalidateQueries({ queryKey: ["admin-games"] });
+      } catch {}
       toast.success(`${game.name || game.title || "Game"} is now ${nextStatusText}`, {
         description: nextIsActive
           ? "This game is now active across all company assessment creators."

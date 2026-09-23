@@ -10,7 +10,8 @@ import { SECTION_STATUS } from "../../constants";
 
 const ReviewSectionItem = ({ item, onReview }) => {
   const { section, index, status, label } = item;
-  const isComplete = status === SECTION_STATUS.COMPLETED;
+  const isComplete = status === SECTION_STATUS.COMPLETED || item.isComplete;
+  const isFullyAnswered = item.isFullyAnswered !== false;
 
   const Icon = section.type === "quiz" ? HelpCircle : Gamepad2;
 
@@ -35,7 +36,7 @@ const ReviewSectionItem = ({ item, onReview }) => {
       <div className="flex items-center gap-4 pl-14 sm:pl-0">
         <div
           className={`flex items-center gap-1.5 text-sm font-medium ${
-            isComplete ? "text-green-600" : "text-amber-600"
+            isComplete ? "text-emerald-600" : "text-amber-600"
           }`}
         >
           {isComplete ? (
@@ -43,7 +44,9 @@ const ReviewSectionItem = ({ item, onReview }) => {
           ) : (
             <CircleAlert className="h-4 w-4" />
           )}
-          {isComplete ? "Completed" : "Incomplete"}
+          {isComplete
+            ? (section.type === "quiz" && !isFullyAnswered ? "Reviewed" : "Completed")
+            : "Incomplete"}
         </div>
 
         <Button
@@ -51,13 +54,13 @@ const ReviewSectionItem = ({ item, onReview }) => {
           variant="outline"
           size="sm"
           onClick={() => onReview?.(index)}
+          className="rounded-xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
         >
-          {isComplete ? "Review" : "Play / Complete"}
+          Review
         </Button>
       </div>
     </div>
   );
 };
-
 
 export default ReviewSectionItem;

@@ -235,10 +235,9 @@ const AssessmentReview = ({
           <Button
             type="button"
             variant="outline"
-            size="sm"
             onClick={onBack}
             disabled={isSubmitting}
-            className="h-10 px-4 rounded-xl border-slate-200 text-xs font-bold text-slate-700"
+            className="h-10 px-5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs gap-1.5 shadow-2xs transition-all cursor-pointer"
           >
             <ArrowLeft className="h-3.5 w-3.5 mr-1" />
             Back to Settings
@@ -248,10 +247,9 @@ const AssessmentReview = ({
             <Button
               type="button"
               variant="outline"
-              size="sm"
               onClick={onSaveDraft}
               disabled={isSubmitting}
-              className="h-10 px-4 rounded-xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+              className="h-10 px-5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs gap-1.5 shadow-2xs transition-all cursor-pointer"
             >
               {isSubmitting && submitAction === "draft" ? (
                 <span className="flex items-center gap-1.5">
@@ -332,14 +330,23 @@ const AssessmentReview = ({
         )}
 
         <div className="flex items-center justify-between pt-2">
-          <Button type="button" variant="outline" onClick={onBack} className="rounded-xl border-slate-200 text-xs font-bold">
-            <ArrowLeft className="mr-2 h-4 w-4" />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onBack}
+            className="h-10 px-5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs gap-1.5 shadow-2xs transition-all cursor-pointer"
+          >
+            <ArrowLeft className="h-3.5 w-3.5 mr-1" />
             Back to Assessment
           </Button>
 
-          <Button type="button" onClick={onSubmit} disabled={!review.isComplete} className="rounded-xl bg-blue-600 text-white text-xs font-bold">
-            <Send className="mr-2 h-4 w-4" />
-            Submit Assessment
+          <Button
+            type="button"
+            onClick={onSubmit}
+            className="h-10 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20 transition-all cursor-pointer"
+          >
+            <Send className="h-3.5 w-3.5 mr-1" />
+            <span>Submit Assessment</span>
           </Button>
         </div>
       </main>

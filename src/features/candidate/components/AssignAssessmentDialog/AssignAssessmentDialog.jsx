@@ -36,6 +36,16 @@ const AssignAssessmentDialog = ({
 
   const assignAssessment = useAssignAssessment();
 
+  const [activeCandidates, setActiveCandidates] = useState(candidates);
+
+  useEffect(() => {
+    setActiveCandidates(candidates);
+  }, [candidates, open]);
+
+  const handleRemoveCandidate = (candidateId) => {
+    setActiveCandidates((prev) => prev.filter((c) => String(c.id) !== String(candidateId)));
+  };
+
   const availableAssessments = useMemo(() => {
     const list = Array.isArray(assessments) ? [...assessments] : [];
 
@@ -70,22 +80,22 @@ const AssignAssessmentDialog = ({
   };
 
   const handleAssign = () => {
-    if (!assessmentId) {
+    if (!assessmentId || activeCandidates.length === 0) {
       return;
     }
 
-    const firstCandidate = candidates[0] || {};
+    const firstCandidate = activeCandidates[0] || {};
     const firstCandidateName = firstCandidate.name || "";
     const nameParts = typeof firstCandidateName === "string" ? firstCandidateName.split(" ") : [];
 
     assignAssessment.mutate(
       {
         assessmentId,
-        candidateIds: candidates.map((candidate) => candidate.id),
+        candidateIds: activeCandidates.map((candidate) => candidate.id),
         email: firstCandidate.email,
         firstName: firstCandidate.firstName || nameParts[0] || "Candidate",
         lastName: firstCandidate.lastName || nameParts.slice(1).join(" ") || "",
-        candidates: candidates.map((c) => {
+        candidates: activeCandidates.map((c) => {
           const cName = c.name || "";
           const cParts = typeof cName === "string" ? cName.split(" ") : [];
           return {
@@ -151,7 +161,7 @@ const AssignAssessmentDialog = ({
               <span>Target Recipients:</span>
             </div>
             <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-xs font-extrabold px-2.5 py-0.5">
-              {candidates.length} {candidates.length === 1 ? "Candidate" : "Candidates"} Selected
+              {activeCandidates.length} {activeCandidates.length === 1 ? "Candidate" : "Candidates"} Selected
             </Badge>
           </div>
 
@@ -191,7 +201,7 @@ const AssignAssessmentDialog = ({
             </Label>
 
             <div className="max-h-36 space-y-1.5 overflow-y-auto rounded-xl border border-slate-200/90 bg-slate-50/50 p-2.5 divide-y divide-slate-100">
-              {candidates.map((candidate) => (
+              {activeCandidates.map((candidate) => (
                 <div
                   key={candidate.id}
                   className="flex items-center justify-between gap-4 py-1.5 first:pt-0 last:pb-0"
@@ -204,9 +214,21 @@ const AssignAssessmentDialog = ({
                       {candidate.email}
                     </p>
                   </div>
-                  <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
-                    Ready
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                      Ready
+                    </span>
+                    {activeCandidates.length > 1 && (
+                      <button
+                        type="button"
+                        title="Remove candidate"
+                        onClick={() => handleRemoveCandidate(candidate.id)}
+                        className="text-xs font-bold text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-1.5 py-0.5 rounded transition cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

@@ -961,112 +961,103 @@ export default function MahjongGame({ config = {}, onComplete }) {
   const isSelectedTile = (r, c) => selected?.row === r && selected?.col === c;
   const isHintedTile = (r, c) => hintPair?.some((p) => p.row === r && p.col === c);
 
-  const boardWidth = "min(94vw, 36rem)";
   const boardAspectRatio = (dimConfig.cols / dimConfig.rows) * 0.76;
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col items-center select-none py-2 px-3">
+    <div className="mx-auto flex w-full flex-1 flex-col items-center justify-between select-none p-1 sm:p-2 overflow-hidden">
       <style dangerouslySetInnerHTML={{ __html: customStyles }} />
 
-      {/* Top Header Controls Bar */}
-      <div className="mb-4 flex w-full items-center justify-between">
-        <div className="flex items-center gap-2">
+      {/* ── Compact Consolidated Game HUD (Single Strip) ── */}
+      <div className="mb-2 flex w-full flex-wrap items-center justify-between gap-2 bg-slate-50/80 border border-slate-200/80 rounded-xl px-3 py-1.5 shadow-2xs shrink-0">
+        {/* Left: Quick Actions */}
+        <div className="flex items-center gap-1.5">
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={() => setShowHelp(true)}
-            className="flex items-center gap-1.5 rounded-full font-medium"
+            className="h-8 px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-200/60 rounded-lg gap-1"
           >
-            <HelpCircle size={15} />
-            How to play
+            <HelpCircle size={14} />
+            <span className="hidden sm:inline">Rules</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => showHint()}
             disabled={hintsLeft <= 0 || win}
-            className="flex items-center gap-1.5 rounded-full font-medium"
+            className="h-8 px-2.5 text-xs font-bold border-amber-300 bg-amber-50/60 text-amber-900 hover:bg-amber-100 rounded-lg gap-1"
           >
-            <Lightbulb size={15} className="text-amber-500" />
-            Hint ({hintsLeft})
+            <Lightbulb size={14} className="text-amber-600" />
+            <span>Hint ({hintsLeft})</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => shuffleBoard()}
             disabled={shufflesLeft <= 0 || win}
-            className={`flex items-center gap-1.5 rounded-full font-medium transition-all ${
-              isShuffleHighlighted ? "animate-pulse ring-2 ring-emerald-500 bg-emerald-50 text-emerald-700 font-semibold" : ""
+            className={`h-8 px-2.5 text-xs font-bold border-emerald-300 bg-emerald-50/60 text-emerald-900 hover:bg-emerald-100 rounded-lg gap-1 transition-all ${
+              isShuffleHighlighted ? "animate-pulse ring-2 ring-emerald-500 font-black" : ""
             }`}
           >
-            <Shuffle size={15} className="text-emerald-600" />
-            Shuffle ({shufflesLeft})
+            <Shuffle size={14} className="text-emerald-700" />
+            <span>Shuffle ({shufflesLeft})</span>
           </Button>
         </div>
 
-        {/* Audio Toggle & Timer */}
-        <div className="flex items-center gap-2">
+        {/* Center: Live Metrics */}
+        <div className="flex items-center gap-3 sm:gap-5 text-xs">
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] font-bold uppercase text-slate-400">Score</span>
+            <span className="text-sm font-black text-slate-900">{score}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] font-bold uppercase text-slate-400">Moves</span>
+            <span className="text-sm font-black text-slate-900">{moves}</span>
+          </div>
+          {combo > 1 && (
+            <div className="flex items-center gap-1 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-md animate-bounce">
+              <Sparkles size={12} className="text-amber-600" />
+              <span className="text-[10px] font-black text-amber-700">
+                {combo}x!
+              </span>
+            </div>
+          )}
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] font-bold uppercase text-slate-400">Tiles</span>
+            <span className="text-sm font-black text-emerald-600">{activeTiles.length}</span>
+          </div>
+        </div>
+
+        {/* Right: Sound Control */}
+        <div className="flex items-center gap-1.5 ml-auto sm:ml-0">
           <button
             type="button"
             onClick={() => setIsMuted(!isMuted)}
-            className="flex h-9 w-9 items-center justify-center rounded-full border bg-card text-muted-foreground hover:text-foreground transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-slate-900 transition-colors"
             title={isMuted ? "Unmute Sound" : "Mute Sound"}
           >
-            {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+            {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
           </button>
-          <div className="flex items-center gap-2 rounded-full border bg-card px-4 py-1.5 shadow-sm">
-            <Clock size={15} className="text-rose-500" />
-            <span className="font-mono text-sm font-bold tracking-tight text-foreground">
-              {formatted}
-            </span>
-          </div>
         </div>
       </div>
 
-      {/* Score & Combo Dashboard */}
-      <div className="mb-3 flex items-center justify-center gap-6">
-        <div className="flex flex-col items-center">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            Score
-          </span>
-          <span className="text-xl font-black text-foreground">{score}</span>
-        </div>
-        <div className="flex flex-col items-center">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            Moves
-          </span>
-          <span className="text-xl font-black text-foreground">{moves}</span>
-        </div>
-        {combo > 1 && (
-          <div className="flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 animate-bounce">
-            <Sparkles size={14} className="text-amber-500" />
-            <span className="text-xs font-black text-amber-600 dark:text-amber-400">
-              {combo}x Combo!
-            </span>
-          </div>
-        )}
-        <div className="flex flex-col items-center">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            Tiles Left
-          </span>
-          <span className="text-xl font-black text-primary">{activeTiles.length}</span>
-        </div>
-      </div>
+      {/* Subtle Game Message */}
+      {message && (
+        <p className="text-[11px] font-semibold text-slate-500 text-center mb-1 shrink-0">
+          {message}
+        </p>
+      )}
 
-      {/* Game Status Banner */}
-      <p className="mb-3 text-xs font-medium text-muted-foreground text-center min-h-4">
-        {message}
-      </p>
-
-      {/* AUTHENTIC MAHJONG TABLE (Green Felt & Sunken Baize Slots) */}
-      <div className="flex justify-center items-center w-full">
+      {/* AUTHENTIC MAHJONG TABLE (Zero-Scroll Height-Bounded Fit) */}
+      <div className="flex-1 flex justify-center items-center w-full min-h-0 overflow-hidden py-0.5">
         <div
           ref={boardRef}
-          className="relative rounded-[20px] bg-[#3b8132] border-4 border-[#2b5e24] shadow-[inset_0_2px_10px_rgba(0,0,0,0.3),0_12px_30px_rgba(0,0,0,0.25)] overflow-hidden"
+          className="relative rounded-2xl bg-[#3b8132] border-3 sm:border-4 border-[#2b5e24] shadow-[inset_0_2px_10px_rgba(0,0,0,0.3),0_8px_20px_rgba(0,0,0,0.2)] overflow-hidden"
           style={{
-            width: boardWidth,
+            height: "min(calc(100vh - 250px), 480px)",
             aspectRatio: boardAspectRatio,
             maxWidth: "100%",
+            maxHeight: "100%",
           }}
         >
           {/* Authentic Felt Noise Overlay */}

@@ -35,3 +35,5 @@ export { default as SubmitAssessmentDialog } from "./SubmitAssessmentDialog";
 export { default as AssessmentCompleted } from "./AssessmentCompleted";
 export { default as AssessmentPreStart } from "./AssessmentPreStart";
 export { default as AssessmentUnavailable } from "./AssessmentUnavailable";
+export { default as AssessmentDetailsDrawer } from "./AssessmentDetailsDrawer";
+export { default as AssessmentTableView } from "./AssessmentTableView";

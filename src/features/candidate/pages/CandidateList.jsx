@@ -40,6 +40,8 @@ import {
   useSyncMailboxNow,
 } from "../hooks";
 
+const PAGE_SIZE = 10;
+
 const CandidateList = () => {
   const { user } = useAuth();
   const searchParams = useSearchParams();
@@ -60,6 +62,7 @@ const CandidateList = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [sourceFilter, setSourceFilter] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState([]);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [singleAssignCandidate, setSingleAssignCandidate] = useState(null);
@@ -152,6 +155,14 @@ const CandidateList = () => {
     });
   }, [candidates, search, statusFilter, sourceFilter]);
 
+  const totalPages = Math.max(1, Math.ceil(filteredCandidates.length / PAGE_SIZE));
+  const validPage = Math.min(currentPage, totalPages);
+
+  const paginatedCandidates = useMemo(() => {
+    const startIndex = (validPage - 1) * PAGE_SIZE;
+    return filteredCandidates.slice(startIndex, startIndex + PAGE_SIZE);
+  }, [filteredCandidates, validPage]);
+
   const selectedCandidates = useMemo(() => {
     if (singleAssignCandidate) return [singleAssignCandidate];
     return candidates.filter((candidate) =>
@@ -170,7 +181,7 @@ const CandidateList = () => {
   };
 
   const handleToggleAll = () => {
-    const visibleIds = filteredCandidates.map((candidate) => candidate.id);
+    const visibleIds = paginatedCandidates.map((candidate) => candidate.id);
     const areAllSelected =
       visibleIds.length > 0 &&
       visibleIds.every((candidateId) =>
@@ -329,7 +340,10 @@ const CandidateList = () => {
             type="text"
             placeholder="Search by name, email, or skill..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
             className="h-10 w-full pl-9 pr-3 rounded-xl border border-slate-200/80 bg-slate-50/50 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:bg-white transition"
           />
         </div>
@@ -341,7 +355,10 @@ const CandidateList = () => {
             <span className="text-xs font-bold text-slate-600">Status:</span>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               className="h-9 px-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:bg-white transition cursor-pointer"
             >
               <option value="ALL">All Statuses</option>
@@ -357,7 +374,10 @@ const CandidateList = () => {
             <span className="text-xs font-bold text-slate-600">Source:</span>
             <select
               value={sourceFilter}
-              onChange={(e) => setSourceFilter(e.target.value)}
+              onChange={(e) => {
+                setSourceFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               className="h-9 px-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:bg-white transition cursor-pointer"
             >
               <option value="ALL">All Sources</option>
@@ -371,7 +391,7 @@ const CandidateList = () => {
 
       {/* ── 4. Candidate Table ── */}
       <CandidateTable
-        candidates={filteredCandidates}
+        candidates={paginatedCandidates}
         selectedIds={selectedIds}
         onToggleCandidate={handleToggleCandidate}
         onToggleAll={handleToggleAll}
@@ -380,17 +400,62 @@ const CandidateList = () => {
       />
 
       {/* ── 5. Pagination Footer ── */}
-      <div className="flex items-center justify-between text-xs text-muted-foreground font-medium pt-2">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground font-medium pt-2">
         <p>
-          Showing page <span className="font-bold text-slate-900">1 of 1</span> ({filteredCandidates.length} Total Candidates)
+          Showing{" "}
+          <span className="font-bold text-slate-900">
+            {filteredCandidates.length === 0 ? 0 : (validPage - 1) * PAGE_SIZE + 1}–
+            {Math.min(validPage * PAGE_SIZE, filteredCandidates.length)}
+          </span>{" "}
+          of <span className="font-bold text-slate-900">{filteredCandidates.length}</span> Total Candidates (Page{" "}
+          <span className="font-bold text-slate-900">{validPage} of {totalPages}</span>)
         </p>
 
-        <div className="flex items-center gap-1">
-          <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg" disabled>
-            <ChevronLeft className="h-4 w-4" />
+        <div className="flex items-center gap-1.5">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={validPage <= 1}
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+            className="h-8 px-2.5 rounded-lg border-slate-200 text-slate-600 text-xs font-semibold gap-1 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            <span>Prev</span>
           </Button>
-          <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg" disabled>
-            <ChevronRight className="h-4 w-4" />
+
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                const isCurrent = pageNum === validPage;
+                return (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`h-8 min-w-[32px] px-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      isCurrent
+                        ? "bg-blue-600 text-white shadow-xs shadow-blue-500/20"
+                        : "text-slate-600 hover:bg-slate-100 bg-white border border-slate-200"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={validPage >= totalPages}
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+            className="h-8 px-2.5 rounded-lg border-slate-200 text-slate-600 text-xs font-semibold gap-1 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+          >
+            <span>Next</span>
+            <ChevronRight className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
