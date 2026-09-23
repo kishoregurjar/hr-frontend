@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings2, Clock, Zap, CheckCircle2, Sliders, Shield } from "lucide-react";
+import { Settings2, Zap, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -63,7 +62,7 @@ const GameConfigModal = ({ game, open, onOpenChange, onSave }) => {
       saveCompanyGameConfig(targetKey, finalConfig);
       onSave?.(finalConfig);
       toast.success("Configuration saved to database!", {
-        description: `${game.title} calibrated with ${difficulty} difficulty (${duration} mins).`,
+        description: `${game.title} calibrated with ${difficulty} difficulty (${status} status).`,
       });
       onOpenChange(false);
     } catch (err) {
@@ -71,7 +70,7 @@ const GameConfigModal = ({ game, open, onOpenChange, onSave }) => {
       saveCompanyGameConfig(targetKey, updated);
       onSave?.(updated);
       toast.success("Configuration updated successfully", {
-        description: `${game.title} calibrated with ${difficulty} difficulty (${duration} mins).`,
+        description: `${game.title} calibrated with ${difficulty} difficulty (${status} status).`,
       });
       onOpenChange(false);
     } finally {
@@ -128,47 +127,6 @@ const GameConfigModal = ({ game, open, onOpenChange, onSave }) => {
                   {lvl}
                 </button>
               ))}
-            </div>
-          </div>
-
-          {/* Time & Passing Score */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="duration" className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                Duration (Mins)
-              </Label>
-              <div className="relative">
-                <Clock className="h-4 w-4 absolute left-3.5 top-3 text-slate-400" />
-                <Input
-                  id="duration"
-                  type="number"
-                  min="1"
-                  max="60"
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  className="h-10 pl-9.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-bold text-slate-900 focus:bg-white"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="passingScore" className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                Target Score (%)
-              </Label>
-              <div className="relative">
-                <Shield className="h-4 w-4 absolute left-3.5 top-3 text-slate-400" />
-                <Input
-                  id="passingScore"
-                  type="number"
-                  min="10"
-                  max="100"
-                  value={passingScore}
-                  onChange={(e) => setPassingScore(e.target.value)}
-                  className="h-10 pl-9.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-bold text-slate-900 focus:bg-white"
-                  required
-                />
-              </div>
             </div>
           </div>
 
