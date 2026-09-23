@@ -217,20 +217,28 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
             </h1>
           </div>
 
-          <div className="flex items-center gap-4 text-xs font-semibold text-slate-600">
+          <div className="flex items-center gap-3 text-xs font-semibold text-slate-600">
             <div className="hidden sm:flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
               <span className="text-slate-400">Section:</span>
               <span className="text-blue-600 font-bold">{currentSection.title || `Section ${currentSectionIndex + 1}`}</span>
             </div>
 
-            <Button
-              type="button"
-              onClick={onReview}
-              className="h-8 px-3.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 shadow-sm shadow-emerald-600/20 cursor-pointer"
+            {/* ── Compact Top-Bar Live Countdown Clock ── */}
+            <div
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-2xs ${
+                isTimeCritical
+                  ? "bg-rose-50 border-rose-300 text-rose-600 animate-pulse shadow-xs"
+                  : "bg-slate-100 border-slate-200/90 text-slate-800"
+              }`}
             >
-              <Send className="h-3 w-3" />
-              <span>Submit Test</span>
-            </Button>
+              <Clock className={`h-3.5 w-3.5 ${isTimeCritical ? "text-rose-600" : "text-blue-600"}`} />
+              <span className="hidden sm:inline text-[11px] text-slate-500 font-semibold uppercase tracking-wider">
+                Time Left:
+              </span>
+              <span className="font-mono text-xs sm:text-sm font-black tracking-wider text-slate-900">
+                {hours}:{minutes}:{seconds}
+              </span>
+            </div>
           </div>
         </div>
       </header>
@@ -456,40 +464,10 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
           </div>
         </section>
 
-        {/* ── RIGHT PANEL: Timer Clock & Question Palettes (30%) ── */}
-        <aside className="lg:col-span-4 xl:col-span-3 space-y-5">
-          {/* ── 1. Digital Time Left Box ── */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs text-center space-y-3">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400">
-              Total Test Time Left
-            </span>
-
-            <div className="grid grid-cols-3 gap-2.5 pt-1">
-              <div className={`p-2.5 rounded-xl border ${isTimeCritical ? "border-rose-300 bg-rose-50" : "border-slate-200 bg-slate-50"}`}>
-                <span className={`block text-2xl sm:text-3xl font-black font-mono tracking-tight ${isTimeCritical ? "text-rose-600 animate-pulse" : "text-slate-900"}`}>
-                  {hours}
-                </span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hours</span>
-              </div>
-
-              <div className={`p-2.5 rounded-xl border ${isTimeCritical ? "border-rose-300 bg-rose-50" : "border-slate-200 bg-slate-50"}`}>
-                <span className={`block text-2xl sm:text-3xl font-black font-mono tracking-tight ${isTimeCritical ? "text-rose-600 animate-pulse" : "text-slate-900"}`}>
-                  {minutes}
-                </span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Minutes</span>
-              </div>
-
-              <div className={`p-2.5 rounded-xl border ${isTimeCritical ? "border-rose-300 bg-rose-50" : "border-slate-200 bg-slate-50"}`}>
-                <span className={`block text-2xl sm:text-3xl font-black font-mono tracking-tight ${isTimeCritical ? "text-rose-600 animate-pulse" : "text-slate-900"}`}>
-                  {seconds}
-                </span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Seconds</span>
-              </div>
-            </div>
-          </div>
-
-          {/* ── 2. Categorized Section Palettes (Quant, Verbal, Games, etc.) ── */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-6">
+        {/* ── RIGHT PANEL: Question & Module Palettes + Submit Button (30%) ── */}
+        <aside className="lg:col-span-4 xl:col-span-3 space-y-4">
+          {/* ── Categorized Section Palettes (Games & MCQ Quizzes) ── */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-5">
             {sections.map((sec, sIdx) => {
               const secQuestions = sec.questions || [];
               const isSectionActive = sIdx === currentSectionIndex;
@@ -625,6 +603,18 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
                 </div>
               );
             })}
+
+            {/* ── Prominent Submit Assessment Action Button at Bottom of Palette ── */}
+            <div className="pt-3 border-t border-slate-100">
+              <Button
+                type="button"
+                onClick={onReview}
+                className="w-full h-10 px-4 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white gap-2 shadow-sm shadow-emerald-600/20 cursor-pointer transition-all"
+              >
+                <Send className="h-3.5 w-3.5" />
+                <span>Submit Assessment</span>
+              </Button>
+            </div>
           </div>
         </aside>
       </main>
