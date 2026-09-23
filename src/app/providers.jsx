@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { CheckCircle2, AlertCircle, AlertTriangle, Info, Loader2 } from "lucide-react";
 import { AuthProvider } from "@/features/auth/context";
+import { SocketProvider } from "../providers/SocketProvider";
 
 const Providers = ({ children }) => {
   const [queryClient] = useState(
@@ -26,10 +27,11 @@ const Providers = ({ children }) => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        {children}
-        <Toaster
-          position="top-right"
-          expand={true}
+        <SocketProvider>
+          {children}
+          <Toaster
+            position="top-right"
+            expand={true}
           closeButton
           duration={4000}
           theme="dark"
@@ -50,6 +52,7 @@ const Providers = ({ children }) => {
             },
           }}
         />
+        </SocketProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
