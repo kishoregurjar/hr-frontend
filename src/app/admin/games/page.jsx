@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from "react";
 import {
   Gamepad2,
-  Brain,
   Sliders,
   Sparkles,
   Search,
@@ -347,14 +346,9 @@ export default function AdminGamesPage() {
         {/* ── Top Metric Banner ── */}
         <div className="rounded-2xl border bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 p-6 text-white shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
-                <Brain className="h-5 w-5" />
-              </div>
-              <h2 className="font-extrabold text-lg tracking-tight">
-                Global Cognitive Game Engines
-              </h2>
-            </div>
+            <h2 className="font-extrabold text-lg tracking-tight">
+              Global Cognitive Game Engines
+            </h2>
             <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
               Super Admin master controls for all cognitive game modules. Disabling a game globally prevents recruiters from adding it to assessments and restricts candidate playback.
             </p>
