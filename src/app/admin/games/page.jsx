@@ -80,14 +80,20 @@ export default function AdminGamesPage() {
     fetchGames();
   }, [selectedCompanyId]);
 
+  const isGameActiveInScope = (game) => {
+    if (selectedCompanyId === "GLOBAL") {
+      return game.isActive !== undefined ? Boolean(game.isActive) : game.status === "ACTIVE";
+    }
+    return game.isCompanyActive !== undefined
+      ? Boolean(game.isCompanyActive)
+      : (game.companyStatus === "Active" || game.companyStatus === "ACTIVE");
+  };
+
   const handleToggleStatus = async (game) => {
     const gameId = game.id || game.code;
     const isGlobal = selectedCompanyId === "GLOBAL";
     
-    const currentIsActive = isGlobal
-      ? (game.isActive !== undefined ? Boolean(game.isActive) : game.status === "ACTIVE")
-      : (game.isCompanyActive !== undefined ? Boolean(game.isCompanyActive) : game.companyStatus === "Active");
-      
+    const currentIsActive = isGameActiveInScope(game);
     const nextIsActive = !currentIsActive;
     const nextStatusText = nextIsActive ? "ACTIVE" : "INACTIVE";
 
@@ -99,9 +105,9 @@ export default function AdminGamesPage() {
         if ((g.id && g.id === gameId) || (g.code && g.code === gameId)) {
           return {
             ...g,
-            isActive: nextIsActive,
+            isActive: isGlobal ? nextIsActive : g.isActive,
             isCompanyActive: nextIsActive,
-            status: nextStatusText,
+            status: isGlobal ? nextStatusText : g.status,
             companyStatus: nextIsActive ? "Active" : "Inactive",
           };
         }
@@ -147,9 +153,8 @@ export default function AdminGamesPage() {
           if ((g.id && g.id === gameId) || (g.code && g.code === gameId)) {
             return {
               ...g,
-              isActive: currentIsActive,
+              isActive: g.isActive,
               isCompanyActive: currentIsActive,
-              status: currentIsActive ? "ACTIVE" : "INACTIVE",
               companyStatus: currentIsActive ? "Active" : "Inactive",
             };
           }
@@ -162,14 +167,14 @@ export default function AdminGamesPage() {
   };
 
   const activeCount = useMemo(() => {
-    return games.filter((g) => (g.isActive !== undefined ? g.isActive : g.status === "ACTIVE")).length;
-  }, [games]);
+    return games.filter((g) => isGameActiveInScope(g)).length;
+  }, [games, selectedCompanyId]);
 
   const inactiveCount = games.length - activeCount;
 
   const filteredGames = useMemo(() => {
     return games.filter((game) => {
-      const isActive = game.isActive !== undefined ? Boolean(game.isActive) : game.status === "ACTIVE";
+      const isActive = isGameActiveInScope(game);
       
       // Status filter
       if (statusFilter === "ACTIVE" && !isActive) return false;
@@ -194,7 +199,7 @@ export default function AdminGamesPage() {
 
       return true;
     });
-  }, [games, statusFilter, searchQuery]);
+  }, [games, statusFilter, searchQuery, selectedCompanyId]);
 
   return (
     <>
@@ -267,6 +272,7 @@ export default function AdminGamesPage() {
 
           {/* Filter Pills & Refresh */}
           <div className="flex items-center gap-2">
+
             <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">
               <button
                 type="button"
@@ -340,7 +346,7 @@ export default function AdminGamesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredGames.map((game) => {
               const gameId = game.id || game.code;
-              const isActive = game.isActive !== undefined ? Boolean(game.isActive) : game.status === "ACTIVE";
+              const isActive = isGameActiveInScope(game);
               const isToggling = togglingId === gameId;
 
               return (
