@@ -83,15 +83,9 @@ const AdminHeader = ({
         </button>
 
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight truncate">
-              {title}
-            </h1>
-            <Badge className="bg-blue-50 text-blue-700 border-blue-200/80 text-[10px] sm:text-[10.5px] font-extrabold gap-1 shrink-0">
-              <ShieldCheck className="h-3 w-3 text-blue-600" />
-              Super Admin
-            </Badge>
-          </div>
+          <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight truncate">
+            {title}
+          </h1>
           <p className="text-[11px] sm:text-xs text-slate-500 font-medium mt-0.5 truncate max-w-xs sm:max-w-md md:max-w-none">
             {subtitle}
           </p>
