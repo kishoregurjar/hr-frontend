@@ -24,6 +24,7 @@ import {
   toggleGameStatus,
   getCompanyGames,
   toggleCompanyGameStatus,
+  bulkToggleCompanyGameStatus,
   getAdminCompanies,
 } from "@/lib/api/admin";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,10 @@ export default function AdminGamesPage() {
   const [games, setGames] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState("GLOBAL");
+  const [selectedCompanyIds, setSelectedCompanyIds] = useState([]); // Multi-select array
+  const [isMultiMode, setIsMultiMode] = useState(false);
+  const [showCompanyListPopover, setShowCompanyListPopover] = useState(false);
+
   const [selectedGame, setSelectedGame] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -57,7 +62,7 @@ export default function AdminGamesPage() {
     try {
       if (showToast) setRefreshing(true);
       let list = [];
-      if (selectedCompanyId === "GLOBAL") {
+      if (selectedCompanyId === "GLOBAL" || isMultiMode) {
         list = await getAdminGames();
       } else {
         list = await getCompanyGames(selectedCompanyId);
@@ -78,15 +83,81 @@ export default function AdminGamesPage() {
   useEffect(() => {
     setLoading(true);
     fetchGames();
-  }, [selectedCompanyId]);
+  }, [selectedCompanyId, isMultiMode]);
 
   const isGameActiveInScope = (game) => {
-    if (selectedCompanyId === "GLOBAL") {
+    if (selectedCompanyId === "GLOBAL" || isMultiMode) {
       return game.isActive !== undefined ? Boolean(game.isActive) : game.status === "ACTIVE";
     }
     return game.isCompanyActive !== undefined
       ? Boolean(game.isCompanyActive)
       : (game.companyStatus === "Active" || game.companyStatus === "ACTIVE");
+  };
+
+  const handleScopeChange = (e) => {
+    const val = e.target.value;
+    if (val === "MULTI") {
+      setIsMultiMode(true);
+      setSelectedCompanyId("MULTI");
+      setShowCompanyListPopover(true);
+    } else {
+      setIsMultiMode(false);
+      setSelectedCompanyId(val);
+      setShowCompanyListPopover(false);
+    }
+  };
+
+  const toggleSelectCompanyId = (cId) => {
+    setSelectedCompanyIds((prev) =>
+      prev.includes(cId) ? prev.filter((id) => id !== cId) : [...prev, cId]
+    );
+  };
+
+  const toggleSelectAllCompanies = () => {
+    if (selectedCompanyIds.length === companies.length) {
+      setSelectedCompanyIds([]);
+    } else {
+      setSelectedCompanyIds(companies.map((c) => c.id));
+    }
+  };
+
+  const handleBulkToggleStatus = async (game, targetStatus) => {
+    const gameId = game.id || game.code;
+    if (selectedCompanyIds.length === 0) {
+      toast.error("Please select at least 1 company from the checkbox list!");
+      return;
+    }
+
+    setTogglingId(gameId);
+
+    try {
+      const res = await bulkToggleCompanyGameStatus(
+        selectedCompanyIds,
+        gameId,
+        targetStatus
+      );
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("gameStatusChanged"));
+        try {
+          const bc = new BroadcastChannel("hirequest_realtime");
+          bc.postMessage({ type: "GAME_STATUS_CHANGED" });
+          bc.close();
+        } catch {}
+      }
+
+      toast.success(
+        `${game.name || game.title} is now ${targetStatus === "Active" ? "Enabled" : "Disabled"} for ${selectedCompanyIds.length} companies!`,
+        {
+          description: `Updated status to ${targetStatus} across ${selectedCompanyIds.length} selected organizations.`,
+        }
+      );
+    } catch (err) {
+      console.error("Bulk toggle error:", err);
+      toast.error(`Failed to bulk update ${game.name || "game"} status`);
+    } finally {
+      setTogglingId(null);
+    }
   };
 
   const handleToggleStatus = async (game) => {
@@ -245,16 +316,19 @@ export default function AdminGamesPage() {
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">Target Scope:</span>
             <select
-              value={selectedCompanyId}
-              onChange={(e) => setSelectedCompanyId(e.target.value)}
-              className="h-9 text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              value={isMultiMode ? "MULTI" : selectedCompanyId}
+              onChange={handleScopeChange}
+              className="h-9 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
             >
               <option value="GLOBAL">🌐 Global Platform Controls (All Companies)</option>
-              {companies.map((c) => (
-                <option key={c.id} value={c.id}>
-                  🏢 Company: {c.name || c.slug}
-                </option>
-              ))}
+              <option value="MULTI">☑️ Multi-Company Selection Mode (Bulk Batch)</option>
+              <optgroup label="Single Company Controls">
+                {companies.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    🏢 Company: {c.name || c.slug}
+                  </option>
+                ))}
+              </optgroup>
             </select>
           </div>
 
@@ -321,6 +395,76 @@ export default function AdminGamesPage() {
             </Button>
           </div>
         </div>
+
+        {/* ── Multi-Company Selection Panel ── */}
+        {isMultiMode && (
+          <div className="bg-slate-900 border border-slate-800 text-white rounded-2xl p-5 shadow-lg space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">
+                  <CheckCircle2 className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold tracking-tight">
+                    Multi-Company Batch Licensing
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Select 1 or more companies to bulk update game access permissions in batch.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={toggleSelectAllCompanies}
+                  className="h-8 text-xs font-semibold bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 hover:text-white cursor-pointer"
+                >
+                  {selectedCompanyIds.length === companies.length ? "Deselect All" : `Select All (${companies.length})`}
+                </Button>
+                <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 px-3 py-1 text-xs font-semibold">
+                  {selectedCompanyIds.length} / {companies.length} Selected
+                </Badge>
+              </div>
+            </div>
+
+            {/* Checkbox Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-48 overflow-y-auto pr-1">
+              {companies.map((c) => {
+                const isChecked = selectedCompanyIds.includes(c.id);
+                return (
+                  <label
+                    key={c.id}
+                    onClick={() => toggleSelectCompanyId(c.id)}
+                    className={`flex items-center gap-3 p-2.5 rounded-xl border text-xs font-medium cursor-pointer transition-all ${
+                      isChecked
+                        ? "bg-blue-950/80 border-blue-500/50 text-white shadow-2xs"
+                        : "bg-slate-950/40 border-slate-800 text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {}}
+                      className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900 cursor-pointer"
+                    />
+                    <div className="truncate">
+                      <p className="font-semibold truncate leading-snug">{c.name || c.slug}</p>
+                      <p className="text-[10px] text-slate-400 font-mono truncate">{c.domain || c.id}</p>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+
+            {selectedCompanyIds.length === 0 && (
+              <p className="text-xs text-amber-400/90 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl flex items-center gap-2">
+                ⚠️ Please select at least one company above to enable or disable games for them.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* ── Games Grid ── */}
         {loading ? (
@@ -423,7 +567,7 @@ export default function AdminGamesPage() {
                   </div>
 
                   {/* Actions Footer */}
-                  <div className="flex items-center justify-between gap-3 pt-4 mt-4 border-t border-slate-100">
+                  <div className="flex items-center justify-between gap-2 pt-4 mt-4 border-t border-slate-100">
                     <Button
                       size="sm"
                       variant="outline"
@@ -434,25 +578,55 @@ export default function AdminGamesPage() {
                       Details
                     </Button>
 
-                    <Button
-                      size="sm"
-                      variant={isActive ? "outline" : "default"}
-                      disabled={isToggling}
-                      onClick={() => handleToggleStatus(game)}
-                      className={`text-xs font-semibold h-8 min-w-[96px] cursor-pointer transition-all ${
-                        isActive
-                          ? "border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300"
-                          : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs"
-                      }`}
-                    >
-                      {isToggling ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : isActive ? (
-                        "Disable"
-                      ) : (
-                        "Enable"
-                      )}
-                    </Button>
+                    {isMultiMode ? (
+                      <div className="flex items-center gap-1.5">
+                        <Button
+                          size="sm"
+                          disabled={isToggling || selectedCompanyIds.length === 0}
+                          onClick={() => handleBulkToggleStatus(game, "Active")}
+                          className="text-xs font-semibold h-8 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-2xs"
+                        >
+                          {isToggling ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            `Bulk Enable (${selectedCompanyIds.length})`
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={isToggling || selectedCompanyIds.length === 0}
+                          onClick={() => handleBulkToggleStatus(game, "Inactive")}
+                          className="text-xs font-semibold h-8 px-2.5 border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 cursor-pointer"
+                        >
+                          {isToggling ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            `Bulk Disable (${selectedCompanyIds.length})`
+                          )}
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant={isActive ? "outline" : "default"}
+                        disabled={isToggling}
+                        onClick={() => handleToggleStatus(game)}
+                        className={`text-xs font-semibold h-8 min-w-[96px] cursor-pointer transition-all ${
+                          isActive
+                            ? "border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300"
+                            : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs"
+                        }`}
+                      >
+                        {isToggling ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : isActive ? (
+                          "Disable"
+                        ) : (
+                          "Enable"
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </div>
               );
