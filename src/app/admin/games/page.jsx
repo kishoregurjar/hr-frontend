@@ -85,8 +85,35 @@ export default function AdminGamesPage() {
     fetchGames();
   }, [selectedCompanyId, isMultiMode]);
 
+  useEffect(() => {
+    const handleStatusChange = () => {
+      fetchGames();
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("gameStatusChanged", handleStatusChange);
+    }
+
+    let bc;
+    try {
+      bc = new BroadcastChannel("hirequest_realtime");
+      bc.onmessage = (event) => {
+        if (event.data?.type === "GAME_STATUS_CHANGED" || event.data?.type === "GAME_STATUS_UPDATED") {
+          fetchGames();
+        }
+      };
+    } catch {}
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("gameStatusChanged", handleStatusChange);
+      }
+      if (bc) bc.close();
+    };
+  }, [selectedCompanyId, isMultiMode]);
+
   const isGameActiveInScope = (game) => {
-    if (selectedCompanyId === "GLOBAL" || isMultiMode) {
+    if (selectedCompanyId === "GLOBAL") {
       return game.isActive !== undefined ? Boolean(game.isActive) : game.status === "ACTIVE";
     }
     return game.isCompanyActive !== undefined
@@ -128,7 +155,26 @@ export default function AdminGamesPage() {
       return;
     }
 
+    const nextIsActive = targetStatus === "Active";
+    const nextStatusText = nextIsActive ? "ACTIVE" : "INACTIVE";
+
     setTogglingId(gameId);
+
+    // Optimistic UI Update
+    setGames((prev) =>
+      prev.map((g) => {
+        if ((g.id && g.id === gameId) || (g.code && g.code === gameId)) {
+          return {
+            ...g,
+            isActive: nextIsActive,
+            isCompanyActive: nextIsActive,
+            status: nextStatusText,
+            companyStatus: targetStatus,
+          };
+        }
+        return g;
+      })
+    );
 
     try {
       const res = await bulkToggleCompanyGameStatus(
@@ -155,6 +201,7 @@ export default function AdminGamesPage() {
     } catch (err) {
       console.error("Bulk toggle error:", err);
       toast.error(`Failed to bulk update ${game.name || "game"} status`);
+      fetchGames(); // Revert on error
     } finally {
       setTogglingId(null);
     }
