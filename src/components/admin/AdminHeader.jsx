@@ -131,12 +131,6 @@ const AdminHeader = ({
                 <p className="text-[11px] text-slate-500 font-medium truncate">
                   {adminEmail}
                 </p>
-                <div className="mt-1.5">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/70 text-[9.5px] font-extrabold tracking-wider uppercase">
-                    <Shield className="h-2.5 w-2.5" />
-                    Super Admin
-                  </span>
-                </div>
               </div>
 
               {/* Clean Logout Button */}
