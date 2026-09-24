@@ -62,7 +62,10 @@ export default function AdminGamesPage() {
     try {
       if (showToast) setRefreshing(true);
       let list = [];
-      if (selectedCompanyId === "GLOBAL" || isMultiMode) {
+      if (isMultiMode && selectedCompanyIds.length > 0) {
+        // Fetch company specific configs for the first selected company in batch context
+        list = await getCompanyGames(selectedCompanyIds[0]);
+      } else if (selectedCompanyId === "GLOBAL" || isMultiMode) {
         list = await getAdminGames();
       } else {
         list = await getCompanyGames(selectedCompanyId);
@@ -83,7 +86,7 @@ export default function AdminGamesPage() {
   useEffect(() => {
     setLoading(true);
     fetchGames();
-  }, [selectedCompanyId, isMultiMode]);
+  }, [selectedCompanyId, isMultiMode, selectedCompanyIds]);
 
   useEffect(() => {
     const handleStatusChange = () => {
@@ -92,6 +95,7 @@ export default function AdminGamesPage() {
 
     if (typeof window !== "undefined") {
       window.addEventListener("gameStatusChanged", handleStatusChange);
+      window.addEventListener("GAME_STATUS_UPDATED", handleStatusChange);
     }
 
     let bc;
@@ -107,12 +111,23 @@ export default function AdminGamesPage() {
     return () => {
       if (typeof window !== "undefined") {
         window.removeEventListener("gameStatusChanged", handleStatusChange);
+        window.removeEventListener("GAME_STATUS_UPDATED", handleStatusChange);
       }
       if (bc) bc.close();
     };
-  }, [selectedCompanyId, isMultiMode]);
+  }, [selectedCompanyId, isMultiMode, selectedCompanyIds]);
 
   const isGameActiveInScope = (game) => {
+    if (isMultiMode) {
+      if (game.companyStatus !== undefined) {
+        return game.companyStatus === "Active" || game.companyStatus === "ACTIVE";
+      }
+      if (game.isCompanyActive !== undefined) {
+        return Boolean(game.isCompanyActive);
+      }
+      return game.isActive !== undefined ? Boolean(game.isActive) : game.status === "ACTIVE";
+    }
+
     if (selectedCompanyId === "GLOBAL") {
       return game.isActive !== undefined ? Boolean(game.isActive) : game.status === "ACTIVE";
     }
@@ -160,7 +175,7 @@ export default function AdminGamesPage() {
 
     setTogglingId(gameId);
 
-    // Optimistic UI Update
+    // Immediate Optimistic UI Update across all state
     setGames((prev) =>
       prev.map((g) => {
         if ((g.id && g.id === gameId) || (g.code && g.code === gameId)) {
@@ -185,9 +200,11 @@ export default function AdminGamesPage() {
 
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("gameStatusChanged"));
+        window.dispatchEvent(new Event("GAME_STATUS_UPDATED"));
         try {
           const bc = new BroadcastChannel("hirequest_realtime");
           bc.postMessage({ type: "GAME_STATUS_CHANGED" });
+          bc.postMessage({ type: "GAME_STATUS_UPDATED" });
           bc.close();
         } catch {}
       }
