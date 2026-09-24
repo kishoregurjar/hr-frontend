@@ -31,12 +31,11 @@ export function SocketProvider({ children }) {
           localStorage.getItem("jwt")
         : null);
 
-    if (!tokenToUse) return;
-
     const socketInstance = io(SOCKET_URL, {
       auth: {
-        token: tokenToUse,
+        token: tokenToUse || "",
       },
+      withCredentials: true,
       transports: ["websocket", "polling"],
     });
 
