@@ -64,11 +64,8 @@ const AdminSidebar = ({ isOpen = false, onClose = () => {} }) => {
             <Shield className="h-5 w-5" />
           </div>
           <div>
-            <span className="font-extrabold text-base tracking-tight text-slate-900 flex items-center gap-1.5 leading-none">
+            <span className="font-extrabold text-base tracking-tight text-slate-900 leading-none">
               HireQuest
-              <span className="text-[9px] font-extrabold uppercase bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded tracking-wider">
-                SUPER
-              </span>
             </span>
           </div>
         </div>

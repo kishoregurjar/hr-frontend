@@ -5,7 +5,6 @@ import {
   Send,
   RefreshCw,
   Copy,
-  ExternalLink,
   Mail,
   Sparkles,
   FileText,
@@ -279,25 +278,11 @@ export default function InvitationsPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleCopyLink(inv.token)}
-                        className="h-8 px-2.5 text-xs font-semibold rounded-lg gap-1 border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs"
+                        className="h-8 px-2.5 text-xs font-semibold rounded-lg gap-1.5 border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs cursor-pointer"
                       >
-                        <Copy className="h-3 w-3 text-slate-500" />
+                        <Copy className="h-3.5 w-3.5 text-slate-500" />
                         Copy Link
                       </Button>
-
-                      <a
-                        href={`/take-test?token=${inv.token}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Button
-                          size="sm"
-                          className="h-8 px-2.5 text-xs font-bold rounded-lg gap-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/80 shadow-none"
-                        >
-                          <ExternalLink className="h-3 w-3 text-blue-600" />
-                          Test Portal
-                        </Button>
-                      </a>
                     </div>
                   </td>
                 </tr>
