@@ -10,8 +10,64 @@ const createToken = () => {
   return crypto.randomUUID();
 };
 
+const extractArrayData = (res) => {
+  if (!res) return [];
+  if (Array.isArray(res)) return res;
+  if (Array.isArray(res?.data)) return res.data;
+  if (Array.isArray(res?.data?.items)) return res.data.items;
+  if (Array.isArray(res?.data?.data)) return res.data.data;
+  if (Array.isArray(res?.items)) return res.items;
+  if (Array.isArray(res?.attempts)) return res.attempts;
+  return [];
+};
+
 export const getAssignments = async () => {
-  await delay();
+  try {
+    const res = await axiosClient.get("/attempts");
+    const list = extractArrayData(res);
+
+    if (Array.isArray(list) && list.length > 0) {
+      const normalized = list.map((item) => {
+        const candidate = item.candidate || item.candidateAssessment?.candidate || {};
+        const assessment = item.assessment || item.candidateAssessment?.assessment || {};
+        const candidateName =
+          candidate.name ||
+          `${candidate.firstName || ""} ${candidate.lastName || ""}`.trim() ||
+          candidate.email ||
+          item.candidateName ||
+          "Candidate";
+        const email = candidate.email || item.candidateEmail || item.email || "";
+        const assessmentTitle = assessment.title || item.assessmentTitle || "Assessment Test";
+        const token = item.token || item.invitationToken || item.id || "";
+
+        return {
+          id: item.id,
+          candidateId: candidate.id || item.candidateId,
+          assessmentId: assessment.id || item.assessmentId,
+          candidateName,
+          email,
+          candidateEmail: email,
+          assessmentTitle,
+          status: item.status || "Invited",
+          token,
+          invitationToken: token,
+          invitedAt: item.createdAt || item.startedAt || item.invitedAt || new Date().toISOString(),
+          createdAt: item.createdAt,
+          expiresAt: item.expiresAt,
+          startedAt: item.startedAt,
+          submittedAt: item.submittedAt,
+          completedAt: item.completedAt,
+        };
+      });
+
+      const serverIds = new Set(normalized.map((n) => String(n.id)));
+      const localOnly = assignments.filter((a) => !serverIds.has(String(a.id)));
+      return [...normalized, ...localOnly];
+    }
+  } catch (err) {
+    console.warn("Live /attempts API fetch in getAssignments fallback:", err?.message);
+  }
+
   return [...assignments];
 };
 
