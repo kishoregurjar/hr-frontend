@@ -19,13 +19,21 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import AdminHeader from "@/components/admin/AdminHeader";
-import { getAdminGames, toggleGameStatus } from "@/lib/api/admin";
+import {
+  getAdminGames,
+  toggleGameStatus,
+  getCompanyGames,
+  toggleCompanyGameStatus,
+  getAdminCompanies,
+} from "@/lib/api/admin";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export default function AdminGamesPage() {
   const [games, setGames] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState("GLOBAL");
   const [selectedGame, setSelectedGame] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -33,10 +41,27 @@ export default function AdminGamesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL"); // ALL | ACTIVE | INACTIVE
 
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const list = await getAdminCompanies();
+        setCompanies(list || []);
+      } catch (err) {
+        console.error("Failed to load companies:", err);
+      }
+    };
+    fetchCompanies();
+  }, []);
+
   const fetchGames = async (showToast = false) => {
     try {
       if (showToast) setRefreshing(true);
-      const list = await getAdminGames();
+      let list = [];
+      if (selectedCompanyId === "GLOBAL") {
+        list = await getAdminGames();
+      } else {
+        list = await getCompanyGames(selectedCompanyId);
+      }
       setGames(list);
       if (showToast) {
         toast.success("Game catalog refreshed successfully");
@@ -51,12 +76,18 @@ export default function AdminGamesPage() {
   };
 
   useEffect(() => {
+    setLoading(true);
     fetchGames();
-  }, []);
+  }, [selectedCompanyId]);
 
   const handleToggleStatus = async (game) => {
     const gameId = game.id || game.code;
-    const currentIsActive = game.isActive !== undefined ? Boolean(game.isActive) : game.status === "ACTIVE";
+    const isGlobal = selectedCompanyId === "GLOBAL";
+    
+    const currentIsActive = isGlobal
+      ? (game.isActive !== undefined ? Boolean(game.isActive) : game.status === "ACTIVE")
+      : (game.isCompanyActive !== undefined ? Boolean(game.isCompanyActive) : game.companyStatus === "Active");
+      
     const nextIsActive = !currentIsActive;
     const nextStatusText = nextIsActive ? "ACTIVE" : "INACTIVE";
 
@@ -69,7 +100,9 @@ export default function AdminGamesPage() {
           return {
             ...g,
             isActive: nextIsActive,
+            isCompanyActive: nextIsActive,
             status: nextStatusText,
+            companyStatus: nextIsActive ? "Active" : "Inactive",
           };
         }
         return g;
@@ -77,24 +110,34 @@ export default function AdminGamesPage() {
     );
 
     try {
-      await toggleGameStatus(gameId, nextIsActive);
+      if (isGlobal) {
+        await toggleGameStatus(gameId, nextIsActive);
+      } else {
+        await toggleCompanyGameStatus(selectedCompanyId, gameId, nextIsActive ? "Active" : "Inactive");
+      }
+
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("gameStatusChanged"));
         try {
           const bc = new BroadcastChannel("hirequest_realtime");
-          bc.postMessage({ type: "GAME_STATUS_CHANGED" });
+          bc.postMessage({ type: "GAME_STATUS_CHANGED", companyId: selectedCompanyId });
           bc.close();
         } catch {}
       }
-      try {
-        queryClient.invalidateQueries({ queryKey: ["games"] });
-        queryClient.invalidateQueries({ queryKey: ["admin-games"] });
-      } catch {}
-      toast.success(`${game.name || game.title || "Game"} is now ${nextStatusText}`, {
-        description: nextIsActive
-          ? "This game is now active across all company assessment creators."
-          : "This game has been disabled globally.",
-      });
+      
+      const compName = companies.find((c) => c.id === selectedCompanyId)?.name || "Company";
+      toast.success(
+        `${game.name || game.title || "Game"} is now ${nextIsActive ? "Enabled" : "Disabled"}`,
+        {
+          description: isGlobal
+            ? nextIsActive
+              ? "This game is now active across all company assessment creators."
+              : "This game has been disabled globally."
+            : nextIsActive
+              ? `Enabled specifically for ${compName}.`
+              : `Disabled specifically for ${compName}.`,
+        }
+      );
     } catch (err) {
       console.error("Toggle error:", err);
       toast.error(`Failed to update ${game.name || "game"} status`);
@@ -105,7 +148,9 @@ export default function AdminGamesPage() {
             return {
               ...g,
               isActive: currentIsActive,
+              isCompanyActive: currentIsActive,
               status: currentIsActive ? "ACTIVE" : "INACTIVE",
+              companyStatus: currentIsActive ? "Active" : "Inactive",
             };
           }
           return g;
@@ -191,12 +236,29 @@ export default function AdminGamesPage() {
 
         {/* ── Filter Bar & Actions ── */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border shadow-2xs">
+          {/* Company Scope Selector */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">Target Scope:</span>
+            <select
+              value={selectedCompanyId}
+              onChange={(e) => setSelectedCompanyId(e.target.value)}
+              className="h-9 text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            >
+              <option value="GLOBAL">🌐 Global Platform Controls (All Companies)</option>
+              {companies.map((c) => (
+                <option key={c.id} value={c.id}>
+                  🏢 Company: {c.name || c.slug}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Search Box */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               type="text"
-              placeholder="Search by game name, skill, or code..."
+              placeholder="Search game..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-9 text-xs bg-slate-50/50 border-slate-200"

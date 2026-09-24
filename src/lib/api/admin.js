@@ -290,7 +290,43 @@ export const toggleGameStatus = async (gameId, isActiveOrStatus) => {
 };
 
 /**
- * 12. Fetch Platform Users
+ * 12. Fetch Games for a specific Company
+ * Endpoint: GET /api/v1/super-admin/games/companies/:companyId/games
+ */
+export const getCompanyGames = async (companyId) => {
+  try {
+    const res = await axiosClient.get(`/super-admin/games/companies/${companyId}/games`);
+    const data = res?.data?.data || res?.data || res;
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    console.error(`Failed to fetch games for company ${companyId}:`, err);
+    return [];
+  }
+};
+
+/**
+ * 13. Toggle Game Status for a specific Company
+ * Endpoint: PATCH /api/v1/super-admin/games/companies/:companyId/games/:gameId/status
+ */
+export const toggleCompanyGameStatus = async (companyId, gameId, statusOrIsActive) => {
+  const status = typeof statusOrIsActive === "boolean" 
+    ? (statusOrIsActive ? "Active" : "Inactive")
+    : statusOrIsActive;
+
+  try {
+    const res = await axiosClient.patch(`/super-admin/games/companies/${companyId}/games/${gameId}/status`, {
+      status,
+      isActive: status === "Active",
+    });
+    return res?.data?.data || res?.data || res;
+  } catch (err) {
+    console.error(`Failed to toggle company game status:`, err);
+    throw err;
+  }
+};
+
+/**
+ * 14. Fetch Platform Users
  * Endpoint: GET /api/v1/super-admin/users
  */
 export const getAdminUsers = async () => {
@@ -302,3 +338,4 @@ export const getAdminUsers = async () => {
     return [];
   }
 };
+
