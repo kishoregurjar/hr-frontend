@@ -15,6 +15,8 @@ import {
   ToggleLeft,
   ToggleRight,
   Loader2,
+  Building2,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import AdminHeader from "@/components/admin/AdminHeader";
@@ -30,6 +32,13 @@ import useSocketStore from "@/store/useSocketStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 export default function AdminGamesPage() {
   const { socket } = useSocketStore();
@@ -38,7 +47,8 @@ export default function AdminGamesPage() {
   const [selectedCompanyId, setSelectedCompanyId] = useState("GLOBAL");
   const [selectedCompanyIds, setSelectedCompanyIds] = useState([]); // Multi-select array
   const [isMultiMode, setIsMultiMode] = useState(false);
-  const [showCompanyListPopover, setShowCompanyListPopover] = useState(false);
+  const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
+  const [companySearchQuery, setCompanySearchQuery] = useState("");
 
   const [selectedGame, setSelectedGame] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -149,13 +159,25 @@ export default function AdminGamesPage() {
     if (val === "MULTI") {
       setIsMultiMode(true);
       setSelectedCompanyId("MULTI");
-      setShowCompanyListPopover(true);
+      setIsCompanyModalOpen(true);
     } else {
       setIsMultiMode(false);
       setSelectedCompanyId(val);
-      setShowCompanyListPopover(false);
+      setIsCompanyModalOpen(false);
     }
   };
+
+  const filteredModalCompanies = useMemo(() => {
+    if (!companySearchQuery.trim()) return companies;
+    const q = companySearchQuery.toLowerCase();
+    return companies.filter(
+      (c) =>
+        (c.name && c.name.toLowerCase().includes(q)) ||
+        (c.slug && c.slug.toLowerCase().includes(q)) ||
+        (c.domain && c.domain.toLowerCase().includes(q)) ||
+        (c.id && c.id.toLowerCase().includes(q))
+    );
+  }, [companies, companySearchQuery]);
 
   const toggleSelectCompanyId = (cId) => {
     setSelectedCompanyIds((prev) =>
@@ -382,21 +404,38 @@ export default function AdminGamesPage() {
           {/* Company Scope Selector */}
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">Target Scope:</span>
-            <select
-              value={isMultiMode ? "MULTI" : selectedCompanyId}
-              onChange={handleScopeChange}
-              className="h-9 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
-            >
-              <option value="GLOBAL">🌐 Global Platform Controls (All Companies)</option>
-              <option value="MULTI">☑️ Multi-Company Selection Mode (Bulk Batch)</option>
-              <optgroup label="Single Company Controls">
-                {companies.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    🏢 Company: {c.name || c.slug}
-                  </option>
-                ))}
-              </optgroup>
-            </select>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <select
+                value={isMultiMode ? "MULTI" : selectedCompanyId}
+                onChange={handleScopeChange}
+                className="h-9 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
+              >
+                <option value="GLOBAL">🌐 Global Platform Controls (All Companies)</option>
+                <option value="MULTI">
+                  ☑️ Multi-Company Selection Mode ({selectedCompanyIds.length} Selected)
+                </option>
+                <optgroup label="Single Company Controls">
+                  {companies.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      🏢 Company: {c.name || c.slug}
+                    </option>
+                  ))}
+                </optgroup>
+              </select>
+
+              {isMultiMode && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsCompanyModalOpen(true)}
+                  className="h-9 px-3 text-xs font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 rounded-lg gap-1.5 cursor-pointer shadow-2xs"
+                >
+                  <Building2 className="h-3.5 w-3.5 text-blue-600" />
+                  <span>Choose Companies ({selectedCompanyIds.length})</span>
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Search Box */}
@@ -413,7 +452,6 @@ export default function AdminGamesPage() {
 
           {/* Filter Pills & Refresh */}
           <div className="flex items-center gap-2">
-
             <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">
               <button
                 type="button"
@@ -462,76 +500,6 @@ export default function AdminGamesPage() {
             </Button>
           </div>
         </div>
-
-        {/* ── Multi-Company Selection Panel ── */}
-        {isMultiMode && (
-          <div className="bg-slate-900 border border-slate-800 text-white rounded-2xl p-5 shadow-lg space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="h-8 w-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">
-                  <CheckCircle2 className="h-4 w-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold tracking-tight">
-                    Multi-Company Batch Licensing
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Select 1 or more companies to bulk update game access permissions in batch.
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={toggleSelectAllCompanies}
-                  className="h-8 text-xs font-semibold bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 hover:text-white cursor-pointer"
-                >
-                  {selectedCompanyIds.length === companies.length ? "Deselect All" : `Select All (${companies.length})`}
-                </Button>
-                <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 px-3 py-1 text-xs font-semibold">
-                  {selectedCompanyIds.length} / {companies.length} Selected
-                </Badge>
-              </div>
-            </div>
-
-            {/* Checkbox Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-48 overflow-y-auto pr-1">
-              {companies.map((c) => {
-                const isChecked = selectedCompanyIds.includes(c.id);
-                return (
-                  <label
-                    key={c.id}
-                    onClick={() => toggleSelectCompanyId(c.id)}
-                    className={`flex items-center gap-3 p-2.5 rounded-xl border text-xs font-medium cursor-pointer transition-all ${
-                      isChecked
-                        ? "bg-blue-950/80 border-blue-500/50 text-white shadow-2xs"
-                        : "bg-slate-950/40 border-slate-800 text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => {}}
-                      className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900 cursor-pointer"
-                    />
-                    <div className="truncate">
-                      <p className="font-semibold truncate leading-snug">{c.name || c.slug}</p>
-                      <p className="text-[10px] text-slate-400 font-mono truncate">{c.domain || c.id}</p>
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
-
-            {selectedCompanyIds.length === 0 && (
-              <p className="text-xs text-amber-400/90 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl flex items-center gap-2">
-                ⚠️ Please select at least one company above to enable or disable games for them.
-              </p>
-            )}
-          </div>
-        )}
 
         {/* ── Games Grid ── */}
         {loading ? (
@@ -827,6 +795,165 @@ export default function AdminGamesPage() {
             </div>
           </div>
         )}
+
+        {/* ── Center Multi-Company Selection Modal (Spacious & Clean) ── */}
+        <Dialog open={isCompanyModalOpen} onOpenChange={setIsCompanyModalOpen}>
+          <DialogContent className="sm:max-w-[720px] w-[95vw] p-0 overflow-hidden rounded-3xl border border-slate-200 shadow-2xl bg-white font-sans">
+            {/* Header */}
+            <div className="p-6 pb-4 border-b border-slate-100 bg-gradient-to-b from-slate-50/80 to-white">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="h-11 w-11 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center font-bold text-blue-600 shadow-2xs shrink-0">
+                    <Building2 className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <DialogTitle className="text-lg font-black tracking-tight text-slate-900">
+                        Target Companies Selection
+                      </DialogTitle>
+                      <Badge className="text-[10px] font-extrabold uppercase bg-blue-50 text-blue-700 border-blue-200">
+                        Batch Scope
+                      </Badge>
+                    </div>
+                    <DialogDescription className="text-xs text-slate-500 font-medium mt-0.5">
+                      Select one or more organizations to bulk enable or disable cognitive game modules.
+                    </DialogDescription>
+                  </div>
+                </div>
+              </div>
+
+              {/* Search & Select All Bar */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 mt-4 pt-3 border-t border-slate-100">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                  <Input
+                    type="text"
+                    placeholder="Search company by name or domain..."
+                    value={companySearchQuery}
+                    onChange={(e) => setCompanySearchQuery(e.target.value)}
+                    className="pl-8.5 h-8.5 text-xs bg-white border-slate-200 rounded-xl"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={toggleSelectAllCompanies}
+                    className="h-8.5 px-3 text-xs font-bold rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
+                  >
+                    {selectedCompanyIds.length === companies.length
+                      ? "Deselect All"
+                      : `Select All (${companies.length})`}
+                  </Button>
+                  <Badge className="h-8.5 px-2.5 text-xs font-extrabold bg-blue-50 text-blue-700 border-blue-200 flex items-center">
+                    {selectedCompanyIds.length} / {companies.length} Selected
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
+            {/* Companies Spacious Grid List */}
+            <div className="p-6 max-h-[380px] overflow-y-auto space-y-2">
+              {filteredModalCompanies.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 text-xs">
+                  No organizations found matching "{companySearchQuery}".
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {filteredModalCompanies.map((c) => {
+                    const isChecked = selectedCompanyIds.includes(c.id);
+                    return (
+                      <div
+                        key={c.id}
+                        onClick={() => toggleSelectCompanyId(c.id)}
+                        className={`flex items-start gap-3 p-3 rounded-2xl border transition-all cursor-pointer ${
+                          isChecked
+                            ? "bg-blue-50/70 border-blue-300 ring-2 ring-blue-500/20 shadow-2xs"
+                            : "bg-white border-slate-200 hover:bg-slate-50/80 hover:border-slate-300"
+                        }`}
+                      >
+                        <div className="pt-0.5 shrink-0">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {}}
+                            className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-slate-900 truncate">
+                            {c.name || c.slug}
+                          </p>
+                          <p className="text-[11px] text-slate-500 font-medium truncate mt-0.5">
+                            {c.email || c.domain || c.id}
+                          </p>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={`text-[9.5px] font-bold shrink-0 ${
+                            c.status === "ACTIVE"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : "bg-slate-50 text-slate-600 border-slate-200"
+                          }`}
+                        >
+                          {c.status || "Active"}
+                        </Badge>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 px-6 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between gap-3">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectedCompanyId("GLOBAL");
+                  setIsMultiMode(false);
+                  setIsCompanyModalOpen(false);
+                }}
+                className="text-xs text-slate-600 hover:text-slate-900 font-semibold cursor-pointer"
+              >
+                Reset to Global Scope
+              </Button>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsCompanyModalOpen(false)}
+                  className="h-9 px-4 rounded-xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    if (selectedCompanyIds.length === 0) {
+                      toast.warning("No companies selected. Scope set to Multi-Mode.");
+                    } else {
+                      toast.success(`Target scope set to ${selectedCompanyIds.length} companies.`);
+                    }
+                    setIsMultiMode(true);
+                    setSelectedCompanyId("MULTI");
+                    setIsCompanyModalOpen(false);
+                  }}
+                  className="h-9 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/25 cursor-pointer"
+                >
+                  Apply Selection ({selectedCompanyIds.length})
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </>
   );
