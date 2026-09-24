@@ -107,7 +107,7 @@ const GameList = () => {
       const difficulty = savedConfig?.difficulty || game.difficulty || "Easy";
       const duration = savedConfig?.duration || game.duration || 6;
       const isGloballyActive = game.isActive !== undefined ? Boolean(game.isActive) : game.status === "ACTIVE";
-      const isCompanyActive = savedConfig?.status ? savedConfig.status === "Active" : true;
+      const isCompanyActive = game.companyStatus ? (game.companyStatus === "Active" || game.companyStatus === "ACTIVE") : (savedConfig?.status ? savedConfig.status === "Active" : true);
       const isActive = isGloballyActive && isCompanyActive;
       const statusText = isActive ? "Active" : "Inactive";
       const skill = game.skill || "Logical Problem Solving";
