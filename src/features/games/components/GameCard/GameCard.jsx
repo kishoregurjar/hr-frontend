@@ -80,7 +80,7 @@ const GameCard = ({ game, onPreview, onConfigure }) => {
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 border border-slate-100 font-semibold text-slate-700">
             <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-            <span>{game.duration} Mins</span>
+            <span>Est. ~{game.duration} Mins</span>
           </div>
 
           <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 border border-slate-100 font-semibold text-slate-700">
