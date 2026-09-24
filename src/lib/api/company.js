@@ -395,3 +395,17 @@ export const acceptAndRegisterCompanyInvitation = async ({ token, name, password
   }
 };
 
+
+/**
+ * Game Configurations
+ */
+export const getGameConfig = async (gameId) => {
+  const res = await axiosClient.get(`/companies/me/games/${gameId}/config`);
+  return res?.data?.data || res?.data || res;
+};
+
+export const updateGameConfig = async (gameId, payload) => {
+  const res = await axiosClient.put(`/companies/me/games/${gameId}/config`, payload);
+  return res?.data?.data || res?.data || res;
+};
+

@@ -259,7 +259,7 @@ export const getAllResults = async () => {
           ? Math.round(item.score)
           : 0;
 
-      const isPass = item.result === "PASS" || item.result === "PASSED" || item.passed === true || scoreNum >= 60;
+      const isPass = item.result === "PASS" || item.result === "PASSED" || item.passed === true;
       const isInProgress = (item.status === "IN_PROGRESS" || item.rawStatus === "IN_PROGRESS") && !item.submittedAt;
 
       const statusLabel = isPass
@@ -314,9 +314,9 @@ export const getAllResults = async () => {
         timeSpent: timeSpentText,
         completedAt: formattedDate,
         integrityScore: item.integrityScore || 100,
-        cognitiveTraits: item.cognitiveTraits || { problemSolving: Math.min(95, scoreNum + 10), memoryRecall: Math.max(70, scoreNum - 5), processingSpeed: Math.min(90, scoreNum + 5) },
-        mcqScore: `${scoreNum}%`,
-        gameScore: `${scoreNum}%`,
+        cognitiveTraits: item.cognitiveTraits || null,
+        mcqScore: item.quizScore !== undefined ? `${Math.round(item.quizScore)}%` : (item.sections?.find(s => s.type === 'quiz')?.score !== undefined ? `${Math.round(item.sections.find(s => s.type === 'quiz').score)}%` : "N/A"),
+        gameScore: item.gameScore !== undefined ? `${Math.round(item.gameScore)}%` : (item.sections?.find(s => s.type === 'game')?.score !== undefined ? `${Math.round(item.sections.find(s => s.type === 'game').score)}%` : "N/A"),
       };
     });
   }

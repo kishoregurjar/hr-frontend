@@ -117,11 +117,10 @@ const GameConfigModal = ({ game, open, onOpenChange, onSave }) => {
                   key={lvl}
                   type="button"
                   onClick={() => setDifficulty(lvl)}
-                  className={`h-10 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                    difficulty === lvl
+                  className={`h-10 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${difficulty === lvl
                       ? "border-blue-600 bg-blue-50 text-blue-700 shadow-2xs ring-2 ring-blue-500/20"
                       : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                  }`}
+                    }`}
                 >
                   <Zap className={`h-3.5 w-3.5 ${difficulty === lvl ? "text-blue-600" : "text-slate-400"}`} />
                   {lvl}
@@ -141,11 +140,10 @@ const GameConfigModal = ({ game, open, onOpenChange, onSave }) => {
                   key={st}
                   type="button"
                   onClick={() => setStatus(st)}
-                  className={`h-10 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                    status === st
+                  className={`h-10 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${status === st
                       ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-2xs ring-2 ring-emerald-500/20"
                       : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                  }`}
+                    }`}
                 >
                   <CheckCircle2 className={`h-3.5 w-3.5 ${status === st ? "text-emerald-600" : "text-slate-400"}`} />
                   {st}
