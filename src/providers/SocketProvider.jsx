@@ -22,11 +22,20 @@ export function SocketProvider({ children }) {
   const { token: accessToken, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) return;
+    const tokenToUse =
+      accessToken ||
+      (typeof window !== "undefined"
+        ? localStorage.getItem("hirequest_token") ||
+          localStorage.getItem("token") ||
+          localStorage.getItem("accessToken") ||
+          localStorage.getItem("jwt")
+        : null);
+
+    if (!tokenToUse) return;
 
     const socketInstance = io(SOCKET_URL, {
       auth: {
-        token: accessToken,
+        token: tokenToUse,
       },
       transports: ["websocket", "polling"],
     });
