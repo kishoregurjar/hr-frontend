@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Brain,
   Clock,
   BarChart3,
   Play,
@@ -31,18 +30,13 @@ const GameCard = ({ game, onPreview, onConfigure }) => {
       {/* ── Top Header ── */}
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform shrink-0">
-              <Brain className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="font-extrabold text-base text-slate-900 leading-tight">
-                {game.title}
-              </h3>
-              <span className="text-[11px] font-semibold text-blue-600 mt-0.5 inline-block">
-                {game.category}
-              </span>
-            </div>
+          <div>
+            <h3 className="font-extrabold text-base text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">
+              {game.title}
+            </h3>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 mt-1 inline-block">
+              {game.category}
+            </span>
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
