@@ -326,7 +326,30 @@ export const toggleCompanyGameStatus = async (companyId, gameId, statusOrIsActiv
 };
 
 /**
- * 14. Fetch Platform Users
+ * 14. Bulk Toggle Game Status for Multiple Companies
+ * Endpoint: PATCH /api/v1/super-admin/games/companies/bulk/status
+ */
+export const bulkToggleCompanyGameStatus = async (companyIds, gameId, statusOrIsActive) => {
+  const status = typeof statusOrIsActive === "boolean"
+    ? (statusOrIsActive ? "Active" : "Inactive")
+    : statusOrIsActive;
+
+  try {
+    const res = await axiosClient.patch("/super-admin/games/companies/bulk/status", {
+      companyIds,
+      gameId,
+      status,
+      isActive: status === "Active",
+    });
+    return res?.data?.data || res?.data || res;
+  } catch (err) {
+    console.error("Failed to bulk toggle company game status:", err);
+    throw err;
+  }
+};
+
+/**
+ * 15. Fetch Platform Users
  * Endpoint: GET /api/v1/super-admin/users
  */
 export const getAdminUsers = async () => {
