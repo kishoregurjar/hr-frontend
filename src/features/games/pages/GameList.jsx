@@ -64,16 +64,22 @@ const GameList = () => {
     const handleGameStatusChange = () => {
       try {
         refetch();
-      } catch {}
+      } catch (err) {
+        console.error("Refetch error on game status change:", err);
+      }
     };
 
     let bc = null;
     if (typeof window !== "undefined") {
       window.addEventListener("gameStatusChanged", handleGameStatusChange);
+      window.addEventListener("GAME_STATUS_UPDATED", handleGameStatusChange);
       try {
         bc = new BroadcastChannel("hirequest_realtime");
         bc.onmessage = (event) => {
-          if (event.data?.type === "GAME_STATUS_CHANGED") {
+          if (
+            event.data?.type === "GAME_STATUS_CHANGED" ||
+            event.data?.type === "GAME_STATUS_UPDATED"
+          ) {
             handleGameStatusChange();
           }
         };
@@ -83,6 +89,7 @@ const GameList = () => {
     return () => {
       if (typeof window !== "undefined") {
         window.removeEventListener("gameStatusChanged", handleGameStatusChange);
+        window.removeEventListener("GAME_STATUS_UPDATED", handleGameStatusChange);
       }
       if (bc) {
         try {
