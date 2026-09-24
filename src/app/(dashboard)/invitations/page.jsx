@@ -63,7 +63,7 @@ export default function InvitationsPage() {
   };
 
   const handleCopyLink = (token) => {
-    const link = `${window.location.origin}/take-test?token=${token}`;
+    const link = `${window.location.origin}/candidate/assessments/invitation?token=${token}`;
     navigator.clipboard.writeText(link);
     toast.success("Candidate exam link copied to clipboard!");
   };
