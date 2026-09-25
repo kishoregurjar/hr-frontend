@@ -14,17 +14,6 @@ const GameCompleted = ({
   isSaving,
   error,
 }) => {
-  if (isSaving) {
-    return (
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-12 text-center shadow-2xs font-sans">
-        <Loader2 className="mx-auto h-8 w-8 animate-spin text-blue-600" />
-        <p className="mt-4 font-bold text-xs text-slate-700">
-          Recording game results securely...
-        </p>
-      </div>
-    );
-  }
-
   const isSkipped = Boolean(result?.skipped || result?.status === "SKIPPED");
   const gameTitle = currentGame?.title || section?.title || "Cognitive Challenge";
 
