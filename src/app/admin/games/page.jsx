@@ -28,6 +28,7 @@ import {
   bulkToggleCompanyGameStatus,
   getAdminCompanies,
 } from "@/lib/api/admin";
+import useSocketStore from "@/store/useSocketStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,7 @@ import {
 } from "@/components/ui/dialog";
 
 export default function AdminGamesPage() {
+  const { socket } = useSocketStore();
   const [games, setGames] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState("GLOBAL");
@@ -107,6 +109,10 @@ export default function AdminGamesPage() {
       window.addEventListener("GAME_STATUS_UPDATED", handleStatusChange);
     }
 
+    if (socket) {
+      socket.on("GAME_STATUS_UPDATED", handleStatusChange);
+    }
+
     let bc;
     try {
       bc = new BroadcastChannel("hirequest_realtime");
@@ -122,9 +128,12 @@ export default function AdminGamesPage() {
         window.removeEventListener("gameStatusChanged", handleStatusChange);
         window.removeEventListener("GAME_STATUS_UPDATED", handleStatusChange);
       }
+      if (socket) {
+        socket.off("GAME_STATUS_UPDATED", handleStatusChange);
+      }
       if (bc) bc.close();
     };
-  }, [selectedCompanyId, isMultiMode, selectedCompanyIds]);
+  }, [selectedCompanyId, isMultiMode, selectedCompanyIds, socket]);
 
   const isGameActiveInScope = (game) => {
     if (isMultiMode) {

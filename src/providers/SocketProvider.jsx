@@ -22,12 +22,20 @@ export function SocketProvider({ children }) {
   const { token: accessToken, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) return;
+    const tokenToUse =
+      accessToken ||
+      (typeof window !== "undefined"
+        ? localStorage.getItem("hirequest_token") ||
+          localStorage.getItem("token") ||
+          localStorage.getItem("accessToken") ||
+          localStorage.getItem("jwt")
+        : null);
 
     const socketInstance = io(SOCKET_URL, {
       auth: {
-        token: accessToken,
+        token: tokenToUse || "",
       },
+      withCredentials: true,
       transports: ["websocket", "polling"],
     });
 
@@ -44,8 +52,12 @@ export function SocketProvider({ children }) {
     // Event Listeners
     // ==========================================
 
-    socketInstance.on("GAME_STATUS_UPDATED", () => {
-      queryClient.invalidateQueries({ queryKey: ["games"] });
+    socketInstance.on("GAME_STATUS_UPDATED", (data) => {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("GAME_STATUS_UPDATED"));
+        window.dispatchEvent(new Event("gameStatusChanged"));
+      }
+      queryClient.invalidateQueries({ queryKey: ["games"], refetchType: "all" });
     });
 
     socketInstance.on("ATTEMPT_STARTED", (data) => {
