@@ -141,17 +141,20 @@ const EmailExtractorDialog = ({ triggerText = "Extract from Emails" }) => {
       return;
     }
     const dataToSave = extractedPreview || parseRawEmailContent(rawText);
-    extractMutation.mutate(dataToSave, {
-      onSuccess: (candidate) => {
-        toast.success(`Candidate "${candidate?.name || "Candidate"}" added successfully!`);
-        setOpen(false);
-        setRawText("");
-        setExtractedPreview(null);
-      },
-      onError: (err) => {
-        toast.error(err?.message || "Failed to extract candidate.");
-      },
-    });
+    extractMutation.mutate(
+      { ...dataToSave, source: "EMAIL_EXTRACTION" },
+      {
+        onSuccess: (candidate) => {
+          toast.success(`Candidate "${candidate?.name || "Candidate"}" added successfully!`);
+          setOpen(false);
+          setRawText("");
+          setExtractedPreview(null);
+        },
+        onError: (err) => {
+          toast.error(err?.message || "Failed to extract candidate.");
+        },
+      }
+    );
   };
 
   return (
