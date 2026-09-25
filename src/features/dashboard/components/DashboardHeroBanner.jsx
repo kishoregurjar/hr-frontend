@@ -1,9 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { Mail, FileText, Crown, Building2, Shield } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/context";
 
 const DashboardHeroBanner = () => {
@@ -72,7 +69,7 @@ const DashboardHeroBanner = () => {
       <div className="absolute right-0 top-0 -mt-10 -mr-10 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
       <div className="absolute left-1/4 bottom-0 h-40 w-40 rounded-full bg-indigo-500/10 blur-2xl pointer-events-none" />
 
-      <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="relative z-10">
         <div className="space-y-1">
           <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight">
             Automated Candidate Screening Pipeline
@@ -80,27 +77,6 @@ const DashboardHeroBanner = () => {
           <p className="text-xs sm:text-sm text-slate-300 max-w-xl font-medium">
             Deploy multi-module cognitive assessments, manage candidate pipelines, and shortlist top talent.
           </p>
-        </div>
-
-        {/* Action CTAs */}
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-          <Link href="/candidates">
-            <Button
-              className="bg-white hover:bg-slate-100 text-slate-900 font-bold rounded-xl text-xs sm:text-sm px-4 py-2 shadow-md gap-1.5 cursor-pointer transition-all"
-            >
-              <Mail className="h-4 w-4 text-blue-600" />
-              Extract Candidates
-            </Button>
-          </Link>
-
-          <Link href="/assessments/create">
-            <Button
-              className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs sm:text-sm px-4 py-2 shadow-md gap-1.5 cursor-pointer transition-all"
-            >
-              <FileText className="h-4 w-4" />
-              Assessment Builder
-            </Button>
-          </Link>
         </div>
       </div>
     </div>
