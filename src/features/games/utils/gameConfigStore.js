@@ -101,7 +101,7 @@ export const saveCompanyGameConfig = (gameSlugOrId, newConfig = {}) => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       window.dispatchEvent(new CustomEvent("hirequest_game_configs_updated", { detail: updated }));
-    } catch {}
+    } catch { }
   }
 
   return updated[key];
@@ -110,11 +110,10 @@ export const saveCompanyGameConfig = (gameSlugOrId, newConfig = {}) => {
 export const getEffectiveGameRuntimeConfig = (gameSlugOrId, assessmentConfig = {}) => {
   const companyConfig = getCompanyGameConfig(gameSlugOrId);
   const diff = (
-    assessmentConfig?.difficulty ||
     companyConfig?.difficulty ||
+    assessmentConfig?.difficulty ||
     "easy"
   ).toLowerCase();
-
   return {
     ...companyConfig,
     ...assessmentConfig,
