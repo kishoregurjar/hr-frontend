@@ -90,7 +90,11 @@ const CandidateExtractorDrawer = ({
     <Dialog open={isDrawerOpen} onOpenChange={(nextOpen) => {
       if (!nextOpen) handleClose();
     }}>
-      <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto p-0 rounded-2xl border border-slate-200 bg-white shadow-2xl">
+      <DialogContent 
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+        className="max-w-4xl max-h-[92vh] overflow-y-auto p-0 rounded-2xl border border-slate-200 bg-white shadow-2xl"
+      >
         {/* ── 1. Top Hero Profile Header ─────────────────────────────── */}
         <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 text-white rounded-t-2xl relative overflow-hidden">
           {/* Subtle Background Glow Accent */}
@@ -375,17 +379,17 @@ const CandidateExtractorDrawer = ({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={onClose}
-              className="text-slate-600 hover:text-slate-900"
+              onClick={handleClose}
+              className="text-slate-600 hover:text-slate-900 cursor-pointer"
             >
               Close
             </Button>
 
             <Button
               size="sm"
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold gap-2 shadow-md shadow-blue-500/20 px-5"
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold gap-2 shadow-md shadow-blue-500/20 px-5 cursor-pointer"
               onClick={() => {
-                onClose();
+                handleClose();
                 onAssignAssessment(candidate);
               }}
             >
