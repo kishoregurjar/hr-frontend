@@ -181,13 +181,30 @@ const AssessmentAttempt = ({ attemptId }) => {
 
   // ── 5. Review Mode ──────────────────────────────────────────
   if (isReviewing) {
-    const reviewData = getAssessmentReview({ assessment: effectiveAssessment, attempt });
+    let localSavedResponses = {};
+    if (typeof window !== "undefined") {
+      try {
+        localSavedResponses = JSON.parse(
+          sessionStorage.getItem(`candidate_responses_${attempt?.id || attemptId}`) || "{}"
+        );
+      } catch {}
+    }
+
+    const mergedAttempt = {
+      ...attempt,
+      responses: {
+        ...(attempt?.responses || {}),
+        ...localSavedResponses,
+      },
+    };
+
+    const reviewData = getAssessmentReview({ assessment: effectiveAssessment, attempt: mergedAttempt });
 
     return (
       <>
         <AssessmentReview
           assessment={effectiveAssessment}
-          attempt={attempt}
+          attempt={mergedAttempt}
           onBack={() => setIsReviewing(false)}
           onReviewSection={handleReviewSection}
           onSubmit={() => setSubmitDialogOpen(true)}
