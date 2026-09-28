@@ -112,6 +112,11 @@ const GameRuntime = ({ section, attempt, onComplete, onTimeTick, onActiveGameCha
       timeTaken: result.timeTaken || timeSpent || 60,
     };
     
+    // 1. Instant Optimistic UI: Immediately show the completed screen without network lag
+    setCompletedResult(finalResult);
+    setGameState(GAME_STATE.COMPLETED);
+
+    // 2. Background Auto-Save: Silently synchronize result with backend database
     saveGameResult.mutate(
       {
         attemptId: attempt.id,
@@ -126,7 +131,9 @@ const GameRuntime = ({ section, attempt, onComplete, onTimeTick, onActiveGameCha
             finalResult;
 
           setCompletedResult(res);
-          setGameState(GAME_STATE.COMPLETED);
+        },
+        onError: (err) => {
+          console.warn("[GameRuntime] Background sync warning:", err?.message);
         },
       }
     );
