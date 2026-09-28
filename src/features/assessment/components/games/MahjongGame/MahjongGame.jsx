@@ -594,10 +594,19 @@ export default function MahjongGame({ config = {}, onComplete }) {
     }
 
     if (remainingTiles.length > 0 && !hasAnyValidMovesOrMatches(nextBoard)) {
-      setTimeout(() => {
-        setIsShuffleHighlighted(true);
-        setMessage("No direct matches visible — Click 'Shuffle' button to reshuffle tiles!");
-      }, 350);
+      if (shuffles > 0) {
+        setTimeout(() => {
+          setIsShuffleHighlighted(true);
+          setMessage("No direct matches visible — Click 'Shuffle' button to reshuffle tiles!");
+        }, 350);
+      } else {
+        setTimeout(() => {
+          setMessage("No more valid moves available! Finishing challenge with your earned score.");
+          solvedRef.current = true;
+          stopTimer();
+          setWin(true);
+        }, 800);
+      }
     }
   };
 
