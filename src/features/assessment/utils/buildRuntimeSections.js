@@ -276,7 +276,7 @@ export const buildRuntimeSections = (assessment) => {
     const apiDifficulty = typeof gameItem === "object" ? (gameItem.difficulty || gameItem.game?.difficulty || itemConfig.difficulty) : null;
     const effectiveConfig = getEffectiveGameRuntimeConfig(resolvedSlug, {
       ...itemConfig,
-      difficulty: apiDifficulty || itemConfig.difficulty || assessment?.difficulty || "easy",
+      difficulty: apiDifficulty || itemConfig.difficulty || assessment?.difficulty || "medium",
     });
 
     const gameDurationMinutes = 10;
