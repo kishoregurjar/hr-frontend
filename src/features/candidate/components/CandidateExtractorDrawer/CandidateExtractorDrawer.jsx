@@ -176,16 +176,22 @@ const CandidateExtractorDrawer = ({
                 Extracted Skills & Tech Stack
               </h4>
 
-              <div className="flex flex-wrap gap-1.5">
-                {(candidate.skills || ["React", "TypeScript", "Next.js", "Node.js", "Tailwind CSS"]).map((skill) => (
-                  <span
-                    key={skill}
-                    className="rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100/80 px-2.5 py-1 text-xs font-semibold text-blue-800 shadow-xs"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
+              {Array.isArray(candidate.extractedSkills) && candidate.extractedSkills.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {candidate.extractedSkills.map((skill) => (
+                    <span
+                      key={skill}
+                      className="rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100/80 px-2.5 py-1 text-xs font-semibold text-blue-800 shadow-xs"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm font-medium text-slate-400 italic py-1">
+                  No skills extracted
+                </div>
+              )}
             </div>
 
             {/* Resume Attachment Card */}
@@ -264,7 +270,7 @@ const CandidateExtractorDrawer = ({
               {/* Mail Header */}
               <div className="space-y-1.5 border-b border-slate-200/80 pb-3">
                 <h3 className="text-sm font-bold text-slate-900">
-                  {candidate.emailSubject || `Application for ${candidate.role || "Software Engineer"} - ${candidate.name}`}
+                  {candidate.emailSubject ? candidate.emailSubject : <span className="text-slate-400 italic font-normal">Subject unavailable</span>}
                 </h3>
                 <div className="flex items-center justify-between text-xs text-slate-500">
                   <span>From: <strong className="text-slate-800">{candidate.name}</strong> &lt;{candidate.email}&gt;</span>
@@ -274,8 +280,8 @@ const CandidateExtractorDrawer = ({
 
               {/* Formatted Mail Body */}
               <div className="text-xs text-slate-700 leading-relaxed space-y-2 font-sans overflow-y-auto max-h-56 pr-2 whitespace-pre-wrap">
-                {candidate.emailBody || (
-                  `Dear Hiring Team,\n\nI am writing to express my strong interest in the ${candidate.role || "Software Engineer"} role at HireQuest. With ${candidate.experience || "over 3 years"} of experience working on production web applications, I have developed expertise in ${(candidate.skills || ["React", "JavaScript"]).join(", ")}.\n\nI look forward to discussing how my skills and background can contribute to the success of your team.\n\nBest regards,\n${candidate.name}`
+                {candidate.emailBody ? candidate.emailBody : (
+                  <span className="text-slate-400 italic">Original email content is unavailable</span>
                 )}
               </div>
 
@@ -322,7 +328,7 @@ const CandidateExtractorDrawer = ({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={onClose}
+              onClick={handleClose}
               className="text-slate-600 hover:text-slate-900"
             >
               Close
@@ -332,7 +338,7 @@ const CandidateExtractorDrawer = ({
               size="sm"
               className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold gap-2 shadow-md shadow-blue-500/20 px-5"
               onClick={() => {
-                onClose();
+                handleClose();
                 onAssignAssessment(candidate);
               }}
             >
