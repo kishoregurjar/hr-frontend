@@ -38,7 +38,23 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
   const [activeGameIndex, setActiveGameIndex] = useState(0);
 
   // Local answer selections & review tracking
-  const [localSelections, setLocalSelections] = useState({});
+  const [localSelections, setLocalSelections] = useState(() => {
+    if (typeof window !== "undefined" && attempt?.id) {
+      try {
+        const stored = JSON.parse(
+          sessionStorage.getItem(`candidate_responses_${attempt.id}`) || "{}"
+        );
+        const flatMap = {};
+        Object.values(stored).forEach((secAnswers) => {
+          if (secAnswers && typeof secAnswers === "object") {
+            Object.assign(flatMap, secAnswers);
+          }
+        });
+        return flatMap;
+      } catch {}
+    }
+    return {};
+  });
   const [reviewQuestions, setReviewQuestions] = useState(() => new Set());
   const [visitedQuestions, setVisitedQuestions] = useState(() => new Set(["0-0"]));
 
@@ -111,6 +127,17 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
       [currentQuestion.id]: optionId,
     }));
 
+    if (typeof window !== "undefined" && attempt?.id) {
+      try {
+        const stored = JSON.parse(
+          sessionStorage.getItem(`candidate_responses_${attempt.id}`) || "{}"
+        );
+        const secAnswers = stored[currentSection.id] || {};
+        stored[currentSection.id] = { ...secAnswers, [currentQuestion.id]: optionId };
+        sessionStorage.setItem(`candidate_responses_${attempt.id}`, JSON.stringify(stored));
+      } catch {}
+    }
+
     if (attempt?.id) {
       saveResponse.mutate({
         attemptId: attempt.id,
@@ -129,6 +156,18 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
       delete copy[currentQuestion.id];
       return copy;
     });
+
+    if (typeof window !== "undefined" && attempt?.id) {
+      try {
+        const stored = JSON.parse(
+          sessionStorage.getItem(`candidate_responses_${attempt.id}`) || "{}"
+        );
+        if (stored[currentSection.id]) {
+          delete stored[currentSection.id][currentQuestion.id];
+          sessionStorage.setItem(`candidate_responses_${attempt.id}`, JSON.stringify(stored));
+        }
+      } catch {}
+    }
 
     if (attempt?.id) {
       saveResponse.mutate({

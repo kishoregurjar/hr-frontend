@@ -35,6 +35,7 @@ const saveCachedAttempts = (list) => {
 };
 
 let attempts = getCachedAttempts();
+const inFlightRequests = new Map();
 
 const MAX_INTEGRITY_EVENTS = 100;
 
@@ -354,19 +355,27 @@ export const startAttempt = async ({
           }
         : {};
 
-      const res = await axiosClient.post(
-        "/attempts/start-by-token",
-        {
-          token,
-          invitationToken: token,
-          candidateAccessToken: candidateToken,
-          candidateSessionToken: candidateToken,
-          sessionToken: candidateToken,
-          assessmentId,
-        },
-        { headers }
-      );
+      const requestKey = `start_token_${token}_${assessmentId || ""}`;
+      let resPromise = inFlightRequests.get(requestKey);
+      if (!resPromise) {
+        resPromise = axiosClient.post(
+          "/attempts/start-by-token",
+          {
+            token,
+            invitationToken: token,
+            candidateAccessToken: candidateToken,
+            candidateSessionToken: candidateToken,
+            sessionToken: candidateToken,
+            assessmentId,
+          },
+          { headers }
+        ).finally(() => {
+          setTimeout(() => inFlightRequests.delete(requestKey), 2000);
+        });
+        inFlightRequests.set(requestKey, resPromise);
+      }
 
+      const res = await resPromise;
       const liveData = res?.data?.data || res?.data || res;
       const realId = liveData?.id || liveData?.attempt?.id;
       if (realId) {

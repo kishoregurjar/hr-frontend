@@ -151,7 +151,9 @@ function validateTangoGrid(grid, size, constraints) {
 }
 
 export default function TangoGame({ config = {}, onComplete }) {
-  const size = Number(config?.size || DEFAULT_TANGO_DATA.size) || 6;
+  const diff = String(config?.difficulty || "medium").toLowerCase();
+  const defaultSize = diff === "easy" ? 4 : diff === "hard" ? 8 : 6;
+  const size = Number(config?.size || defaultSize) || 6;
   const initial = config?.initial || DEFAULT_TANGO_DATA.initial;
   const constraints = config?.constraints || DEFAULT_TANGO_DATA.constraints;
 

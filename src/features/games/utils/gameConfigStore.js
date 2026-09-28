@@ -6,50 +6,7 @@
 
 const STORAGE_KEY = "hirequest_company_game_configs";
 
-const DEFAULT_CONFIGS = {
-  mahjong: {
-    difficulty: "Easy",
-    duration: 7,
-    passingScore: 70,
-    status: "Active",
-  },
-  sudoku: {
-    difficulty: "Easy",
-    duration: 10,
-    passingScore: 70,
-    status: "Active",
-  },
-  zip: {
-    difficulty: "Easy",
-    duration: 6,
-    passingScore: 70,
-    status: "Active",
-  },
-  tango: {
-    difficulty: "Easy",
-    duration: 8,
-    passingScore: 70,
-    status: "Active",
-  },
-  pattern_memory: {
-    difficulty: "Easy",
-    duration: 6,
-    passingScore: 70,
-    status: "Active",
-  },
-  maze_escape: {
-    difficulty: "Easy",
-    duration: 8,
-    passingScore: 70,
-    status: "Active",
-  },
-  card_match: {
-    difficulty: "Easy",
-    duration: 5,
-    passingScore: 70,
-    status: "Active",
-  },
-};
+const DEFAULT_CONFIGS = {};
 
 const normalizeKey = (key = "") => {
   const str = String(key || "").toLowerCase().trim();
@@ -65,23 +22,22 @@ const normalizeKey = (key = "") => {
 
 export const getAllCompanyGameConfigs = () => {
   if (typeof window === "undefined") {
-    return { ...DEFAULT_CONFIGS };
+    return {};
   }
 
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...DEFAULT_CONFIGS };
-    const parsed = JSON.parse(raw);
-    return { ...DEFAULT_CONFIGS, ...parsed };
+    if (!raw) return {};
+    return JSON.parse(raw);
   } catch {
-    return { ...DEFAULT_CONFIGS };
+    return {};
   }
 };
 
 export const getCompanyGameConfig = (gameSlugOrId) => {
   const key = normalizeKey(gameSlugOrId);
   const all = getAllCompanyGameConfigs();
-  return all[key] || DEFAULT_CONFIGS[key] || { difficulty: "Easy", duration: 7, passingScore: 70, status: "Active" };
+  return all[key] || null;
 };
 
 export const saveCompanyGameConfig = (gameSlugOrId, newConfig = {}) => {
@@ -91,9 +47,8 @@ export const saveCompanyGameConfig = (gameSlugOrId, newConfig = {}) => {
   const updated = {
     ...current,
     [key]: {
-      ...(current[key] || DEFAULT_CONFIGS[key] || {}),
+      ...(current[key] || {}),
       ...newConfig,
-      difficulty: newConfig.difficulty || current[key]?.difficulty || "Easy",
     },
   };
 
@@ -101,7 +56,7 @@ export const saveCompanyGameConfig = (gameSlugOrId, newConfig = {}) => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       window.dispatchEvent(new CustomEvent("hirequest_game_configs_updated", { detail: updated }));
-    } catch {}
+    } catch { }
   }
 
   return updated[key];
@@ -110,14 +65,13 @@ export const saveCompanyGameConfig = (gameSlugOrId, newConfig = {}) => {
 export const getEffectiveGameRuntimeConfig = (gameSlugOrId, assessmentConfig = {}) => {
   const companyConfig = getCompanyGameConfig(gameSlugOrId);
   const diff = (
-    assessmentConfig?.difficulty ||
     companyConfig?.difficulty ||
+    assessmentConfig?.difficulty ||
     "easy"
   ).toLowerCase();
-
   return {
-    ...companyConfig,
     ...assessmentConfig,
+    ...companyConfig,
     difficulty: diff,
   };
 };

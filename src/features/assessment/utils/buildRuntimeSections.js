@@ -273,9 +273,10 @@ export const buildRuntimeSections = (assessment) => {
     const title = (typeof gameItem === "object" && (gameItem?.title || gameItem?.game?.title || gameItem?.game?.name)) || catalogInfo.title || `Game ${index + 1}: ${catalogInfo.title || "Challenge"}`;
 
     const itemConfig = typeof gameItem === "object" ? (gameItem.config || {}) : {};
+    const apiDifficulty = typeof gameItem === "object" ? (gameItem.difficulty || gameItem.game?.difficulty || itemConfig.difficulty) : null;
     const effectiveConfig = getEffectiveGameRuntimeConfig(resolvedSlug, {
       ...itemConfig,
-      difficulty: itemConfig.difficulty || assessment?.difficulty || "easy",
+      difficulty: apiDifficulty || itemConfig.difficulty || assessment?.difficulty || "medium",
     });
 
     const gameDurationMinutes = 10;

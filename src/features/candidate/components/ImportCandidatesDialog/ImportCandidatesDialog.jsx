@@ -90,7 +90,10 @@ const ImportCandidatesDialog = ({ existingCandidates = [] }) => {
   };
 
   const handleImport = () => {
-    const candidates = result.valid.map((item) => item.candidate);
+    const candidates = result.valid.map((item) => ({
+      ...item.candidate,
+      source: "CSV_IMPORT",
+    }));
 
     if (candidates.length === 0) {
       return;

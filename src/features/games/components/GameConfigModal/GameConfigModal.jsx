@@ -15,10 +15,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+import { useQueryClient } from "@tanstack/react-query";
+import { GAMES_QUERY_KEY } from "../../hooks/useGamesQuery";
 import { saveCompanyGameConfig, getCompanyGameConfig } from "../../utils/gameConfigStore";
 import { updateGameConfig } from "@/lib/api/games";
 
 const GameConfigModal = ({ game, open, onOpenChange, onSave }) => {
+  const queryClient = useQueryClient();
   const [difficulty, setDifficulty] = useState("Easy");
   const [duration, setDuration] = useState(10);
   const [passingScore, setPassingScore] = useState(70);
@@ -60,6 +63,7 @@ const GameConfigModal = ({ game, open, onOpenChange, onSave }) => {
 
       const finalConfig = apiResult || updated;
       saveCompanyGameConfig(targetKey, finalConfig);
+      queryClient.invalidateQueries({ queryKey: GAMES_QUERY_KEY });
       onSave?.(finalConfig);
       toast.success("Configuration saved to database!", {
         description: `${game.title} calibrated with ${difficulty} difficulty (${status} status).`,
