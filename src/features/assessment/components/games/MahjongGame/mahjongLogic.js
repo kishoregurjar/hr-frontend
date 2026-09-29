@@ -259,3 +259,83 @@ export function hasAnyValidMovesOrMatches(board) {
   return false;
 }
 
+export function generateSolvableBoardFromTiles(tiles, rows, cols, occupiedCoords = null) {
+  const hasPairs = checkRemainingPairsExist(tiles);
+  if (!hasPairs || tiles.length === 0) return null;
+
+  const validPositions =
+    occupiedCoords && occupiedCoords.length === tiles.length ? occupiedCoords : [];
+
+  // 1. Try shuffling among existing occupied coordinates first
+  if (validPositions.length === tiles.length) {
+    let attempts = 0;
+    while (attempts < 200) {
+      const shuffledTiles = shuffle([...tiles]);
+      const board = Array.from({ length: rows }, () =>
+        Array.from({ length: cols }, () => null)
+      );
+      validPositions.forEach((pos, idx) => {
+        const t = shuffledTiles[idx];
+        board[pos.r][pos.c] = { ...t, row: pos.r, col: pos.c };
+      });
+
+      if (getAvailablePair(board) || hasAnyValidMovesOrMatches(board)) {
+        return board;
+      }
+      attempts++;
+    }
+  }
+
+  // 2. If tiles were trapped in a blocked line (e.g. A-B-A-B in single column), distribute across open board
+  const allBoardCoords = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      allBoardCoords.push({ r, c });
+    }
+  }
+
+  let attempts = 0;
+  while (attempts < 300) {
+    const shuffledCoords = shuffle([...allBoardCoords]).slice(0, tiles.length);
+    const shuffledTiles = shuffle([...tiles]);
+    const board = Array.from({ length: rows }, () =>
+      Array.from({ length: cols }, () => null)
+    );
+    shuffledCoords.forEach((pos, idx) => {
+      const t = shuffledTiles[idx];
+      board[pos.r][pos.c] = { ...t, row: pos.r, col: pos.c };
+    });
+
+    if (getAvailablePair(board) || hasAnyValidMovesOrMatches(board)) {
+      return board;
+    }
+    attempts++;
+  }
+
+  // 3. Deterministic guaranteed solvable fallback: place pairs side-by-side
+  const board = Array.from({ length: rows }, () =>
+    Array.from({ length: cols }, () => null)
+  );
+  const grouped = {};
+  tiles.forEach((t) => {
+    if (!grouped[t.design.id]) grouped[t.design.id] = [];
+    grouped[t.design.id].push(t);
+  });
+
+  let curR = 0;
+  let curC = 0;
+  Object.values(grouped).forEach((pairList) => {
+    pairList.forEach((tile) => {
+      if (curC >= cols) {
+        curC = 0;
+        curR++;
+      }
+      if (curR < rows) {
+        board[curR][curC] = { ...tile, row: curR, col: curC };
+        curC++;
+      }
+    });
+  });
+
+  return board;
+}

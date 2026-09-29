@@ -28,6 +28,7 @@ import {
   getAvailablePair,
   checkRemainingPairsExist,
   hasAnyValidMovesOrMatches,
+  generateSolvableBoardFromTiles,
 } from "./mahjongLogic";
 
 // Authentic Classic Mahjong SVG Tile Face Renderer (100% pure responsive SVG)
@@ -594,19 +595,14 @@ export default function MahjongGame({ config = {}, onComplete }) {
     }
 
     if (remainingTiles.length > 0 && !hasAnyValidMovesOrMatches(nextBoard)) {
-      if (shuffles > 0) {
-        setTimeout(() => {
-          setIsShuffleHighlighted(true);
-          setMessage("No direct matches visible — Click 'Shuffle' button to reshuffle tiles!");
-        }, 350);
-      } else {
-        setTimeout(() => {
-          setMessage("No more valid moves available! Finishing challenge with your earned score.");
-          solvedRef.current = true;
-          stopTimer();
-          setWin(true);
-        }, 800);
+      if (shufflesLeft > 0) {
+        setIsShuffleHighlighted(true);
+        setMessage("No direct matches visible — Auto-shuffling board into a solvable state...");
       }
+      setTimeout(() => {
+        setMessage("No moves left — Board Auto-Shuffled!");
+        shuffleBoard(nextBoard, true);
+      }, 450);
     }
   };
 
@@ -840,14 +836,24 @@ export default function MahjongGame({ config = {}, onComplete }) {
           setMoves((m) => m + 1);
           executeMatch(matchedPair.r1, matchedPair.c1, matchedPair.r2, matchedPair.c2, testBoard);
         } else {
-          // Invalid move (No match) -> Snap back to initial state with error feedback!
-          playSynthSound("error");
-          const activeTile = board[state.tileR]?.[state.tileC];
-          if (activeTile) {
-            setShakingDesignId(activeTile.design.id);
-            setTimeout(() => setShakingDesignId(null), 350);
+          // Strategic sliding to empty grid slots (Allows candidate to unblock rows/columns)
+          setBoard(testBoard);
+          setMoves((m) => m + 1);
+          playSynthSound("move");
+          setMessage("Tile moved! Check for open lines.");
+
+          // Check if repositioned board reached deadlock
+          const remainingTiles = [];
+          for (let r = 0; r < dimConfig.rows; r++) {
+            for (let c = 0; c < dimConfig.cols; c++) {
+              if (testBoard[r][c]) remainingTiles.push(testBoard[r][c]);
+            }
           }
-          setMessage("No match made. Tile returned to position!");
+          if (remainingTiles.length > 0 && !hasAnyValidMovesOrMatches(testBoard)) {
+            setTimeout(() => {
+              shuffleBoard(testBoard, true);
+            }, 450);
+          }
         }
       }
     } else if (!state.direction) {
@@ -908,43 +914,14 @@ export default function MahjongGame({ config = {}, onComplete }) {
     setIsShuffleHighlighted(false);
     playSynthSound("shuffle");
 
-    const hasRemainingPairs = checkRemainingPairsExist(tilesToShuffle);
-    let finalBoard = currentBoard;
-    let fallbackBoard = null;
-    let attempts = 0;
+    const solvableBoard = generateSolvableBoardFromTiles(
+      tilesToShuffle,
+      dimConfig.rows,
+      dimConfig.cols,
+      occupiedCoords
+    );
 
-    if (hasRemainingPairs) {
-      while (attempts < 150) {
-        const testCoords = shuffle([...occupiedCoords]);
-        const testBoard = Array.from({ length: dimConfig.rows }, () =>
-          Array.from({ length: dimConfig.cols }, () => null)
-        );
-
-        tilesToShuffle.forEach((tile, index) => {
-          const coord = testCoords[index];
-          testBoard[coord.r][coord.c] = {
-            ...tile,
-            row: coord.r,
-            col: coord.c,
-          };
-        });
-
-        if (!fallbackBoard) {
-          fallbackBoard = testBoard;
-        }
-
-        if (hasAnyValidMovesOrMatches(testBoard)) {
-          finalBoard = testBoard;
-          break;
-        }
-        attempts += 1;
-      }
-
-      // If no instant match detected in 150 attempts, still use randomized fallback board
-      if (finalBoard === currentBoard && fallbackBoard) {
-        finalBoard = fallbackBoard;
-      }
-    }
+    const finalBoard = solvableBoard || currentBoard;
 
     setBoard(finalBoard);
     setSelected(null);
@@ -952,7 +929,7 @@ export default function MahjongGame({ config = {}, onComplete }) {
     setHintPair(null);
     setCombo(1);
     if (!isAuto) setMoves((m) => m + 1);
-    setMessage(isAuto ? "No moves left — Auto-shuffled board!" : "Board shuffled! Keep matching!");
+    setMessage(isAuto ? "No moves left — Board Auto-Shuffled!" : "Board shuffled! Keep matching!");
   };
 
   const handleReset = () => {
