@@ -1,14 +1,19 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/features/auth/context";
 
 export default function AdminAuthGuard({ children }) {
+  const [mounted, setMounted] = useState(false);
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isSuperAdmin =
     user?.role === "SUPER_ADMIN" ||
@@ -18,16 +23,16 @@ export default function AdminAuthGuard({ children }) {
     user?.isSuperAdmin;
 
   useEffect(() => {
-    if (isLoading) return;
+    if (!mounted || isLoading) return;
 
     if (!isAuthenticated) {
       router.replace("/login");
     } else if (!isSuperAdmin) {
       router.replace("/dashboard");
     }
-  }, [isAuthenticated, isSuperAdmin, isLoading, router]);
+  }, [mounted, isAuthenticated, isSuperAdmin, isLoading, router]);
 
-  if (isLoading) {
+  if (!mounted || isLoading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 gap-3">
         <Loader2 className="h-7 w-7 animate-spin text-indigo-600" />

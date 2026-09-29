@@ -28,19 +28,24 @@ export default function AdminLayoutClient({ children }) {
     user?.email?.toLowerCase()?.includes("admin") ||
     user?.isSuperAdmin;
 
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        router.push("/login");
-      } else if (!isSuperAdmin) {
-        toast.error("Access restricted: Super Administrator credentials required.");
-        router.push("/dashboard");
-      }
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || isLoading) return;
+    if (!isAuthenticated) {
+      router.push("/login");
+    } else if (!isSuperAdmin) {
+      toast.error("Access restricted: Super Administrator credentials required.");
+      router.push("/dashboard");
     }
-  }, [isAuthenticated, isSuperAdmin, isLoading, router]);
+  }, [mounted, isAuthenticated, isSuperAdmin, isLoading, router]);
 
   // Loading state while verifying auth
-  if (isLoading) {
+  if (!mounted || isLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8fafc] text-slate-900 font-sans space-y-3">
         <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
