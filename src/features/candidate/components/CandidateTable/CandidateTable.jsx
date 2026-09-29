@@ -155,12 +155,6 @@ const CandidateTable = ({
     );
   };
 
-  const defaultSkillsList = [
-    ["React", "Node.js", "PostgreSQL"],
-    ["Next.js", "Tailwind CSS", "Redux"],
-    ["Vue.js", "Express", "MongoDB"],
-    ["TypeScript", "GraphQL", "AWS"],
-  ];
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-card shadow-xs font-sans">
@@ -216,9 +210,9 @@ const CandidateTable = ({
               const displayName = getCandidateName(candidate);
               const roleName = candidate.role || "Applicant";
               const skills =
-                Array.isArray(candidate.skills) && candidate.skills.length > 0
-                  ? candidate.skills
-                  : defaultSkillsList[idx % defaultSkillsList.length];
+                Array.isArray(candidate.extractedSkills) && candidate.extractedSkills.length > 0
+                  ? candidate.extractedSkills
+                  : [];
 
               const addedDate = candidate.createdAt
                 ? new Intl.DateTimeFormat("en-US", {
@@ -249,10 +243,15 @@ const CandidateTable = ({
                   <TableCell className="py-3.5 px-4">
                     <div>
                       <p
-                        className="font-bold text-slate-900 text-sm cursor-pointer hover:text-blue-600 transition"
+                        className="font-bold text-slate-900 text-sm cursor-pointer hover:text-blue-600 transition flex items-center gap-2"
                         onClick={() => onViewDetails && onViewDetails(candidate)}
                       >
                         {displayName}
+                        {candidate.updatedAt && candidate.createdAt && new Date(candidate.updatedAt).getTime() > new Date(candidate.createdAt).getTime() + 10000 && (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[9px] px-1.5 py-0 h-4">
+                            Updated
+                          </Badge>
+                        )}
                       </p>
                       <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium mt-0.5">
                         <Briefcase className="h-3 w-3 text-slate-400" />
@@ -283,18 +282,24 @@ const CandidateTable = ({
                   {/* Skills / Tags */}
                   <TableCell className="py-3.5 px-4">
                     <div className="flex flex-wrap items-center gap-1 max-w-[200px]">
-                      {skills.slice(0, 3).map((skill) => (
-                        <span
-                          key={skill}
-                          className="rounded-md bg-slate-100 px-2 py-0.5 text-[10.5px] font-semibold text-slate-700 border border-slate-200/60"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                      {skills.length > 3 && (
-                        <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 border border-slate-200/60">
-                          +{skills.length - 3}
-                        </span>
+                      {skills.length > 0 ? (
+                        <>
+                          {skills.slice(0, 3).map((skill) => (
+                            <span
+                              key={skill}
+                              className="rounded-md bg-slate-100 px-2 py-0.5 text-[10.5px] font-semibold text-slate-700 border border-slate-200/60"
+                            >
+                              {skill}
+                            </span>
+                          ))}
+                          {skills.length > 3 && (
+                            <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 border border-slate-200/60">
+                              +{skills.length - 3}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 italic">No skills listed</span>
                       )}
                     </div>
                   </TableCell>
