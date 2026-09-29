@@ -74,11 +74,10 @@ const AssessmentDetailsDrawer = ({
             <div>
               <div className="flex items-center gap-2">
                 <Badge
-                  className={`text-[10.5px] font-bold uppercase tracking-wider px-2 py-0.5 ${
-                    isPublished
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                      : "bg-amber-50 text-amber-700 border-amber-300"
-                  }`}
+                  className={`text-[10.5px] font-bold uppercase tracking-wider px-2 py-0.5 ${isPublished
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                    : "bg-amber-50 text-amber-700 border-amber-300"
+                    }`}
                 >
                   {isPublished ? "Published Assessment" : "Draft"}
                 </Badge>
@@ -169,7 +168,9 @@ const AssessmentDetailsDrawer = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                 {cognitiveGames.map((g, idx) => {
                   const gameTitle = typeof g === "object" ? g.title || g.name || "Cognitive Game" : String(g);
-                  const gameCategory = typeof g === "object" ? g.category || "Cognitive" : "Game Module";
+                  const gameCategory = typeof g?.category === "string"
+                    ? g.category
+                    : (g?.category?.name || "Cognitive");
                   return (
                     <div
                       key={idx}
@@ -220,7 +221,9 @@ const AssessmentDetailsDrawer = ({
               <div className="space-y-2 max-h-48 overflow-y-auto pr-1 pt-1">
                 {quizQuestions.map((q, idx) => {
                   const qText = q.title || q.question || q.content || `Question ${idx + 1}`;
-                  const qCat = q.category?.name || q.category || q.categoryName || "General";
+                  const qCat = typeof q.category === "string"
+                    ? q.category
+                    : (q.category?.name || q.categoryName || "General");
                   const qDiff = q.difficulty || "Medium";
                   return (
                     <div
@@ -241,13 +244,12 @@ const AssessmentDetailsDrawer = ({
                         </Badge>
                         <Badge
                           variant="outline"
-                          className={`text-[9.5px] font-bold ${
-                            qDiff === "Easy"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : qDiff === "Hard"
+                          className={`text-[9.5px] font-bold ${qDiff === "Easy"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : qDiff === "Hard"
                               ? "bg-rose-50 text-rose-700 border-rose-200"
                               : "bg-amber-50 text-amber-700 border-amber-200"
-                          }`}
+                            }`}
                         >
                           {qDiff}
                         </Badge>
