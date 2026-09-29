@@ -42,8 +42,13 @@ const AssessmentDetailsDrawer = ({
   if (!assessment) return null;
 
   const { games, quizzes, totalSections } = getAssessmentSummary(assessment);
-  const quizQuestions = quizzes?.[0]?.questions || assessment?.questions || [];
-  const cognitiveGames = games || assessment?.games || assessment?.selectedGameIds || [];
+  const quizQuestions = Array.isArray(assessment?.questions)
+    ? assessment.questions
+    : (Array.isArray(quizzes) && quizzes[0]?.questions ? quizzes[0].questions : []);
+
+  const cognitiveGames = Array.isArray(assessment?.games)
+    ? assessment.games
+    : (Array.isArray(assessment?.selectedGameIds) ? assessment.selectedGameIds : []);
 
   const quizWeight = assessment?.quizWeight ?? 40;
   const gameWeight = assessment?.gameWeight ?? 60;
