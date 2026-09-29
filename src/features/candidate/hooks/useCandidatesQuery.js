@@ -7,7 +7,7 @@ import { candidateService } from "../services";
 const useCandidatesQuery = (options = {}) => {
   return useQuery({
     queryKey: CANDIDATE_QUERY_KEYS.lists(),
-    queryFn: () => candidateService.getAll(),
+    queryFn: () => candidateService.getAll({ limit: 1000 }),
     staleTime: 30000,
     refetchOnMount: false,
     refetchOnWindowFocus: false,

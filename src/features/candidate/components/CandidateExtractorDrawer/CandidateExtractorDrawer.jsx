@@ -186,20 +186,22 @@ const CandidateExtractorDrawer = ({
                 Extracted Skills & Tech Stack
               </h4>
 
-              <div className="flex flex-wrap gap-1.5">
-                {Array.isArray(candidate.skills) && candidate.skills.filter(s => s && s.toLowerCase() !== "general").length > 0 ? (
-                  candidate.skills.filter(s => s && s.toLowerCase() !== "general").map((skill) => (
+              {Array.isArray(candidate.extractedSkills) && candidate.extractedSkills.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {candidate.extractedSkills.map((skill) => (
                     <span
                       key={skill}
-                      className="rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100/80 px-2.5 py-1 text-xs font-semibold text-blue-800 shadow-2xs"
+                      className="rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100/80 px-2.5 py-1 text-xs font-semibold text-blue-800 shadow-xs"
                     >
                       {skill}
                     </span>
-                  ))
-                ) : (
-                  <span className="text-xs text-slate-400 italic">No skills tagged yet</span>
-                )}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm font-medium text-slate-400 italic py-1">
+                  No skills extracted
+                </div>
+              )}
             </div>
 
             {/* Resume Attachment Card */}
@@ -282,7 +284,7 @@ const CandidateExtractorDrawer = ({
                   {/* Mail Header */}
                   <div className="space-y-1.5 border-b border-slate-200/80 pb-3">
                     <h3 className="text-sm font-bold text-slate-900">
-                      {candidate.emailSubject || `Application for ${candidate.role || "Applicant"} - ${candidate.name}`}
+                      {candidate.emailSubject ? candidate.emailSubject : <span className="text-slate-400 italic font-normal">Subject unavailable</span>}
                     </h3>
                     <div className="flex items-center justify-between text-xs text-slate-500">
                       <span>From: <strong className="text-slate-800">{candidate.name}</strong> &lt;{candidate.email}&gt;</span>
@@ -290,9 +292,11 @@ const CandidateExtractorDrawer = ({
                     </div>
                   </div>
 
-                  {/* Real Mail Body */}
+                  {/* Formatted Mail Body */}
                   <div className="text-xs text-slate-700 leading-relaxed space-y-2 font-sans overflow-y-auto max-h-56 pr-2 whitespace-pre-wrap">
-                    {candidate.emailBody}
+                    {candidate.emailBody ? candidate.emailBody : (
+                      <span className="text-slate-400 italic">Original email content is unavailable</span>
+                    )}
                   </div>
                 </>
               ) : (
@@ -336,7 +340,7 @@ const CandidateExtractorDrawer = ({
                 </div>
               )}
 
-              {/* Status Footer */}
+              {/* Verified Parsing Badge Footer */}
               <div className="flex items-center justify-between pt-3 border-t border-slate-200/80 text-[11px] text-slate-500">
                 <span className="flex items-center gap-1 text-slate-600 font-semibold">
                   <CheckCircle2 className="h-3.5 w-3.5 text-blue-600" />

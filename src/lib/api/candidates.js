@@ -5,7 +5,7 @@ if (typeof window !== "undefined") {
   try {
     localStorage.removeItem("hirequest_candidates_cache_v2");
     localStorage.removeItem("hirequest_candidates_cache");
-  } catch {}
+  } catch { }
 }
 
 let inMemoryCandidates = [];
@@ -111,7 +111,7 @@ export const getCandidates = async (params = {}) => {
       if (Array.isArray(items)) {
         backendItems = items;
       }
-    } catch {}
+    } catch { }
   }
 
   // Map backend database records
@@ -132,7 +132,7 @@ export const getCandidates = async (params = {}) => {
       fullName = fullName.replace(/\s+User$/i, "");
     }
     const email = att.email || att.candidateEmail || user.email || `candidate${idx + 1}@example.com`;
-    
+
     return {
       id: att.id || att.candidateId || user.id || `cand-${idx}`,
       name: fullName,
@@ -141,8 +141,11 @@ export const getCandidates = async (params = {}) => {
       phoneNumber: att.phoneNumber || att.phone || user.phone || user.phoneNumber || "",
       role: att.role || user.role || "Applicant",
       skills: Array.isArray(att.skills) ? att.skills : (Array.isArray(user.skills) ? user.skills : ["General"]),
+      extractedSkills: att.extractedSkills || [],
       experience: att.experience || user.experience || "1-2 Years",
       source: att.source || (att.emailSubject ? "Email Ingestion" : "Manual Add"),
+      emailSubject: att.emailSubject || null,
+      emailBody: att.emailBody || null,
       status: att.status || (att.submittedAt ? "Completed" : (att.invitedAt || att.token ? "Invited" : "New")),
       appliedAt: att.createdAt || att.addedDate || att.invitedAt || new Date().toISOString(),
       createdAt: att.createdAt || att.addedDate || new Date().toISOString(),
@@ -379,10 +382,10 @@ export const syncEmailApplications = async (config = {}) => {
     const candidates = Array.isArray(res?.data?.data)
       ? res.data.data
       : Array.isArray(res?.data)
-      ? res.data
-      : Array.isArray(res)
-      ? res
-      : [];
+        ? res.data
+        : Array.isArray(res)
+          ? res
+          : [];
 
     const emailCount = candidates.filter(
       (c) =>
@@ -434,7 +437,7 @@ export const extractCandidateFromEmail = async (input) => {
       inMemoryCandidates = [extracted, ...inMemoryCandidates.filter((c) => c.email !== cleanEmail)];
       return extracted;
     }
-  } catch {}
+  } catch { }
 
   const newCandidate = {
     id: `cand-${Date.now()}`,
@@ -533,7 +536,7 @@ export const importCandidates = async (importedCandidates) => {
   // Try bulk candidate creation on backend
   try {
     await axiosClient.post("/candidates/bulk", { candidates: createdCandidates });
-  } catch {}
+  } catch { }
 
   inMemoryCandidates = [...createdCandidates, ...inMemoryCandidates];
   return createdCandidates;

@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/features/auth/context";
+import useSocketStore from "@/store/useSocketStore";
 
 import {
   AddCandidateDialog,
@@ -31,7 +32,6 @@ import {
   CandidateTable,
   CandidateStatsCards,
   EmailExtractorDialog,
-  ImportCandidatesDialog,
 } from "../components";
 import {
   useCandidatesQuery,
@@ -75,6 +75,22 @@ const CandidateList = () => {
     error,
     refetch,
   } = useCandidatesQuery();
+
+  const { socket } = useSocketStore();
+
+  useEffect(() => {
+    if (!socket) return;
+    
+    const handleRefresh = () => {
+       refetch();
+    };
+
+    socket.on("CANDIDATES_REFRESH_REQUIRED", handleRefresh);
+
+    return () => {
+      socket.off("CANDIDATES_REFRESH_REQUIRED", handleRefresh);
+    };
+  }, [socket, refetch]);
 
   // Catch Google OAuth redirect parameters: ?mailbox=connected&email=...
   useEffect(() => {
@@ -244,7 +260,6 @@ const CandidateList = () => {
 
         <div className="flex flex-wrap items-center gap-2.5">
           <EmailExtractorDialog triggerText="Extract from Emails" />
-          <ImportCandidatesDialog existingCandidates={candidates} />
           <AddCandidateDialog />
         </div>
       </div>
