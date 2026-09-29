@@ -1,25 +1,26 @@
-/**
- * Returns a summary of games, quizzes/questions and total sections
- * from an assessment object.
- *
- * Supports both:
- *   assessment.gameIds / assessment.questionIds  (new in-memory API model)
- *   assessment.games / assessment.quizzes        (legacy data model)
- */
 export const getAssessmentSummary = (assessment) => {
-  const games =
-    assessment?.gameIds?.length ??
-    assessment?.games?.length ??
+  const gameCount =
+    (Array.isArray(assessment?.games) ? assessment.games.length : undefined) ??
+    (Array.isArray(assessment?.gameIds) ? assessment.gameIds.length : undefined) ??
+    (Array.isArray(assessment?.selectedGameIds) ? assessment.selectedGameIds.length : undefined) ??
+    (typeof assessment?.gameCount === "number" ? assessment.gameCount : undefined) ??
     0;
 
-  const quizzes =
-    assessment?.questionIds?.length ??
-    assessment?.quizzes?.length ??
+  const questionCount =
+    (Array.isArray(assessment?.questions) ? assessment.questions.length : undefined) ??
+    (Array.isArray(assessment?.questionIds) ? assessment.questionIds.length : undefined) ??
+    (Array.isArray(assessment?.quizzes?.[0]?.questions) ? assessment.quizzes[0].questions.length : undefined) ??
+    (Array.isArray(assessment?.quizzes) ? assessment.quizzes.length : undefined) ??
+    (typeof assessment?.questionCount === "number" ? assessment.questionCount : undefined) ??
     0;
+
+  const sequentialModules = (gameCount > 0 ? 1 : 0) + (questionCount > 0 ? 1 : 0);
 
   return {
-    games,
-    quizzes,
-    totalSections: games + quizzes,
+    games: gameCount,
+    quizzes: questionCount,
+    gameCount,
+    questionCount,
+    totalSections: sequentialModules || (gameCount + questionCount > 0 ? 1 : 0),
   };
 };
