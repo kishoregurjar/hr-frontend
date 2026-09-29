@@ -92,7 +92,7 @@ const AssessmentAttempt = ({ attemptId }) => {
     try {
       const stored = sessionStorage.getItem("current_assessment_data");
       if (stored) fallbackSessionAssessment = JSON.parse(stored);
-    } catch {}
+    } catch { }
   }
 
   const assessmentObj = (attempt?.assessment && Object.keys(attempt.assessment).length > 0)
@@ -187,7 +187,7 @@ const AssessmentAttempt = ({ attemptId }) => {
         localSavedResponses = JSON.parse(
           sessionStorage.getItem(`candidate_responses_${attempt?.id || attemptId}`) || "{}"
         );
-      } catch {}
+      } catch { }
     }
 
     const mergedAttempt = {

@@ -32,7 +32,6 @@ import {
   CandidateTable,
   CandidateStatsCards,
   EmailExtractorDialog,
-  ImportCandidatesDialog,
 } from "../components";
 import {
   useCandidatesQuery,
@@ -261,7 +260,6 @@ const CandidateList = () => {
 
         <div className="flex flex-wrap items-center gap-2.5">
           <EmailExtractorDialog triggerText="Extract from Emails" />
-          <ImportCandidatesDialog existingCandidates={candidates} />
           <AddCandidateDialog />
         </div>
       </div>
