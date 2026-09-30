@@ -173,9 +173,16 @@ axiosClient.interceptors.response.use(
       currentPath.includes("/assessment/attempt") ||
       currentPath.includes("/test/");
 
+    const isPublicAuthEndpoint =
+      originalRequest?.url?.includes("/auth/login") ||
+      originalRequest?.url?.includes("/auth/register") ||
+      originalRequest?.url?.includes("/auth/refresh-token") ||
+      originalRequest?.url?.includes("/auth/forgot-password") ||
+      originalRequest?.url?.includes("/auth/reset-password");
+
     const isAuthOrCandidateEndpoint =
       isCandidatePage ||
-      originalRequest?.url?.includes("/auth/") ||
+      isPublicAuthEndpoint ||
       originalRequest?.url?.includes("/companies/invitations/accept") ||
       originalRequest?.url?.includes("/invitations/verify") ||
       originalRequest?.url?.includes("/attempts/start-by-token") ||
