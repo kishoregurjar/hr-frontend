@@ -16,6 +16,7 @@ import {
   X,
   Settings,
   Shield,
+  LifeBuoy,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/context";
 import { toast } from "sonner";
@@ -66,6 +67,11 @@ const NAV_ITEMS = [
     title: "Cognitive Games",
     href: "/games",
     icon: Brain,
+  },
+  {
+    title: "Support",
+    href: "/support",
+    icon: LifeBuoy,
   },
   {
     title: "Company & Team",
