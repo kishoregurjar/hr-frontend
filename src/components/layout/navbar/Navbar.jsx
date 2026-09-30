@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
-  Bell,
   LogOut,
   Menu,
   Shield,
@@ -223,17 +222,8 @@ const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
           </div>
         </div>
 
-        {/* Right Section: Notifications + Interactive Company Workspace Identity Dropdown */}
+        {/* Right Section: Interactive Company Workspace Identity Dropdown */}
         <div className="flex items-center gap-3 shrink-0">
-          {/* Notifications Trigger */}
-          <button
-            type="button"
-            className="relative p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 border border-slate-200/80 transition-all cursor-pointer shadow-2xs"
-            title="Notifications"
-          >
-            <Bell className="h-4 w-4" />
-            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-blue-600 ring-2 ring-white" />
-          </button>
 
           {/* ── Organization / Company Workspace Identity Dropdown ── */}
           <div className="relative" ref={menuRef}>

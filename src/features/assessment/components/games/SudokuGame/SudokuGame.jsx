@@ -8,7 +8,18 @@ import GameWinModal from "../shared/GameWinModal";
 import { GAME_RULES } from "../shared/gameRules";
 import { useGameTimer } from "../shared/useGameTimer";
 
-const FALLBACK_BOARD = [
+// Easy: 26 clues given, only 10 empty cells to complete (straightforward logic)
+const EASY_BOARD = [
+  [5, 1, 0, 4, 6, 3],
+  [6, 3, 4, 0, 2, 0],
+  [2, 0, 5, 6, 0, 1],
+  [0, 6, 1, 2, 5, 0],
+  [4, 5, 0, 3, 1, 2],
+  [1, 0, 3, 5, 0, 6],
+];
+
+// Medium: 18 clues given, 18 empty cells (balanced row/col deduction)
+const MEDIUM_BOARD = [
   [5, 1, 0, 4, 0, 3],
   [0, 3, 4, 0, 2, 0],
   [0, 0, 5, 6, 0, 0],
@@ -16,6 +27,22 @@ const FALLBACK_BOARD = [
   [0, 5, 0, 0, 1, 0],
   [1, 2, 0, 5, 4, 0],
 ];
+
+// Hard: 12 clues given, 24 empty cells (challenging candidate elimination)
+const HARD_BOARD = [
+  [0, 1, 0, 4, 0, 0],
+  [0, 0, 4, 0, 2, 0],
+  [0, 4, 0, 6, 0, 0],
+  [3, 0, 0, 0, 5, 0],
+  [0, 5, 0, 0, 0, 2],
+  [1, 0, 0, 5, 0, 0],
+];
+
+const DIFFICULTY_BOARDS = {
+  easy: EASY_BOARD,
+  medium: MEDIUM_BOARD,
+  hard: HARD_BOARD,
+};
 
 const FALLBACK_SOLUTION = [
   [5, 1, 2, 4, 6, 3],
@@ -33,15 +60,27 @@ export default function SudokuGame({ config = {}, onComplete }) {
   const boxRows = 2;
   const boxCols = 3;
 
+  const difficulty = String(config?.difficulty || config?.level || "medium").toLowerCase();
+
   const initialBoard = useMemo(() => {
     const incoming = config?.board || config?.puzzle || config?.initialBoard;
     if (Array.isArray(incoming) && incoming.length === 6) {
       return incoming.map((r) => r.map((v) => Number(v) || 0));
     }
-    return FALLBACK_BOARD;
-  }, [config]);
+    return DIFFICULTY_BOARDS[difficulty] || MEDIUM_BOARD;
+  }, [config, difficulty]);
 
   const [board, setBoard] = useState(() => cloneBoard(initialBoard));
+
+  // Sync board when initialBoard / difficulty changes
+  useEffect(() => {
+    setBoard(cloneBoard(initialBoard));
+    setNotes(Array.from({ length: 6 }, () => Array.from({ length: 6 }, () => new Set())));
+    setSelected(null);
+    setHistory([]);
+    setWin(false);
+    solvedRef.current = false;
+  }, [initialBoard]);
   const [notes, setNotes] = useState(() =>
     Array.from({ length: 6 }, () => Array.from({ length: 6 }, () => new Set()))
   );

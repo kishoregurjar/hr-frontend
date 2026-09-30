@@ -350,7 +350,6 @@ export default function ResultsAndRankingPage() {
                 <th className="py-3.5 px-5 w-16 text-center">Rank</th>
                 <th className="py-3.5 px-6">Candidate</th>
                 <th className="py-3.5 px-6">Assessment Module</th>
-                <th className="py-3.5 px-6">Cognitive Breakdown</th>
                 <th className="py-3.5 px-6 text-center">Score & Pass %</th>
                 <th className="py-3.5 px-6">Status</th>
                 <th className="py-3.5 px-6 text-right">Actions</th>
@@ -359,7 +358,7 @@ export default function ResultsAndRankingPage() {
             <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
               {filteredResults.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="py-16 text-center">
+                  <td colSpan="6" className="py-16 text-center">
                     <div className="flex flex-col items-center justify-center max-w-sm mx-auto space-y-3">
                       <div className="h-14 w-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-2xs">
                         <Trophy className="h-7 w-7 text-blue-500" />
@@ -410,18 +409,6 @@ export default function ResultsAndRankingPage() {
                           <Clock className="h-3 w-3" />
                           {item.timeSpent} • {item.completedAt}
                         </p>
-                      </div>
-                    </td>
-
-                    {/* Cognitive Breakdown Mini Pills */}
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-1.5">
-                        <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold" title="Problem Solving">
-                          Logic {item.cognitiveTraits?.problemSolving || 85}%
-                        </span>
-                        <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-bold" title="Memory Recall">
-                          Memory {item.cognitiveTraits?.memoryRecall || 80}%
-                        </span>
                       </div>
                     </td>
 

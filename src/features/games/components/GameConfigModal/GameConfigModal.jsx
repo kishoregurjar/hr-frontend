@@ -25,16 +25,14 @@ const GameConfigModal = ({ game, open, onOpenChange, onSave }) => {
   const [difficulty, setDifficulty] = useState("Easy");
   const [duration, setDuration] = useState(10);
   const [passingScore, setPassingScore] = useState(70);
-  const [status, setStatus] = useState("Active");
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (game) {
       const saved = getCompanyGameConfig(game.slug || game.id || game.code);
-      setDifficulty(game.difficulty || saved.difficulty || "Easy");
-      setDuration(game.duration || saved.duration || 10);
-      setPassingScore(game.passingScore || saved.passingScore || 70);
-      setStatus(game.status || saved.status || "Active");
+      setDifficulty(game.difficulty || saved?.difficulty || "Easy");
+      setDuration(game.duration || saved?.duration || 10);
+      setPassingScore(game.passingScore || saved?.passingScore || 70);
     }
   }, [game, open]);
 
@@ -48,7 +46,6 @@ const GameConfigModal = ({ game, open, onOpenChange, onSave }) => {
       difficulty,
       duration: Number(duration),
       passingScore: Number(passingScore),
-      status,
     };
 
     const targetKey = game.slug || game.code || game.id;
@@ -58,15 +55,14 @@ const GameConfigModal = ({ game, open, onOpenChange, onSave }) => {
         difficulty,
         duration: Number(duration),
         passingScore: Number(passingScore),
-        status,
       });
 
       const finalConfig = apiResult || updated;
       saveCompanyGameConfig(targetKey, finalConfig);
       queryClient.invalidateQueries({ queryKey: GAMES_QUERY_KEY });
       onSave?.(finalConfig);
-      toast.success("Configuration saved to database!", {
-        description: `${game.title} calibrated with ${difficulty} difficulty (${status} status).`,
+      toast.success("Configuration saved!", {
+        description: `${game.title} calibrated with ${difficulty} difficulty.`,
       });
       onOpenChange(false);
     } catch (err) {
@@ -74,7 +70,7 @@ const GameConfigModal = ({ game, open, onOpenChange, onSave }) => {
       saveCompanyGameConfig(targetKey, updated);
       onSave?.(updated);
       toast.success("Configuration updated successfully", {
-        description: `${game.title} calibrated with ${difficulty} difficulty (${status} status).`,
+        description: `${game.title} calibrated with ${difficulty} difficulty.`,
       });
       onOpenChange(false);
     } finally {
@@ -128,29 +124,6 @@ const GameConfigModal = ({ game, open, onOpenChange, onSave }) => {
                 >
                   <Zap className={`h-3.5 w-3.5 ${difficulty === lvl ? "text-blue-600" : "text-slate-400"}`} />
                   {lvl}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Status Selection */}
-          <div className="space-y-1.5">
-            <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
-              Module Status
-            </Label>
-            <div className="grid grid-cols-2 gap-2">
-              {["Active", "Draft"].map((st) => (
-                <button
-                  key={st}
-                  type="button"
-                  onClick={() => setStatus(st)}
-                  className={`h-10 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${status === st
-                      ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-2xs ring-2 ring-emerald-500/20"
-                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                    }`}
-                >
-                  <CheckCircle2 className={`h-3.5 w-3.5 ${status === st ? "text-emerald-600" : "text-slate-400"}`} />
-                  {st}
                 </button>
               ))}
             </div>

@@ -14,7 +14,7 @@ export const GAME_RULES = {
     title: "How To Play Tango",
     steps: [
       "Fill every grid cell using <b>Sun (🟡)</b> and <b>Moon (🌙)</b> symbols.",
-      "Each <b>row</b> and <b>column</b> must have an equal number of Suns and Moons (3 of each in a 6x6 grid).",
+      "Each <b>row</b> and <b>column</b> must have an equal number of Suns and Moons (e.g. 2 & 2 in 4x4, 3 & 3 in 6x6, 4 & 4 in 8x8).",
       "No <b>3 consecutive identical symbols</b> are allowed horizontally or vertically.",
       "Shaded/bordered cells are pre-filled clues and cannot be modified.",
       "Click or tap an empty cell to cycle: <b>Empty → Sun (🟡) → Moon (🌙) → Empty</b>.",

@@ -80,6 +80,14 @@ export function SocketProvider({ children }) {
       }
     });
 
+    socketInstance.on("COMPANY_MEMBER_JOINED", (data) => {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("COMPANY_MEMBER_JOINED"));
+        window.dispatchEvent(new Event("companyMemberJoined"));
+      }
+      queryClient.invalidateQueries({ queryKey: ["company"] });
+    });
+
     return () => {
       socketInstance.off("connect");
       socketInstance.off("disconnect");
@@ -87,6 +95,7 @@ export function SocketProvider({ children }) {
       socketInstance.off("ATTEMPT_STARTED");
       socketInstance.off("ASSESSMENT_SUBMITTED");
       socketInstance.off("NEW_JOB_APPLICATION");
+      socketInstance.off("COMPANY_MEMBER_JOINED");
       socketInstance.disconnect();
     };
   }, [accessToken, isAuthenticated, queryClient, setSocket, setConnected]);
