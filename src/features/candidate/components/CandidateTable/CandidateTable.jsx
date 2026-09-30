@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, Send, Briefcase, Mail, Phone } from "lucide-react";
+import { Eye, Send, Briefcase, Mail, Phone, Check, Minus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -162,17 +162,19 @@ const CandidateTable = ({
         <TableHeader className="bg-slate-50/80 border-b border-slate-200/80">
           <TableRow className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
             <TableHead className="w-10 pl-4">
-              <Checkbox
-                checked={
-                  allSelected
-                    ? true
-                    : someSelected
-                    ? "indeterminate"
-                    : false
-                }
-                onCheckedChange={onToggleAll}
-                aria-label="Select all"
-              />
+              <button
+                type="button"
+                onClick={onToggleAll}
+                aria-label="Select all candidates on this page"
+                className={`flex h-4.5 w-4.5 items-center justify-center rounded-[5px] border transition-all cursor-pointer ${
+                  allSelected || someSelected
+                    ? "bg-blue-600 border-blue-600 text-white shadow-2xs"
+                    : "border-slate-300 bg-white hover:border-slate-400"
+                }`}
+              >
+                {allSelected && <Check className="h-3 w-3 stroke-[3]" />}
+                {someSelected && <Minus className="h-3 w-3 stroke-[3]" />}
+              </button>
             </TableHead>
             <TableHead className="py-3.5 px-4 font-bold text-[11px] text-slate-600 uppercase tracking-wider">
               Candidate Name & Role
@@ -232,11 +234,18 @@ const CandidateTable = ({
                 >
                   {/* Checkbox */}
                   <TableCell className="pl-4">
-                    <Checkbox
-                      checked={isSelected(candidate.id)}
-                      onCheckedChange={() => onToggleCandidate(candidate.id)}
+                    <button
+                      type="button"
+                      onClick={() => onToggleCandidate(candidate.id)}
                       aria-label={`Select ${displayName}`}
-                    />
+                      className={`flex h-4.5 w-4.5 items-center justify-center rounded-[5px] border transition-all cursor-pointer ${
+                        isSelected(candidate.id)
+                          ? "bg-blue-600 border-blue-600 text-white shadow-2xs"
+                          : "border-slate-300 bg-white hover:border-slate-400"
+                      }`}
+                    >
+                      {isSelected(candidate.id) && <Check className="h-3 w-3 stroke-[3]" />}
+                    </button>
                   </TableCell>
 
                   {/* Candidate Name & Role */}

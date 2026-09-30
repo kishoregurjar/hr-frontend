@@ -103,43 +103,10 @@ export const createAssessment = async (payload) => {
  * 4. Update Assessment — PATCH / PUT /api/v1/assessments/:id
  */
 export const updateAssessment = async (id, payload) => {
-  const targetQuestionIds =
-    payload?.questionIds || payload?.questions || payload?.selectedQuestionIds || [];
-
   const res = await axiosClient.patch(`/assessments/${id}`, payload);
-  const updated = res?.data?.data || res?.data || res;
-
-  if (id && Array.isArray(targetQuestionIds) && targetQuestionIds.length > 0) {
-    const existingQIds = new Set((updated?.questions || []).map((q) => q.questionId || q.id || q));
-    const newQIds = targetQuestionIds.filter((qId) => !existingQIds.has(typeof qId === "object" ? qId?.id || qId?.questionId : qId));
-    if (newQIds.length > 0) {
-      try {
-        await assignAssessmentQuestions(id, newQIds);
-      } catch (e) {
-        console.warn("Auto-assign questions on update:", e?.message);
-      }
-    }
-  }
-
-  if (id && String(payload?.status || "").toUpperCase() === "PUBLISHED") {
-    try {
-      await publishAssessment(id);
-    } catch (e) {
-      console.warn("Auto-publish on update:", e?.message);
-    }
-  }
-
-  if (id) {
-    try {
-      const fresh = await getAssessmentById(id);
-      return fresh;
-    } catch {
-      return updated;
-    }
-  }
-
-  return updated;
+  return res?.data?.data || res?.data || res;
 };
+
 
 /**
  * 5. Delete Assessment (Soft Delete) — DELETE /api/v1/assessments/:id

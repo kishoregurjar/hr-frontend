@@ -95,12 +95,10 @@ const AssessmentTableView = ({
 
         <TableBody className="divide-y divide-slate-100">
           {assessments.map((assessment) => {
-            const { games, quizzes, totalSections } = getAssessmentSummary(assessment);
-            const questionCount = quizzes?.[0]?.questions?.length ?? assessment?.questions?.length ?? 0;
-            const gameCount = games?.length ?? assessment?.games?.length ?? assessment?.selectedGameIds?.length ?? 0;
+            const { gameCount, questionCount, totalSections } = getAssessmentSummary(assessment);
 
-            const quizWeight = assessment?.quizWeight ?? 40;
-            const gameWeight = assessment?.gameWeight ?? 60;
+            const quizWeight = assessment?.quizWeight ?? (gameCount > 0 && questionCount > 0 ? 40 : (questionCount > 0 ? 100 : 0));
+            const gameWeight = assessment?.gameWeight ?? (gameCount > 0 && questionCount > 0 ? 60 : (gameCount > 0 ? 100 : 0));
             const passingScore = assessment?.passingScore ?? 70;
             const duration = assessment?.durationMinutes ?? 60;
 
@@ -153,7 +151,9 @@ const AssessmentTableView = ({
                       )}
                     </div>
                     <span className="text-[10.5px] text-slate-400 font-medium">
-                      {totalSections} Sequential Modules
+                      {totalSections > 0
+                        ? `${totalSections} ${totalSections === 1 ? "Sequential Module" : "Sequential Modules"}`
+                        : "No modules configured"}
                     </span>
                   </div>
                 </TableCell>
@@ -190,19 +190,6 @@ const AssessmentTableView = ({
                     >
                       <Eye className="h-3.5 w-3.5 text-slate-500" />
                       <span>View</span>
-                    </Button>
-
-                    {/* Invite CTA */}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onInvite?.(assessment)}
-                      className="h-8 px-2.5 rounded-xl border-blue-200/90 text-blue-700 bg-blue-50/50 hover:bg-blue-100/70 text-xs font-semibold gap-1 shadow-2xs cursor-pointer"
-                      title="Invite Candidate"
-                    >
-                      <Send className="h-3.5 w-3.5" />
-                      <span>Invite</span>
                     </Button>
 
                     {/* Actions Menu (Duplicate, Delete, Publish/Archive) */}

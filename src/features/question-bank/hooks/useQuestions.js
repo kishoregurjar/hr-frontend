@@ -1,8 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 import useQuestionsQuery from "./useQuestionsQuery";
-
-const PAGE_SIZE = 25;
 
 const useQuestions = () => {
   const {
@@ -19,6 +17,12 @@ const useQuestions = () => {
   const [status, setStatus] = useState("all");
   const [sortBy, setSortBy] = useState("latest");
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Reset to first page whenever search/filters/pageSize change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, category, difficulty, status, sortBy, pageSize]);
 
   const filteredQuestions = useMemo(() => {
     let data = [...questions];
@@ -97,7 +101,7 @@ const useQuestions = () => {
 
   const totalPages = Math.max(
     1,
-    Math.ceil(totalQuestions / PAGE_SIZE)
+    Math.ceil(totalQuestions / pageSize)
   );
 
   const safeCurrentPage = Math.min(
@@ -107,13 +111,13 @@ const useQuestions = () => {
 
   const paginatedQuestions = useMemo(() => {
     const start =
-      (safeCurrentPage - 1) * PAGE_SIZE;
+      (safeCurrentPage - 1) * pageSize;
 
     return filteredQuestions.slice(
       start,
-      start + PAGE_SIZE
+      start + pageSize
     );
-  }, [filteredQuestions, safeCurrentPage]);
+  }, [filteredQuestions, safeCurrentPage, pageSize]);
 
   return {
     questions: paginatedQuestions,
@@ -141,6 +145,9 @@ const useQuestions = () => {
 
     currentPage: safeCurrentPage,
     setCurrentPage,
+
+    pageSize,
+    setPageSize,
 
     totalPages,
     totalQuestions,

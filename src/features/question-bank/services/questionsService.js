@@ -1,5 +1,6 @@
 import {
   createQuestion,
+  bulkCreateQuestions,
   deleteQuestion,
   getQuestionById,
   getQuestions,
@@ -17,6 +18,10 @@ export const questionsService = {
 
   create: async (data) => {
     return createQuestion(data);
+  },
+
+  bulkCreate: async (data) => {
+    return bulkCreateQuestions(data);
   },
 
   update: async (id, data) => {

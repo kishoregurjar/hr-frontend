@@ -35,36 +35,33 @@ const AssessmentDetailsDrawer = ({
   assessment,
   open,
   onOpenChange,
-  onInvite,
 }) => {
-  const [copied, setCopied] = useState(false);
-
   if (!assessment) return null;
 
-  const { games, quizzes, totalSections } = getAssessmentSummary(assessment);
-  const quizQuestions = quizzes?.[0]?.questions || assessment?.questions || [];
-  const cognitiveGames = games || assessment?.games || assessment?.selectedGameIds || [];
+  const { games, quizzes, gameCount, questionCount, totalSections } = getAssessmentSummary(assessment);
+  const quizQuestions = Array.isArray(assessment?.questions)
+    ? assessment.questions
+    : (Array.isArray(quizzes) && quizzes[0]?.questions
+        ? quizzes[0].questions
+        : (Array.isArray(assessment?.quizzes?.[0]?.questions) ? assessment.quizzes[0].questions : []));
 
-  const quizWeight = assessment?.quizWeight ?? 40;
-  const gameWeight = assessment?.gameWeight ?? 60;
+  const cognitiveGames = Array.isArray(assessment?.games)
+    ? assessment.games
+    : (Array.isArray(assessment?.selectedGameIds)
+        ? assessment.selectedGameIds
+        : (Array.isArray(assessment?.gameIds) ? assessment.gameIds : []));
+
+  const finalGameCount = gameCount || cognitiveGames.length;
+  const finalQuestionCount = questionCount || quizQuestions.length;
+
+  const quizWeight = assessment?.quizWeight ?? (finalGameCount > 0 && finalQuestionCount > 0 ? 40 : (finalQuestionCount > 0 ? 100 : 0));
+  const gameWeight = assessment?.gameWeight ?? (finalGameCount > 0 && finalQuestionCount > 0 ? 60 : (finalGameCount > 0 ? 100 : 0));
   const passingScore = assessment?.passingScore ?? 70;
   const duration = assessment?.durationMinutes ?? 60;
 
   const isPublished =
     String(assessment?.status || "").toUpperCase() === "PUBLISHED" ||
     String(assessment?.status || "").toUpperCase() === "ACTIVE";
-
-  const handleCopyInviteLink = () => {
-    const inviteUrl = typeof window !== "undefined"
-      ? `${window.location.origin}/assessment/invite/${assessment.id}`
-      : "";
-    if (inviteUrl) {
-      navigator.clipboard.writeText(inviteUrl);
-      setCopied(true);
-      toast.success("Assessment invite link copied to clipboard!");
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -74,11 +71,10 @@ const AssessmentDetailsDrawer = ({
             <div>
               <div className="flex items-center gap-2">
                 <Badge
-                  className={`text-[10.5px] font-bold uppercase tracking-wider px-2 py-0.5 ${
-                    isPublished
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                      : "bg-amber-50 text-amber-700 border-amber-300"
-                  }`}
+                  className={`text-[10.5px] font-bold uppercase tracking-wider px-2 py-0.5 ${isPublished
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                    : "bg-amber-50 text-amber-700 border-amber-300"
+                    }`}
                 >
                   {isPublished ? "Published Assessment" : "Draft"}
                 </Badge>
@@ -125,7 +121,7 @@ const AssessmentDetailsDrawer = ({
               <span>Cognitive Games</span>
             </div>
             <p className="text-sm font-extrabold text-slate-900 mt-1">
-              {cognitiveGames.length} ({gameWeight}%)
+              {finalGameCount} ({gameWeight}%)
             </p>
           </div>
 
@@ -135,7 +131,7 @@ const AssessmentDetailsDrawer = ({
               <span>MCQ Questions</span>
             </div>
             <p className="text-sm font-extrabold text-slate-900 mt-1">
-              {quizQuestions.length} ({quizWeight}%)
+              {finalQuestionCount} ({quizWeight}%)
             </p>
           </div>
         </div>
@@ -169,7 +165,9 @@ const AssessmentDetailsDrawer = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                 {cognitiveGames.map((g, idx) => {
                   const gameTitle = typeof g === "object" ? g.title || g.name || "Cognitive Game" : String(g);
-                  const gameCategory = typeof g === "object" ? g.category || "Cognitive" : "Game Module";
+                  const gameCategory = typeof g?.category === "string"
+                    ? g.category
+                    : (g?.category?.name || "Cognitive");
                   return (
                     <div
                       key={idx}
@@ -220,7 +218,9 @@ const AssessmentDetailsDrawer = ({
               <div className="space-y-2 max-h-48 overflow-y-auto pr-1 pt-1">
                 {quizQuestions.map((q, idx) => {
                   const qText = q.title || q.question || q.content || `Question ${idx + 1}`;
-                  const qCat = q.category?.name || q.category || q.categoryName || "General";
+                  const qCat = typeof q.category === "string"
+                    ? q.category
+                    : (q.category?.name || q.categoryName || "General");
                   const qDiff = q.difficulty || "Medium";
                   return (
                     <div
@@ -241,13 +241,12 @@ const AssessmentDetailsDrawer = ({
                         </Badge>
                         <Badge
                           variant="outline"
-                          className={`text-[9.5px] font-bold ${
-                            qDiff === "Easy"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : qDiff === "Hard"
+                          className={`text-[9.5px] font-bold ${qDiff === "Easy"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : qDiff === "Hard"
                               ? "bg-rose-50 text-rose-700 border-rose-200"
                               : "bg-amber-50 text-amber-700 border-amber-200"
-                          }`}
+                            }`}
                         >
                           {qDiff}
                         </Badge>
@@ -261,44 +260,28 @@ const AssessmentDetailsDrawer = ({
         </div>
 
         {/* ── Footer Actions ── */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100 mt-4">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleCopyInviteLink}
-            className="w-full sm:w-auto h-9 px-3.5 rounded-xl border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 gap-1.5 cursor-pointer shadow-2xs"
-          >
-            <Copy className="h-3.5 w-3.5" />
-            {copied ? "Link Copied!" : "Copy Test Link"}
-          </Button>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Link href={`/assessments/${assessment.id}/edit`} className="w-full sm:w-auto">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="w-full sm:w-auto h-9 px-4 rounded-xl border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 gap-1.5 cursor-pointer shadow-2xs"
-              >
-                <Edit className="h-3.5 w-3.5" />
-                Edit / Modules
-              </Button>
-            </Link>
-
+        <div className="flex flex-col sm:flex-row items-center justify-end gap-2 pt-4 border-t border-slate-100 mt-4">
+          <Link href={`/assessments/${assessment.id}/edit`} className="w-full sm:w-auto">
             <Button
               type="button"
+              variant="outline"
               size="sm"
-              onClick={() => {
-                onOpenChange?.(false);
-                onInvite?.(assessment);
-              }}
-              className="w-full sm:w-auto h-9 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20 cursor-pointer"
+              className="w-full sm:w-auto h-9 px-4 rounded-xl border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 gap-1.5 cursor-pointer shadow-2xs"
             >
-              <Send className="h-3.5 w-3.5" />
-              Invite Candidate
+              <Edit className="h-3.5 w-3.5" />
+              Edit / Modules
             </Button>
-          </div>
+          </Link>
+
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => onOpenChange?.(false)}
+            className="w-full sm:w-auto h-9 px-5 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold text-xs cursor-pointer"
+          >
+            Close
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

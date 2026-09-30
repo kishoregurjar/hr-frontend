@@ -87,12 +87,14 @@ const CandidateExtractorDrawer = ({
   };
 
   return (
-    <Dialog open={isDrawerOpen} onOpenChange={(nextOpen) => {
-      if (!nextOpen) handleClose();
-    }}>
+    <Dialog 
+      open={isDrawerOpen} 
+      preventCloseOnClickOutside={true}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) handleClose();
+      }}
+    >
       <DialogContent 
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
         className="max-w-4xl max-h-[92vh] overflow-y-auto p-0 rounded-2xl border border-slate-200 bg-white shadow-2xl"
       >
         {/* ── 1. Top Hero Profile Header ─────────────────────────────── */}
