@@ -12,12 +12,13 @@ const useUpdateAssessment = () => {
     mutationFn: ({ id, payload }) =>
       assessmentService.update(id, payload),
 
-    onSuccess: (assessment) => {
-      queryClient.invalidateQueries({
-        queryKey: ASSESSMENT_QUERY_KEYS.all,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["assessments"],
+        refetchType: "all",
       });
-      queryClient.invalidateQueries({
-        predicate: (query) => query.queryKey[0] === "assessments",
+      await queryClient.refetchQueries({
+        queryKey: ["assessments"],
       });
     },
   });
