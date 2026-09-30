@@ -12,8 +12,9 @@ export const useGamesQuery = (options = {}) => {
       const apiGames = await getGames();
       return Array.isArray(apiGames) ? apiGames : [];
     },
-    staleTime: 5000,
-    refetchOnWindowFocus: true,
+    staleTime: 10 * 60 * 1000,     
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
     ...options,
   });
 };
