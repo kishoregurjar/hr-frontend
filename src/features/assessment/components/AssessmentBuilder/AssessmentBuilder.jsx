@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Copy, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 import { useGamesQuery } from "@/features/games/hooks";
+import { getCompanyGameConfig } from "@/features/games/utils/gameConfigStore";
 import { useQuestionsQuery } from "@/features/question-bank/hooks";
 import { QUESTION_STATUS } from "@/features/question-bank/constants";
 
@@ -56,9 +57,19 @@ const AssessmentBuilder = ({
     isError: isGamesError,
   } = useGamesQuery();
 
-  const games = (Array.isArray(allGames) ? allGames : []).filter(
-    (g) => g.isActive !== false && g.status !== "INACTIVE"
-  );
+  const games = useMemo(() => {
+    return (Array.isArray(allGames) ? allGames : [])
+      .filter((g) => g.isActive !== false && g.status !== "INACTIVE")
+      .map((game) => {
+        const slug = game.slug || game.code || game.id;
+        const savedConfig = getCompanyGameConfig(slug || game.id);
+        const calibratedDifficulty = savedConfig?.difficulty || game.difficulty || "Medium";
+        return {
+          ...game,
+          difficulty: calibratedDifficulty,
+        };
+      });
+  }, [allGames]);
 
   const [selectionErrors, setSelectionErrors] = useState({
     games: "",

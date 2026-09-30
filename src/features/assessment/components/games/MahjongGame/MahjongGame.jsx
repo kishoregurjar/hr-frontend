@@ -557,7 +557,7 @@ export default function MahjongGame({ config = {}, onComplete }) {
     }
     setCombo(newCombo);
 
-    const earnedPoints = newCombo * 100;
+    const earnedPoints = newCombo;
     setScore((prev) => prev + earnedPoints);
     setMoves((m) => m + 1);
 

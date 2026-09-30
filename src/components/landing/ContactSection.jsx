@@ -1,18 +1,50 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Mail, MapPin, MessageSquare, Send } from "lucide-react";
+import { CheckCircle2, Mail, MapPin, MessageSquare, Send, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { submitPublicContact } from "@/lib/api/publicContact";
 
 export default function ContactSection() {
   const [contactSubmitted, setContactSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    subject: "",
+    message: "",
+  });
 
-  const handleContactSubmit = (e) => {
+  const handleChange = (e) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setError("");
+  };
+
+  const handleContactSubmit = async (e) => {
     e.preventDefault();
-    setContactSubmitted(true);
-    setTimeout(() => setContactSubmitted(false), 4000);
+    setError("");
+    
+    // Basic validation
+    if (formData.message.length < 10) {
+      setError("Message must be at least 10 characters long.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await submitPublicContact(formData);
+      setContactSubmitted(true);
+      setFormData({ fullName: "", email: "", subject: "", message: "" });
+      setTimeout(() => setContactSubmitted(false), 5000);
+    } catch (err) {
+      setError(err?.response?.data?.message || err.message || "Failed to submit. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -72,7 +104,7 @@ export default function ContactSection() {
                 <CheckCircle2 className="h-10 w-10 sm:h-12 sm:w-12 text-green-600" />
                 <h3 className="text-lg sm:text-xl font-bold text-slate-900">Message Sent Successfully!</h3>
                 <p className="text-xs sm:text-sm text-slate-600">
-                  Thank you for reaching out. Our HR support team will get back to you within 24 hours.
+                  Thank you for reaching out. Our team will get back to you within 24 hours.
                 </p>
               </div>
             ) : (
@@ -80,34 +112,47 @@ export default function ContactSection() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-slate-700">Full Name</label>
-                    <Input placeholder="Enter your name" required />
+                    <Input name="fullName" value={formData.fullName} onChange={handleChange} placeholder="Enter your name" required maxLength={100} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-slate-700">Work Email</label>
-                    <Input type="email" placeholder="name@company.com" required />
+                    <Input name="email" value={formData.email} onChange={handleChange} type="email" placeholder="name@company.com" required maxLength={150} />
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-slate-700">Subject</label>
-                  <Input placeholder="e.g. Enterprise Custom Assessment Inquiry" required />
+                  <Input name="subject" value={formData.subject} onChange={handleChange} placeholder="e.g. Enterprise Custom Assessment Inquiry" required maxLength={200} />
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-slate-700">Message</label>
                   <Textarea
+                    name="message"
+                    value={formData.message}
+                    onChange={handleChange}
                     placeholder="Tell us about your organization's hiring and assessment needs..."
                     className="min-h-[100px] sm:min-h-[120px]"
                     required
+                    maxLength={5000}
                   />
+                  <p className="text-[11px] text-slate-400 text-right">{formData.message.length}/5000</p>
                 </div>
+                
+                {error && (
+                  <div className="flex items-start gap-2 bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl text-xs mt-4">
+                    <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                    <span>{error}</span>
+                  </div>
+                )}
 
                 <Button
                   type="submit"
+                  disabled={isSubmitting}
                   className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold"
                 >
-                  <Send className="mr-2 h-4 w-4" />
-                  Send Message
+                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                  {isSubmitting ? "Sending..." : "Send Message"}
                 </Button>
               </form>
             )}

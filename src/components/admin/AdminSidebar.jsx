@@ -10,6 +10,8 @@ import {
   BarChart3,
   Shield,
   X,
+  LifeBuoy,
+  Inbox,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -33,6 +35,16 @@ const NAV_ITEMS = [
     label: "Users & Teams",
     href: "/admin/users",
     icon: Users,
+  },
+  {
+    label: "HR Support Tickets",
+    href: "/admin/support",
+    icon: LifeBuoy,
+  },
+  {
+    label: "Public Inquiries",
+    href: "/admin/contact-inquiries",
+    icon: Inbox,
   },
   {
     label: "Analytics",

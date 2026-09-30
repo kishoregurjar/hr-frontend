@@ -8,33 +8,94 @@ import GameWinModal from "../shared/GameWinModal";
 import { GAME_RULES } from "../shared/gameRules";
 import { useGameTimer } from "../shared/useGameTimer";
 
-const DEFAULT_TANGO_DATA = {
-  size: 6,
-  initial: {
-    "0-4": "X",
-    "0-5": "X",
-    "1-1": "X",
-    "1-2": "O",
-    "1-5": "O",
-    "2-1": "O",
-    "3-4": "X",
-    "4-0": "X",
-    "4-3": "X",
-    "4-4": "X",
-    "5-0": "O",
-    "5-1": "O",
+const TANGO_PUZZLES = {
+  easy: {
+    size: 4,
+    initial: {
+      "0-0": "O",
+      "1-3": "O",
+      "2-1": "X",
+      "3-0": "O",
+      "3-3": "X",
+    },
+    constraints: [
+      { a: "2-0", b: "2-1", type: "equal" },
+      { a: "1-1", b: "1-2", type: "not-equal" },
+      { a: "3-1", b: "3-2", type: "not-equal" },
+    ],
   },
-  constraints: [
-    { a: "0-0", b: "0-1", type: "not-equal" },
-    { a: "0-0", b: "1-0", type: "not-equal" },
-    { a: "1-3", b: "1-4", type: "not-equal" },
-    { a: "1-4", b: "2-4", type: "equal" },
-    { a: "3-1", b: "4-1", type: "not-equal" },
-    { a: "4-2", b: "4-1", type: "equal" },
-    { a: "5-5", b: "4-5", type: "not-equal" },
-    { a: "5-5", b: "5-4", type: "not-equal" },
-  ],
+  medium: {
+    size: 6,
+    initial: {
+      "0-4": "X",
+      "0-5": "X",
+      "1-1": "X",
+      "1-2": "O",
+      "1-5": "O",
+      "2-1": "O",
+      "3-4": "X",
+      "4-0": "X",
+      "4-3": "X",
+      "4-4": "X",
+      "5-0": "O",
+      "5-1": "O",
+    },
+    constraints: [
+      { a: "0-0", b: "0-1", type: "not-equal" },
+      { a: "0-0", b: "1-0", type: "not-equal" },
+      { a: "1-3", b: "1-4", type: "not-equal" },
+      { a: "1-4", b: "2-4", type: "equal" },
+      { a: "3-1", b: "4-1", type: "not-equal" },
+      { a: "4-2", b: "4-1", type: "equal" },
+      { a: "5-5", b: "4-5", type: "not-equal" },
+      { a: "5-5", b: "5-4", type: "not-equal" },
+    ],
+  },
+  hard: {
+    size: 8,
+    initial: {
+      "0-0": "O",
+      "0-3": "X",
+      "0-6": "O",
+      "1-1": "O",
+      "1-4": "O",
+      "1-7": "O",
+      "2-2": "X",
+      "2-5": "O",
+      "3-0": "X",
+      "3-3": "X",
+      "3-6": "X",
+      "4-1": "O",
+      "4-4": "O",
+      "4-7": "X",
+      "5-2": "O",
+      "5-5": "O",
+      "6-0": "X",
+      "6-3": "O",
+      "6-6": "O",
+      "7-2": "O",
+      "7-4": "X",
+      "7-7": "O",
+    },
+    constraints: [
+      { a: "0-3", b: "0-4", type: "equal" },
+      { a: "0-4", b: "0-5", type: "not-equal" },
+      { a: "0-0", b: "1-0", type: "not-equal" },
+      { a: "1-3", b: "1-4", type: "equal" },
+      { a: "2-1", b: "2-2", type: "equal" },
+      { a: "3-1", b: "3-2", type: "equal" },
+      { a: "3-3", b: "4-3", type: "equal" },
+      { a: "4-0", b: "4-1", type: "equal" },
+      { a: "5-0", b: "5-1", type: "equal" },
+      { a: "5-6", b: "6-6", type: "not-equal" },
+      { a: "6-7", b: "7-7", type: "not-equal" },
+      { a: "7-3", b: "7-4", type: "equal" },
+      { a: "7-6", b: "7-7", type: "not-equal" },
+    ],
+  },
 };
+
+const DEFAULT_TANGO_DATA = TANGO_PUZZLES.medium;
 
 function badgePos(a, b, cellSize) {
   const [r1, c1] = String(a).split("-").map(Number);
@@ -152,10 +213,11 @@ function validateTangoGrid(grid, size, constraints) {
 
 export default function TangoGame({ config = {}, onComplete }) {
   const diff = String(config?.difficulty || "medium").toLowerCase();
-  const defaultSize = diff === "easy" ? 4 : diff === "hard" ? 8 : 6;
-  const size = Number(config?.size || defaultSize) || 6;
-  const initial = config?.initial || DEFAULT_TANGO_DATA.initial;
-  const constraints = config?.constraints || DEFAULT_TANGO_DATA.constraints;
+  const puzzle = TANGO_PUZZLES[diff] || TANGO_PUZZLES.medium;
+  const size = Number(config?.size || puzzle.size) || 6;
+  const initial = config?.initial || puzzle.initial;
+  const constraints = config?.constraints || puzzle.constraints;
+  const half = Math.floor(size / 2);
 
   const [grid, setGrid] = useState(() => ({ ...(initial || {}) }));
   const [history, setHistory] = useState([]);
@@ -290,8 +352,8 @@ export default function TangoGame({ config = {}, onComplete }) {
         <div className="flex items-center gap-1.5">
           <span className="text-base">🌙</span> Moon (X)
         </div>
-        <div>
-          Equal 3 & 3 per line
+        <div className="rounded-md bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-slate-800 dark:text-slate-200 font-bold">
+          Equal {half} & {half} per line
         </div>
       </div>
 

@@ -13,7 +13,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
-  Copy,
   RefreshCw,
   Loader2,
   Zap,
@@ -378,21 +377,6 @@ const CandidateList = () => {
               Connect Mailbox
             </Button>
           )}
-
-          <button
-            type="button"
-            onClick={() => {
-              const emailToCopy = mailboxStatus?.email || user?.email || "";
-              if (emailToCopy) {
-                navigator.clipboard.writeText(emailToCopy);
-                toast.success(`Email copied: ${emailToCopy}`);
-              }
-            }}
-            className="text-xs font-semibold text-indigo-700 hover:text-indigo-900 hover:bg-white/90 bg-white/70 border border-indigo-200/80 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-          >
-            <Copy className="h-3.5 w-3.5" />
-            Copy Email
-          </button>
         </div>
       </div>
 
