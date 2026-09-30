@@ -29,10 +29,10 @@ export const toAssessmentPayload = (assessment, status) => {
     shuffleQuestions: Boolean(assessment.shuffleQuestions ?? true),
     showResultToCandidate: Boolean(assessment.showResultToCandidate ?? false),
 
-    gameIds: [...(assessment.selectedGameIds || assessment.gameIds || assessment.games || [])].filter(Boolean),
-    games: [...(assessment.selectedGameIds || assessment.gameIds || assessment.games || [])].filter(Boolean),
-    questionIds: [...(assessment.selectedQuestionIds || assessment.questionIds || assessment.questions || [])].filter(Boolean),
-    questions: [...(assessment.selectedQuestionIds || assessment.questionIds || assessment.questions || [])].filter(Boolean),
+    gameIds: [...(assessment.selectedGameIds || assessment.gameIds || assessment.games || [])].map(g => typeof g === "object" ? (g.gameId || g.id) : g).filter(Boolean),
+    games: [...(assessment.selectedGameIds || assessment.gameIds || assessment.games || [])].map(g => typeof g === "object" ? (g.gameId || g.id) : g).filter(Boolean),
+    questionIds: [...(assessment.selectedQuestionIds || assessment.questionIds || assessment.questions || [])].map(q => typeof q === "object" ? (q.questionId || q.id) : q).filter(Boolean),
+    questions: [...(assessment.selectedQuestionIds || assessment.questionIds || assessment.questions || [])].map(q => typeof q === "object" ? (q.questionId || q.id) : q).filter(Boolean),
   };
 };
 
@@ -45,13 +45,13 @@ export const toAssessmentBuilder = (assessment) => {
       : null) ||
     (Array.isArray(assessment.questions)
       ? assessment.questions
-          .map((q) => q?.questionId || q?.id || q?._id)
-          .filter(Boolean)
+        .map((q) => q?.questionId || q?.id || q?._id)
+        .filter(Boolean)
       : null) ||
     (Array.isArray(assessment.AssessmentQuestions)
       ? assessment.AssessmentQuestions
-          .map((q) => q?.questionId || q?.id)
-          .filter(Boolean)
+        .map((q) => q?.questionId || q?.id)
+        .filter(Boolean)
       : null) ||
     [];
 
@@ -61,13 +61,13 @@ export const toAssessmentBuilder = (assessment) => {
       : null) ||
     (Array.isArray(assessment.games)
       ? assessment.games
-          .map((g) => g?.gameId || g?.id || g?._id)
-          .filter(Boolean)
+        .map((g) => g?.gameId || g?.id || g?._id)
+        .filter(Boolean)
       : null) ||
     (Array.isArray(assessment.AssessmentGames)
       ? assessment.AssessmentGames
-          .map((g) => g?.gameId || g?.id)
-          .filter(Boolean)
+        .map((g) => g?.gameId || g?.id)
+        .filter(Boolean)
       : null) ||
     [];
 
