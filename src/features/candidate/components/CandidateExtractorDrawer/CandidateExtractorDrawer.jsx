@@ -29,7 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { formatDate } from "@/lib/formatters";
+import { formatDate, formatExperience } from "@/lib/formatters";
 import { useUpdateCandidateStatus } from "../../hooks";
 
 const CandidateExtractorDrawer = ({
@@ -131,8 +131,12 @@ const CandidateExtractorDrawer = ({
 
                 <p className="text-xs text-slate-300 flex items-center gap-2 flex-wrap font-medium">
                   <span className="text-blue-300 font-semibold">{candidate.role || "Applicant"}</span>
-                  <span>•</span>
-                  <span>{candidate.experience || "Experience not specified"}</span>
+                  {candidate.experience != null && (
+                    <>
+                      <span>•</span>
+                      <span>{formatExperience(candidate.experience)}</span>
+                    </>
+                  )}
                   <span>•</span>
                   <span>Applied {formatDate(candidate.appliedAt || candidate.createdAt)}</span>
                 </p>
@@ -174,10 +178,12 @@ const CandidateExtractorDrawer = ({
                   <span>{candidate.phoneNumber || candidate.phone || "Not provided"}</span>
                 </div>
 
-                <div className="flex items-center gap-2.5 text-slate-700">
-                  <Briefcase className="h-4 w-4 text-slate-400 shrink-0" />
-                  <span>Experience: <strong className="text-slate-900">{candidate.experience || "Not specified"}</strong></span>
-                </div>
+                {candidate.experience != null && (
+                  <div className="flex items-center gap-2.5 text-slate-700">
+                    <Briefcase className="h-4 w-4 text-slate-400 shrink-0" />
+                    <span>Experience: <strong className="text-slate-900">{formatExperience(candidate.experience)}</strong></span>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -192,7 +192,7 @@ const CandidateTable = ({
               Status
             </TableHead>
             <TableHead className="py-3.5 px-4 font-bold text-[11px] text-slate-600 uppercase tracking-wider">
-              Added Date
+              Updated Date
             </TableHead>
             <TableHead className="py-3.5 px-4 text-right font-bold text-[11px] text-slate-600 uppercase tracking-wider">
               Actions
@@ -216,14 +216,14 @@ const CandidateTable = ({
                   ? candidate.extractedSkills
                   : [];
 
-              const addedDate = candidate.createdAt
+              const updatedDate = candidate.updatedAt
                 ? new Intl.DateTimeFormat("en-US", {
                     month: "short",
                     day: "numeric",
                     year: "numeric",
                     hour: "numeric",
                     minute: "numeric",
-                  }).format(new Date(candidate.createdAt))
+                  }).format(new Date(candidate.updatedAt))
                 : "Just now";
 
               return (
@@ -318,9 +318,9 @@ const CandidateTable = ({
                     {getStatusBadge(candidate.status)}
                   </TableCell>
 
-                  {/* Added Date */}
+                  {/* Updated Date */}
                   <TableCell className="py-3.5 px-4 text-slate-500 text-[11px] font-medium">
-                    {addedDate}
+                    {updatedDate}
                   </TableCell>
 
                   {/* Actions Column with Assign & Profile buttons */}
