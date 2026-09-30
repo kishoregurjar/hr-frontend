@@ -17,6 +17,10 @@ import {
   RefreshCw,
   Loader2,
   Zap,
+  CheckCircle2,
+  Check,
+  Minus,
+  X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -40,7 +44,7 @@ import {
   useSyncMailboxNow,
 } from "../hooks";
 
-const PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 10;
 
 const CandidateList = () => {
   const { user } = useAuth();
@@ -62,6 +66,7 @@ const CandidateList = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [sourceFilter, setSourceFilter] = useState("ALL");
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState([]);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -171,13 +176,47 @@ const CandidateList = () => {
     });
   }, [candidates, search, statusFilter, sourceFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredCandidates.length / PAGE_SIZE));
+  const effectivePageSize = pageSize === "all" ? Math.max(1, filteredCandidates.length) : Number(pageSize);
+  const totalPages = Math.max(1, Math.ceil(filteredCandidates.length / effectivePageSize));
   const validPage = Math.min(currentPage, totalPages);
 
   const paginatedCandidates = useMemo(() => {
-    const startIndex = (validPage - 1) * PAGE_SIZE;
-    return filteredCandidates.slice(startIndex, startIndex + PAGE_SIZE);
-  }, [filteredCandidates, validPage]);
+    if (pageSize === "all") return filteredCandidates;
+    const startIndex = (validPage - 1) * effectivePageSize;
+    return filteredCandidates.slice(startIndex, startIndex + effectivePageSize);
+  }, [filteredCandidates, validPage, pageSize, effectivePageSize]);
+
+  // Candidate ID sets for smart bulk selection
+  const pageCandidateIds = useMemo(
+    () => paginatedCandidates.map((c) => c.id),
+    [paginatedCandidates]
+  );
+  const filteredCandidateIds = useMemo(
+    () => filteredCandidates.map((c) => c.id),
+    [filteredCandidates]
+  );
+
+  const selectedOnPageCount = useMemo(
+    () =>
+      pageCandidateIds.filter((id) =>
+        selectedIds.some((sId) => String(sId) === String(id))
+      ).length,
+    [pageCandidateIds, selectedIds]
+  );
+  const isAllOnPageSelected =
+    pageCandidateIds.length > 0 && selectedOnPageCount === pageCandidateIds.length;
+  const isSomeOnPageSelected =
+    selectedOnPageCount > 0 && !isAllOnPageSelected;
+
+  const selectedFilteredCount = useMemo(
+    () =>
+      filteredCandidateIds.filter((id) =>
+        selectedIds.some((sId) => String(sId) === String(id))
+      ).length,
+    [filteredCandidateIds, selectedIds]
+  );
+  const isAllFilteredSelected =
+    filteredCandidateIds.length > 0 && selectedFilteredCount === filteredCandidateIds.length;
 
   const selectedCandidates = useMemo(() => {
     if (singleAssignCandidate) return [singleAssignCandidate];
@@ -197,33 +236,47 @@ const CandidateList = () => {
   };
 
   const handleToggleAll = () => {
-    const visibleIds = paginatedCandidates.map((candidate) => candidate.id);
-    const areAllSelected =
-      visibleIds.length > 0 &&
-      visibleIds.every((candidateId) =>
-        selectedIds.some((selectedId) => String(selectedId) === String(candidateId))
-      );
-
-    if (areAllSelected) {
+    if (isAllOnPageSelected) {
+      // Deselect all on current page
       setSelectedIds((current) =>
         current.filter(
           (selectedId) =>
-            !visibleIds.some((visibleId) => String(visibleId) === String(selectedId))
+            !pageCandidateIds.some((pId) => String(pId) === String(selectedId))
         )
       );
-      return;
+    } else {
+      // Select all on current page
+      setSelectedIds((current) => {
+        const next = [...current];
+        pageCandidateIds.forEach((cId) => {
+          if (!next.some((id) => String(id) === String(cId))) {
+            next.push(cId);
+          }
+        });
+        return next;
+      });
     }
+  };
 
+  const handleSelectAllFiltered = () => {
     setSelectedIds((current) => {
       const next = [...current];
-      visibleIds.forEach((candidateId) => {
-        const exists = next.some((id) => String(id) === String(candidateId));
-        if (!exists) {
-          next.push(candidateId);
+      filteredCandidateIds.forEach((cId) => {
+        if (!next.some((id) => String(id) === String(cId))) {
+          next.push(cId);
         }
       });
       return next;
     });
+  };
+
+  const handleDeselectAllFiltered = () => {
+    setSelectedIds((current) =>
+      current.filter(
+        (selectedId) =>
+          !filteredCandidateIds.some((fId) => String(fId) === String(selectedId))
+      )
+    );
   };
 
   const handleClearSelection = () => {
@@ -404,6 +457,127 @@ const CandidateList = () => {
         </div>
       </div>
 
+      {/* ── 3.5. Action Toolbar: Master Select & Per Page ── */}
+      {filteredCandidates.length > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-slate-50/90 border border-slate-200/90 shadow-2xs">
+          <div className="flex items-center flex-wrap gap-2">
+            {/* Master Page Checkbox Button */}
+            <button
+              type="button"
+              onClick={handleToggleAll}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                isAllOnPageSelected || isSomeOnPageSelected
+                  ? "bg-blue-50 border-blue-300 text-blue-700 shadow-2xs"
+                  : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-100/60"
+              }`}
+            >
+              <div
+                className={`flex h-4 w-4 items-center justify-center rounded border transition-colors ${
+                  isAllOnPageSelected || isSomeOnPageSelected
+                    ? "bg-blue-600 border-blue-600 text-white"
+                    : "border-slate-300 bg-white"
+                }`}
+              >
+                {isAllOnPageSelected && <Check className="h-3 w-3 stroke-[3]" />}
+                {isSomeOnPageSelected && <Minus className="h-3 w-3 stroke-[3]" />}
+              </div>
+              <span>
+                {isAllOnPageSelected
+                  ? `Deselect Page (${pageCandidateIds.length})`
+                  : `Select Page (${pageCandidateIds.length})`}
+              </span>
+            </button>
+
+            {/* Select All Filtered Button */}
+            {!isAllFilteredSelected && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSelectAllFiltered}
+                className="h-8 px-3 rounded-xl border-blue-200 bg-white text-blue-600 hover:text-blue-700 hover:bg-blue-50/70 text-xs font-bold cursor-pointer shadow-2xs"
+              >
+                <span>Select All {filteredCandidates.length} Candidates</span>
+              </Button>
+            )}
+
+            {/* Clear All Selected */}
+            {selectedIds.length > 0 && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleClearSelection}
+                className="h-8 px-2.5 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 text-xs font-semibold gap-1 cursor-pointer"
+              >
+                <X className="h-3.5 w-3.5" />
+                <span>Clear Selection</span>
+              </Button>
+            )}
+          </div>
+
+          {/* Right: Selected Count & Page Size Dropdown */}
+          <div className="flex items-center gap-3 self-end sm:self-center">
+            <span className="text-xs font-semibold text-slate-600">
+              <span className="font-extrabold text-blue-600">{selectedIds.length}</span> of {candidates.length} selected
+            </span>
+
+            <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
+              <span className="text-[11px] font-semibold text-slate-400">Rows:</span>
+              <select
+                value={String(pageSize)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setPageSize(val === "all" ? "all" : Number(val));
+                  setCurrentPage(1);
+                }}
+                className="h-8 px-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700 focus:outline-none cursor-pointer"
+              >
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="all">All</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Smart Selection Banner (Gmail/HackerRank Style) ── */}
+      {isAllOnPageSelected && filteredCandidates.length > pageCandidateIds.length && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50/50 to-blue-50 border border-blue-200 text-xs text-blue-900 animate-in fade-in-50 shadow-2xs">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-blue-600 shrink-0" />
+            <span>
+              All <strong className="font-extrabold text-blue-950">{pageCandidateIds.length}</strong> candidates on this page are selected.
+              {!isAllFilteredSelected ? (
+                <button
+                  type="button"
+                  onClick={handleSelectAllFiltered}
+                  className="ml-1.5 font-extrabold text-blue-600 underline underline-offset-2 hover:text-blue-900 cursor-pointer"
+                >
+                  Select all {filteredCandidates.length} candidates in this directory?
+                </button>
+              ) : (
+                <span className="ml-1.5 font-bold text-emerald-700">
+                  (All {filteredCandidates.length} candidates across all pages are currently selected)
+                </span>
+              )}
+            </span>
+          </div>
+
+          {isAllFilteredSelected && (
+            <button
+              type="button"
+              onClick={handleDeselectAllFiltered}
+              className="text-xs font-bold text-rose-600 hover:text-rose-800 underline cursor-pointer shrink-0"
+            >
+              Deselect All {filteredCandidates.length}
+            </button>
+          )}
+        </div>
+      )}
+
       {/* ── 4. Candidate Table ── */}
       <CandidateTable
         candidates={paginatedCandidates}
@@ -416,30 +590,52 @@ const CandidateList = () => {
 
       {/* ── 5. Pagination Footer ── */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground font-medium pt-2">
-        <p>
-          Showing{" "}
-          <span className="font-bold text-slate-900">
-            {filteredCandidates.length === 0 ? 0 : (validPage - 1) * PAGE_SIZE + 1}–
-            {Math.min(validPage * PAGE_SIZE, filteredCandidates.length)}
-          </span>{" "}
-          of <span className="font-bold text-slate-900">{filteredCandidates.length}</span> Total Candidates (Page{" "}
-          <span className="font-bold text-slate-900">{validPage} of {totalPages}</span>)
-        </p>
+        <div className="flex items-center gap-3">
+          <p>
+            Showing{" "}
+            <span className="font-bold text-slate-900">
+              {filteredCandidates.length === 0 ? 0 : (validPage - 1) * effectivePageSize + 1}–
+              {Math.min(validPage * effectivePageSize, filteredCandidates.length)}
+            </span>{" "}
+            of <span className="font-bold text-slate-900">{filteredCandidates.length}</span> Total Candidates
+            {pageSize !== "all" && totalPages > 1 && (
+              <span> (Page <span className="font-bold text-slate-900">{validPage} of {totalPages}</span>)</span>
+            )}
+          </p>
 
-        <div className="flex items-center gap-1.5">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={validPage <= 1}
-            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-            className="h-8 px-2.5 rounded-lg border-slate-200 text-slate-600 text-xs font-semibold gap-1 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" />
-            <span>Prev</span>
-          </Button>
+          <div className="flex items-center gap-1.5 pl-3 border-l border-slate-200">
+            <span className="text-[11px] font-semibold text-slate-400">Rows:</span>
+            <select
+              value={String(pageSize)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setPageSize(val === "all" ? "all" : Number(val));
+                setCurrentPage(1);
+              }}
+              className="h-7 px-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700 focus:outline-none cursor-pointer"
+            >
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="all">All</option>
+            </select>
+          </div>
+        </div>
 
-          {totalPages > 1 && (
+        {pageSize !== "all" && totalPages > 1 && (
+          <div className="flex items-center gap-1.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={validPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+              className="h-8 px-2.5 rounded-lg border-slate-200 text-slate-600 text-xs font-semibold gap-1 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+              <span>Prev</span>
+            </Button>
+
             <div className="flex items-center gap-1">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
                 const isCurrent = pageNum === validPage;
@@ -459,20 +655,20 @@ const CandidateList = () => {
                 );
               })}
             </div>
-          )}
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={validPage >= totalPages}
-            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-            className="h-8 px-2.5 rounded-lg border-slate-200 text-slate-600 text-xs font-semibold gap-1 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
-          >
-            <span>Next</span>
-            <ChevronRight className="h-3.5 w-3.5" />
-          </Button>
-        </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={validPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+              className="h-8 px-2.5 rounded-lg border-slate-200 text-slate-600 text-xs font-semibold gap-1 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+            >
+              <span>Next</span>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* ── 6. Modals & Drawers ── */}
