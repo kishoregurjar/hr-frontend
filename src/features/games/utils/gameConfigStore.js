@@ -71,14 +71,14 @@ export const saveCompanyGameConfig = (gameSlugOrId, newConfig = {}) => {
 
 export const getEffectiveGameRuntimeConfig = (gameSlugOrId, assessmentConfig = {}) => {
   const companyConfig = getCompanyGameConfig(gameSlugOrId);
-  const diff = (
-    companyConfig?.difficulty ||
+  const diff = String(
     assessmentConfig?.difficulty ||
+    companyConfig?.difficulty ||
     "medium"
   ).toLowerCase();
   return {
-    ...assessmentConfig,
     ...companyConfig,
+    ...assessmentConfig,
     difficulty: diff,
   };
 };
