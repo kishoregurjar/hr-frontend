@@ -275,17 +275,21 @@ export const buildRuntimeSections = (assessment) => {
     const itemConfig = typeof gameItem === "object" ? (gameItem.config || {}) : {};
     const apiDifficulty = typeof gameItem === "object" ? (gameItem.difficulty || gameItem.game?.difficulty || itemConfig.difficulty) : null;
     const companyConfig = getCompanyGameConfig(resolvedSlug) || (typeof gameItem === "object" && (getCompanyGameConfig(gameItem.id) || getCompanyGameConfig(gameItem.gameId)));
-    const targetDifficulty = (
-      companyConfig?.difficulty ||
+    
+    // Dynamic Resolution: Priority goes to Database API values configured by the owner
+    const rawTargetDifficulty =
       apiDifficulty ||
       itemConfig.difficulty ||
       assessment?.difficulty ||
-      "Hard"
-    ).toLowerCase();
+      companyConfig?.difficulty ||
+      catalogInfo.difficulty ||
+      "medium";
+
+    const targetDifficulty = String(rawTargetDifficulty).toLowerCase();
 
     const effectiveConfig = getEffectiveGameRuntimeConfig(resolvedSlug, {
-      ...itemConfig,
       ...companyConfig,
+      ...itemConfig,
       difficulty: targetDifficulty,
     });
 

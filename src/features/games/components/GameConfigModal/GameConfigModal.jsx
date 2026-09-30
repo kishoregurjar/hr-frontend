@@ -59,6 +59,10 @@ const GameConfigModal = ({ game, open, onOpenChange, onSave }) => {
 
       const finalConfig = apiResult || updated;
       saveCompanyGameConfig(targetKey, finalConfig);
+      if (game.slug) saveCompanyGameConfig(game.slug, finalConfig);
+      if (game.code) saveCompanyGameConfig(game.code, finalConfig);
+      if (game.id) saveCompanyGameConfig(game.id, finalConfig);
+
       queryClient.invalidateQueries({ queryKey: GAMES_QUERY_KEY });
       onSave?.(finalConfig);
       toast.success("Configuration saved!", {
@@ -68,9 +72,12 @@ const GameConfigModal = ({ game, open, onOpenChange, onSave }) => {
     } catch (err) {
       console.error("Backend save failed, syncing with local state:", err);
       saveCompanyGameConfig(targetKey, updated);
+      if (game.slug) saveCompanyGameConfig(game.slug, updated);
+      if (game.code) saveCompanyGameConfig(game.code, updated);
+      if (game.id) saveCompanyGameConfig(game.id, updated);
       onSave?.(updated);
-      toast.success("Configuration updated successfully", {
-        description: `${game.title} calibrated with ${difficulty} difficulty.`,
+      toast.warning("Server sync issue - Saved locally", {
+        description: `${game.title} difficulty set to ${difficulty}.`,
       });
       onOpenChange(false);
     } finally {

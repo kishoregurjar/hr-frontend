@@ -15,10 +15,18 @@ export const toAssessmentPayload = (assessment, status) => {
   let resolvedDifficulty = assessment.difficulty;
   if (!resolvedDifficulty) {
     try {
+      const selectedIds = [
+        ...(assessment.selectedGameIds || assessment.gameIds || assessment.games || []),
+      ].map((g) => (typeof g === "object" ? g.slug || g.gameId || g.id : g)).filter(Boolean);
+
       const allConfigs = getAllCompanyGameConfigs();
-      const diffValues = Object.values(allConfigs).map((c) => c?.difficulty).filter(Boolean);
-      if (diffValues.length > 0) {
-        resolvedDifficulty = diffValues[0];
+      for (const id of selectedIds) {
+        const key = String(id).toLowerCase();
+        const conf = allConfigs[key] || allConfigs[id];
+        if (conf?.difficulty) {
+          resolvedDifficulty = conf.difficulty;
+          break;
+        }
       }
     } catch {}
   }
@@ -93,6 +101,7 @@ export const toAssessmentBuilder = (assessment) => {
     duration: assessment.duration ?? assessment.durationMinutes ?? 60,
     passingScore: assessment.passingScore ?? 70,
     attemptsAllowed: assessment.attemptsAllowed ?? 1,
+    difficulty: assessment.difficulty || "MEDIUM",
     shuffleQuestions: assessment.shuffleQuestions ?? true,
     showResultToCandidate: assessment.showResultToCandidate ?? false,
   };

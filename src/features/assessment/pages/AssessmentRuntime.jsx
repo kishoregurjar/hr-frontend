@@ -168,6 +168,7 @@ const AssessmentAttempt = ({ attemptId }) => {
     description: assessmentObj?.description || attempt?.assessmentDescription || attempt?.assessment?.description || fallbackSessionAssessment?.description || "Assessment session in progress.",
     durationMinutes: assessmentObj?.durationMinutes || attempt?.durationMinutes || fallbackSessionAssessment?.durationMinutes || 60,
     passingScore: assessmentObj?.passingScore || attempt?.passingScore || fallbackSessionAssessment?.passingScore || 70,
+    difficulty: assessmentObj?.difficulty || attempt?.difficulty || attempt?.assessment?.difficulty || fallbackSessionAssessment?.difficulty,
     questions: hydratedQuestions,
     games: rawCandidateGames,
   };
