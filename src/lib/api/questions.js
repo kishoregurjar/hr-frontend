@@ -335,7 +335,10 @@ export const restoreQuestionTag = async (id) => {
 export const getQuestions = async (params = {}) => {
   try {
     const res = await axiosClient.get("/questions", {
-      params,
+      params: {
+        limit: 100,
+        ...params,
+      },
     });
     const rawList = extractArrayData(res);
     const normalized = rawList.map(normalizeQuestion).filter(Boolean);
@@ -420,6 +423,19 @@ export const createQuestion = async (payload) => {
   return {
     success: true,
     data: normalized,
+  };
+};
+
+/**
+ * Bulk Create Questions — LIVE API: POST /api/v1/questions/bulk
+ */
+export const bulkCreateQuestions = async (questions) => {
+  const payload = Array.isArray(questions) ? { questions } : questions;
+  const res = await axiosClient.post("/questions/bulk", payload);
+  const rawData = res?.data?.data || res?.data || res;
+  return {
+    success: true,
+    data: rawData,
   };
 };
 

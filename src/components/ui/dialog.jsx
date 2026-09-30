@@ -72,7 +72,14 @@ export function DialogOverlay({ className, ...props }) {
   );
 }
 
-export function DialogContent({ className, children, ...props }) {
+export function DialogContent({
+  className,
+  children,
+  onPointerDownOutside,
+  onInteractOutside,
+  onEscapeKeyDown,
+  ...props
+}) {
   const { open, setOpen } = React.useContext(DialogContext);
   if (!open) return null;
 

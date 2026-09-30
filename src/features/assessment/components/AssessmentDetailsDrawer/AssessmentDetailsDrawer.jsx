@@ -41,17 +41,24 @@ const AssessmentDetailsDrawer = ({
 
   if (!assessment) return null;
 
-  const { games, quizzes, totalSections } = getAssessmentSummary(assessment);
+  const { games, quizzes, gameCount, questionCount, totalSections } = getAssessmentSummary(assessment);
   const quizQuestions = Array.isArray(assessment?.questions)
     ? assessment.questions
-    : (Array.isArray(quizzes) && quizzes[0]?.questions ? quizzes[0].questions : []);
+    : (Array.isArray(quizzes) && quizzes[0]?.questions
+        ? quizzes[0].questions
+        : (Array.isArray(assessment?.quizzes?.[0]?.questions) ? assessment.quizzes[0].questions : []));
 
   const cognitiveGames = Array.isArray(assessment?.games)
     ? assessment.games
-    : (Array.isArray(assessment?.selectedGameIds) ? assessment.selectedGameIds : []);
+    : (Array.isArray(assessment?.selectedGameIds)
+        ? assessment.selectedGameIds
+        : (Array.isArray(assessment?.gameIds) ? assessment.gameIds : []));
 
-  const quizWeight = assessment?.quizWeight ?? 40;
-  const gameWeight = assessment?.gameWeight ?? 60;
+  const finalGameCount = gameCount || cognitiveGames.length;
+  const finalQuestionCount = questionCount || quizQuestions.length;
+
+  const quizWeight = assessment?.quizWeight ?? (finalGameCount > 0 && finalQuestionCount > 0 ? 40 : (finalQuestionCount > 0 ? 100 : 0));
+  const gameWeight = assessment?.gameWeight ?? (finalGameCount > 0 && finalQuestionCount > 0 ? 60 : (finalGameCount > 0 ? 100 : 0));
   const passingScore = assessment?.passingScore ?? 70;
   const duration = assessment?.durationMinutes ?? 60;
 
@@ -129,7 +136,7 @@ const AssessmentDetailsDrawer = ({
               <span>Cognitive Games</span>
             </div>
             <p className="text-sm font-extrabold text-slate-900 mt-1">
-              {cognitiveGames.length} ({gameWeight}%)
+              {finalGameCount} ({gameWeight}%)
             </p>
           </div>
 
@@ -139,7 +146,7 @@ const AssessmentDetailsDrawer = ({
               <span>MCQ Questions</span>
             </div>
             <p className="text-sm font-extrabold text-slate-900 mt-1">
-              {quizQuestions.length} ({quizWeight}%)
+              {finalQuestionCount} ({quizWeight}%)
             </p>
           </div>
         </div>
