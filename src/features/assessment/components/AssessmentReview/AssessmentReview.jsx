@@ -101,7 +101,7 @@ const AssessmentReview = ({
               1. Assessment Overview
             </h3>
             <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] font-bold">
-              {assessment?.difficulty ?? "Medium"}
+              {assessment?.difficulty || selectedGames[0]?.difficulty || "Hard"}
             </Badge>
           </div>
 
@@ -166,9 +166,22 @@ const AssessmentReview = ({
                     </div>
                     <span className="font-bold text-slate-900">{game.title}</span>
                   </div>
-                  <Badge className="bg-white text-indigo-700 border-indigo-200 text-[10px] font-bold">
-                    {game.type || "Cognitive"}
-                  </Badge>
+                  <div className="flex items-center gap-1.5">
+                    <Badge className="bg-white text-indigo-700 border-indigo-200 text-[10px] font-bold">
+                      {game.type || "Cognitive"}
+                    </Badge>
+                    {game.difficulty && (
+                      <Badge className={`text-[10px] font-extrabold uppercase px-2 py-0.5 ${
+                        String(game.difficulty).toLowerCase() === "easy"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                          : String(game.difficulty).toLowerCase() === "hard"
+                          ? "bg-rose-50 text-rose-700 border-rose-300"
+                          : "bg-amber-50 text-amber-700 border-amber-300"
+                      }`}>
+                        {game.difficulty}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

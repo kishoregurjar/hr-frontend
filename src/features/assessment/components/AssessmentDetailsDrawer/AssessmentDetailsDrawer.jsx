@@ -21,6 +21,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { getCompanyGameConfig } from "@/features/games/utils/gameConfigStore";
 import {
   Dialog,
   DialogContent,
@@ -168,6 +169,10 @@ const AssessmentDetailsDrawer = ({
                   const gameCategory = typeof g?.category === "string"
                     ? g.category
                     : (g?.category?.name || "Cognitive");
+                  const slug = g?.slug || g?.code || g?.id || gameTitle;
+                  const savedConfig = getCompanyGameConfig(slug);
+                  const gameDiff = savedConfig?.difficulty || g?.difficulty || "Hard";
+
                   return (
                     <div
                       key={idx}
@@ -181,9 +186,20 @@ const AssessmentDetailsDrawer = ({
                           {gameTitle}
                         </span>
                       </div>
-                      <Badge variant="outline" className="text-[9.5px] font-semibold text-slate-600 bg-white">
-                        {gameCategory}
-                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        <Badge variant="outline" className="text-[9.5px] font-semibold text-slate-600 bg-white">
+                          {gameCategory}
+                        </Badge>
+                        <Badge className={`text-[9.5px] font-extrabold uppercase px-1.5 py-0.5 ${
+                          String(gameDiff).toLowerCase() === "easy"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                            : String(gameDiff).toLowerCase() === "hard"
+                            ? "bg-rose-50 text-rose-700 border-rose-300"
+                            : "bg-amber-50 text-amber-700 border-amber-300"
+                        }`}>
+                          {gameDiff}
+                        </Badge>
+                      </div>
                     </div>
                   );
                 })}

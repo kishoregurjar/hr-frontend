@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Search, ArrowLeft, ArrowRight } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
+import { Search, ArrowLeft, ArrowRight, CheckCircle2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,12 @@ const GameSelectionStep = ({
 }) => {
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState(selectedGameIds);
+
+  useEffect(() => {
+    if (selectedGameIds) {
+      setSelectedIds(selectedGameIds);
+    }
+  }, [selectedGameIds]);
 
   const filteredGames = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -36,6 +42,26 @@ const GameSelectionStep = ({
       );
     });
   }, [games, search]);
+
+  const filteredGameIds = useMemo(() => {
+    return filteredGames.map((g) => g.id);
+  }, [filteredGames]);
+
+  const isAllFilteredSelected =
+    filteredGameIds.length > 0 &&
+    filteredGameIds.every((id) => selectedIds.includes(id));
+
+  const handleSelectAll = () => {
+    const combined = Array.from(new Set([...selectedIds, ...filteredGameIds]));
+    setSelectedIds(combined);
+    onSelectionChange?.(combined);
+  };
+
+  const handleDeselectAll = () => {
+    const remaining = selectedIds.filter((id) => !filteredGameIds.includes(id));
+    setSelectedIds(remaining);
+    onSelectionChange?.(remaining);
+  };
 
   const handleToggle = (gameId) => {
     const updatedIds = selectedIds.includes(gameId)
@@ -62,15 +88,50 @@ const GameSelectionStep = ({
         </p>
       </div>
 
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      {/* ── Search & Bulk Action Bar ── */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search games..."
+            className="pl-9 h-10 rounded-xl bg-white border-slate-200 text-xs shadow-2xs"
+          />
+        </div>
 
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search games..."
-          className="pl-9"
-        />
+        {/* Bulk Selection Actions */}
+        {filteredGames.length > 0 && (
+          <div className="flex items-center gap-2.5 self-start sm:self-center">
+            {!isAllFilteredSelected ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSelectAll}
+                className="h-9 px-3.5 rounded-xl border-blue-200 bg-blue-50/60 hover:bg-blue-100/80 text-blue-700 text-xs font-bold gap-1.5 cursor-pointer shadow-2xs transition-all"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5 text-blue-600" />
+                <span>Select All</span>
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleDeselectAll}
+                className="h-9 px-3.5 rounded-xl border-slate-200 bg-white hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-700 text-xs font-bold gap-1.5 cursor-pointer shadow-2xs transition-all"
+              >
+                <X className="h-3.5 w-3.5" />
+                <span>Deselect All</span>
+              </Button>
+            )}
+
+            <span className="text-xs font-semibold text-slate-500 pl-1 border-l border-slate-200">
+              <strong className="text-slate-900 font-extrabold">{selectedIds.length}</strong> of {games.length} selected
+            </span>
+          </div>
+        )}
       </div>
 
       {filteredGames.length > 0 ? (

@@ -113,16 +113,13 @@ const GameList = () => {
       const category = game.category || "Cognitive Reasoning";
       const difficulty = savedConfig?.difficulty || game.difficulty || "Easy";
       const duration = savedConfig?.duration || game.duration || 6;
-      const isGloballyActive = game.isActive !== undefined ? Boolean(game.isActive) : game.status === "ACTIVE";
-      const isCompanyActive =
-        game.isCompanyActive !== undefined
-          ? Boolean(game.isCompanyActive)
-          : game.companyStatus !== undefined && game.companyStatus !== null
-          ? (game.companyStatus === "Active" || game.companyStatus === "ACTIVE")
-          : savedConfig?.status
-          ? savedConfig.status === "Active"
+      const isGloballyActive =
+        game.isActive !== undefined
+          ? Boolean(game.isActive)
+          : game.status !== undefined
+          ? game.status === "ACTIVE" || game.status === "Active"
           : true;
-      const isActive = isGloballyActive && isCompanyActive;
+      const isActive = isGloballyActive;
       const statusText = isActive ? "Active" : "Inactive";
       const skill = game.skill || "Logical Problem Solving";
 

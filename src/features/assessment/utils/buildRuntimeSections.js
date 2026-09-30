@@ -8,7 +8,7 @@
  */
 
 import { games as gamesCatalog } from "@/features/games/data";
-import { getEffectiveGameRuntimeConfig } from "@/features/games/utils/gameConfigStore";
+import { getEffectiveGameRuntimeConfig, getCompanyGameConfig } from "@/features/games/utils/gameConfigStore";
 
 // Automatically clear stale attempt cache from localStorage if found with placeholder options
 if (typeof window !== "undefined") {
@@ -274,12 +274,25 @@ export const buildRuntimeSections = (assessment) => {
 
     const itemConfig = typeof gameItem === "object" ? (gameItem.config || {}) : {};
     const apiDifficulty = typeof gameItem === "object" ? (gameItem.difficulty || gameItem.game?.difficulty || itemConfig.difficulty) : null;
+    const companyConfig = getCompanyGameConfig(resolvedSlug) || (typeof gameItem === "object" && (getCompanyGameConfig(gameItem.id) || getCompanyGameConfig(gameItem.gameId)));
+    const targetDifficulty = (
+      companyConfig?.difficulty ||
+      apiDifficulty ||
+      itemConfig.difficulty ||
+      assessment?.difficulty ||
+      "Hard"
+    ).toLowerCase();
+
     const effectiveConfig = getEffectiveGameRuntimeConfig(resolvedSlug, {
       ...itemConfig,
-      difficulty: apiDifficulty || itemConfig.difficulty || assessment?.difficulty || "medium",
+      ...companyConfig,
+      difficulty: targetDifficulty,
     });
 
-    const gameDurationMinutes = 10;
+    const displayDifficulty =
+      targetDifficulty.charAt(0).toUpperCase() + targetDifficulty.slice(1);
+
+    const gameDurationMinutes = Number(companyConfig?.duration || itemConfig.duration || 10) || 10;
 
     return {
       id: `game-${index + 1}`,
@@ -287,13 +300,17 @@ export const buildRuntimeSections = (assessment) => {
       slug: resolvedSlug,
       gameType: resolvedSlug,
       title,
+      difficulty: displayDifficulty,
       description: catalogInfo.description || "",
       category: catalogInfo.category || "Cognitive Assessment",
       duration: gameDurationMinutes,
       durationMinutes: gameDurationMinutes,
       durationSeconds: gameDurationMinutes * 60,
       skill: catalogInfo.skill || "Problem Solving",
-      config: effectiveConfig,
+      config: {
+        ...effectiveConfig,
+        difficulty: targetDifficulty,
+      },
     };
   });
 

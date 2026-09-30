@@ -1,3 +1,5 @@
+import { getAllCompanyGameConfigs } from "@/features/games/utils/gameConfigStore";
+
 const safeNum = (val, fallback) => {
   const n = Number(val);
   return isNaN(n) ? fallback : n;
@@ -8,6 +10,18 @@ export const toAssessmentPayload = (assessment, status) => {
   const passingScore = safeNum(assessment.passingScore, 10);
   const maximumScore = safeNum(assessment.maximumScore, 100);
   const maxAttempts = safeNum(assessment.attemptsAllowed ?? assessment.maxAttempts, 1);
+
+  // Compute dominant difficulty from configured games if not explicitly set
+  let resolvedDifficulty = assessment.difficulty;
+  if (!resolvedDifficulty) {
+    try {
+      const allConfigs = getAllCompanyGameConfigs();
+      const diffValues = Object.values(allConfigs).map((c) => c?.difficulty).filter(Boolean);
+      if (diffValues.length > 0) {
+        resolvedDifficulty = diffValues[0];
+      }
+    } catch {}
+  }
 
   return {
     title: assessment.title?.trim() ?? "",
@@ -25,7 +39,7 @@ export const toAssessmentPayload = (assessment, status) => {
 
     // Enums & Flags
     type: assessment.type || "TECHNICAL",
-    difficulty: (assessment.difficulty || "MEDIUM").toUpperCase(),
+    difficulty: (resolvedDifficulty || "MEDIUM").toUpperCase(),
     shuffleQuestions: Boolean(assessment.shuffleQuestions ?? true),
     showResultToCandidate: Boolean(assessment.showResultToCandidate ?? false),
 

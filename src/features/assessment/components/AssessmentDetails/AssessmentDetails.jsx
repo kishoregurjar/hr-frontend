@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/card";
 
 import AssessmentStatusBadge from "../AssessmentStatusBadge";
+import { getCompanyGameConfig } from "@/features/games/utils/gameConfigStore";
 
 const AssessmentDetails = ({
   assessment,
@@ -34,13 +35,36 @@ const AssessmentDetails = ({
 
   const selectedGames =
     (Array.isArray(assessment.games) && assessment.games.length > 0
-      ? assessment.games.map((g) => g?.game || g).filter(Boolean)
+      ? assessment.games.map((g) => {
+          const base = g?.game || g;
+          const slug = base?.slug || base?.code || base?.id || base?.title;
+          const savedConfig = getCompanyGameConfig(slug);
+          return {
+            ...base,
+            difficulty: savedConfig?.difficulty || base?.difficulty || "Hard",
+          };
+        }).filter(Boolean)
       : null) ||
     (Array.isArray(assessment.AssessmentGames) && assessment.AssessmentGames.length > 0
-      ? assessment.AssessmentGames.map((g) => g?.game || g).filter(Boolean)
+      ? assessment.AssessmentGames.map((g) => {
+          const base = g?.game || g;
+          const slug = base?.slug || base?.code || base?.id || base?.title;
+          const savedConfig = getCompanyGameConfig(slug);
+          return {
+            ...base,
+            difficulty: savedConfig?.difficulty || base?.difficulty || "Hard",
+          };
+        }).filter(Boolean)
       : null) ||
     (Array.isArray(assessment.gameIds) && assessment.gameIds.length > 0
-      ? games.filter((game) => assessment.gameIds.includes(game.id || game._id))
+      ? games.filter((game) => assessment.gameIds.includes(game.id || game._id)).map((base) => {
+          const slug = base?.slug || base?.code || base?.id || base?.title;
+          const savedConfig = getCompanyGameConfig(slug);
+          return {
+            ...base,
+            difficulty: savedConfig?.difficulty || base?.difficulty || "Hard",
+          };
+        })
       : []) ||
     [];
 

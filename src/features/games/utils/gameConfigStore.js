@@ -35,21 +35,28 @@ export const getAllCompanyGameConfigs = () => {
 };
 
 export const getCompanyGameConfig = (gameSlugOrId) => {
+  if (!gameSlugOrId) return null;
+  const rawKey = String(gameSlugOrId).toLowerCase().trim();
   const key = normalizeKey(gameSlugOrId);
   const all = getAllCompanyGameConfigs();
-  return all[key] || null;
+  return all[rawKey] || all[key] || null;
 };
 
 export const saveCompanyGameConfig = (gameSlugOrId, newConfig = {}) => {
   const key = normalizeKey(gameSlugOrId);
+  const rawKey = String(gameSlugOrId || "").toLowerCase().trim();
   const current = getAllCompanyGameConfigs();
+
+  const entry = {
+    ...(current[key] || {}),
+    ...(rawKey && current[rawKey] ? current[rawKey] : {}),
+    ...newConfig,
+  };
 
   const updated = {
     ...current,
-    [key]: {
-      ...(current[key] || {}),
-      ...newConfig,
-    },
+    [key]: entry,
+    ...(rawKey ? { [rawKey]: entry } : {}),
   };
 
   if (typeof window !== "undefined") {
@@ -67,7 +74,7 @@ export const getEffectiveGameRuntimeConfig = (gameSlugOrId, assessmentConfig = {
   const diff = (
     companyConfig?.difficulty ||
     assessmentConfig?.difficulty ||
-    "easy"
+    "medium"
   ).toLowerCase();
   return {
     ...assessmentConfig,
