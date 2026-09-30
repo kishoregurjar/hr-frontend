@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/formatters";
 import { EditQuestionDialog, DeleteQuestionDialog, QuestionPreviewSheet } from "..";
 
-const QuestionTableView = ({ questions = [] }) => {
+const QuestionTableView = ({ questions = [], currentPage = 1, pageSize = 10 }) => {
   return (
     <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white shadow-xs font-sans">
       <table className="w-full text-left text-xs">
@@ -34,6 +34,7 @@ const QuestionTableView = ({ questions = [] }) => {
         </thead>
         <tbody className="divide-y divide-slate-100 text-slate-800 font-medium">
           {questions.map((question, index) => {
+            const serialNumber = (currentPage - 1) * pageSize + index + 1;
             const difficultyColor =
               question.difficulty === "Easy"
                 ? "bg-emerald-50 text-emerald-700 border-emerald-300"
@@ -48,7 +49,7 @@ const QuestionTableView = ({ questions = [] }) => {
               >
                 {/* Index Column */}
                 <td className="py-3.5 px-4 text-center font-bold text-slate-400">
-                  {index + 1}
+                  {serialNumber}
                 </td>
 
                 {/* Question Title & Options count */}

@@ -25,6 +25,7 @@ import {
   QuestionTableView,
   QuestionStats,
   AddQuestionDialog,
+  BulkQuestionImportDialog,
   ManageCategoriesDialog,
   QuestionGridSkeleton,
 } from "../components";
@@ -65,9 +66,14 @@ const QuestionList = () => {
     setSortBy,
     currentPage,
     setCurrentPage,
+    pageSize,
+    setPageSize,
     totalPages,
     totalQuestions,
   } = useQuestions();
+
+  const startIndex = totalQuestions === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endIndex = Math.min(currentPage * pageSize, totalQuestions);
 
   const hasFilters =
     search.trim() !== "" ||
@@ -89,6 +95,7 @@ const QuestionList = () => {
 
         <div className="flex flex-wrap items-center gap-2.5">
           <ManageCategoriesDialog />
+          <BulkQuestionImportDialog />
           <AddQuestionDialog />
         </div>
       </div>
@@ -177,13 +184,14 @@ const QuestionList = () => {
             </p>
           </div>
           {!hasFilters && (
-            <div className="pt-2">
+            <div className="pt-2 flex items-center justify-center gap-2.5">
+              <BulkQuestionImportDialog />
               <AddQuestionDialog />
             </div>
           )}
         </div>
       ) : viewMode === "table" ? (
-        <QuestionTableView questions={questions} />
+        <QuestionTableView questions={questions} currentPage={currentPage} pageSize={pageSize} />
       ) : (
         <QuestionGrid
           questions={questions}
@@ -191,6 +199,70 @@ const QuestionList = () => {
           totalPages={totalPages}
           onPageChange={setCurrentPage}
         />
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200">
+          <div className="flex items-center gap-3">
+            <p className="text-xs text-slate-500 font-medium">
+              Showing <strong className="text-slate-800">{startIndex}–{endIndex}</strong> of{" "}
+              <strong className="text-slate-800">{totalQuestions}</strong> questions
+            </p>
+            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+              <span className="text-slate-300">•</span>
+              <span>Per page:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="h-7 px-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="h-8 px-2.5 text-xs rounded-xl border-slate-200 font-bold cursor-pointer"
+            >
+              Previous
+            </Button>
+
+            {/* Numeric Page Buttons */}
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                <button
+                  key={pageNum}
+                  type="button"
+                  onClick={() => setCurrentPage(pageNum)}
+                  className={`h-8 w-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    currentPage === pageNum
+                      ? "bg-blue-600 text-white shadow-xs shadow-blue-500/30"
+                      : "text-slate-600 hover:bg-slate-100 border border-transparent hover:border-slate-200"
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              ))}
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="h-8 px-2.5 text-xs rounded-xl border-slate-200 font-bold cursor-pointer"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );

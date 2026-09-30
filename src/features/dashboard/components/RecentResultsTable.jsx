@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { ArrowRight, AlertTriangle, Inbox } from "lucide-react";
+import { ArrowRight, Inbox } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { getAttempts } from "@/lib/api/attempts";
@@ -54,14 +54,13 @@ const RecentResultsTable = () => {
               <th className="py-2.5 px-3">Assessment</th>
               <th className="py-2.5 px-3">Score</th>
               <th className="py-2.5 px-3">Time</th>
-              <th className="py-2.5 px-3">Integrity</th>
               <th className="py-2.5 px-3 text-right">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y text-slate-800 font-medium">
             {submittedAttempts.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-10 text-center text-slate-500">
+                <td colSpan={6} className="py-10 text-center text-slate-500">
                   <div className="flex flex-col items-center justify-center space-y-1.5">
                     <Inbox className="h-7 w-7 text-slate-300" />
                     <p className="text-xs font-bold text-slate-700">No test results submitted yet</p>
@@ -100,18 +99,6 @@ const RecentResultsTable = () => {
                   </td>
                   <td className="py-3.5 px-3 text-muted-foreground font-bold">
                     {timeText}
-                  </td>
-                  <td className="py-3.5 px-3">
-                    {row.integrity?.events?.length === 0 ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px] border border-emerald-200/60">
-                        Clean
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-bold text-[10px] border border-amber-200/60">
-                        <AlertTriangle className="h-2.5 w-2.5" />
-                        {row.integrity?.events?.length || 0} logs
-                      </span>
-                    )}
                   </td>
                   <td className="py-3.5 px-3 text-right">
                     <Badge
