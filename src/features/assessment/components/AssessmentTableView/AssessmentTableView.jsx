@@ -192,19 +192,6 @@ const AssessmentTableView = ({
                       <span>View</span>
                     </Button>
 
-                    {/* Invite CTA */}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onInvite?.(assessment)}
-                      className="h-8 px-2.5 rounded-xl border-blue-200/90 text-blue-700 bg-blue-50/50 hover:bg-blue-100/70 text-xs font-semibold gap-1 shadow-2xs cursor-pointer"
-                      title="Invite Candidate"
-                    >
-                      <Send className="h-3.5 w-3.5" />
-                      <span>Invite</span>
-                    </Button>
-
                     {/* Actions Menu (Duplicate, Delete, Publish/Archive) */}
                     <AssessmentCardActions
                       assessment={assessment}

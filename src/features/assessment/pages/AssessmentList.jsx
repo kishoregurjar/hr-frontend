@@ -78,18 +78,6 @@ const AssessmentList = () => {
   const handleArchive = (id) => updateStatus(id, ASSESSMENT_STATUS.ARCHIVED);
   const handleRestore = (id) => updateStatus(id, ASSESSMENT_STATUS.PUBLISHED);
 
-  const handleInvite = (assessment) => {
-    const inviteUrl = typeof window !== "undefined"
-      ? `${window.location.origin}/assessment/invite/${assessment.id}`
-      : "";
-    if (inviteUrl) {
-      navigator.clipboard.writeText(inviteUrl);
-      toast.success(`Invite link for "${assessment.title}" copied!`);
-    } else {
-      setSelectedDrawerAssessment(assessment);
-    }
-  };
-
   const filteredAssessments = useMemo(() => {
     const query = search.trim().toLowerCase();
     return assessments.filter((assessment) => {
@@ -229,7 +217,6 @@ const AssessmentList = () => {
         <AssessmentTableView
           assessments={paginatedAssessments}
           onViewDetails={(assessment) => setSelectedDrawerAssessment(assessment)}
-          onInvite={handleInvite}
           onPublish={handlePublish}
           onArchive={handleArchive}
           onRestore={handleRestore}
@@ -305,7 +292,6 @@ const AssessmentList = () => {
         open={Boolean(selectedDrawerAssessment)}
         onOpenChange={(open) => !open && setSelectedDrawerAssessment(null)}
         assessment={selectedDrawerAssessment}
-        onInvite={handleInvite}
       />
     </div>
   );
