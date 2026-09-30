@@ -13,11 +13,9 @@ export const assessmentSchema = z.object({
     .max(500, "Description cannot exceed 500 characters")
     .optional(),
 
-  selectedGameIds: z
-    .array(z.union([z.string(), z.number()])),
+  selectedGameIds: z.array(z.union([z.string(), z.number(), z.object({}).passthrough()])),
 
-  selectedQuestionIds: z
-    .array(z.union([z.string(), z.number()])),
+  selectedQuestionIds: z.array(z.union([z.string(), z.number(), z.object({}).passthrough()])),
 
   duration: z.coerce
     .number()

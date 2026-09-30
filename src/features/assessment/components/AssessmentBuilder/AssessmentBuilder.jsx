@@ -254,7 +254,8 @@ const AssessmentBuilder = ({
         },
         {
           onSuccess: () => {
-            router.push(`/assessments/${assessmentId}`);
+            toast.success("Assessment updated successfully!");
+            router.push("/assessments");
           },
           onSettled: () => {
             setSubmitAction(null);
