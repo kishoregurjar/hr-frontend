@@ -295,13 +295,18 @@ const AssessmentBuilder = ({
     const validation = validateAssessment(assessment);
     const errors = { ...validation.errors };
 
-    const hasInvalidGameSelection = assessment.selectedGameIds.some(
-      (id) => !games.some((game) => String(game.id || game._id) === String(id))
+    const hasInvalidGameSelection = !isGamesLoading && assessment.selectedGameIds.some(
+      (id) => {
+        const rawId = typeof id === "object" ? (id.gameId || id.id) : String(id);
+        return rawId && !games.some((game) => String(game.id || game._id) === String(rawId));
+      }
     );
 
-    const hasInvalidQuestionSelection = assessment.selectedQuestionIds.some(
-      (id) =>
-        !questions.some((question) => String(question.id || question._id) === String(id))
+    const hasInvalidQuestionSelection = !isQuestionsLoading && assessment.selectedQuestionIds.some(
+      (id) => {
+        const rawId = typeof id === "object" ? (id.questionId || id.id) : String(id);
+        return rawId && !questions.some((question) => String(question.id || question._id) === String(rawId));
+      }
     );
 
     if (hasInvalidGameSelection) {

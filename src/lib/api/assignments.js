@@ -88,7 +88,7 @@ export const getAssignmentByToken = async (rawToken) => {
   try {
     const res = await axiosClient.get(`/attempts/verify/${encodeURIComponent(rawStr)}`);
     inv = res?.data?.data || res?.data || res;
-  } catch {}
+  } catch { }
 
   // 2. Secondary fallback loop for token variants if direct verify missed
   if (!inv || (!inv.id && !inv.assessmentId && !inv.token)) {
@@ -98,14 +98,14 @@ export const getAssignmentByToken = async (rawToken) => {
         const res = await axiosClient.get(`/attempts/verify/${encodeURIComponent(t)}`);
         inv = res?.data?.data || res?.data || res;
         if (inv && (inv.id || inv.assessmentId || inv.token)) break;
-      } catch {}
+      } catch { }
 
       if (!inv) {
         try {
           const res = await axiosClient.post("/attempts/verify", { token: t });
           inv = res?.data?.data || res?.data || res;
           if (inv && (inv.id || inv.assessmentId || inv.token)) break;
-        } catch {}
+        } catch { }
       }
     }
   }
@@ -188,7 +188,7 @@ export const getAssignmentByToken = async (rawToken) => {
       try {
         sessionStorage.setItem("current_assessment_data", JSON.stringify(hydratedAssessment));
         sessionStorage.setItem("invitationToken", inv.token || rawToken);
-      } catch {}
+      } catch { }
     }
 
     return {
@@ -220,44 +220,7 @@ export const getAssignmentByToken = async (rawToken) => {
     };
   }
 
-  // If token was not found on backend verify, try looking up live assessments list
-  let fallbackAssessment = {
-    id: assessmentId || "assessment-live",
-    title: "Candidate Assessment",
-    description: "Please review the instructions and begin your assessment session.",
-    durationMinutes: 60,
-    passingScore: 70,
-    status: "PUBLISHED",
-  };
-
-  try {
-    const listRes = await axiosClient.get("/assessments", { params: { limit: 1 } });
-    const items = listRes?.data?.items || listRes?.data?.data || listRes?.data || [];
-    if (Array.isArray(items) && items.length > 0 && items[0]?.title) {
-      fallbackAssessment = items[0];
-    }
-  } catch {}
-
-  return {
-    id: `inv-${Date.now()}`,
-    assignmentId: `inv-${Date.now()}`,
-    assessmentId: fallbackAssessment.id,
-    candidateId: "cand-active-01",
-    email: "",
-    candidateName: "Candidate",
-    candidateEmail: "",
-    status: "Invited",
-    token: rawToken,
-    invitationToken: rawToken,
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    isExpired: false,
-    assessment: fallbackAssessment,
-    candidate: {
-      id: "cand-active-01",
-      name: "Candidate",
-      email: "",
-    },
-  };
+  throw new Error("Invalid or expired invitation token.");
 };
 
 export const createAssignment = async ({

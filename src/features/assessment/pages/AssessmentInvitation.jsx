@@ -41,7 +41,7 @@ const AssessmentInvitation = ({ token }) => {
     };
 
   const handleStart = async (candidateInfo = {}) => {
-    await enterFullscreen().catch(() => {});
+    await enterFullscreen().catch(() => { });
 
     if (token && typeof window !== "undefined") {
       sessionStorage.setItem("invitationToken", token);
@@ -88,9 +88,11 @@ const AssessmentInvitation = ({ token }) => {
 
   const { assignment, assessment } = data;
 
+  const rawStatus = String(assignment?.status || "").toLowerCase();
+
   // ── 3. Completed State ──────────────────────────────────────
-  if (assignment?.status === "Completed") {
-    return <AssessmentCompleted />;
+  if (rawStatus === "completed" || rawStatus === "submitted") {
+    return <AssessmentCompleted assessment={assessment} attempt={assignment} />;
   }
 
   // ── 4. Expired State ────────────────────────────────────────
@@ -113,7 +115,6 @@ const AssessmentInvitation = ({ token }) => {
   }
 
   // ── 5. Invited / Pending State — Validation & Pre-Start ──────────────
-  const rawStatus = String(assignment?.status || "").toLowerCase();
   const isPendingOrInvited =
     rawStatus === "invited" ||
     rawStatus === "pending" ||
