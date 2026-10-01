@@ -352,13 +352,24 @@ export const bulkToggleCompanyGameStatus = async (companyIds, gameId, statusOrIs
  * 15. Fetch Platform Users
  * Endpoint: GET /api/v1/super-admin/users
  */
-export const getAdminUsers = async () => {
+export const getAdminUsers = async (params = {}) => {
   try {
-    const res = await axiosClient.get("/super-admin/users");
+    const res = await axiosClient.get("/super-admin/users", { params });
     const data = res?.data?.data || res?.data || res;
-    return Array.isArray(data) ? data : data?.users || [];
-  } catch {
-    return [];
+    return data;
+  } catch (err) {
+    console.error("Failed to fetch admin users:", err);
+    return {
+      users: [],
+      pagination: {
+        page: 1,
+        limit: 20,
+        total: 0,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+    };
   }
 };
 
