@@ -8,7 +8,7 @@
  */
 
 import { games as gamesCatalog } from "@/features/games/data";
-import { getEffectiveGameRuntimeConfig, getCompanyGameConfig } from "@/features/games/utils/gameConfigStore";
+import { getEffectiveGameRuntimeConfig } from "@/features/games/utils/gameConfigStore";
 
 // Automatically clear stale attempt cache from localStorage if found with placeholder options
 if (typeof window !== "undefined") {
@@ -274,21 +274,18 @@ export const buildRuntimeSections = (assessment) => {
 
     const itemConfig = typeof gameItem === "object" ? (gameItem.config || {}) : {};
     const apiDifficulty = typeof gameItem === "object" ? (gameItem.difficulty || gameItem.game?.difficulty || itemConfig.difficulty) : null;
-    const companyConfig = getCompanyGameConfig(resolvedSlug) || (typeof gameItem === "object" && (getCompanyGameConfig(gameItem.id) || getCompanyGameConfig(gameItem.gameId)));
     
     // Dynamic Resolution: Priority goes to Database API values configured by the owner
     const rawTargetDifficulty =
       apiDifficulty ||
       itemConfig.difficulty ||
       assessment?.difficulty ||
-      companyConfig?.difficulty ||
       catalogInfo.difficulty ||
       "medium";
 
     const targetDifficulty = String(rawTargetDifficulty).toLowerCase();
 
     const effectiveConfig = getEffectiveGameRuntimeConfig(resolvedSlug, {
-      ...companyConfig,
       ...itemConfig,
       difficulty: targetDifficulty,
     });
@@ -296,7 +293,7 @@ export const buildRuntimeSections = (assessment) => {
     const displayDifficulty =
       targetDifficulty.charAt(0).toUpperCase() + targetDifficulty.slice(1);
 
-    const gameDurationMinutes = Number(companyConfig?.duration || itemConfig.duration || 10) || 10;
+    const gameDurationMinutes = Number(itemConfig.duration || 10) || 10;
 
     return {
       id: `game-${index + 1}`,
