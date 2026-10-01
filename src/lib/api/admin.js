@@ -373,3 +373,21 @@ export const getAdminUsers = async (params = {}) => {
   }
 };
 
+/**
+ * 16. Invite Platform Admin (SUPER_ADMIN)
+ * Endpoint: POST /api/v1/super-admin/users/invite
+ */
+export const invitePlatformAdmin = async (payload) => {
+  const res = await axiosClient.post("/super-admin/users/invite", payload);
+  return res?.data?.data || res?.data || res;
+};
+
+/**
+ * 17. Resend Platform Admin Invitation
+ * Endpoint: POST /api/v1/super-admin/users/:userId/resend-invitation
+ */
+export const resendPlatformAdminInvitation = async (userId) => {
+  const res = await axiosClient.post(`/super-admin/users/${userId}/resend-invitation`);
+  return res?.data?.data || res?.data || res;
+};
+

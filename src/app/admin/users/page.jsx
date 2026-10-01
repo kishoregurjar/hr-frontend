@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Users,
   Search,
@@ -13,6 +13,7 @@ import AdminHeader from "@/components/admin/AdminHeader";
 import { getAdminUsers } from "@/lib/api/admin";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import InviteAdminModal from "@/components/admin/InviteAdminModal";
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState([]);
@@ -29,72 +30,61 @@ export default function AdminUsersPage() {
     hasPreviousPage: false,
   });
   const [loading, setLoading] = useState(true);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
-  useEffect(() => {
-    let isMounted = true;
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = {
+        page,
+        limit,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      };
 
-    const fetchUsers = async () => {
-      setLoading(true);
-      try {
-        const params = {
+      if (search.trim()) {
+        params.search = search.trim();
+      }
+
+      if (roleFilter !== "ALL") {
+        params.role = roleFilter;
+      }
+
+      const data = await getAdminUsers(params);
+
+      const userList = Array.isArray(data?.users) ? data.users : [];
+      setUsers(userList);
+      if (data?.pagination) {
+        setPagination(data.pagination);
+      } else {
+        setPagination({
           page,
           limit,
-          sortBy: "createdAt",
-          sortOrder: "desc",
-        };
-
-        if (search.trim()) {
-          params.search = search.trim();
-        }
-
-        if (roleFilter !== "ALL") {
-          params.role = roleFilter;
-        }
-
-        const data = await getAdminUsers(params);
-
-        if (isMounted) {
-          const userList = Array.isArray(data?.users) ? data.users : [];
-          setUsers(userList);
-          if (data?.pagination) {
-            setPagination(data.pagination);
-          } else {
-            setPagination({
-              page,
-              limit,
-              total: userList.length,
-              totalPages: 1,
-              hasNextPage: false,
-              hasPreviousPage: false,
-            });
-          }
-        }
-      } catch (err) {
-        console.error("Failed to fetch users:", err);
-        if (isMounted) {
-          setUsers([]);
-          setPagination({
-            page: 1,
-            limit: 20,
-            total: 0,
-            totalPages: 1,
-            hasNextPage: false,
-            hasPreviousPage: false,
-          });
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+          total: userList.length,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        });
       }
-    };
-
-    fetchUsers();
-
-    return () => {
-      isMounted = false;
-    };
+    } catch (err) {
+      console.error("Failed to fetch users:", err);
+      setUsers([]);
+      setPagination({
+        page: 1,
+        limit: 20,
+        total: 0,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      });
+    } finally {
+      setLoading(false);
+    }
   }, [page, limit, search, roleFilter]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
@@ -110,6 +100,39 @@ export default function AdminUsersPage() {
   const start = total === 0 ? 0 : (page - 1) * limit + 1;
   const end = Math.min(page * limit, total);
   const totalPages = pagination.totalPages || 1;
+
+  const renderCompanyRoleBadge = (companyRole) => {
+    if (!companyRole) {
+      return <span className="text-slate-400 font-bold px-1">—</span>;
+    }
+
+    switch (companyRole) {
+      case "OWNER":
+        return (
+          <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px] font-bold">
+            OWNER
+          </Badge>
+        );
+      case "ADMIN":
+        return (
+          <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 text-[10px] font-bold">
+            ADMIN
+          </Badge>
+        );
+      case "RECRUITER":
+        return (
+          <Badge className="bg-sky-100 text-sky-800 border-sky-200 text-[10px] font-bold">
+            RECRUITER
+          </Badge>
+        );
+      default:
+        return (
+          <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-[10px] font-bold">
+            {companyRole}
+          </Badge>
+        );
+    }
+  };
 
   return (
     <>
@@ -143,11 +166,13 @@ export default function AdminUsersPage() {
               <option value="ALL">All Roles</option>
               <option value="SUPER_ADMIN">Super Admin</option>
               <option value="HR">HR / Recruiter</option>
-              <option value="CANDIDATE">Candidate</option>
             </select>
           </div>
 
-          <Button className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-md shadow-blue-500/20 shrink-0">
+          <Button
+            onClick={() => setIsInviteModalOpen(true)}
+            className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-md shadow-blue-500/20 shrink-0 cursor-pointer"
+          >
             <Plus className="h-4 w-4" />
             Invite Platform Admin
           </Button>
@@ -163,6 +188,7 @@ export default function AdminUsersPage() {
                   <th className="py-3.5 px-6">Email Address</th>
                   <th className="py-3.5 px-6">Associated Company</th>
                   <th className="py-3.5 px-6">Platform Role</th>
+                  <th className="py-3.5 px-6">Company Role</th>
                   <th className="py-3.5 px-6">Status</th>
                   <th className="py-3.5 px-6 text-right">Actions</th>
                 </tr>
@@ -170,7 +196,7 @@ export default function AdminUsersPage() {
               <tbody className="divide-y text-slate-700 font-medium">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-400">
+                    <td colSpan={7} className="py-12 text-center text-slate-400">
                       <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-current border-t-transparent text-blue-600 mb-2" />
                       <p className="text-xs font-semibold text-slate-600">Loading users...</p>
                     </td>
@@ -218,9 +244,7 @@ export default function AdminUsersPage() {
                           className={`text-[10px] font-bold ${
                             user.role === "SUPER_ADMIN"
                               ? "bg-purple-100 text-purple-800 border-purple-200"
-                              : user.role === "HR"
-                              ? "bg-blue-100 text-blue-800 border-blue-200"
-                              : "bg-slate-100 text-slate-800 border-slate-200"
+                              : "bg-blue-100 text-blue-800 border-blue-200"
                           }`}
                         >
                           {user.role}
@@ -228,7 +252,19 @@ export default function AdminUsersPage() {
                       </td>
 
                       <td className="py-4 px-6">
-                        <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px] font-bold">
+                        {renderCompanyRoleBadge(user.companyRole)}
+                      </td>
+
+                      <td className="py-4 px-6">
+                        <Badge
+                          className={`text-[10px] font-bold ${
+                            user.status === "ACTIVE"
+                              ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                              : user.status === "INVITED"
+                              ? "bg-amber-100 text-amber-800 border-amber-200"
+                              : "bg-slate-100 text-slate-800 border-slate-200"
+                          }`}
+                        >
                           {user.status || "ACTIVE"}
                         </Badge>
                       </td>
@@ -246,7 +282,7 @@ export default function AdminUsersPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-400">
+                    <td colSpan={7} className="py-12 text-center text-slate-400">
                       <Users className="h-8 w-8 mx-auto text-slate-300 mb-2" />
                       <p className="text-xs font-bold text-slate-700">No platform users found</p>
                       <p className="text-[11px] text-slate-400 mt-0.5">
@@ -301,6 +337,13 @@ export default function AdminUsersPage() {
           )}
         </div>
       </main>
+
+      {/* Invite Platform Admin Modal */}
+      <InviteAdminModal
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        onSuccess={fetchUsers}
+      />
     </>
   );
 }
