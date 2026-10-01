@@ -391,3 +391,18 @@ export const resendPlatformAdminInvitation = async (userId) => {
   return res?.data?.data || res?.data || res;
 };
 
+/**
+ * 18. Fetch Platform Audit Logs
+ * Endpoint: GET /api/v1/super-admin/audit-logs
+ */
+export const getAuditLogs = async (params = {}) => {
+  try {
+    const res = await axiosClient.get("/super-admin/audit-logs", { params });
+    const data = res?.data?.data || res?.data || res;
+    return data;
+  } catch (err) {
+    console.error("Failed to fetch audit logs:", err);
+    throw err;
+  }
+};
+
