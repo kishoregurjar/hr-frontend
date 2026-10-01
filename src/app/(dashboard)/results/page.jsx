@@ -26,11 +26,14 @@ import {
   Star,
   Inbox,
   Filter,
+  Calendar,
+  Video,
+  CheckSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/features/auth/context";
 import { useAssessmentsQuery } from "@/features/assessment/hooks";
-import { getAllResults } from "@/lib/api/results";
+import { getAllResults, sendInterviewInvite } from "@/lib/api/results";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -48,6 +51,12 @@ export default function ResultsAndRankingPage() {
     (typeof user?.fullName === "string" ? user.fullName : "") ||
     "HR Manager";
   const userName = String(rawName).replace(/\s+user$/i, "").trim() || "HR Manager";
+
+  const companyName =
+    user?.companyName ||
+    user?.company?.name ||
+    (typeof user?.company === "string" ? user.company : null) ||
+    "";
 
   const { data: apiAssessments = [] } = useAssessmentsQuery();
 
@@ -81,6 +90,97 @@ export default function ResultsAndRankingPage() {
 
   // Detailed Candidate Scorecard Modal
   const [selectedCandidate, setSelectedCandidate] = useState(null);
+
+  // Selected Candidates for Bulk / Interview Action
+  const [selectedCandidateIds, setSelectedCandidateIds] = useState([]);
+  const [isInterviewModalOpen, setIsInterviewModalOpen] = useState(false);
+  const [interviewTargets, setInterviewTargets] = useState([]);
+  const [isSendingInvites, setIsSendingInvites] = useState(false);
+
+  // Form State for Interview Modal
+  const [interviewForm, setInterviewForm] = useState({
+    roundName: "Technical Interview - Round 2",
+    scheduledAt: "",
+    meetingLink: "",
+    customMessage: "We were impressed with your assessment performance and would love to invite you to our next technical interview round.",
+  });
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedCandidateIds(filteredResults.map((r) => r.id));
+    } else {
+      setSelectedCandidateIds([]);
+    }
+  };
+
+  const handleToggleSelect = (id) => {
+    setSelectedCandidateIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const openInterviewModalForSelected = () => {
+    const targets = filteredResults.filter((r) => selectedCandidateIds.includes(r.id));
+    if (targets.length === 0) {
+      toast.error("Please select at least one candidate.");
+      return;
+    }
+    setInterviewTargets(targets);
+    if (selectedAssessment && selectedAssessment !== "ALL") {
+      setInterviewForm((prev) => ({
+        ...prev,
+        roundName: `${selectedAssessment} - Round 2 Interview`,
+      }));
+    }
+    setIsInterviewModalOpen(true);
+  };
+
+  const openInterviewModalForSingle = (candidate) => {
+    setInterviewTargets([candidate]);
+    if (candidate?.assessmentTitle) {
+      setInterviewForm((prev) => ({
+        ...prev,
+        roundName: `${candidate.assessmentTitle} - Round 2 Interview`,
+      }));
+    }
+    setIsInterviewModalOpen(true);
+  };
+
+  const handleDispatchInterviewInvites = async () => {
+    if (!interviewTargets.length) return;
+    if (!interviewForm.scheduledAt) {
+      toast.error("Please select the interview date and time.");
+      return;
+    }
+    setIsSendingInvites(true);
+    try {
+      const payload = {
+        candidates: interviewTargets.map((c) => ({
+          email: c.email || c.candidateEmail,
+          name: c.candidateName || c.name,
+          score: c.percentage || c.score || 0,
+          assessmentTitle: c.assessmentTitle,
+        })),
+        roundName: interviewForm.roundName,
+        scheduledAt: interviewForm.scheduledAt,
+        meetingLink: interviewForm.meetingLink || "",
+        customMessage: interviewForm.customMessage || "",
+        companyName: companyName || undefined,
+      };
+
+      const result = await sendInterviewInvite(payload);
+      toast.success(
+        `Interview invitation sent successfully to ${result?.count || interviewTargets.length} candidate(s)!`
+      );
+      await refetch();
+      setIsInterviewModalOpen(false);
+      setSelectedCandidateIds([]);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.message || "Failed to send interview invitations.");
+    } finally {
+      setIsSendingInvites(false);
+    }
+  };
 
   const filteredResults = useMemo(() => {
     return results
@@ -305,7 +405,10 @@ export default function ResultsAndRankingPage() {
           {/* Assessment Filter */}
           <select
             value={selectedAssessment}
-            onChange={(e) => setSelectedAssessment(e.target.value)}
+            onChange={(e) => {
+              setSelectedAssessment(e.target.value);
+              setSelectedCandidateIds([]);
+            }}
             className="h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer max-w-[200px] truncate"
           >
             <option value="ALL">All Assessments</option>
@@ -338,6 +441,45 @@ export default function ResultsAndRankingPage() {
             <option value="speed">Fastest Completion</option>
             <option value="name">Candidate Name (A-Z)</option>
           </select>
+
+          {/* Interview Action Button - Only enabled when a specific assessment is selected */}
+          {selectedAssessment !== "ALL" ? (
+            selectedCandidateIds.length > 0 ? (
+              <Button
+                size="sm"
+                onClick={openInterviewModalForSelected}
+                className="h-10 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer transition animate-in fade-in"
+              >
+                <Calendar className="h-3.5 w-3.5" />
+                Invite Selected ({selectedCandidateIds.length})
+              </Button>
+            ) : (
+              filteredResults.some((r) => r.status === "QUALIFIED") && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const qualified = filteredResults.filter((r) => r.status === "QUALIFIED");
+                    setInterviewTargets(qualified);
+                    setInterviewForm((prev) => ({
+                      ...prev,
+                      roundName: `${selectedAssessment} - Round 2 Interview`,
+                    }));
+                    setIsInterviewModalOpen(true);
+                  }}
+                  className="h-10 px-3.5 rounded-xl border-emerald-300 bg-emerald-50/50 hover:bg-emerald-100/70 text-emerald-800 text-xs font-bold gap-1.5 shadow-2xs cursor-pointer transition"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                  Invite All Qualified ({filteredResults.filter((r) => r.status === "QUALIFIED").length})
+                </Button>
+              )
+            )
+          ) : (
+            <div className="hidden lg:flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 bg-slate-100/80 border border-slate-200/80 px-3 py-2 rounded-xl">
+              <Filter className="h-3 w-3 text-slate-400" />
+              Select an assessment to enable checkboxes & interview invites
+            </div>
+          )}
         </div>
       </div>
 
@@ -347,18 +489,32 @@ export default function ResultsAndRankingPage() {
           <table className="w-full text-left text-xs min-w-[760px]">
             <thead className="bg-slate-50/80 border-b text-[11px] font-bold uppercase tracking-wider text-slate-500">
               <tr>
-                <th className="py-3.5 px-5 w-16 text-center">Rank</th>
-                <th className="py-3.5 px-6">Candidate</th>
-                <th className="py-3.5 px-6">Assessment Module</th>
-                <th className="py-3.5 px-6 text-center">Score & Pass %</th>
-                <th className="py-3.5 px-6">Status</th>
-                <th className="py-3.5 px-6 text-right">Actions</th>
+                {selectedAssessment !== "ALL" && (
+                  <th className="py-3.5 px-4 w-10 text-center animate-in fade-in">
+                    <input
+                      type="checkbox"
+                      checked={
+                        filteredResults.length > 0 &&
+                        selectedCandidateIds.length === filteredResults.length
+                      }
+                      onChange={handleSelectAll}
+                      aria-label="Select all candidates"
+                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
+                    />
+                  </th>
+                )}
+                <th className="py-3.5 px-4 w-14 text-center">Rank</th>
+                <th className="py-3.5 px-5">Candidate</th>
+                <th className="py-3.5 px-5">Assessment Module</th>
+                <th className="py-3.5 px-5 text-center">Score & Pass %</th>
+                <th className="py-3.5 px-5">Status</th>
+                <th className="py-3.5 px-5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
               {filteredResults.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="py-16 text-center">
+                  <td colSpan={selectedAssessment !== "ALL" ? 7 : 6} className="py-16 text-center">
                     <div className="flex flex-col items-center justify-center max-w-sm mx-auto space-y-3">
                       <div className="h-14 w-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-2xs">
                         <Trophy className="h-7 w-7 text-blue-500" />
@@ -374,14 +530,32 @@ export default function ResultsAndRankingPage() {
                 </tr>
               ) : (
                 filteredResults.map((item, index) => (
-                  <tr key={item.id} className="hover:bg-slate-50/70 transition group">
+                  <tr
+                    key={item.id}
+                    className={`hover:bg-slate-50/70 transition group ${
+                      selectedCandidateIds.includes(item.id) ? "bg-blue-50/40" : ""
+                    }`}
+                  >
+                    {/* Select Checkbox - only shown when specific assessment is selected */}
+                    {selectedAssessment !== "ALL" && (
+                      <td className="py-4 px-4 text-center animate-in fade-in">
+                        <input
+                          type="checkbox"
+                          checked={selectedCandidateIds.includes(item.id)}
+                          onChange={() => handleToggleSelect(item.id)}
+                          aria-label={`Select ${item.candidateName}`}
+                          className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
+                        />
+                      </td>
+                    )}
+
                     {/* Rank */}
-                    <td className="py-4 px-5 text-center font-extrabold">
+                    <td className="py-4 px-4 text-center font-extrabold">
                       {getRankMedal(index)}
                     </td>
 
                     {/* Candidate */}
-                    <td className="py-4 px-6">
+                    <td className="py-4 px-5">
                       <div className="flex items-center gap-3">
                         <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-slate-900 to-indigo-950 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
                           {String(item.candidateName || "C")
@@ -402,7 +576,7 @@ export default function ResultsAndRankingPage() {
                     </td>
 
                     {/* Assessment */}
-                    <td className="py-4 px-6">
+                    <td className="py-4 px-5">
                       <div className="space-y-0.5">
                         <p className="font-bold text-slate-800">{item.assessmentTitle}</p>
                         <p className="text-[11px] text-slate-500 flex items-center gap-1">
@@ -413,7 +587,7 @@ export default function ResultsAndRankingPage() {
                     </td>
 
                     {/* Score */}
-                    <td className="py-4 px-6 text-center">
+                    <td className="py-4 px-5 text-center">
                       <span className="font-black text-sm text-slate-900">
                         {item.score}/{item.maxScore || 100}
                       </span>
@@ -423,31 +597,79 @@ export default function ResultsAndRankingPage() {
                     </td>
 
                     {/* Status */}
-                    <td className="py-4 px-6">
-                      <Badge
-                        className={`text-[10px] font-black uppercase px-2.5 py-0.5 ${
-                          item.status === "QUALIFIED"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                            : item.status === "IN_REVIEW"
-                            ? "bg-amber-50 text-amber-700 border-amber-300"
-                            : "bg-rose-50 text-rose-700 border-rose-300"
-                        }`}
-                      >
-                        {item.status === "QUALIFIED" ? "Qualified" : item.status === "IN_REVIEW" ? "In Review" : "Failed"}
-                      </Badge>
+                    <td className="py-4 px-5">
+                      <div className="flex flex-col gap-1 items-start">
+                        <Badge
+                          className={`text-[10px] font-black uppercase px-2.5 py-0.5 ${
+                            item.status === "QUALIFIED"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                              : item.status === "IN_REVIEW"
+                              ? "bg-amber-50 text-amber-700 border-amber-300"
+                              : "bg-rose-50 text-rose-700 border-rose-300"
+                          }`}
+                        >
+                          {item.status === "QUALIFIED" ? "Qualified" : item.status === "IN_REVIEW" ? "In Review" : "Failed"}
+                        </Badge>
+
+                        {item.status === "QUALIFIED" &&
+                          item.interview &&
+                          (!item.interview.assessmentTitle ||
+                            item.assessmentTitle?.toLowerCase().includes(item.interview.assessmentTitle?.toLowerCase()) ||
+                            item.interview.assessmentTitle?.toLowerCase().includes(item.assessmentTitle?.toLowerCase()) ||
+                            item.interview.roundName?.toLowerCase().includes(item.assessmentTitle?.toLowerCase())) && (
+                            <span
+                              className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/90 px-2 py-0.5 rounded-md shadow-2xs"
+                              title={`Interview Scheduled: ${item.interview.formattedDate || item.interview.roundName}`}
+                            >
+                              <Calendar className="h-2.5 w-2.5 text-indigo-600" />
+                              Interview Invited
+                            </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Actions */}
-                    <td className="py-4 px-6 text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedCandidate(item)}
-                        className="h-8 px-3 rounded-xl border-slate-200 hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-bold gap-1 shadow-2xs cursor-pointer transition"
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                        Scorecard
-                      </Button>
+                    <td className="py-4 px-5 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {item.status === "QUALIFIED" && (() => {
+                          const isCurrentAssessmentInvited =
+                            Boolean(item.interview) &&
+                            (!item.interview.assessmentTitle ||
+                              item.assessmentTitle?.toLowerCase().includes(item.interview.assessmentTitle?.toLowerCase()) ||
+                              item.interview.assessmentTitle?.toLowerCase().includes(item.assessmentTitle?.toLowerCase()) ||
+                              item.interview.roundName?.toLowerCase().includes(item.assessmentTitle?.toLowerCase()));
+
+                          return (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openInterviewModalForSingle(item)}
+                              className={`h-8 px-2.5 rounded-xl text-xs font-bold gap-1 shadow-2xs cursor-pointer transition ${
+                                isCurrentAssessmentInvited
+                                  ? "border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 hover:text-indigo-800 text-indigo-700"
+                                  : "border-emerald-200 bg-emerald-50/50 hover:bg-emerald-100 hover:text-emerald-800 text-emerald-700"
+                              }`}
+                              title={
+                                isCurrentAssessmentInvited
+                                  ? `Interview already scheduled for ${item.interview.formattedDate}`
+                                  : "Schedule Next Round Interview"
+                              }
+                            >
+                              <Calendar className="h-3.5 w-3.5" />
+                              {isCurrentAssessmentInvited ? "Re-invite" : "Invite"}
+                            </Button>
+                          );
+                        })()}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedCandidate(item)}
+                          className="h-8 px-3 rounded-xl border-slate-200 hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-bold gap-1 shadow-2xs cursor-pointer transition"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          Scorecard
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -557,6 +779,155 @@ export default function ResultsAndRankingPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* ── 7. NEXT ROUND INTERVIEW SCHEDULING MODAL ── */}
+      <Dialog open={isInterviewModalOpen} onOpenChange={setIsInterviewModalOpen}>
+        <DialogContent className="max-w-xl p-0 overflow-hidden rounded-3xl border-slate-200 shadow-2xl font-sans bg-white">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 p-6 text-white relative">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-2xl bg-white/10 border border-white/20 text-white flex items-center justify-center font-black text-lg shadow-inner">
+                <Calendar className="h-6 w-6 text-blue-300" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-extrabold text-white tracking-tight">
+                  Schedule Next Round Interview
+                </DialogTitle>
+                <DialogDescription className="text-xs text-blue-200/90 mt-0.5">
+                  Send personalized email invitations with meeting link to {interviewTargets.length} selected candidate{interviewTargets.length > 1 ? "s" : ""}.
+                </DialogDescription>
+              </div>
+            </div>
+          </div>
+
+          {/* Form Body */}
+          <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+            {/* Target Candidates Badges */}
+            <div>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 block">
+                Invited Candidate(s) ({interviewTargets.length})
+              </label>
+              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                {interviewTargets.map((c, i) => (
+                  <span
+                    key={c.id || i}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-800 shadow-2xs"
+                  >
+                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                    {c.candidateName || c.name}
+                    <span className="text-[10px] text-slate-400">({c.percentage || c.score || 0}%)</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Round Name */}
+            <div>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1 block">
+                Interview Round Name *
+              </label>
+              <input
+                type="text"
+                value={interviewForm.roundName}
+                onChange={(e) => setInterviewForm((prev) => ({ ...prev, roundName: e.target.value }))}
+                placeholder="e.g. Technical Round 2 / System Design / HR Discussion"
+                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 shadow-2xs"
+              />
+            </div>
+
+            {/* Date & Time Picker */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1 flex items-center justify-between">
+                  <span>Date & Time *</span>
+                  {!interviewForm.scheduledAt && (
+                    <span className="text-[10px] text-amber-600 font-semibold">Required</span>
+                  )}
+                </label>
+                <input
+                  type="datetime-local"
+                  required
+                  min={new Date().toISOString().slice(0, 16)}
+                  value={interviewForm.scheduledAt}
+                  onChange={(e) => setInterviewForm((prev) => ({ ...prev, scheduledAt: e.target.value }))}
+                  className={`w-full h-10 px-3.5 rounded-xl border text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 shadow-2xs ${
+                    !interviewForm.scheduledAt
+                      ? "border-amber-300 bg-amber-50/20 focus:ring-amber-500/30"
+                      : "border-slate-200 focus:ring-blue-500/30"
+                  }`}
+                />
+              </div>
+
+              {/* Meeting Link */}
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1 block">
+                  Meeting Link (Google Meet / Zoom)
+                </label>
+                <div className="relative">
+                  <Video className="h-3.5 w-3.5 absolute left-3 top-3.5 text-slate-400" />
+                  <input
+                    type="url"
+                    value={interviewForm.meetingLink}
+                    onChange={(e) => setInterviewForm((prev) => ({ ...prev, meetingLink: e.target.value }))}
+                    placeholder="https://meet.google.com/xyz or Zoom URL"
+                    className="w-full h-10 pl-9 pr-3 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 shadow-2xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Custom Message */}
+            <div>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1 block">
+                Custom Message / Instructions to Candidates
+              </label>
+              <textarea
+                rows={3}
+                value={interviewForm.customMessage}
+                onChange={(e) => setInterviewForm((prev) => ({ ...prev, customMessage: e.target.value }))}
+                placeholder="Add instructions, pre-requisites, or congratulatory notes for the candidate..."
+                className="w-full p-3 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 resize-none shadow-2xs"
+              />
+            </div>
+
+            {/* Footer Actions */}
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsInterviewModalOpen(false)}
+                className="rounded-xl px-4 text-xs font-bold text-slate-600 cursor-pointer"
+              >
+                Cancel
+              </Button>
+
+              <Button
+                type="button"
+                disabled={
+                  isSendingInvites ||
+                  !interviewTargets.length ||
+                  !interviewForm.roundName.trim() ||
+                  !interviewForm.scheduledAt
+                }
+                onClick={handleDispatchInterviewInvites}
+                className="rounded-xl px-5 text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 text-white gap-2 shadow-md shadow-blue-500/20 cursor-pointer"
+              >
+                {isSendingInvites ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    Sending Invitations...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-3.5 w-3.5" />
+                    Send Invitation Email{interviewTargets.length > 1 ? "s" : ""}
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
