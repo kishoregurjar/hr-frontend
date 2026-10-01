@@ -352,13 +352,42 @@ export const bulkToggleCompanyGameStatus = async (companyIds, gameId, statusOrIs
  * 15. Fetch Platform Users
  * Endpoint: GET /api/v1/super-admin/users
  */
-export const getAdminUsers = async () => {
+export const getAdminUsers = async (params = {}) => {
   try {
-    const res = await axiosClient.get("/super-admin/users");
+    const res = await axiosClient.get("/super-admin/users", { params });
     const data = res?.data?.data || res?.data || res;
-    return Array.isArray(data) ? data : data?.users || [];
-  } catch {
-    return [];
+    return data;
+  } catch (err) {
+    console.error("Failed to fetch admin users:", err);
+    return {
+      users: [],
+      pagination: {
+        page: 1,
+        limit: 20,
+        total: 0,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+    };
   }
+};
+
+/**
+ * 16. Invite Platform Admin (SUPER_ADMIN)
+ * Endpoint: POST /api/v1/super-admin/users/invite
+ */
+export const invitePlatformAdmin = async (payload) => {
+  const res = await axiosClient.post("/super-admin/users/invite", payload);
+  return res?.data?.data || res?.data || res;
+};
+
+/**
+ * 17. Resend Platform Admin Invitation
+ * Endpoint: POST /api/v1/super-admin/users/:userId/resend-invitation
+ */
+export const resendPlatformAdminInvitation = async (userId) => {
+  const res = await axiosClient.post(`/super-admin/users/${userId}/resend-invitation`);
+  return res?.data?.data || res?.data || res;
 };
 
