@@ -608,7 +608,7 @@ export const markAssignmentCompleted = async (assignmentId) => {
   );
 
   if (index === -1) {
-    throw new Error("Assignment not found.");
+    return { id: assignmentId, status: "Completed" };
   }
 
   assignments[index] = {
