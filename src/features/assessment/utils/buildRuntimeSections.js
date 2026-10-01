@@ -330,19 +330,38 @@ export const buildRuntimeSections = (assessment) => {
 
   // ── Build Unified 2-Module Structure ───────────────────────────
   const runtimeModules = [];
+  const totalAssessmentDuration = Number(assessment?.durationMinutes ?? assessment?.duration ?? 60);
 
-  // MODULE 1: Cognitive Games Challenge (Bundle of all selected games)
+  // Calculate pooled durations (Default: 40 Mins Games, 20 Mins Quiz out of 60 Mins)
+  let gameDurationMinutes = 40;
+  let quizDurationMinutes = 20;
+
+  if (parsedGames.length > 0 && parsedQuestions.length > 0) {
+    if (assessment?.gameDurationMinutes) {
+      gameDurationMinutes = Number(assessment.gameDurationMinutes);
+      quizDurationMinutes = Math.max(5, totalAssessmentDuration - gameDurationMinutes);
+    } else {
+      gameDurationMinutes = Math.min(totalAssessmentDuration - 10, Math.round(totalAssessmentDuration * (40 / 60)));
+      quizDurationMinutes = Math.max(10, totalAssessmentDuration - gameDurationMinutes);
+    }
+  } else if (parsedGames.length > 0) {
+    gameDurationMinutes = totalAssessmentDuration;
+    quizDurationMinutes = 0;
+  } else if (parsedQuestions.length > 0) {
+    gameDurationMinutes = 0;
+    quizDurationMinutes = totalAssessmentDuration;
+  }
+
+  // MODULE 1: Cognitive Games Challenge (Shared pooled time across all games)
   if (parsedGames.length > 0) {
-    const totalGameDurationMinutes = parsedGames.length * 10;
     runtimeModules.push({
       id: "module-cognitive-games",
       type: "game",
       title: "Cognitive & Behavioral Games",
-      description: `Interactive problem-solving challenge consisting of ${parsedGames.length} cognitive ${parsedGames.length === 1 ? "game" : "games"}. Each game has a dedicated 10-minute time limit.`,
+      description: `Interactive problem-solving challenge with ${parsedGames.length} cognitive ${parsedGames.length === 1 ? "game" : "games"}. Total module time: ${gameDurationMinutes} minutes. Solve as many challenges as you can within this time.`,
       games: parsedGames,
-      durationMinutes: totalGameDurationMinutes,
-      durationSeconds: totalGameDurationMinutes * 60,
-      // Default to first game config for backward compatibility
+      durationMinutes: gameDurationMinutes,
+      durationSeconds: gameDurationMinutes * 60,
       slug: parsedGames[0].slug,
       gameId: parsedGames[0].gameId,
       config: parsedGames[0].config,
@@ -355,15 +374,11 @@ export const buildRuntimeSections = (assessment) => {
       ? `${assessment.title} - Technical Quiz`
       : "Technical & Domain Knowledge";
 
-    const totalAssessmentDuration = Number(assessment?.durationMinutes ?? assessment?.duration ?? 60);
-    const gameDurationTotal = parsedGames.length * 10;
-    const quizDurationMinutes = Math.max(10, totalAssessmentDuration - gameDurationTotal);
-
     runtimeModules.push({
       id: "module-technical-quiz",
       type: "quiz",
       title: quizTitle,
-      description: `Multiple choice questions (${parsedQuestions.length} questions) evaluating domain knowledge and core concepts.`,
+      description: `Multiple choice questions (${parsedQuestions.length} questions) evaluating domain knowledge and core concepts. Total module time: ${quizDurationMinutes} minutes.`,
       questions: parsedQuestions,
       durationMinutes: quizDurationMinutes,
       durationSeconds: quizDurationMinutes * 60,
