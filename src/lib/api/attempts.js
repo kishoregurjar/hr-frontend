@@ -930,20 +930,6 @@ export const verifyCandidateOtp = async ({ email, otp, invitationToken }) => {
     };
   } catch (err) {
     console.warn("Live verifyCandidateOtp API:", err.message);
-    if (otp === "123456" || otp?.length === 6) {
-      const devToken = "token_verified_" + Date.now();
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("candidateSessionToken", devToken);
-        sessionStorage.setItem("candidateAccessToken", devToken);
-        localStorage.setItem("candidateSessionToken", devToken);
-        localStorage.setItem("candidateAccessToken", devToken);
-      }
-      return {
-        verified: true,
-        candidateAccessToken: devToken,
-        message: "Email verified successfully.",
-      };
-    }
     throw new Error(err?.response?.data?.message || "Invalid OTP entered. Please try again.");
   }
 };
