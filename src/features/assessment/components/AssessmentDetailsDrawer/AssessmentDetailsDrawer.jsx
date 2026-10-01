@@ -17,11 +17,11 @@ import {
   Edit,
   Copy,
   ExternalLink,
+  Loader2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getCompanyGameConfig } from "@/features/games/utils/gameConfigStore";
 import {
   Dialog,
   DialogContent,
@@ -36,6 +36,7 @@ const AssessmentDetailsDrawer = ({
   assessment,
   open,
   onOpenChange,
+  isLoading,
 }) => {
   if (!assessment) return null;
 
@@ -138,7 +139,13 @@ const AssessmentDetailsDrawer = ({
         </div>
 
         {/* ── Modules Deep Breakdown ── */}
-        <div className="space-y-4 pt-1">
+        {isLoading ? (
+          <div className="py-12 flex flex-col items-center justify-center space-y-3 bg-slate-50/50 rounded-xl border border-slate-100 mt-4">
+            <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+            <p className="text-xs font-medium text-slate-500">Loading module configuration...</p>
+          </div>
+        ) : (
+          <div className="space-y-4 pt-1">
           {/* Module 1: Cognitive Games */}
           <div className="rounded-xl border border-slate-200/80 p-4 space-y-3 bg-white shadow-2xs">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
@@ -165,13 +172,11 @@ const AssessmentDetailsDrawer = ({
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                 {cognitiveGames.map((g, idx) => {
-                  const gameTitle = typeof g === "object" ? g.title || g.name || "Cognitive Game" : String(g);
+                  const gameTitle = g?.game?.name || (typeof g === "object" ? g.title || g.name || "Cognitive Game" : String(g));
                   const gameCategory = typeof g?.category === "string"
                     ? g.category
                     : (g?.category?.name || "Cognitive");
-                  const slug = g?.slug || g?.code || g?.id || gameTitle;
-                  const savedConfig = getCompanyGameConfig(slug);
-                  const gameDiff = savedConfig?.difficulty || g?.difficulty || "Hard";
+                  const gameDiff = g?.config?.difficulty || g?.difficulty || "Hard";
 
                   return (
                     <div
@@ -233,11 +238,11 @@ const AssessmentDetailsDrawer = ({
             ) : (
               <div className="space-y-2 max-h-48 overflow-y-auto pr-1 pt-1">
                 {quizQuestions.map((q, idx) => {
-                  const qText = q.title || q.question || q.content || `Question ${idx + 1}`;
-                  const qCat = typeof q.category === "string"
+                  const qText = q?.question?.title || q?.title || (typeof q?.question === "string" ? q.question : null) || q?.content || `Question ${idx + 1}`;
+                  const qCat = q?.question?.category?.name || (typeof q?.category === "string"
                     ? q.category
-                    : (q.category?.name || q.categoryName || "General");
-                  const qDiff = q.difficulty || "Medium";
+                    : (q?.category?.name || q?.categoryName || "General"));
+                  const qDiff = q?.question?.difficulty || q?.difficulty || "Medium";
                   return (
                     <div
                       key={q.id || idx}
@@ -274,7 +279,7 @@ const AssessmentDetailsDrawer = ({
             )}
           </div>
         </div>
-
+      )}
         {/* ── Footer Actions ── */}
         <div className="flex flex-col sm:flex-row items-center justify-end gap-2 pt-4 border-t border-slate-100 mt-4">
           <Link href={`/assessments/${assessment.id}/edit`} className="w-full sm:w-auto">

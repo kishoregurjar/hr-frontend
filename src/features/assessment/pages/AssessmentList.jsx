@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Filter,
   Eye,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,6 +36,7 @@ import {
   useAssessmentsQuery,
   useAssessmentStatusMutation,
 } from "../hooks";
+import { getAssessmentById } from "@/lib/api/assessments";
 
 const PAGE_SIZE = 8;
 
@@ -46,6 +48,7 @@ const AssessmentList = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [actionAssessmentId, setActionAssessmentId] = useState(null);
   const [selectedDrawerAssessment, setSelectedDrawerAssessment] = useState(null);
+  const [isDrawerLoading, setIsDrawerLoading] = useState(false);
 
   const {
     data: assessments = [],
@@ -77,6 +80,21 @@ const AssessmentList = () => {
   const handlePublish = (id) => updateStatus(id, ASSESSMENT_STATUS.PUBLISHED);
   const handleArchive = (id) => updateStatus(id, ASSESSMENT_STATUS.ARCHIVED);
   const handleRestore = (id) => updateStatus(id, ASSESSMENT_STATUS.PUBLISHED);
+
+  const handleViewDetails = async (assessment) => {
+    setSelectedDrawerAssessment(assessment);
+    setIsDrawerLoading(true);
+    try {
+      const detailedAssessment = await getAssessmentById(assessment.id);
+      if (detailedAssessment) {
+        setSelectedDrawerAssessment(detailedAssessment);
+      }
+    } catch (e) {
+      toast.error("Failed to load full assessment details.");
+    } finally {
+      setIsDrawerLoading(false);
+    }
+  };
 
   const filteredAssessments = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -216,7 +234,7 @@ const AssessmentList = () => {
       ) : (
         <AssessmentTableView
           assessments={paginatedAssessments}
-          onViewDetails={(assessment) => setSelectedDrawerAssessment(assessment)}
+          onViewDetails={handleViewDetails}
           onPublish={handlePublish}
           onArchive={handleArchive}
           onRestore={handleRestore}
@@ -292,6 +310,7 @@ const AssessmentList = () => {
         open={Boolean(selectedDrawerAssessment)}
         onOpenChange={(open) => !open && setSelectedDrawerAssessment(null)}
         assessment={selectedDrawerAssessment}
+        isLoading={isDrawerLoading}
       />
     </div>
   );
