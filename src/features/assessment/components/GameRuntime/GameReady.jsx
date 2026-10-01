@@ -121,7 +121,7 @@ const GameReady = ({ section, gameIndex = 0, totalGames = 1, onStart, onSkip }) 
 
           <div className="inline-flex items-center gap-1.5 rounded-xl bg-slate-50 border border-slate-200/80 px-3.5 py-2 text-xs font-bold text-slate-700">
             <Clock className="h-4 w-4 text-blue-600" />
-            <span>Duration: {brief.duration}</span>
+            <span>Module Pool: Shared Time</span>
           </div>
         </div>
 
@@ -166,7 +166,7 @@ const GameReady = ({ section, gameIndex = 0, totalGames = 1, onStart, onSkip }) 
         {/* Action Footer */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
           <div className="text-xs text-slate-500 font-medium">
-            Timer will begin automatically once you click <strong className="text-slate-800">Start Game Challenge</strong>.
+            Module timer is shared across all cognitive games. You can solve as many games as you want within the 40-min module pool.
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
