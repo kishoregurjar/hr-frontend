@@ -12,6 +12,7 @@ import {
   X,
   LifeBuoy,
   Inbox,
+  FileText,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -35,6 +36,11 @@ const NAV_ITEMS = [
     label: "Users & Teams",
     href: "/admin/users",
     icon: Users,
+  },
+  {
+    label: "Platform Audit Logs",
+    href: "/admin/audit-logs",
+    icon: FileText,
   },
   {
     label: "HR Support Tickets",

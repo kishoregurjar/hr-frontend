@@ -290,6 +290,28 @@ export const getAllResults = async () => {
         ? new Date(item.submittedAt || item.completedAt || item.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })
         : "Today";
 
+      // Assessment-specific interview matching & Qualified check
+      let resolvedInterview = item.interview || null;
+      if (!resolvedInterview && item.candidate?.metadata && isPass) {
+        const meta = item.candidate.metadata;
+        const normTitle = assessmentTitle?.trim()?.toLowerCase();
+        if (normTitle && meta.interviewsByAssessment) {
+          resolvedInterview = meta.interviewsByAssessment[normTitle] || null;
+        }
+        if (!resolvedInterview && Array.isArray(meta.interviews) && normTitle) {
+          resolvedInterview = meta.interviews.find(
+            (inv) =>
+              inv?.assessmentTitle &&
+              (inv.assessmentTitle.trim().toLowerCase() === normTitle ||
+               normTitle.includes(inv.assessmentTitle.trim().toLowerCase()))
+          ) || null;
+        }
+      }
+
+      if (!isPass) {
+        resolvedInterview = null;
+      }
+
       return {
         id: item.id || item._id || item.attemptId || `res-${idx}`,
         attemptId: item.id || item._id || item.attemptId,
@@ -315,6 +337,7 @@ export const getAllResults = async () => {
         completedAt: formattedDate,
         integrityScore: item.integrityScore || 100,
         cognitiveTraits: item.cognitiveTraits || null,
+        interview: resolvedInterview,
         mcqScore: item.quizScore !== undefined ? `${Math.round(item.quizScore)}%` : (item.sections?.find(s => s.type === 'quiz')?.score !== undefined ? `${Math.round(item.sections.find(s => s.type === 'quiz').score)}%` : "N/A"),
         gameScore: item.gameScore !== undefined ? `${Math.round(item.gameScore)}%` : (item.sections?.find(s => s.type === 'game')?.score !== undefined ? `${Math.round(item.sections.find(s => s.type === 'game').score)}%` : "N/A"),
       };
@@ -557,4 +580,12 @@ export const updateCandidateDecisions = async ({ resultIds, decision }) => {
   });
 
   return updatedResults;
+};
+
+/**
+ * Dispatch Interview Invitation Emails to Selected/Qualified Candidates
+ */
+export const sendInterviewInvite = async (payload) => {
+  const res = await axiosClient.post("/results/send-interview-invite", payload);
+  return res?.data?.data || res?.data || res;
 };

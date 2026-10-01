@@ -190,13 +190,12 @@ export default function AdminUsersPage() {
                   <th className="py-3.5 px-6">Platform Role</th>
                   <th className="py-3.5 px-6">Company Role</th>
                   <th className="py-3.5 px-6">Status</th>
-                  <th className="py-3.5 px-6 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y text-slate-700 font-medium">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-400">
+                    <td colSpan={6} className="py-12 text-center text-slate-400">
                       <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-current border-t-transparent text-blue-600 mb-2" />
                       <p className="text-xs font-semibold text-slate-600">Loading users...</p>
                     </td>
@@ -268,21 +267,11 @@ export default function AdminUsersPage() {
                           {user.status || "ACTIVE"}
                         </Badge>
                       </td>
-
-                      <td className="py-4 px-6 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs font-semibold text-blue-600 hover:text-blue-700 cursor-pointer"
-                        >
-                          Edit Role
-                        </Button>
-                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-400">
+                    <td colSpan={6} className="py-12 text-center text-slate-400">
                       <Users className="h-8 w-8 mx-auto text-slate-300 mb-2" />
                       <p className="text-xs font-bold text-slate-700">No platform users found</p>
                       <p className="text-[11px] text-slate-400 mt-0.5">
