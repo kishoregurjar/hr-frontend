@@ -293,6 +293,8 @@ export default function AdminAuditLogsPage() {
               <option value="MEMBER_ROLE_UPDATED">Member Role Updated</option>
               <option value="MEMBER_REMOVED">Member Removed</option>
               <option value="OWNERSHIP_TRANSFERRED">Ownership Transferred</option>
+              <option value="INVITATION_CREATED">Invitation Created</option>
+              <option value="INVITATION_ACCEPTED">Invitation Accepted</option>
             </select>
           </div>
 
