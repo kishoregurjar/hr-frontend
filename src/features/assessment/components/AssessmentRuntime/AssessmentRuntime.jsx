@@ -58,37 +58,60 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
   const [reviewQuestions, setReviewQuestions] = useState(() => new Set());
   const [visitedQuestions, setVisitedQuestions] = useState(() => new Set(["0-0"]));
 
-  // Live Timer Countdown
-  const getCalculatedRemaining = () => {
-    const calculated = getRemainingTime({
-      startedAt: attempt?.startedAt,
-      durationMinutes: assessment?.durationMinutes || 60,
-    });
-    if (!attempt?.startedAt && (!calculated || calculated <= 0)) {
-      return (Number(assessment?.durationMinutes) || 60) * 60;
+  const currentSection = sections[currentSectionIndex] || sections[0] || {};
+  const isQuizSection = currentSection?.type === "quiz";
+
+  // Module 1 (Games) Pooled Duration Resolution (e.g. 40 Mins shared across all games)
+  const gameSection = sections.find((s) => s.type === "game");
+  const gameModuleMinutes = gameSection?.durationMinutes || 40;
+  const totalAssessmentMinutes = Number(assessment?.durationMinutes) || 60;
+
+  // Single unified time calculator based on attempt startedAt
+  const calculateRemainingTimes = () => {
+    let remTotal = totalAssessmentMinutes * 60;
+    let remModule = gameModuleMinutes * 60;
+
+    if (attempt?.startedAt) {
+      const elapsed = Math.max(0, Math.floor((Date.now() - new Date(attempt.startedAt).getTime()) / 1000));
+      remTotal = Math.max(0, totalAssessmentMinutes * 60 - elapsed);
+      remModule = Math.max(0, gameModuleMinutes * 60 - elapsed);
     }
-    return calculated;
+
+    return { remTotal, remModule };
   };
 
-  const [remainingSeconds, setRemainingSeconds] = useState(getCalculatedRemaining);
+  const initialTimes = calculateRemainingTimes();
+  const [remainingSeconds, setRemainingSeconds] = useState(initialTimes.remTotal);
+  const [moduleRemainingSeconds, setModuleRemainingSeconds] = useState(initialTimes.remModule);
 
+  // Master live countdown timer: ticks every 1000ms reliably
   useEffect(() => {
-    setRemainingSeconds(getCalculatedRemaining());
+    const init = calculateRemainingTimes();
+    setRemainingSeconds(init.remTotal);
+    setModuleRemainingSeconds(init.remModule);
+
+    let advanced = false;
+
     const timerInterval = setInterval(() => {
-      setRemainingSeconds((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerInterval);
-          return 0;
-        }
-        return getCalculatedRemaining();
-      });
+      const { remTotal, remModule } = calculateRemainingTimes();
+      setRemainingSeconds(remTotal);
+      setModuleRemainingSeconds(remModule);
+
+      // Auto-advance to Module 2 if Module 1 expires and we are currently on Module 1
+      if (!isQuizSection && remModule <= 0 && sections.length > 1 && !advanced) {
+        advanced = true;
+        toast.info("Module 1 (Cognitive Games) time has completed! Transitioning to Module 2 (Technical Quiz).");
+        setCurrentSectionIndex(1);
+        setCurrentQuestionIndex(0);
+      }
+
+      if (remTotal <= 0) {
+        clearInterval(timerInterval);
+      }
     }, 1000);
 
     return () => clearInterval(timerInterval);
-  }, [attempt?.startedAt, assessment?.durationMinutes]);
-
-  const currentSection = sections[currentSectionIndex] || sections[0] || {};
-  const isQuizSection = currentSection?.type === "quiz";
+  }, [attempt?.startedAt, totalAssessmentMinutes, gameModuleMinutes, isQuizSection, sections.length]);
   const questions = currentSection?.questions || [];
   const currentQuestion = questions[currentQuestionIndex] || {};
 
@@ -223,11 +246,12 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
     });
   };
 
-  // Total Test Live Timer (Overall Duration Countdown)
-  const hours = String(Math.floor(remainingSeconds / 3600)).padStart(2, "0");
-  const minutes = String(Math.floor((remainingSeconds % 3600) / 60)).padStart(2, "0");
-  const seconds = String(remainingSeconds % 60).padStart(2, "0");
-  const isTimeCritical = remainingSeconds <= 5 * 60; // Critical when < 5 mins remaining
+  // Active Countdown Timer (Module 1 pooled games countdown vs Module 2 / overall countdown)
+  const activeCountdown = !isQuizSection ? moduleRemainingSeconds : remainingSeconds;
+  const hours = String(Math.floor(activeCountdown / 3600)).padStart(2, "0");
+  const minutes = String(Math.floor((activeCountdown % 3600) / 60)).padStart(2, "0");
+  const seconds = String(activeCountdown % 60).padStart(2, "0");
+  const isTimeCritical = activeCountdown <= 5 * 60; // Critical when < 5 mins remaining
 
   // Empty assessment fallback
   if (sections.length === 0) {
@@ -272,7 +296,7 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
             >
               <Clock className={`h-3.5 w-3.5 ${isTimeCritical ? "text-rose-600" : "text-blue-600"}`} />
               <span className="hidden sm:inline text-[11px] text-slate-500 font-semibold uppercase tracking-wider">
-                Time Left:
+                {!isQuizSection ? "Module 1 (Games):" : "Time Left:"}
               </span>
               <span className="font-mono text-xs sm:text-sm font-black tracking-wider text-slate-900">
                 {hours}:{minutes}:{seconds}
@@ -399,8 +423,17 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
                 key={currentSection.id || `game-${currentSection.slug}`}
                 section={currentSection}
                 attempt={attempt}
-                onComplete={handleNextQuestion}
+                moduleTimeRemaining={moduleRemainingSeconds}
+                activeGameIndex={activeGameIndex}
                 onActiveGameChange={setActiveGameIndex}
+                onComplete={() => {
+                  if (currentSectionIndex < sections.length - 1) {
+                    setCurrentSectionIndex(currentSectionIndex + 1);
+                    setCurrentQuestionIndex(0);
+                  } else {
+                    onReview?.();
+                  }
+                }}
               />
             </div>
           )}
@@ -537,10 +570,10 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
                           <div
                             key={g.id || g.slug || gIdx}
                             onClick={() => {
-                              if (isSectionActive && isCompleted) return;
                               jumpToQuestion(sIdx, 0);
+                              setActiveGameIndex(gIdx);
                             }}
-                            className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold transition-all select-none ${
+                            className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold transition-all select-none cursor-pointer ${
                               isCurrentActiveGame
                                 ? "bg-blue-50/90 border-blue-400 text-blue-900 shadow-2xs ring-1 ring-blue-300/60"
                                 : isCompleted

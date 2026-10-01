@@ -52,6 +52,7 @@ const AssessmentAttempt = ({ attemptId }) => {
       {
         onSuccess: () => {
           setSubmitDialogOpen(false);
+          setIsReviewing(false);
         },
       }
     );
@@ -174,7 +175,8 @@ const AssessmentAttempt = ({ attemptId }) => {
   };
 
   // ── 4. Completed State ──────────────────────────────────────
-  if (attempt.status === "Completed") {
+  const rawAttemptStatus = String(attempt?.status || "").toUpperCase();
+  if (rawAttemptStatus === "COMPLETED" || rawAttemptStatus === "SUBMITTED") {
     return (
       <AssessmentCompleted assessment={effectiveAssessment} attempt={attempt} />
     );

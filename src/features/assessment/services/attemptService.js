@@ -68,8 +68,12 @@ export const attemptService = {
       assessment,
     });
 
-    if (attempt.assignmentId) {
-      await markAssignmentCompleted(attempt.assignmentId);
+    if (attempt?.assignmentId) {
+      try {
+        await markAssignmentCompleted(attempt.assignmentId);
+      } catch (err) {
+        console.warn("[attemptService] Non-blocking local assignment status sync notice:", err?.message);
+      }
     }
 
     return attempt;

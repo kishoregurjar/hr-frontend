@@ -12,9 +12,15 @@ import GameCompleted from "./GameCompleted";
 import { GAME_STATE } from "../../constants";
 import { useSaveGameResult } from "../../hooks";
 
-const DEFAULT_GAME_TIME_SECONDS = 10 * 60; // 10 Minutes per game
-
-const GameRuntime = ({ section, attempt, onComplete, onTimeTick, onActiveGameChange }) => {
+const GameRuntime = ({
+  section,
+  attempt,
+  onComplete,
+  onTimeTick,
+  onActiveGameChange,
+  activeGameIndex: externalGameIndex,
+  moduleTimeRemaining,
+}) => {
   const games =
     Array.isArray(section.games) && section.games.length > 0
       ? section.games
@@ -31,7 +37,16 @@ const GameRuntime = ({ section, attempt, onComplete, onTimeTick, onActiveGameCha
     return idx !== -1 ? idx : 0;
   };
 
-  const [activeGameIndex, setActiveGameIndex] = useState(findInitialIndex);
+  const [activeGameIndex, setActiveGameIndex] = useState(
+    typeof externalGameIndex === "number" ? externalGameIndex : findInitialIndex
+  );
+
+  useEffect(() => {
+    if (typeof externalGameIndex === "number" && externalGameIndex !== activeGameIndex) {
+      setActiveGameIndex(externalGameIndex);
+    }
+  }, [externalGameIndex]);
+
   const currentGame = games[activeGameIndex] || games[0];
 
   useEffect(() => {
@@ -49,67 +64,86 @@ const GameRuntime = ({ section, attempt, onComplete, onTimeTick, onActiveGameCha
     existingResult ? GAME_STATE.COMPLETED : GAME_STATE.READY
   );
 
-  // 10-Minute Game Countdown State
-  const gameDurationSec = (currentGame.durationMinutes || currentGame.duration || 10) * 60;
-  const [gameTimeRemaining, setGameTimeRemaining] = useState(gameDurationSec);
-  const timerIntervalRef = useRef(null);
+  // ── Module-Level Pooled Countdown State ──
+  // Shared across ALL games in Module 1 (e.g. 40 Mins total)
+  const moduleDurationSec = (section.durationMinutes || 40) * 60;
+
+  const getCalculatedRemaining = () => {
+    if (typeof moduleTimeRemaining === "number") {
+      return Math.max(0, moduleTimeRemaining);
+    }
+    if (attempt?.startedAt) {
+      const elapsed = Math.max(0, Math.floor((Date.now() - new Date(attempt.startedAt).getTime()) / 1000));
+      return Math.max(0, moduleDurationSec - elapsed);
+    }
+    return moduleDurationSec;
+  };
+
+  const [moduleTimeLeft, setModuleTimeLeft] = useState(getCalculatedRemaining);
+
+  useEffect(() => {
+    if (typeof moduleTimeRemaining === "number") {
+      setModuleTimeLeft(Math.max(0, moduleTimeRemaining));
+    }
+  }, [moduleTimeRemaining]);
 
   const saveGameResult = useSaveGameResult();
 
-  // Handle Game Start
+  // Handle Game Start: Begins active gameplay; does NOT reset the pooled module timer!
   const handleStart = () => {
-    setGameTimeRemaining(gameDurationSec);
     setGameState(GAME_STATE.PLAYING);
   };
 
-  // Game Countdown Timer effect
+  // Continuous Module Timer sync effect
   useEffect(() => {
-    if (gameState === GAME_STATE.PLAYING) {
-      timerIntervalRef.current = setInterval(() => {
-        setGameTimeRemaining((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerIntervalRef.current);
-            handleTimeExpired();
-            return 0;
-          }
-          const nextVal = prev - 1;
-          onTimeTick?.(nextVal);
-          return nextVal;
-        });
-      }, 1000);
-    } else {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    if (typeof moduleTimeRemaining === "number") {
+      setModuleTimeLeft(Math.max(0, moduleTimeRemaining));
+      if (moduleTimeRemaining <= 0) {
+        handleTimeExpired();
+      }
+      return;
     }
 
-    return () => {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-    };
-  }, [gameState, activeGameIndex]);
+    const timer = setInterval(() => {
+      setModuleTimeLeft((prev) => {
+        const nextVal = getCalculatedRemaining();
+        if (nextVal <= 1) {
+          clearInterval(timer);
+          handleTimeExpired();
+          return 0;
+        }
+        onTimeTick?.(nextVal);
+        return nextVal;
+      });
+    }, 1000);
 
-  // Timeout handler when 10 minutes expire
+    return () => clearInterval(timer);
+  }, [attempt?.startedAt, section.durationMinutes, moduleTimeRemaining]);
+
+  // Timeout handler when the pooled module duration (40 mins) expires
   const handleTimeExpired = () => {
-    toast.warning(`Time's up for ${currentGame.title}! Auto-saving your challenge result.`);
-    const timeoutResult = {
-      score: 30, // Partial baseline score for attempted moves
-      rawScore: 30,
-      accuracy: 30,
-      moves: 0,
-      timeTaken: gameDurationSec,
-      timedOut: true,
-      status: "TIMED_OUT",
-      completedAt: new Date().toISOString(),
-    };
-    handleGameComplete(timeoutResult);
+    toast.warning("Cognitive Games module time has completed! Transitioning to Technical Quiz.");
+    if (gameState === GAME_STATE.PLAYING) {
+      const timeoutResult = {
+        score: 30, // Partial baseline score for attempted moves
+        rawScore: 30,
+        accuracy: 30,
+        moves: 0,
+        timeTaken: 60,
+        timedOut: true,
+        status: "TIMED_OUT",
+        completedAt: new Date().toISOString(),
+      };
+      handleGameComplete(timeoutResult);
+    }
+    onComplete?.();
   };
 
   const handleGameComplete = (result) => {
-    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-
     const saveKey = currentGame.id || currentGame.slug || section.id;
-    const timeSpent = gameDurationSec - gameTimeRemaining;
     const finalResult = {
       ...result,
-      timeTaken: result.timeTaken || timeSpent || 60,
+      timeTaken: result.timeTaken || 60,
     };
     
     // 1. Instant Optimistic UI: Immediately show the completed screen without network lag
@@ -145,8 +179,6 @@ const GameRuntime = ({ section, attempt, onComplete, onTimeTick, onActiveGameCha
     );
     if (!isConfirmed) return;
 
-    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-
     const skippedResult = {
       score: 0,
       rawScore: 0,
@@ -171,8 +203,6 @@ const GameRuntime = ({ section, attempt, onComplete, onTimeTick, onActiveGameCha
 
       setActiveGameIndex(nextIdx);
       setCompletedResult(nextExisting ?? null);
-      const nextDuration = (nextGame.durationMinutes || nextGame.duration || 10) * 60;
-      setGameTimeRemaining(nextDuration);
       setGameState(nextExisting ? GAME_STATE.COMPLETED : GAME_STATE.READY);
     } else {
       onComplete?.();
@@ -180,16 +210,18 @@ const GameRuntime = ({ section, attempt, onComplete, onTimeTick, onActiveGameCha
   };
 
   // Format MM:SS for countdown timer
+  const effectiveSeconds = typeof moduleTimeRemaining === "number" ? Math.max(0, moduleTimeRemaining) : moduleTimeLeft;
+  const isLowTime = effectiveSeconds <= 5 * 60; // Critical when < 5 mins left in module
+
   const formatTime = (secs) => {
     const m = Math.floor(secs / 60);
     const s = secs % 60;
     return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   };
 
-  const isLowTime = gameTimeRemaining <= 60;
-
   return (
     <div className="w-full flex-1 flex flex-col justify-between overflow-hidden">
+
       {/* ── Active Game Stage ── */}
       {gameState === GAME_STATE.READY && (
         <GameReady
@@ -203,16 +235,16 @@ const GameRuntime = ({ section, attempt, onComplete, onTimeTick, onActiveGameCha
 
       {gameState === GAME_STATE.PLAYING && (
         <div className="space-y-3">
-          {/* Active Game Top Bar with 10-Minute Countdown Clock */}
+          {/* Active Game Top Bar with Shared Module Countdown Clock */}
           <div className="flex items-center justify-between px-2 py-1.5 rounded-xl bg-slate-100/70 border border-slate-200/80">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-slate-700">
-                Round {activeGameIndex + 1} of {games.length}: <strong className="text-slate-900">{currentGame.title}</strong>
+                Game {activeGameIndex + 1} of {games.length}: <strong className="text-slate-900">{currentGame.title}</strong>
               </span>
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Challenge Countdown Badge */}
+              {/* Module Countdown Badge */}
               <div
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-lg border font-mono text-xs font-black tracking-wider transition-all ${
                   isLowTime
@@ -221,7 +253,7 @@ const GameRuntime = ({ section, attempt, onComplete, onTimeTick, onActiveGameCha
                 }`}
               >
                 <Clock className="h-3.5 w-3.5" />
-                <span>{formatTime(gameTimeRemaining)} Left</span>
+                <span>{formatTime(effectiveSeconds)} Module Time</span>
               </div>
 
               <Button
