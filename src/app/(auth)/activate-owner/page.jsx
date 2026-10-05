@@ -36,6 +36,7 @@ function ActivateOwnerContent() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [redirectUrl, setRedirectUrl] = useState("/dashboard");
 
   useEffect(() => {
     let isMounted = true;
@@ -147,23 +148,40 @@ function ActivateOwnerContent() {
       const companies = payload?.companies || payload?.data?.companies || [];
       const primaryCompany = (Array.isArray(companies) && companies[0]) || payload?.company;
 
+      const rawPlatformRole = String(
+        userData?.role ||
+        ""
+      ).toUpperCase().trim();
+
+      const isPlatformAdmin =
+        rawPlatformRole === "SUPER_ADMIN" ||
+        rawPlatformRole === "PLATFORM_ADMIN";
+
       if (typeof window !== "undefined" && accessToken) {
         const normalizedUser = normalizeUser(response) || userData || {};
-        if (primaryCompany?.role === "OWNER" || primaryCompany?.role === "COMPANY_OWNER" || !normalizedUser.companyRole) {
-          normalizedUser.isOwner = true;
-          normalizedUser.companyRole = "OWNER";
-          normalizedUser.role = "Company Owner";
-          normalizedUser.rawRole = "OWNER";
-          if (!normalizedUser.activeCompany) {
-            normalizedUser.activeCompany = {
-              id: primaryCompany?.id || "",
-              name: primaryCompany?.name || "",
-              role: "OWNER",
-            };
-          } else {
-            normalizedUser.activeCompany.role = "OWNER";
+
+        if (!isPlatformAdmin) {
+          if (
+            primaryCompany?.role === "OWNER" ||
+            primaryCompany?.role === "COMPANY_OWNER" ||
+            !normalizedUser.companyRole
+          ) {
+            normalizedUser.isOwner = true;
+            normalizedUser.companyRole = "OWNER";
+            normalizedUser.role = "Company Owner";
+            normalizedUser.rawRole = "OWNER";
+            if (!normalizedUser.activeCompany) {
+              normalizedUser.activeCompany = {
+                id: primaryCompany?.id || "",
+                name: primaryCompany?.name || "",
+                role: "OWNER",
+              };
+            } else {
+              normalizedUser.activeCompany.role = "OWNER";
+            }
           }
         }
+
         if (primaryCompany?.id) normalizedUser.companyId = primaryCompany.id;
         if (primaryCompany?.name) normalizedUser.companyName = primaryCompany.name;
         if (primaryCompany?.logoUrl || primaryCompany?.logo) normalizedUser.companyLogo = primaryCompany.logoUrl || primaryCompany.logo;
@@ -171,12 +189,20 @@ function ActivateOwnerContent() {
         setAuthSession(accessToken, normalizedUser, refreshToken);
       }
 
+      let targetRoute = "/dashboard";
+      if (isPlatformAdmin) {
+        targetRoute = "/admin";
+      } else if (rawPlatformRole === "CANDIDATE") {
+        targetRoute = "/take-test";
+      }
+
+      setRedirectUrl(targetRoute);
       setIsSuccess(true);
       toast.success("Account activated successfully! Logging you in...");
 
-      // Direct auto-login redirect to dashboard
+      // Role-aware auto-login redirect
       setTimeout(() => {
-        window.location.href = "/dashboard";
+        window.location.href = targetRoute;
       }, 1000);
     } catch (err) {
       const errMsg =
@@ -229,7 +255,7 @@ function ActivateOwnerContent() {
         <div className="space-y-1.5 max-w-sm">
           <h2 className="text-xl font-extrabold text-slate-900">Account Already Activated</h2>
           <p className="text-xs text-slate-500 leading-relaxed">
-            Your Organization Owner workspace account is already active. You can sign in using your credentials.
+            Your workspace account is already active. You can sign in using your credentials.
           </p>
         </div>
 
@@ -267,7 +293,7 @@ function ActivateOwnerContent() {
         <div className="space-y-1.5 max-w-sm">
           <h2 className="text-xl font-extrabold text-slate-900">Invalid or Expired Link</h2>
           <p className="text-xs text-slate-500 leading-relaxed">
-            This owner activation link is no longer valid. It may have expired or already been used.
+            This activation link is no longer valid. It may have expired or already been used.
           </p>
         </div>
 
@@ -277,7 +303,7 @@ function ActivateOwnerContent() {
             Next Steps
           </div>
           <p className="text-[11px] text-amber-700 leading-relaxed">
-            Please contact your Super Administrator to request a fresh workspace activation email.
+            Please contact your Administrator to request a fresh activation email.
           </p>
         </div>
 
@@ -295,7 +321,7 @@ function ActivateOwnerContent() {
     );
   }
 
-  // Success State: Redirecting to Dashboard
+  // Success State: Redirecting to Portal
   if (isSuccess) {
     return (
       <div className="flex flex-col items-center justify-center p-6 text-center space-y-5">
@@ -305,16 +331,16 @@ function ActivateOwnerContent() {
         <div className="space-y-1.5 max-w-sm">
           <h2 className="text-xl font-extrabold text-slate-900">Welcome to HireQuest!</h2>
           <p className="text-xs text-slate-500 leading-relaxed">
-            Your Organization Owner account has been activated. Redirecting you directly to your workspace dashboard...
+            Your account has been activated. Redirecting you directly to your portal...
           </p>
         </div>
 
         <div className="pt-2 w-full">
           <Button
-            onClick={() => { window.location.href = "/dashboard"; }}
+            onClick={() => { window.location.href = redirectUrl; }}
             className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span>Proceed to Workspace Dashboard</span>
+            <span>Proceed to Workspace</span>
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
