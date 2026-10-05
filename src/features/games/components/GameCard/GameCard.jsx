@@ -85,7 +85,7 @@ const GameCard = ({ game, onPreview, onConfigure }) => {
 
           <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 border border-slate-100 font-semibold text-slate-700">
             <BarChart3 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-            <span>{game.usedIn} Assessments</span>
+            <span>{game.usedIn || 0} {Number(game.usedIn) === 1 ? "Assessment" : "Assessments"}</span>
           </div>
         </div>
       </div>

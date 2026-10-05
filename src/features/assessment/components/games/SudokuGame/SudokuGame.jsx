@@ -92,7 +92,18 @@ export default function SudokuGame({ config = {}, onComplete }) {
   const [cellSize, setCellSize] = useState(52);
   const solvedRef = useRef(false);
 
-  const { formatted, startTimer, stopTimer, time } = useGameTimer();
+  const { formatted, startTimer, stopTimer, resetTimer, time } = useGameTimer();
+
+  const handleSandboxRestart = () => {
+    setWin(false);
+    solvedRef.current = false;
+    setBoard(cloneBoard(initialBoard));
+    setSelected(null);
+    setHistory([]);
+    setNotes(Array.from({ length: 6 }, () => Array.from({ length: 6 }, () => new Set())));
+    resetTimer();
+    startTimer();
+  };
 
   useEffect(() => {
     startTimer();
@@ -422,8 +433,10 @@ export default function SudokuGame({ config = {}, onComplete }) {
         isOpen={win}
         score={100}
         time={formatted}
+        isSandbox={Boolean(config?.isSandbox || config?.isPreview)}
         message="Masterful! The Mini Sudoku grid is completely and accurately filled!"
         onContinue={handleContinue}
+        onRestart={handleSandboxRestart}
       />
     </div>
   );

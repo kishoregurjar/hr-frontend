@@ -406,7 +406,21 @@ export default function MahjongGame({ config = {}, onComplete }) {
     slotSize: 0,
   });
 
-  const { formatted, startTimer, stopTimer, time } = useGameTimer();
+  const { formatted, startTimer, stopTimer, resetTimer, time } = useGameTimer();
+
+  const handleSandboxRestart = () => {
+    setWin(false);
+    solvedRef.current = false;
+    setBoard(config?.board || createBoard(difficulty));
+    setSelected(null);
+    setScore(0);
+    setMoves(0);
+    setCombo(1);
+    setHintsLeft(config?.maxHints ?? 3);
+    setShufflesLeft(config?.maxShuffles ?? 3);
+    resetTimer();
+    startTimer();
+  };
 
   useEffect(() => {
     startTimer();
@@ -1276,8 +1290,10 @@ export default function MahjongGame({ config = {}, onComplete }) {
         isOpen={win}
         score={100}
         time={formatted}
+        isSandbox={Boolean(config?.isSandbox || config?.isPreview)}
         message="Masterful! All Mahjong tiles cleared with pure strategy and focus!"
         onContinue={handleContinue}
+        onRestart={handleSandboxRestart}
       />
     </div>
   );
