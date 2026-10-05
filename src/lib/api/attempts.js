@@ -760,7 +760,7 @@ export const saveGameResult = async ({
   return index !== -1 ? { ...attempts[index] } : { id: attemptId, gameResults: updatedGameResults };
 };
 
-export const completeAttempt = async ({ attemptId, assessment, responses }) => {
+export const completeAttempt = async ({ attemptId, assessment, responses, gameResults }) => {
   let targetAttemptId = attemptId;
   if ((!targetAttemptId || String(targetAttemptId).startsWith("att_")) && typeof window !== "undefined") {
     const storedId = sessionStorage.getItem("candidate_attempt_id") || localStorage.getItem("candidate_attempt_id");
@@ -773,16 +773,28 @@ export const completeAttempt = async ({ attemptId, assessment, responses }) => {
     (attempt) => String(attempt.id) === String(targetAttemptId) || String(attempt.id) === String(attemptId)
   );
 
-  const attempt = index !== -1 ? attempts[index] : { id: targetAttemptId || attemptId, responses: {}, gameResults: {} };
+  let localGames = {};
+  if (typeof window !== "undefined") {
+    try {
+      localGames = JSON.parse(
+        sessionStorage.getItem(`candidate_game_results_${targetAttemptId || attemptId}`) ||
+        sessionStorage.getItem("candidate_game_results") ||
+        "{}"
+      );
+    } catch {}
+  }
+
+  const attempt = index !== -1 ? attempts[index] : { id: targetAttemptId || attemptId, responses: {}, gameResults: localGames };
+  const effectiveGameResults = gameResults || (Object.keys(localGames).length > 0 ? localGames : attempt.gameResults) || {};
 
   if (attempt.status === "Completed" || attempt.status === "SUBMITTED") {
-    return { ...attempt };
+    return { ...attempt, gameResults: effectiveGameResults };
   }
 
   let scoringResult = { score: 100, quizScore: 100, gameScore: 100, sections: [] };
   try {
     if (typeof calculateAssessmentScore === "function") {
-      scoringResult = calculateAssessmentScore({ assessment: assessment || attempt?.assessment, attempt });
+      scoringResult = calculateAssessmentScore({ assessment: assessment || attempt?.assessment, attempt: { ...attempt, gameResults: effectiveGameResults } });
     }
   } catch (err) {
     console.warn("Scoring calculation notice:", err?.message);
@@ -815,7 +827,7 @@ export const completeAttempt = async ({ attemptId, assessment, responses }) => {
     candidateAssessmentId: targetAttemptId,
     attemptId: targetAttemptId,
     responses: responses || attempt.responses || {},
-    gameResults: attempt.gameResults || {},
+    gameResults: effectiveGameResults,
     score: scoringResult.score,
   };
 
@@ -852,6 +864,7 @@ export const completeAttempt = async ({ attemptId, assessment, responses }) => {
     ...attempt,
     id: targetAttemptId || attempt.id,
     ...(responses ? { responses: Array.isArray(responses) ? [...responses] : responses } : {}),
+    gameResults: effectiveGameResults,
     status: "Completed",
     score: scoringResult.score,
     quizScore: scoringResult.quizScore,
@@ -870,8 +883,8 @@ export const completeAttempt = async ({ attemptId, assessment, responses }) => {
   return completedRecord;
 };
 
-export const submitAttempt = async ({ attemptId, assessment, responses }) => {
-  return completeAttempt({ attemptId, assessment, responses });
+export const submitAttempt = async ({ attemptId, assessment, responses, gameResults }) => {
+  return completeAttempt({ attemptId, assessment, responses, gameResults });
 };
 
 /**

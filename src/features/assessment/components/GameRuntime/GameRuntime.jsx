@@ -140,20 +140,57 @@ const GameRuntime = ({
   };
 
   const handleGameComplete = (result) => {
+    const rawSlug = String(currentGame.slug || currentGame.code || currentGame.id || "").toLowerCase();
+    const canonicalKey = rawSlug.includes("zip") || rawSlug.includes("path")
+      ? "zip"
+      : rawSlug.includes("tango")
+      ? "tango"
+      : rawSlug.includes("sudoku")
+      ? "sudoku"
+      : rawSlug.includes("mahjong")
+      ? "mahjong"
+      : rawSlug;
+
     const saveKey = currentGame.id || currentGame.slug || section.id;
     const finalResult = {
       ...result,
-      timeTaken: result.timeTaken || 60,
+      gameId: currentGame.id,
+      slug: canonicalKey,
+      timeTaken: result.timeTaken || result.timeSpent || 60,
+      timeSpent: result.timeSpent || result.timeTaken || 60,
     };
     
     // 1. Instant Optimistic UI: Immediately show the completed screen without network lag
     setCompletedResult(finalResult);
     setGameState(GAME_STATE.COMPLETED);
 
-    // 2. Background Auto-Save: Silently synchronize result with backend database
+    // 2. Client-side Real-Time Session Storage (Fail-safe persistence)
+    if (typeof window !== "undefined") {
+      try {
+        const attemptId = attempt?.id;
+        const candidateAttemptId = sessionStorage.getItem("candidate_attempt_id");
+        const storeKeys = [
+          attemptId ? `candidate_game_results_${attemptId}` : null,
+          candidateAttemptId ? `candidate_game_results_${candidateAttemptId}` : null,
+          "candidate_game_results",
+        ].filter(Boolean);
+
+        storeKeys.forEach((key) => {
+          const existing = JSON.parse(sessionStorage.getItem(key) || "{}");
+          existing[saveKey] = finalResult;
+          existing[canonicalKey] = finalResult;
+          existing[`game-${activeGameIndex + 1}`] = finalResult;
+          sessionStorage.setItem(key, JSON.stringify(existing));
+        });
+      } catch (err) {
+        console.warn("[GameRuntime] Session storage persistence notice:", err);
+      }
+    }
+
+    // 3. Background Auto-Save: Silently synchronize result with backend database
     saveGameResult.mutate(
       {
-        attemptId: attempt.id,
+        attemptId: attempt?.id,
         sectionId: saveKey,
         result: finalResult,
       },
@@ -185,6 +222,7 @@ const GameRuntime = ({
       accuracy: 0,
       moves: 0,
       timeTaken: 0,
+      timeSpent: 0,
       skipped: true,
       status: "SKIPPED",
       completedAt: new Date().toISOString(),
