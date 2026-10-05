@@ -263,6 +263,8 @@ export default function ZipGame({ config = {}, onComplete }) {
   const [cellSize, setCellSize] = useState(48);
   const [lastMoveError, setLastMoveError] = useState("");
   const solvedRef = useRef(false);
+  const rewindsRef = useRef(0);
+  const errorsRef = useRef(0);
 
   const { formatted, startTimer, stopTimer, resetTimer, time } = useGameTimer();
 
@@ -335,13 +337,20 @@ export default function ZipGame({ config = {}, onComplete }) {
 
   const handleContinue = () => {
     const rawScore = 100;
+    const computedAccuracy = Math.max(
+      50,
+      Math.round(100 - rewindsRef.current * 4 - errorsRef.current * 3)
+    );
+
     onComplete?.({
       rawScore,
       score: rawScore,
       normalizedScore: rawScore,
-      accuracy: 100,
+      accuracy: computedAccuracy,
       timeSpent: time,
       cellsVisited: path.length,
+      rewinds: rewindsRef.current,
+      errors: errorsRef.current,
       finalState: { path },
     });
   };
@@ -355,6 +364,7 @@ export default function ZipGame({ config = {}, onComplete }) {
     // Rewind logic when moving back into existing path
     if (path.includes(cell)) {
       if (!allowRewind) return;
+      rewindsRef.current += 1;
       const index = path.indexOf(cell);
       const newPath = path.slice(0, index + 1);
       setPath(newPath);
@@ -391,11 +401,13 @@ export default function ZipGame({ config = {}, onComplete }) {
 
         if (hasWall(currPath[currPath.length - 1], step)) {
           aborted = true;
+          errorsRef.current += 1;
           break;
         }
 
         if (currPath.includes(step)) {
           aborted = true;
+          errorsRef.current += 1;
           break;
         }
 

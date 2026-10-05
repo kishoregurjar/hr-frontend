@@ -19,6 +19,15 @@ import { getAssessmentReview } from "../utils";
 const AssessmentAttempt = ({ attemptId }) => {
   const [isReviewing, setIsReviewing] = useState(false);
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
+  const [submissionResult, setSubmissionResult] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem(`submission_result_${attemptId}`);
+        return cached ? JSON.parse(cached) : null;
+      } catch {}
+    }
+    return null;
+  });
 
   const {
     data: attempt,
@@ -50,9 +59,18 @@ const AssessmentAttempt = ({ attemptId }) => {
         assessment: effectiveAssessment,
       },
       {
-        onSuccess: () => {
+        onSuccess: (result) => {
           setSubmitDialogOpen(false);
           setIsReviewing(false);
+          if (result) {
+            setSubmissionResult(result);
+            try {
+              sessionStorage.setItem(
+                `submission_result_${attempt?.id || attemptId}`,
+                JSON.stringify(result)
+              );
+            } catch {}
+          }
         },
       }
     );
@@ -174,32 +192,37 @@ const AssessmentAttempt = ({ attemptId }) => {
     games: rawCandidateGames,
   };
 
+  let localSavedResponses = {};
+  if (typeof window !== "undefined") {
+    try {
+      localSavedResponses = JSON.parse(
+        sessionStorage.getItem(`candidate_responses_${attempt?.id || attemptId}`) || "{}"
+      );
+    } catch {}
+  }
+
+  const mergedAttempt = {
+    ...attempt,
+    responses: {
+      ...(attempt?.responses || {}),
+      ...localSavedResponses,
+    },
+  };
+
   // ── 4. Completed State ──────────────────────────────────────
   const rawAttemptStatus = String(attempt?.status || "").toUpperCase();
-  if (rawAttemptStatus === "COMPLETED" || rawAttemptStatus === "SUBMITTED") {
+  if (rawAttemptStatus === "COMPLETED" || rawAttemptStatus === "SUBMITTED" || submissionResult) {
     return (
-      <AssessmentCompleted assessment={effectiveAssessment} attempt={attempt} />
+      <AssessmentCompleted
+        assessment={effectiveAssessment}
+        attempt={mergedAttempt}
+        submissionResult={submissionResult}
+      />
     );
   }
 
   // ── 5. Review Mode ──────────────────────────────────────────
   if (isReviewing) {
-    let localSavedResponses = {};
-    if (typeof window !== "undefined") {
-      try {
-        localSavedResponses = JSON.parse(
-          sessionStorage.getItem(`candidate_responses_${attempt?.id || attemptId}`) || "{}"
-        );
-      } catch { }
-    }
-
-    const mergedAttempt = {
-      ...attempt,
-      responses: {
-        ...(attempt?.responses || {}),
-        ...localSavedResponses,
-      },
-    };
 
     const reviewData = getAssessmentReview({ assessment: effectiveAssessment, attempt: mergedAttempt });
 
