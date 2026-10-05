@@ -45,6 +45,7 @@ function AcceptInvitationContent() {
 
   const [isVerifying, setIsVerifying] = useState(true);
   const [tokenValid, setTokenValid] = useState(true);
+  const [isConsumed, setIsConsumed] = useState(false);
   const [invitationData, setInvitationData] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -77,12 +78,15 @@ function AcceptInvitationContent() {
         const isExisting = payload?.isExistingUser === true || payload?.isNewUser === false;
         setIsExistingUserMode(isExisting);
       } catch (err) {
-        const msg =
-          err?.response?.data?.message ||
-          err?.message ||
-          "This invitation link is invalid or has already been accepted.";
-        setErrorMessage(msg);
-        setTokenValid(false);
+        const code = err?.response?.data?.error?.code || err?.response?.data?.code;
+        const msg = err?.response?.data?.message || err?.message || "";
+        
+        if (code === "COMPANY_INVITATION_ALREADY_ACCEPTED" || msg.toLowerCase().includes("already been accepted")) {
+          setIsConsumed(true);
+        } else {
+          setErrorMessage(msg || "This invitation link is invalid or has expired.");
+          setTokenValid(false);
+        }
       } finally {
         setIsVerifying(false);
       }
@@ -248,6 +252,32 @@ function AcceptInvitationContent() {
         <div>
           <h2 className="text-lg font-extrabold text-slate-900">Verifying Invitation...</h2>
           <p className="text-xs text-slate-500 mt-1">Validating your workspace invitation details.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // State: Consumed Token
+  if (isConsumed) {
+    return (
+      <div className="flex flex-col items-center justify-center p-6 text-center space-y-5">
+        <div className="h-14 w-14 rounded-2xl bg-amber-50 flex items-center justify-center border border-amber-100 shadow-xs">
+          <CheckCircle2 className="h-7 w-7 text-amber-600" />
+        </div>
+        <div className="space-y-1.5 max-w-sm">
+          <h2 className="text-xl font-extrabold text-slate-900">Already Accepted</h2>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            This invitation has already been used. Please log in to access your workspace.
+          </p>
+        </div>
+        <div className="pt-2 w-full">
+          <Link href="/login" className="block w-full">
+            <Button
+              className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg cursor-pointer flex items-center justify-center gap-2"
+            >
+              <LogIn className="h-4 w-4" /> Go to Login
+            </Button>
+          </Link>
         </div>
       </div>
     );
