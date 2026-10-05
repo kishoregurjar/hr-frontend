@@ -47,6 +47,9 @@ import {
 } from "../../utils/autoClassifier";
 import { getQuestionCategories, getQuestionTags } from "@/lib/api/questions";
 import { useBulkCreateQuestions } from "../../hooks";
+import { useQueryClient } from "@tanstack/react-query";
+import { QUESTION_QUERY_KEYS } from "../../constants/queryKeys";
+import { questionsService } from "../../services";
 
 const BulkQuestionImportDialog = () => {
   const [open, setOpen] = useState(false);
@@ -56,8 +59,11 @@ const BulkQuestionImportDialog = () => {
   const [tags, setTags] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [fileName, setFileName] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState(null);
 
   const fileInputRef = useRef(null);
+  const queryClient = useQueryClient();
   const bulkCreate = useBulkCreateQuestions();
 
   // Load existing categories and tags on open
@@ -81,11 +87,13 @@ const BulkQuestionImportDialog = () => {
 
   // Reset dialog state on close
   const handleOpenChange = (newOpen) => {
+    if (isImporting) return;
     setOpen(newOpen);
     if (!newOpen) {
       setParsedRows([]);
       setFileName("");
       setSearchQuery("");
+      setImportProgress(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -280,8 +288,8 @@ const BulkQuestionImportDialog = () => {
     setParsedRows((prev) => prev.filter((r) => r.id !== id));
   };
 
-  // Submit all valid rows to backend
-  const handleBulkImport = () => {
+  // Submit all valid rows to backend in batches
+  const handleBulkImport = async () => {
     if (parsedRows.length === 0) {
       toast.error("No questions to import.");
       return;
@@ -314,23 +322,77 @@ const BulkQuestionImportDialog = () => {
       ],
     }));
 
-    bulkCreate.mutate(payload, {
-      onSuccess: (res) => {
-        const data = res?.data || res;
-        const createdCount = data?.createdCount ?? parsedRows.length;
-        const skippedCount = data?.skippedCount ?? 0;
+    const CHUNK_SIZE = 15;
+    const totalQuestions = payload.length;
+    const totalChunks = Math.ceil(totalQuestions / CHUNK_SIZE);
 
-        let msg = `Successfully imported ${createdCount} questions!`;
-        if (skippedCount > 0) {
-          msg += ` (${skippedCount} duplicates skipped)`;
-        }
-        toast.success(msg);
-        handleOpenChange(false);
-      },
-      onError: (err) => {
-        toast.error(err?.message || "Failed to bulk import questions.");
-      },
+    setIsImporting(true);
+    setImportProgress({
+      current: 0,
+      total: totalQuestions,
+      percent: 0,
+      currentBatch: 1,
+      totalBatches: totalChunks,
     });
+
+    let totalCreated = 0;
+    let totalSkipped = 0;
+    let totalFailed = 0;
+
+    try {
+      for (let i = 0; i < totalQuestions; i += CHUNK_SIZE) {
+        const chunk = payload.slice(i, i + CHUNK_SIZE);
+        const batchNum = Math.floor(i / CHUNK_SIZE) + 1;
+
+        setImportProgress({
+          current: i,
+          total: totalQuestions,
+          percent: Math.round((i / totalQuestions) * 100),
+          currentBatch: batchNum,
+          totalBatches: totalChunks,
+        });
+
+        const res = await questionsService.bulkCreate(chunk);
+        const data = res?.data || res;
+
+        totalCreated += data?.createdCount ?? (Array.isArray(data?.created) ? data.created.length : chunk.length);
+        totalSkipped += data?.skippedCount ?? 0;
+        totalFailed += data?.failedCount ?? 0;
+
+        const processedCount = Math.min(i + chunk.length, totalQuestions);
+        setImportProgress({
+          current: processedCount,
+          total: totalQuestions,
+          percent: Math.round((processedCount / totalQuestions) * 100),
+          currentBatch: batchNum,
+          totalBatches: totalChunks,
+        });
+      }
+
+      // Invalidate queries so Question Bank refreshes
+      queryClient.invalidateQueries({
+        queryKey: QUESTION_QUERY_KEYS.all,
+      });
+
+      let msg = `Successfully imported ${totalCreated} questions!`;
+      if (totalSkipped > 0) {
+        msg += ` (${totalSkipped} duplicates skipped)`;
+      }
+      if (totalFailed > 0) {
+        msg += ` (${totalFailed} failed)`;
+      }
+      toast.success(msg);
+      handleOpenChange(false);
+    } catch (err) {
+      console.error("Bulk import failed:", err);
+      toast.error(err?.response?.data?.message || err?.message || "Failed to bulk import questions.");
+      queryClient.invalidateQueries({
+        queryKey: QUESTION_QUERY_KEYS.all,
+      });
+    } finally {
+      setIsImporting(false);
+      setImportProgress(null);
+    }
   };
 
   // Filtered rows for search
@@ -679,49 +741,64 @@ const BulkQuestionImportDialog = () => {
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 px-6 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between shrink-0">
-          <p className="text-xs text-slate-500 font-medium">
-            {parsedRows.length > 0 ? (
-              <span>
-                Ready to save <strong className="text-slate-800">{validCount}</strong> of{" "}
-                {parsedRows.length} questions as Draft.
-              </span>
-            ) : (
-              <span>Tip: Download sample CSV to inspect expected column headers.</span>
-            )}
-          </p>
-
-          <div className="flex items-center gap-2.5">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => handleOpenChange(false)}
-              disabled={bulkCreate.isPending}
-              className="h-9 px-4 rounded-xl border-slate-200 text-xs font-bold"
-            >
-              Cancel
-            </Button>
-
-            {parsedRows.length > 0 && (
-              <Button
-                type="button"
-                size="sm"
-                onClick={handleBulkImport}
-                disabled={bulkCreate.isPending || validCount === 0}
-                className="h-9 px-5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold shadow-md shadow-emerald-500/20 cursor-pointer"
-              >
-                {bulkCreate.isPending ? (
-                  <span className="flex items-center gap-1.5">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    Importing Questions...
+        <div className="p-4 px-6 border-t border-slate-100 bg-slate-50/60 shrink-0">
+          {isImporting && importProgress ? (
+            <div className="flex flex-col gap-2 py-1">
+              <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
+                <span className="flex items-center gap-2 text-emerald-600">
+                  <Loader2 className="h-4 w-4 animate-spin text-emerald-600" />
+                  <span>
+                    Importing batch {importProgress.currentBatch} of {importProgress.totalBatches}... ({importProgress.current}/{importProgress.total} questions processed)
+                  </span>
+                </span>
+                <span className="text-emerald-700 font-mono font-bold">{importProgress.percent}%</span>
+              </div>
+              <div className="w-full h-2 bg-slate-200/80 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-300 rounded-full"
+                  style={{ width: `${importProgress.percent}%` }}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-slate-500 font-medium">
+                {parsedRows.length > 0 ? (
+                  <span>
+                    Ready to save <strong className="text-slate-800">{validCount}</strong> of{" "}
+                    {parsedRows.length} questions as Draft.
                   </span>
                 ) : (
-                  `Import ${validCount} Questions`
+                  <span>Tip: Download sample CSV to inspect expected column headers.</span>
                 )}
-              </Button>
-            )}
-          </div>
+              </p>
+
+              <div className="flex items-center gap-2.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleOpenChange(false)}
+                  disabled={isImporting}
+                  className="h-9 px-4 rounded-xl border-slate-200 text-xs font-bold"
+                >
+                  Cancel
+                </Button>
+
+                {parsedRows.length > 0 && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleBulkImport}
+                    disabled={isImporting || validCount === 0}
+                    className="h-9 px-5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold shadow-md shadow-emerald-500/20 cursor-pointer"
+                  >
+                    Import {validCount} Questions
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

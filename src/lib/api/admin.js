@@ -217,21 +217,22 @@ export const revokeOwnerActivation = async (companyId) => {
  * Endpoint: POST /api/v1/super-admin/companies
  */
 export const createAdminCompany = async (payload) => {
-  const formattedWebsite = payload.domain
-    ? payload.domain.startsWith("http://") || payload.domain.startsWith("https://")
-      ? payload.domain
-      : `https://${payload.domain}`
-    : payload.website || undefined;
+  const rawDomain = (payload.domain || payload.website || "").trim();
+  const formattedWebsite = rawDomain
+    ? rawDomain.startsWith("http://") || rawDomain.startsWith("https://")
+      ? rawDomain
+      : `https://${rawDomain}`
+    : undefined;
 
   const companyName = (payload.companyName || payload.name || "").trim();
   const ownerEmail = (payload.ownerEmail || payload.email || "").trim();
-  const ownerName = (payload.ownerName || payload.name || "").trim() || undefined;
+  const ownerName = (payload.ownerName || "").trim() || undefined;
 
   const body = {
     companyName: companyName,
     name: companyName,
     website: formattedWebsite,
-    domain: payload.domain || undefined,
+    domain: rawDomain || undefined,
     industry: payload.industry || "Information Technology",
     email: ownerEmail,
     ownerEmail: ownerEmail,
