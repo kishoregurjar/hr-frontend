@@ -119,6 +119,44 @@ export const normalizeUser = (resData, fallbackEmail = "") => {
     fallbackEmail ||
     (typeof window !== "undefined" ? localStorage.getItem("user_email") || "" : "");
 
+  const rawPlatformRole = String(
+    rawUser?.role ||
+    rawUser?.rawRole ||
+    payload?.role ||
+    resData?.role ||
+    ""
+  )
+    .toUpperCase()
+    .trim()
+    .replace(/\s+/g, "_");
+
+  const isPlatformAdmin =
+    rawPlatformRole === "SUPER_ADMIN" ||
+    rawPlatformRole === "PLATFORM_ADMIN" ||
+    rawUser?.isSuperAdmin === true;
+
+  if (isPlatformAdmin) {
+    return {
+      id: rawUser.id || rawUser._id || `user-${Date.now()}`,
+      name: formattedName,
+      fullName: formattedName,
+      email: email,
+      company: "",
+      companyName: "",
+      companyId: "",
+      companyLogo: "",
+      companyRole: null,
+      role: "SUPER_ADMIN",
+      rawRole: rawPlatformRole || "SUPER_ADMIN",
+      displayRole: "Super Admin",
+      isOwner: false,
+      isAdmin: false,
+      isSuperAdmin: true,
+      activeCompany: null,
+      companies: [],
+    };
+  }
+
   const explicitCompanyRole =
     primaryCompany?.role ||
     rawUser?.activeCompany?.role ||
@@ -567,6 +605,10 @@ export const activateOwnerApi = async ({ token, password }) => {
   const data = res?.data?.data || res?.data || res;
   const refreshToken = data?.refreshToken || res?.refreshToken || res?.data?.refreshToken;
   const accessToken = data?.accessToken || data?.token || res?.accessToken;
+
+  // Clear any stale browser session (old recruiter/company keys) before storing new session
+  clearAllAuthStorage();
+
   const user = normalizeUser(res);
 
   setAuthSession(accessToken, user, refreshToken);

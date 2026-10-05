@@ -15,12 +15,17 @@ export default function AdminAuthGuard({ children }) {
     setMounted(true);
   }, []);
 
+  const rawRoleStr = String(
+    user?.rawRole || user?.role || ""
+  )
+    .toUpperCase()
+    .trim()
+    .replace(/\s+/g, "_");
+
   const isSuperAdmin =
-    user?.role === "SUPER_ADMIN" ||
-    user?.role === "PLATFORM_ADMIN" ||
-    user?.role === "ADMIN" ||
-    user?.email?.toLowerCase()?.includes("admin") ||
-    user?.isSuperAdmin;
+    rawRoleStr === "SUPER_ADMIN" ||
+    rawRoleStr === "PLATFORM_ADMIN" ||
+    user?.isSuperAdmin === true;
 
   useEffect(() => {
     if (!mounted || isLoading) return;

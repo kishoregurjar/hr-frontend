@@ -16,7 +16,7 @@ import {
   Building2,
   Sparkles,
 } from "lucide-react";
-import { activateOwnerApi, normalizeUser, setAuthSession } from "@/lib/api/auth";
+import { activateOwnerApi, normalizeUser, setAuthSession, clearAllAuthStorage } from "@/lib/api/auth";
 import { AUTH_STORAGE_KEYS } from "@/features/auth/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -124,6 +124,7 @@ function ActivateOwnerContent() {
         rawPlatformRole === "PLATFORM_ADMIN";
 
       if (typeof window !== "undefined" && accessToken) {
+        clearAllAuthStorage();
         const normalizedUser = normalizeUser(response) || userData || {};
 
         if (!isPlatformAdmin) {
@@ -146,11 +147,11 @@ function ActivateOwnerContent() {
               normalizedUser.activeCompany.role = "OWNER";
             }
           }
-        }
 
-        if (primaryCompany?.id) normalizedUser.companyId = primaryCompany.id;
-        if (primaryCompany?.name) normalizedUser.companyName = primaryCompany.name;
-        if (primaryCompany?.logoUrl || primaryCompany?.logo) normalizedUser.companyLogo = primaryCompany.logoUrl || primaryCompany.logo;
+          if (primaryCompany?.id) normalizedUser.companyId = primaryCompany.id;
+          if (primaryCompany?.name) normalizedUser.companyName = primaryCompany.name;
+          if (primaryCompany?.logoUrl || primaryCompany?.logo) normalizedUser.companyLogo = primaryCompany.logoUrl || primaryCompany.logo;
+        }
 
         setAuthSession(accessToken, normalizedUser, refreshToken);
       }
