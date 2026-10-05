@@ -225,12 +225,16 @@ export default function TangoGame({ config = {}, onComplete }) {
   const [showHelp, setShowHelp] = useState(false);
   const [cellSize, setCellSize] = useState(54);
   const solvedRef = useRef(false);
+  const violationsRef = useRef(0);
+  const prevBadSizeRef = useRef(0);
 
   const { formatted, startTimer, stopTimer, resetTimer, time } = useGameTimer();
 
   const handleSandboxRestart = () => {
     setWin(false);
     solvedRef.current = false;
+    violationsRef.current = 0;
+    prevBadSizeRef.current = 0;
     setGrid({ ...(initial || {}) });
     setHistory([]);
     resetTimer();
@@ -304,14 +308,27 @@ export default function TangoGame({ config = {}, onComplete }) {
     setGrid({ ...(initial || {}) });
   };
 
+  useEffect(() => {
+    if (bad.size > prevBadSizeRef.current) {
+      violationsRef.current += 1;
+    }
+    prevBadSizeRef.current = bad.size;
+  }, [bad.size]);
+
   const handleContinue = () => {
     const rawScore = 100;
+    const computedAccuracy = Math.max(
+      50,
+      Math.round(100 - violationsRef.current * 5)
+    );
+
     onComplete?.({
       rawScore,
       score: rawScore,
       normalizedScore: rawScore,
-      accuracy: 100,
+      accuracy: computedAccuracy,
       timeSpent: time,
+      violations: violationsRef.current,
       finalState: { grid },
     });
   };

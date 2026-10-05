@@ -361,11 +361,18 @@ export default function MahjongGame({ config = {}, onComplete }) {
   const [isShuffleHighlighted, setIsShuffleHighlighted] = useState(false);
 
   const handleContinue = () => {
+    const totalTiles = (dimConfig.rows || 4) * (dimConfig.cols || 6);
+    const optimalMoves = Math.max(1, Math.floor(totalTiles / 2));
+    const computedAccuracy = Math.min(
+      100,
+      Math.max(50, Math.round((optimalMoves / Math.max(optimalMoves, moves || optimalMoves)) * 100))
+    );
+
     const finalResult = {
       rawScore: 100,
       score: 100,
       normalizedScore: 100,
-      accuracy: 100,
+      accuracy: computedAccuracy,
       moves,
       timeTaken: formatted,
       timeSeconds: time || 0,
