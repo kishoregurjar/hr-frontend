@@ -555,6 +555,15 @@ export const logoutAllApi = async () => {
 };
 
 /**
+ * Verify Owner Activation Token — Public Guest Call
+ * Endpoint: GET /api/v1/auth/owner/activate/verify?token=...
+ */
+export const verifyOwnerActivationApi = async (token) => {
+  const res = await axiosClient.get(`/auth/owner/activate/verify?token=${encodeURIComponent(token)}`);
+  return res?.data?.data || res?.data || res;
+};
+
+/**
  * Owner Account Activation API — Public Guest Call
  * Endpoint: POST /api/v1/auth/owner/activate
  * Payload: { token: string, password: string }
