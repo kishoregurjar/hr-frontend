@@ -264,7 +264,18 @@ export default function ZipGame({ config = {}, onComplete }) {
   const [lastMoveError, setLastMoveError] = useState("");
   const solvedRef = useRef(false);
 
-  const { formatted, startTimer, stopTimer, time } = useGameTimer();
+  const { formatted, startTimer, stopTimer, resetTimer, time } = useGameTimer();
+
+  const handleSandboxRestart = () => {
+    setWin(false);
+    solvedRef.current = false;
+    setPath([startCell]);
+    setCurrent(1);
+    setError(false);
+    setLastMoveError("");
+    resetTimer();
+    startTimer();
+  };
 
   useEffect(() => {
     startTimer();
@@ -717,8 +728,10 @@ export default function ZipGame({ config = {}, onComplete }) {
         isOpen={win}
         score={100}
         time={formatted}
+        isSandbox={Boolean(config?.isSandbox || config?.isPreview)}
         message="Phenomenal! You successfully traversed the complete Zip grid in flawless order!"
         onContinue={handleContinue}
+        onRestart={handleSandboxRestart}
       />
     </div>
   );

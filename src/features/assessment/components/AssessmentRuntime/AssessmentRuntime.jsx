@@ -438,78 +438,70 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
             </div>
           )}
 
-          {/* ── Bottom Action & Navigation Footer ── */}
-          <div
-            className={`border-t border-slate-200 ${
-              isQuizSection ? "mt-8 pt-5 space-y-4" : "mt-2 pt-2.5"
-            }`}
-          >
-            <div className="flex items-center justify-between gap-3">
-              {/* Left Controls: Previous Button (+ Review / Clear for quiz) */}
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  onClick={handlePreviousQuestion}
-                  disabled={currentSectionIndex === 0 && currentQuestionIndex === 0}
-                  className="h-9 sm:h-10 px-4 sm:px-5 font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 shadow-2xs disabled:opacity-40 cursor-pointer"
-                >
-                  <ArrowLeft className="mr-1.5 h-4 w-4" />
-                  Previous
-                </Button>
+          {/* ── Bottom Action & Navigation Footer (Only shown for Technical Quiz MCQs) ── */}
+          {isQuizSection && (
+            <div className="border-t border-slate-200 mt-8 pt-5 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                {/* Left Controls: Previous Button (+ Review / Clear for quiz) */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    onClick={handlePreviousQuestion}
+                    disabled={currentSectionIndex === 0 && currentQuestionIndex === 0}
+                    className="h-9 sm:h-10 px-4 sm:px-5 font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 shadow-2xs disabled:opacity-40 cursor-pointer"
+                  >
+                    <ArrowLeft className="mr-1.5 h-4 w-4" />
+                    Previous
+                  </Button>
 
-                {isQuizSection && (
-                  <>
+                  <Button
+                    type="button"
+                    onClick={handleToggleReview}
+                    className={`h-9 sm:h-10 px-3.5 text-xs font-bold transition-all cursor-pointer ${
+                      isMarkedForReview
+                        ? "bg-purple-700 hover:bg-purple-800 text-white shadow-sm"
+                        : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 shadow-2xs"
+                    }`}
+                  >
+                    <Bookmark className="mr-1.5 h-3.5 w-3.5 fill-current" />
+                    {isMarkedForReview ? "Unmark Review" : "Mark for review"}
+                  </Button>
+
+                  {selectedOptionId && (
                     <Button
                       type="button"
-                      onClick={handleToggleReview}
-                      className={`h-9 sm:h-10 px-3.5 text-xs font-bold transition-all cursor-pointer ${
-                        isMarkedForReview
-                          ? "bg-purple-700 hover:bg-purple-800 text-white shadow-sm"
-                          : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 shadow-2xs"
-                      }`}
+                      variant="outline"
+                      onClick={handleClearAnswer}
+                      className="h-9 sm:h-10 px-3 text-xs font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50 border-slate-300 cursor-pointer"
                     >
-                      <Bookmark className="mr-1.5 h-3.5 w-3.5 fill-current" />
-                      {isMarkedForReview ? "Unmark Review" : "Mark for review"}
+                      <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                      Clear
                     </Button>
+                  )}
+                </div>
 
-                    {selectedOptionId && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleClearAnswer}
-                        className="h-9 sm:h-10 px-3 text-xs font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50 border-slate-300 cursor-pointer"
-                      >
-                        <RotateCcw className="mr-1 h-3.5 w-3.5" />
-                        Clear
-                      </Button>
-                    )}
-                  </>
-                )}
+                {/* Right Controls: Single Next / Review & Submit Action */}
+                <div>
+                  <Button
+                    type="button"
+                    onClick={handleNextQuestion}
+                    className={`h-9 sm:h-10 px-6 sm:px-7 font-bold text-xs shadow-sm cursor-pointer ${
+                      currentQuestionIndex === questions.length - 1 && currentSectionIndex === sections.length - 1
+                        ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20"
+                        : "bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-blue-600/20"
+                    }`}
+                  >
+                    <span>
+                      {currentQuestionIndex === questions.length - 1 && currentSectionIndex === sections.length - 1
+                        ? "Review & Submit Test"
+                        : "Next"}
+                    </span>
+                    <ArrowRight className="ml-1.5 h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
-              {/* Right Controls: Single Next / Review & Submit Action */}
-              <div>
-                <Button
-                  type="button"
-                  onClick={handleNextQuestion}
-                  className={`h-9 sm:h-10 px-6 sm:px-7 font-bold text-xs shadow-sm cursor-pointer ${
-                    currentQuestionIndex === questions.length - 1 && currentSectionIndex === sections.length - 1
-                      ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20"
-                      : "bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-blue-600/20"
-                  }`}
-                >
-                  <span>
-                    {currentQuestionIndex === questions.length - 1 && currentSectionIndex === sections.length - 1
-                      ? "Review & Submit Test"
-                      : "Next"}
-                  </span>
-                  <ArrowRight className="ml-1.5 h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* ── Legend Footer (Only shown for Quiz MCQ Mode) ── */}
-            {isQuizSection && (
+              {/* ── Legend Footer (Only shown for Quiz MCQ Mode) ── */}
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-6 gap-y-2 pt-2 border-t border-slate-100 text-xs font-semibold text-slate-600">
                 <span className="flex items-center gap-2">
                   <span className="h-3.5 w-3.5 rounded-full bg-[#2563eb]" />
@@ -532,8 +524,8 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
                   Review
                 </span>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </section>
 
         {/* ── RIGHT PANEL: Question & Module Palettes + Submit Button (30%) ── */}

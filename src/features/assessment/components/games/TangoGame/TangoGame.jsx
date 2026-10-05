@@ -226,7 +226,16 @@ export default function TangoGame({ config = {}, onComplete }) {
   const [cellSize, setCellSize] = useState(54);
   const solvedRef = useRef(false);
 
-  const { formatted, startTimer, stopTimer, time } = useGameTimer();
+  const { formatted, startTimer, stopTimer, resetTimer, time } = useGameTimer();
+
+  const handleSandboxRestart = () => {
+    setWin(false);
+    solvedRef.current = false;
+    setGrid({ ...(initial || {}) });
+    setHistory([]);
+    resetTimer();
+    startTimer();
+  };
 
   useEffect(() => {
     startTimer();
@@ -423,8 +432,10 @@ export default function TangoGame({ config = {}, onComplete }) {
         isOpen={win}
         score={100}
         time={formatted}
+        isSandbox={Boolean(config?.isSandbox || config?.isPreview)}
         message="Bravo! All rows, columns and constraints have been flawlessly balanced!"
         onContinue={handleContinue}
+        onRestart={handleSandboxRestart}
       />
     </div>
   );
