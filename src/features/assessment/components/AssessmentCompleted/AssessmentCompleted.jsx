@@ -26,8 +26,6 @@ export default function AssessmentCompleted({
   attempt,
   submissionResult,
 }) {
-  const [showAnswerKey, setShowAnswerKey] = useState(false);
-  const [expandedQuestionId, setExpandedQuestionId] = useState(null);
 
   const submittedAt = attempt?.submittedAt
     ? new Date(attempt.submittedAt).toLocaleString(undefined, {
@@ -64,12 +62,30 @@ export default function AssessmentCompleted({
     return flat;
   }, [attempt?.responses]);
 
-  // Extract cognitive games results
+  // Extract cognitive games results with real-time session storage fallback
   const gameResultsMap = useMemo(() => {
-    return attempt?.gameResults || {};
-  }, [attempt?.gameResults]);
+    let localGames = {};
+    if (typeof window !== "undefined") {
+      try {
+        const attemptId = attempt?.id;
+        const candidateAttemptId = sessionStorage.getItem("candidate_attempt_id");
+        localGames = JSON.parse(
+          (attemptId && sessionStorage.getItem(`candidate_game_results_${attemptId}`)) ||
+          (candidateAttemptId && sessionStorage.getItem(`candidate_game_results_${candidateAttemptId}`)) ||
+          sessionStorage.getItem("candidate_game_results") ||
+          "{}"
+        );
+      } catch {}
+    }
 
-  // Normalize games list
+    return {
+      ...(attempt?.gameResults || {}),
+      ...(submissionResult?.gameResults || {}),
+      ...localGames,
+    };
+  }, [attempt?.gameResults, attempt?.id, submissionResult?.gameResults]);
+
+  // Normalize games list dynamically
   const gamesList = useMemo(() => {
     const rawGames =
       assessment?.games ||
@@ -80,16 +96,24 @@ export default function AssessmentCompleted({
       [];
 
     const canonicalName = (key) => {
-      const k = String(key || "").toLowerCase();
+      const k = String(
+        (typeof key === "object"
+          ? key?.name || key?.title || key?.game?.name || key?.game?.title || key?.slug || key?.id
+          : key) || ""
+      ).toLowerCase();
       if (k.includes("zip") || k.includes("pathfinder")) return "Zip Grid Pathfinder";
       if (k.includes("tango")) return "Tango Spatial Deduction";
       if (k.includes("sudoku")) return "Mini Sudoku 6x6 Challenge";
       if (k.includes("mahjong")) return "Mahjong Tile Match Strategy";
-      return key || "Cognitive Challenge";
+      return (typeof key === "object" && (key?.title || key?.name)) || key || "Cognitive Challenge";
     };
 
     const canonicalSlug = (key) => {
-      const k = String(key || "").toLowerCase();
+      const k = String(
+        (typeof key === "object"
+          ? key?.slug || key?.game?.slug || key?.game?.code || key?.code || key?.name || key?.title || key?.id
+          : key) || ""
+      ).toLowerCase();
       if (k.includes("zip") || k.includes("pathfinder")) return "zip";
       if (k.includes("tango")) return "tango";
       if (k.includes("sudoku")) return "sudoku";
@@ -104,17 +128,25 @@ export default function AssessmentCompleted({
         : Object.keys(gameResultsMap).map((k) => ({ id: k, slug: k }));
 
     return sourceGames.map((g, idx) => {
-      const slug = canonicalSlug(typeof g === "object" ? g.slug || g.id || g.code : g);
-      const title = canonicalName(typeof g === "object" ? g.title || g.name || g.slug || g.id : g);
+      const slug = canonicalSlug(g);
+      const title = canonicalName(g);
+      const rawGId = typeof g === "object" ? g.id : g;
+      const rawGameId = typeof g === "object" ? g.gameId : null;
+
       const res =
         gameResultsMap[slug] ||
-        gameResultsMap[typeof g === "object" ? g.id : g] ||
         gameResultsMap[`game_${slug}`] ||
+        gameResultsMap[`game-${idx + 1}`] ||
+        gameResultsMap[`game_${idx + 1}`] ||
+        (rawGId ? gameResultsMap[rawGId] : null) ||
+        (rawGameId ? gameResultsMap[rawGameId] : null) ||
         null;
 
       const isSkipped = Boolean(res?.skipped || res?.status === "SKIPPED");
       const isCompleted = Boolean(res && !isSkipped);
-      const accuracy = isCompleted ? (res?.accuracy !== undefined ? res.accuracy : 100) : 0;
+      const accuracy = isCompleted
+        ? (res?.accuracy !== undefined ? res.accuracy : (res?.score !== undefined ? res.score : 100))
+        : 0;
       const score = isCompleted ? (res?.score !== undefined ? res.score : 100) : 0;
       const timeSpentSecs = Number(res?.timeSpent || res?.timeTaken || 0);
 
@@ -136,90 +168,44 @@ export default function AssessmentCompleted({
     });
   }, [assessment, gameResultsMap]);
 
-  // Evaluate Question-by-Question Answer Key
-  const evaluatedQuestions = useMemo(() => {
-    return questions.map((q, idx) => {
-      const qId = String(q.id || q._id || idx);
-      const candidateChoice = flatResponses[qId] ?? null;
-
-      // Find options
-      const opts = Array.isArray(q.options)
-        ? q.options.map((opt) => {
-            const optId = String(opt.id || opt.value || opt.label || "");
-            const optText = opt.text || opt.content || opt.label || opt.optionText || "";
-            const isCorrect = Boolean(
-              opt.isCorrect ||
-              String(q.correctAnswer) === optId ||
-              String(q.correctAnswer) === String(opt.label) ||
-              String(q.correctAnswer) === optText
-            );
-            const isSelected =
-              candidateChoice !== null &&
-              (String(candidateChoice) === optId ||
-                String(candidateChoice) === String(opt.label) ||
-                String(candidateChoice) === optText);
-
-            return {
-              id: optId,
-              text: optText,
-              label: opt.label || `Option ${String.fromCharCode(65 + idx)}`,
-              isCorrect,
-              isSelected,
-            };
-          })
-        : [];
-
-      const correctOpt = opts.find((o) => o.isCorrect);
-      const selectedOpt = opts.find((o) => o.isSelected);
-      const isAnswered = candidateChoice !== null && candidateChoice !== "";
-      const isCorrect = isAnswered && Boolean(selectedOpt && selectedOpt.isCorrect);
-
-      return {
-        id: qId,
-        number: idx + 1,
-        title: q.title || q.question || q.content || `Question ${idx + 1}`,
-        explanation: q.explanation || null,
-        options: opts,
-        isAnswered,
-        isCorrect,
-        selectedOpt,
-        correctOpt,
-      };
-    });
-  }, [questions, flatResponses]);
-
-  // Aggregate stats
+  // Aggregate stats computed dynamically
   const quizStats = useMemo(() => {
     if (submissionResult?.correctCount !== undefined) {
       return {
-        correct: submissionResult.correctCount,
-        incorrect: submissionResult.incorrectCount,
-        unanswered: submissionResult.unansweredCount,
-        total: (submissionResult.correctCount || 0) + (submissionResult.incorrectCount || 0) + (submissionResult.unansweredCount || 0),
-        score: submissionResult.finalScore,
-        percentage: submissionResult.percentage,
-        result: submissionResult.result || (submissionResult.percentage >= 60 ? "PASSED" : "FAILED"),
+        correct: Number(submissionResult.correctCount || 0),
+        incorrect: Number(submissionResult.incorrectCount || 0),
+        unanswered: Number(submissionResult.unansweredCount || 0),
+        total:
+          (submissionResult.correctCount || 0) +
+          (submissionResult.incorrectCount || 0) +
+          (submissionResult.unansweredCount || 0),
+        score: submissionResult.score ?? submissionResult.finalScore ?? 0,
+        percentage: Math.round(Number(submissionResult.percentage ?? 0)),
+        result:
+          submissionResult.result ||
+          (submissionResult.passed ? "PASSED" : (submissionResult.percentage >= 60 ? "PASSED" : "FAILED")),
       };
     }
 
-    const total = evaluatedQuestions.length;
-    const correct = evaluatedQuestions.filter((q) => q.isCorrect).length;
-    const answered = evaluatedQuestions.filter((q) => q.isAnswered).length;
-    const incorrect = answered - correct;
-    const unanswered = total - answered;
-    const percentage = total > 0 ? Math.round((correct / total) * 100) : 100;
+    const total = questions.length;
+    const answeredCount = Object.keys(flatResponses).length;
+    const unansweredCount = Math.max(0, total - answeredCount);
+    const scoreVal = attempt?.score ?? attempt?.percentage ?? 0;
     const passingScore = Number(assessment?.passingScore || 60);
+    const percentage = Math.round(Number(scoreVal));
+    const approxCorrect = total > 0 ? Math.round((percentage / 100) * total) : 0;
+    const approxIncorrect = Math.max(0, answeredCount - approxCorrect);
 
     return {
-      correct,
-      incorrect,
-      unanswered,
+      correct: approxCorrect,
+      incorrect: approxIncorrect,
+      unanswered: unansweredCount,
       total,
-      score: correct,
+      score: scoreVal,
       percentage,
       result: percentage >= passingScore ? "PASSED" : "FAILED",
     };
-  }, [submissionResult, evaluatedQuestions, assessment?.passingScore]);
+  }, [submissionResult, questions.length, flatResponses, attempt?.score, attempt?.percentage, assessment?.passingScore]);
 
   // Cognitive Games aggregate stats
   const gamesStats = useMemo(() => {
@@ -414,168 +400,6 @@ export default function AssessmentCompleted({
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* ── 4. QUESTION-BY-QUESTION DETAILED ANSWER KEY ── */}
-            {evaluatedQuestions.length > 0 && (
-              <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-sm space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0">
-                      <BookOpen className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm sm:text-base font-black text-slate-900 tracking-tight">
-                        Question-by-Question Answer Key
-                      </h3>
-                      <p className="text-xs text-slate-500 font-medium">
-                        Detailed review of your chosen answers vs the verified correct solutions
-                      </p>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowAnswerKey(!showAnswerKey)}
-                    className="rounded-xl border-slate-200 hover:bg-slate-50 font-bold text-xs gap-1.5 shadow-2xs cursor-pointer"
-                  >
-                    <span>{showAnswerKey ? "Collapse Answers" : "Expand Answer Key"}</span>
-                    {showAnswerKey ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                  </Button>
-                </div>
-
-                {/* Collapsible Answer Key List */}
-                {showAnswerKey && (
-                  <div className="space-y-3 pt-2">
-                    {evaluatedQuestions.map((q) => {
-                      const isExpanded = expandedQuestionId === q.id;
-                      return (
-                        <div
-                          key={q.id}
-                          className={`rounded-2xl border transition-all overflow-hidden ${
-                            q.isCorrect
-                              ? "border-emerald-200/80 bg-emerald-50/20"
-                              : !q.isAnswered
-                              ? "border-amber-200/80 bg-amber-50/20"
-                              : "border-rose-200/80 bg-rose-50/20"
-                          }`}
-                        >
-                          {/* Question Row Header */}
-                          <div
-                            onClick={() => setExpandedQuestionId(isExpanded ? null : q.id)}
-                            className="p-4 flex items-center justify-between gap-3 cursor-pointer select-none hover:bg-slate-50/40 transition"
-                          >
-                            <div className="flex items-start gap-3 min-w-0">
-                              <span
-                                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-xs font-black ${
-                                  q.isCorrect
-                                    ? "bg-emerald-600 text-white"
-                                    : !q.isAnswered
-                                    ? "bg-amber-500 text-white"
-                                    : "bg-rose-600 text-white"
-                                }`}
-                              >
-                                {q.number}
-                              </span>
-
-                              <div className="min-w-0">
-                                <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug line-clamp-1">
-                                  {q.title}
-                                </h4>
-                                <div className="flex items-center gap-2 mt-1">
-                                  {q.isCorrect ? (
-                                    <span className="text-[11px] font-bold text-emerald-700 flex items-center gap-1">
-                                      <CheckCircle2 className="h-3 w-3" />
-                                      Your Answer: {q.selectedOpt?.text || "Correct"} (+1 Mark)
-                                    </span>
-                                  ) : !q.isAnswered ? (
-                                    <span className="text-[11px] font-bold text-amber-700 flex items-center gap-1">
-                                      <AlertCircle className="h-3 w-3" />
-                                      Not Attempted • Correct: {q.correctOpt?.text || "Verified"}
-                                    </span>
-                                  ) : (
-                                    <span className="text-[11px] font-bold text-rose-700 flex items-center gap-1">
-                                      <XCircle className="h-3 w-3" />
-                                      Your Answer: {q.selectedOpt?.text || "Incorrect"} • Correct: {q.correctOpt?.text}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0 rounded-lg text-slate-400"
-                            >
-                              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                            </Button>
-                          </div>
-
-                          {/* Expanded Question Details & Options */}
-                          {isExpanded && (
-                            <div className="p-4 pt-0 border-t border-slate-100/80 space-y-3 mt-1 text-xs">
-                              {/* Full Question Text */}
-                              <p className="font-semibold text-slate-800 leading-relaxed pt-3">
-                                {q.title}
-                              </p>
-
-                              {/* Options List */}
-                              <div className="space-y-1.5">
-                                {q.options.map((opt) => (
-                                  <div
-                                    key={opt.id}
-                                    className={`p-2.5 rounded-xl border flex items-center justify-between text-xs font-medium transition ${
-                                      opt.isCorrect
-                                        ? "bg-emerald-50 border-emerald-300 text-emerald-950 font-bold"
-                                        : opt.isSelected
-                                        ? "bg-rose-50 border-rose-300 text-rose-950 font-bold"
-                                        : "bg-white border-slate-200 text-slate-600"
-                                    }`}
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <span className="h-5 w-5 rounded-md bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600">
-                                        {opt.label || opt.id}
-                                      </span>
-                                      <span>{opt.text}</span>
-                                    </div>
-
-                                    <div>
-                                      {opt.isCorrect && (
-                                        <Badge className="bg-emerald-600 text-white text-[9px] font-extrabold px-1.5 py-0">
-                                          Correct Option
-                                        </Badge>
-                                      )}
-                                      {!opt.isCorrect && opt.isSelected && (
-                                        <Badge className="bg-rose-600 text-white text-[9px] font-extrabold px-1.5 py-0">
-                                          Your Choice
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-
-                              {/* Explanation */}
-                              {q.explanation && (
-                                <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-200/80 text-blue-950 text-[11px] leading-relaxed">
-                                  <strong className="font-bold flex items-center gap-1 text-blue-900 mb-0.5">
-                                    <Sparkles className="h-3 w-3 text-blue-600" /> Explanation:
-                                  </strong>
-                                  {q.explanation}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
               </div>
             )}
           </div>

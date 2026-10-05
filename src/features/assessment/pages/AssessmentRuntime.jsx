@@ -53,24 +53,48 @@ const AssessmentAttempt = ({ attemptId }) => {
   };
 
   const handleSubmit = () => {
+    let localSavedResponses = {};
+    let localSavedGameResults = {};
+    if (typeof window !== "undefined") {
+      try {
+        localSavedResponses = JSON.parse(
+          sessionStorage.getItem(`candidate_responses_${attempt?.id || attemptId}`) || "{}"
+        );
+      } catch {}
+      try {
+        localSavedGameResults = JSON.parse(
+          sessionStorage.getItem(`candidate_game_results_${attempt?.id || attemptId}`) ||
+          sessionStorage.getItem("candidate_game_results") ||
+          "{}"
+        );
+      } catch {}
+    }
+
     submitAttempt.mutate(
       {
         attemptId: attempt?.id || attemptId,
         assessment: effectiveAssessment,
+        responses: localSavedResponses,
+        gameResults: localSavedGameResults,
       },
       {
         onSuccess: (result) => {
           setSubmitDialogOpen(false);
           setIsReviewing(false);
-          if (result) {
-            setSubmissionResult(result);
-            try {
-              sessionStorage.setItem(
-                `submission_result_${attempt?.id || attemptId}`,
-                JSON.stringify(result)
-              );
-            } catch {}
-          }
+          const enrichedResult = {
+            ...(result || {}),
+            gameResults: {
+              ...(result?.gameResults || {}),
+              ...localSavedGameResults,
+            },
+          };
+          setSubmissionResult(enrichedResult);
+          try {
+            sessionStorage.setItem(
+              `submission_result_${attempt?.id || attemptId}`,
+              JSON.stringify(enrichedResult)
+            );
+          } catch {}
         },
       }
     );
@@ -193,10 +217,18 @@ const AssessmentAttempt = ({ attemptId }) => {
   };
 
   let localSavedResponses = {};
+  let localSavedGameResults = {};
   if (typeof window !== "undefined") {
     try {
       localSavedResponses = JSON.parse(
         sessionStorage.getItem(`candidate_responses_${attempt?.id || attemptId}`) || "{}"
+      );
+    } catch {}
+    try {
+      localSavedGameResults = JSON.parse(
+        sessionStorage.getItem(`candidate_game_results_${attempt?.id || attemptId}`) ||
+        sessionStorage.getItem("candidate_game_results") ||
+        "{}"
       );
     } catch {}
   }
@@ -206,6 +238,11 @@ const AssessmentAttempt = ({ attemptId }) => {
     responses: {
       ...(attempt?.responses || {}),
       ...localSavedResponses,
+    },
+    gameResults: {
+      ...(attempt?.gameResults || {}),
+      ...localSavedGameResults,
+      ...(submissionResult?.gameResults || {}),
     },
   };
 
