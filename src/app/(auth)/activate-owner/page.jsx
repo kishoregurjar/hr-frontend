@@ -16,7 +16,7 @@ import {
   Building2,
   Sparkles,
 } from "lucide-react";
-import { activateOwnerApi, normalizeUser, setAuthSession } from "@/lib/api/auth";
+import { activateOwnerApi, verifyOwnerActivationApi, normalizeUser, setAuthSession } from "@/lib/api/auth";
 import { AUTH_STORAGE_KEYS } from "@/features/auth/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,16 +38,50 @@ function ActivateOwnerContent() {
   const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    let isMounted = true;
+    
+    const verifyToken = async () => {
       if (!token || token.trim().length === 0) {
-        setTokenValid(false);
-      } else {
-        setTokenValid(true);
+        if (isMounted) {
+          setTokenValid(false);
+          setIsVerifying(false);
+        }
+        return;
       }
-      setIsVerifying(false);
-    }, 500);
 
-    return () => clearTimeout(timer);
+      try {
+        await verifyOwnerActivationApi(token);
+        if (isMounted) {
+          setTokenValid(true);
+          setIsVerifying(false);
+        }
+      } catch (err) {
+        if (isMounted) {
+          const errMsg =
+            err?.response?.data?.message ||
+            err?.message ||
+            "Activation failed. The link may have expired or already been used.";
+
+          if (
+            errMsg.toLowerCase().includes("already active") ||
+            errMsg.toLowerCase().includes("already used") ||
+            errMsg.toLowerCase().includes("already been used") ||
+            errMsg.toLowerCase().includes("sign in directly")
+          ) {
+            setIsAlreadyActive(true);
+          } else {
+            setTokenValid(false);
+          }
+          setIsVerifying(false);
+        }
+      }
+    };
+
+    verifyToken();
+
+    return () => {
+      isMounted = false;
+    };
   }, [token]);
 
   // Password strength calculation
