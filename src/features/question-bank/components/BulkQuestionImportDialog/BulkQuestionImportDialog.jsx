@@ -322,7 +322,7 @@ const BulkQuestionImportDialog = () => {
       ],
     }));
 
-    const CHUNK_SIZE = 15;
+    const CHUNK_SIZE = 4;
     const totalQuestions = payload.length;
     const totalChunks = Math.ceil(totalQuestions / CHUNK_SIZE);
 
@@ -352,7 +352,22 @@ const BulkQuestionImportDialog = () => {
           totalBatches: totalChunks,
         });
 
-        const res = await questionsService.bulkCreate(chunk);
+        // Resilient batch execution with 1 auto-retry if network blip occurs
+        let res;
+        let attempts = 0;
+        const maxAttempts = 2;
+        while (attempts < maxAttempts) {
+          try {
+            res = await questionsService.bulkCreate(chunk);
+            break;
+          } catch (batchErr) {
+            attempts++;
+            if (attempts >= maxAttempts) throw batchErr;
+            // Short backoff before retry
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
+        }
+
         const data = res?.data || res;
 
         totalCreated += data?.createdCount ?? (Array.isArray(data?.created) ? data.created.length : chunk.length);
