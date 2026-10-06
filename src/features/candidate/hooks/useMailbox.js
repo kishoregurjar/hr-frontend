@@ -55,12 +55,18 @@ export const useSyncMailboxNow = () => {
   return useMutation({
     mutationFn: syncMailboxNow,
     onSuccess: (res) => {
+      const isStarted = res?.code === "MAILBOX_SYNC_STARTED";
       const count = res?.processedResumes ?? res?.newCandidatesCount ?? res?.count ?? 0;
-      toast.success(
-        count > 0
-          ? `Synced & extracted ${count} candidate resume(s) from inbox!`
-          : "Mailbox synced successfully! New resumes processed."
-      );
+      
+      if (isStarted) {
+        toast.success(res.message || "Mailbox sync started in background.");
+      } else {
+        toast.success(
+          count > 0
+            ? `Synced & extracted ${count} candidate resume(s) from inbox!`
+            : "Mailbox synced successfully! New resumes processed."
+        );
+      }
       // Revalidate and force instant active re-fetch of on-screen candidate table without page refresh
       queryClient.invalidateQueries({ queryKey: CANDIDATE_QUERY_KEYS.all });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
@@ -87,6 +93,7 @@ export const useSyncMailboxNow = () => {
         queryClient.refetchQueries({ queryKey: ["candidates"], type: "active" });
         return;
       }
+      queryClient.invalidateQueries({ queryKey: MAILBOX_QUERY_KEY });
       const msg = err?.response?.data?.message || err?.message || "Failed to sync mailbox.";
       toast.error(msg);
     },

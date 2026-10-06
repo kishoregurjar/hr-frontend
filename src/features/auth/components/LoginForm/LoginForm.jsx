@@ -29,6 +29,7 @@ const LoginForm = () => {
   const isRegisteredSuccess = searchParams.get("registered") === "true";
   const isActivatedSuccess = searchParams.get("activated") === "true";
   const isExpiredSession = searchParams.get("expired") === "true";
+  const isSuspendedSession = searchParams.get("suspended") === "true";
   const initialEmail = searchParams.get("email") || "";
   const { login } = useAuth();
 
@@ -132,6 +133,14 @@ const LoginForm = () => {
         <div className="rounded-2xl border border-amber-200 bg-amber-50/90 p-3.5 text-xs text-amber-800 font-semibold flex items-center gap-2.5">
           <Info className="h-4 w-4 text-amber-600 shrink-0" />
           <span>Session expired. Please sign in again to continue.</span>
+        </div>
+      )}
+
+      {/* Company Suspended Banner */}
+      {isSuspendedSession && (
+        <div className="rounded-2xl border border-rose-300 bg-rose-50 p-3.5 text-xs text-rose-800 font-semibold flex items-center gap-2.5">
+          <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0" />
+          <span>Your company account has been suspended. Please contact the administrator.</span>
         </div>
       )}
 

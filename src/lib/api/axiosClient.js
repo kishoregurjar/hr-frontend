@@ -194,6 +194,24 @@ axiosClient.interceptors.response.use(
 
     const isTokenExpired = status === 401 && originalRequest && !originalRequest._retry && !isAuthOrCandidateEndpoint;
 
+    const isCompanySuspended = 
+      status === 403 &&
+      (responseData?.error?.code === "COMPANY_SUSPENDED" ||
+       responseData?.code === "COMPANY_SUSPENDED" ||
+       (typeof message === "string" && message.toLowerCase().includes("company account has been suspended")));
+
+    if (isCompanySuspended) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(AUTH_STORAGE_KEYS.TOKEN);
+        localStorage.removeItem("token");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("jwt");
+        localStorage.removeItem("hirequest_refresh_token");
+        window.location.href = "/login?suspended=true";
+      }
+      return Promise.reject(new Error("Your company account has been suspended. Please contact the administrator."));
+    }
+
     if (isTokenExpired) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
