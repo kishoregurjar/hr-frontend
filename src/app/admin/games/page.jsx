@@ -373,7 +373,7 @@ export default function AdminGamesPage() {
         subtitle="Global platform game engine catalog, activation controls & competency mapping."
       />
 
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl">
         {/* ── Top Metric Banner ── */}
         <div className="rounded-2xl border bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 p-6 text-white shadow-sm flex items-center justify-between gap-4 min-h-[104px]">
           <div className="space-y-1.5 min-w-0">
