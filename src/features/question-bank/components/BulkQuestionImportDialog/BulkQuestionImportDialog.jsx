@@ -322,7 +322,7 @@ const BulkQuestionImportDialog = () => {
       ],
     }));
 
-    const CHUNK_SIZE = 8;
+    const CHUNK_SIZE = 4;
     const totalQuestions = payload.length;
     const totalChunks = Math.ceil(totalQuestions / CHUNK_SIZE);
 
