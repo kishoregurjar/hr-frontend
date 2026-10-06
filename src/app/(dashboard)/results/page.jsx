@@ -67,20 +67,76 @@ export default function ResultsAndRankingPage() {
     refetchOnWindowFocus: true,
   });
 
-  const results = useMemo(() => {
+  const dynamicResultsList = useMemo(() => {
     return Array.isArray(dynamicResults) ? dynamicResults : [];
   }, [dynamicResults]);
+
+  // Group results by assessment and calculate per-assessment rankings dynamically
+  const rankedResults = useMemo(() => {
+    if (!dynamicResultsList.length) return [];
+
+    // Group items by assessment (by assessmentId or lowercased assessmentTitle)
+    const groups = new Map();
+    dynamicResultsList.forEach((item) => {
+      const groupKey = String(
+        item.assessmentId || item.assessment?.id || item.assessmentTitle || "default"
+      ).trim().toLowerCase();
+      if (!groups.has(groupKey)) {
+        groups.set(groupKey, []);
+      }
+      groups.get(groupKey).push(item);
+    });
+
+    const enriched = [];
+
+    // For each assessment, sort candidates by score descending and assign actual rank
+    groups.forEach((groupItems) => {
+      const totalCandidatesInAssessment = groupItems.length;
+
+      const sortedGroup = [...groupItems].sort((a, b) => {
+        const scoreA = Number(a.score ?? a.percentage ?? 0);
+        const scoreB = Number(b.score ?? b.percentage ?? 0);
+        if (scoreB !== scoreA) return scoreB - scoreA;
+        const percA = Number(a.percentage ?? 0);
+        const percB = Number(b.percentage ?? 0);
+        if (percB !== percA) return percB - percA;
+        return String(a.timeSpent || "").localeCompare(String(b.timeSpent || ""));
+      });
+
+      let currentRank = 0;
+      let previousScore = null;
+
+      sortedGroup.forEach((item, index) => {
+        const itemScore = Number(item.score ?? item.percentage ?? 0);
+        if (previousScore === null || itemScore !== previousScore) {
+          currentRank = index + 1;
+        }
+
+        enriched.push({
+          ...item,
+          assessmentRank: currentRank,
+          assessmentTotalCandidates: totalCandidatesInAssessment,
+        });
+
+        previousScore = itemScore;
+      });
+    });
+
+    return enriched;
+  }, [dynamicResultsList]);
+
+  const results = rankedResults;
 
   const availableAssessments = useMemo(() => {
     const titles = new Set();
     apiAssessments.forEach((a) => {
       if (a.title) titles.add(a.title);
     });
-    results.forEach((r) => {
+    rankedResults.forEach((r) => {
       if (r.assessmentTitle) titles.add(r.assessmentTitle);
     });
     return Array.from(titles);
-  }, [apiAssessments, results]);
+  }, [apiAssessments, rankedResults]);
 
   const [search, setSearch] = useState("");
   const [selectedAssessment, setSelectedAssessment] = useState("ALL");
@@ -183,7 +239,7 @@ export default function ResultsAndRankingPage() {
   };
 
   const filteredResults = useMemo(() => {
-    return results
+    return rankedResults
       .filter((item) => {
         const matchesSearch =
           !search ||
@@ -201,11 +257,57 @@ export default function ResultsAndRankingPage() {
         return matchesSearch && matchesAssessment && matchesStatus;
       })
       .sort((a, b) => {
-        if (sortBy === "rank" || sortBy === "score") return (b.score || 0) - (a.score || 0);
-        if (sortBy === "speed") return String(a.timeSpent || "").localeCompare(String(b.timeSpent || ""));
+        if (sortBy === "rank") {
+          // If a specific assessment is selected, strictly sort by assessmentRank (1, 2, 3...)
+          if (selectedAssessment !== "ALL") {
+            return (a.assessmentRank || 999) - (b.assessmentRank || 999);
+          }
+          // When "ALL" assessments are selected, sort by rank first, then highest score
+          const rankA = a.assessmentRank || 999;
+          const rankB = b.assessmentRank || 999;
+          if (rankA !== rankB) return rankA - rankB;
+          return (Number(b.score) || 0) - (Number(a.score) || 0);
+        }
+        if (sortBy === "score") {
+          return (Number(b.score) || Number(b.percentage) || 0) - (Number(a.score) || Number(a.percentage) || 0);
+        }
+        if (sortBy === "speed") {
+          return String(a.timeSpent || "").localeCompare(String(b.timeSpent || ""));
+        }
         return String(a.candidateName || "").localeCompare(String(b.candidateName || ""));
       });
-  }, [results, search, selectedAssessment, statusFilter, sortBy]);
+  }, [rankedResults, search, selectedAssessment, statusFilter, sortBy]);
+
+  // Podium candidates: When specific assessment is picked, show its top 3 candidates.
+  // When "ALL" is picked, show the top ranker (Rank #1) of each assessment, sorted by highest score.
+  const podiumCandidates = useMemo(() => {
+    if (selectedAssessment !== "ALL") {
+      return filteredResults.slice(0, 3);
+    }
+    const leadersMap = new Map();
+    rankedResults.forEach((item) => {
+      const key = String(item.assessmentId || item.assessmentTitle || "default").trim().toLowerCase();
+      const existing = leadersMap.get(key);
+      if (!existing) {
+        leadersMap.set(key, item);
+      } else {
+        const currentScore = Number(item.score ?? item.percentage ?? 0);
+        const existingScore = Number(existing.score ?? existing.percentage ?? 0);
+        if (
+          item.assessmentRank < existing.assessmentRank ||
+          (item.assessmentRank === existing.assessmentRank && currentScore > existingScore)
+        ) {
+          leadersMap.set(key, item);
+        }
+      }
+    });
+
+    const topLeaders = Array.from(leadersMap.values()).sort(
+      (a, b) => (Number(b.score ?? b.percentage) || 0) - (Number(a.score ?? a.percentage) || 0)
+    );
+
+    return topLeaders.slice(0, 3);
+  }, [selectedAssessment, filteredResults, rankedResults]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -224,7 +326,7 @@ export default function ResultsAndRankingPage() {
     const rows = filteredResults
       .map(
         (r, i) =>
-          `#${i + 1},"${r.candidateName}","${r.email}","${r.assessmentTitle}",${r.score}/${r.maxScore},${r.percentage}%,${r.status},"${r.timeSpent}",${r.integrityScore}%`
+          `#${r.assessmentRank || (i + 1)},"${r.candidateName}","${r.email}","${r.assessmentTitle}",${r.score}/${r.maxScore},${r.percentage}%,${r.status},"${r.timeSpent}",${r.integrityScore}%`
       )
       .join("\n");
 
@@ -237,11 +339,49 @@ export default function ResultsAndRankingPage() {
     toast.success("Rankings report exported as CSV!");
   };
 
-  const getRankMedal = (index) => {
-    if (index === 0) return <span className="text-lg">🥇</span>;
-    if (index === 1) return <span className="text-lg">🥈</span>;
-    if (index === 2) return <span className="text-lg">🥉</span>;
-    return <span className="font-extrabold text-xs text-slate-500">#{index + 1}</span>;
+  const getRankMedal = (rank, totalCandidates = 1) => {
+    const numRank = Number(rank) || 1;
+    if (numRank === 1) {
+      return (
+        <div className="flex flex-col items-center justify-center">
+          <span className="text-lg leading-none">🥇</span>
+          <span className="text-[10px] font-black text-amber-600 mt-0.5">Rank #1</span>
+          {totalCandidates > 1 && (
+            <span className="text-[9px] text-slate-400 font-semibold">of {totalCandidates}</span>
+          )}
+        </div>
+      );
+    }
+    if (numRank === 2) {
+      return (
+        <div className="flex flex-col items-center justify-center">
+          <span className="text-lg leading-none">🥈</span>
+          <span className="text-[10px] font-black text-slate-600 mt-0.5">Rank #2</span>
+          {totalCandidates > 1 && (
+            <span className="text-[9px] text-slate-400 font-semibold">of {totalCandidates}</span>
+          )}
+        </div>
+      );
+    }
+    if (numRank === 3) {
+      return (
+        <div className="flex flex-col items-center justify-center">
+          <span className="text-lg leading-none">🥉</span>
+          <span className="text-[10px] font-black text-amber-800 mt-0.5">Rank #3</span>
+          {totalCandidates > 1 && (
+            <span className="text-[9px] text-slate-400 font-semibold">of {totalCandidates}</span>
+          )}
+        </div>
+      );
+    }
+    return (
+      <div className="flex flex-col items-center justify-center">
+        <span className="font-extrabold text-xs text-slate-600">#{numRank}</span>
+        {totalCandidates > 1 && (
+          <span className="text-[9px] text-slate-400 font-semibold">of {totalCandidates}</span>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -349,10 +489,10 @@ export default function ResultsAndRankingPage() {
         </div>
       </div>
 
-      {/* ── 3. PODIUM HIGHLIGHT FOR TOP 3 CANDIDATES (Dynamic) ── */}
-      {results.length > 0 && (
+      {/* ── 3. PODIUM HIGHLIGHT FOR TOP CANDIDATES (Dynamic Per-Assessment) ── */}
+      {podiumCandidates.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {results.slice(0, 3).map((candidate, idx) => (
+          {podiumCandidates.map((candidate) => (
             <div
               key={candidate.id}
               onClick={() => setSelectedCandidate(candidate)}
@@ -360,10 +500,25 @@ export default function ResultsAndRankingPage() {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl">{idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉"}</span>
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
-                    Rank #{idx + 1}
+                  <span className="text-2xl">
+                    {candidate.assessmentRank === 1
+                      ? "🥇"
+                      : candidate.assessmentRank === 2
+                      ? "🥈"
+                      : candidate.assessmentRank === 3
+                      ? "🥉"
+                      : `#${candidate.assessmentRank}`}
                   </span>
+                  <div>
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-700">
+                      Rank #{candidate.assessmentRank || 1}
+                    </span>
+                    {candidate.assessmentTotalCandidates > 1 && (
+                      <span className="text-[9.5px] text-slate-400 font-medium block">
+                        of {candidate.assessmentTotalCandidates} candidates
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <Badge className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px] font-black">
                   {candidate.percentage}% Score
@@ -551,7 +706,7 @@ export default function ResultsAndRankingPage() {
 
                     {/* Rank */}
                     <td className="py-4 px-4 text-center font-extrabold">
-                      {getRankMedal(index)}
+                      {getRankMedal(item.assessmentRank, item.assessmentTotalCandidates)}
                     </td>
 
                     {/* Candidate */}
@@ -701,7 +856,16 @@ export default function ResultsAndRankingPage() {
 
             <div className="p-6 space-y-5">
               {/* Score Highlight Box */}
-              <div className="grid grid-cols-3 gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-center">
+              <div className="grid grid-cols-4 gap-2.5 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-center">
+                <div>
+                  <span className="text-[10.5px] font-bold uppercase text-slate-400">Rank</span>
+                  <p className="text-2xl font-black text-amber-600">
+                    #{selectedCandidate.assessmentRank || 1}
+                    {selectedCandidate.assessmentTotalCandidates > 1 && (
+                      <span className="text-xs text-slate-400 font-normal"> / {selectedCandidate.assessmentTotalCandidates}</span>
+                    )}
+                  </p>
+                </div>
                 <div>
                   <span className="text-[10.5px] font-bold uppercase text-slate-400">Total Score</span>
                   <p className="text-2xl font-black text-slate-900">{selectedCandidate.score}/100</p>
