@@ -375,8 +375,8 @@ export default function AdminGamesPage() {
 
       <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
         {/* ── Top Metric Banner ── */}
-        <div className="rounded-2xl border bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 p-6 text-white shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 min-h-[104px]">
-          <div className="space-y-1.5">
+        <div className="rounded-2xl border bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 p-6 text-white shadow-sm flex items-center justify-between gap-4 min-h-[104px]">
+          <div className="space-y-1.5 min-w-0">
             <h2 className="font-extrabold text-lg tracking-tight">
               Global Cognitive Game Engines
             </h2>
@@ -385,17 +385,17 @@ export default function AdminGamesPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 min-h-[32px]">
+          <div className="flex items-center justify-end gap-2 shrink-0 min-h-[32px] w-28">
             {loading ? (
               <div className="h-7 w-24 bg-white/10 animate-pulse rounded-full border border-white/10" />
             ) : (
               <>
-                <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 px-3 py-1.5 text-xs font-semibold">
+                <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 px-3 py-1.5 text-xs font-semibold whitespace-nowrap">
                   <CheckCircle2 className="h-3.5 w-3.5 mr-1 text-emerald-400" />
                   {activeCount} Active
                 </Badge>
                 {inactiveCount > 0 && (
-                  <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 px-3 py-1.5 text-xs font-semibold">
+                  <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 px-3 py-1.5 text-xs font-semibold whitespace-nowrap">
                     <XCircle className="h-3.5 w-3.5 mr-1 text-amber-400" />
                     {inactiveCount} Disabled
                   </Badge>
