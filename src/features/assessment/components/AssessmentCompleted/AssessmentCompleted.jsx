@@ -145,13 +145,18 @@ export default function AssessmentCompleted({
       const isSkipped = Boolean(res?.skipped || res?.status === "SKIPPED");
       const isCompleted = Boolean(res && !isSkipped);
       const accuracy = isCompleted
-        ? (res?.accuracy !== undefined ? res.accuracy : (res?.score !== undefined ? res.score : 100))
+        ? Math.round(res?.accuracy !== undefined ? res.accuracy : (res?.score !== undefined ? res.score : 100))
         : 0;
-      const score = isCompleted ? (res?.score !== undefined ? res.score : 100) : 0;
-      const timeSpentSecs = Number(res?.timeSpent || res?.timeTaken || 0);
+      const score = isCompleted
+        ? Math.round(res?.accuracy !== undefined ? res.accuracy : (res?.score !== undefined ? res.score : 100))
+        : 0;
+
+      // Auto-detect and convert milliseconds to seconds if raw value is > 500
+      const rawTime = Number(res?.timeSpent || res?.timeTaken || res?.timeSeconds || 0);
+      const timeSpentSecs = rawTime > 500 ? Math.round(rawTime / 1000) : Math.round(rawTime);
 
       const formatTime = (secs) => {
-        if (!secs) return "0s";
+        if (!secs || secs <= 0) return "0s";
         const m = Math.floor(secs / 60);
         const s = secs % 60;
         return m > 0 ? `${m}m ${s}s` : `${s}s`;
@@ -162,7 +167,7 @@ export default function AssessmentCompleted({
         title,
         status: isCompleted ? "Completed" : isSkipped ? "Skipped" : "Not Attempted",
         score,
-        accuracy: Math.round(accuracy),
+        accuracy,
         timeFormatted: formatTime(timeSpentSecs),
       };
     });
@@ -171,19 +176,24 @@ export default function AssessmentCompleted({
   // Aggregate stats computed dynamically
   const quizStats = useMemo(() => {
     if (submissionResult?.correctCount !== undefined) {
+      const correct = Number(submissionResult.correctCount || 0);
+      const incorrect = Number(submissionResult.incorrectCount || 0);
+      const unanswered = Number(submissionResult.unansweredCount || 0);
+      const total = correct + incorrect + unanswered;
+      const pureQuizPercent = total > 0 ? Math.round((correct / total) * 100) : 0;
+      const overallPercent = Math.round(Number(submissionResult.percentage ?? submissionResult.score ?? pureQuizPercent));
+
       return {
-        correct: Number(submissionResult.correctCount || 0),
-        incorrect: Number(submissionResult.incorrectCount || 0),
-        unanswered: Number(submissionResult.unansweredCount || 0),
-        total:
-          (submissionResult.correctCount || 0) +
-          (submissionResult.incorrectCount || 0) +
-          (submissionResult.unansweredCount || 0),
+        correct,
+        incorrect,
+        unanswered,
+        total,
         score: submissionResult.score ?? submissionResult.finalScore ?? 0,
-        percentage: Math.round(Number(submissionResult.percentage ?? 0)),
+        percentage: pureQuizPercent,
+        overallPercentage: overallPercent,
         result:
           submissionResult.result ||
-          (submissionResult.passed ? "PASSED" : (submissionResult.percentage >= 60 ? "PASSED" : "FAILED")),
+          (submissionResult.passed ? "PASSED" : (pureQuizPercent >= 60 || overallPercent >= 60 ? "PASSED" : "FAILED")),
       };
     }
 
@@ -195,6 +205,7 @@ export default function AssessmentCompleted({
     const percentage = Math.round(Number(scoreVal));
     const approxCorrect = total > 0 ? Math.round((percentage / 100) * total) : 0;
     const approxIncorrect = Math.max(0, answeredCount - approxCorrect);
+    const pureQuizPercent = total > 0 ? Math.round((approxCorrect / total) * 100) : percentage;
 
     return {
       correct: approxCorrect,
@@ -202,8 +213,9 @@ export default function AssessmentCompleted({
       unanswered: unansweredCount,
       total,
       score: scoreVal,
-      percentage,
-      result: percentage >= passingScore ? "PASSED" : "FAILED",
+      percentage: pureQuizPercent,
+      overallPercentage: percentage,
+      result: pureQuizPercent >= passingScore ? "PASSED" : "FAILED",
     };
   }, [submissionResult, questions.length, flatResponses, attempt?.score, attempt?.percentage, assessment?.passingScore]);
 
@@ -286,6 +298,11 @@ export default function AssessmentCompleted({
                 </div>
                 <p className="text-[11px] text-slate-500 font-medium">
                   {quizStats.correct} of {quizStats.total} Questions
+                  {quizStats.overallPercentage && quizStats.overallPercentage !== quizStats.percentage ? (
+                    <span className="block text-[10px] text-indigo-600 font-bold mt-0.5">
+                      Overall Composite: {quizStats.overallPercentage}%
+                    </span>
+                  ) : null}
                 </p>
               </div>
 
