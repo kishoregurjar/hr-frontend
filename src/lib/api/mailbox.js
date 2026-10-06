@@ -47,3 +47,12 @@ export const disconnectMailbox = async () => {
   const res = await axiosClient.post("/mailbox/disconnect");
   return res?.data?.data || res?.data || res;
 };
+
+/**
+ * 5. Stop Automatic Sync
+ * POST /api/v1/mailbox/stop-sync
+ */
+export const stopAutomaticSync = async () => {
+  const res = await axiosClient.post("/mailbox/stop-sync");
+  return res?.data?.data || res?.data || res;
+};

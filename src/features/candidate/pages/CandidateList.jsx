@@ -50,6 +50,7 @@ import {
   useMailboxStatus,
   useConnectGoogleMailbox,
   useSyncMailboxNow,
+  useStopAutomaticSync,
 } from "../hooks";
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -303,6 +304,7 @@ const CandidateList = () => {
   const { data: mailboxStatus, refetch: refetchMailboxStatus } = useMailboxStatus();
   const connectGoogleMutation = useConnectGoogleMailbox();
   const syncMailboxMutation = useSyncMailboxNow();
+  const stopAutomaticSyncMutation = useStopAutomaticSync();
 
   const inboundCareerEmail =
     mailboxStatus?.email ||
@@ -379,10 +381,33 @@ const CandidateList = () => {
                 <DialogHeader>
                   <DialogTitle>Sync Mailbox</DialogTitle>
                   <DialogDescription>
-                    Select a date range to sync resumes received during that period. Leave dates empty to perform a standard backfill sync.
+                    {mailboxStatus?.dateRangeSyncEnabled
+                      ? "An automatic future-date sync is currently active. New resumes are being continuously parsed."
+                      : "Select a date range to sync resumes received during that period. Leave dates empty to perform a standard backfill sync."}
                   </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
+                
+                {mailboxStatus?.dateRangeSyncEnabled && (
+                  <div className="px-1 pt-4 pb-2">
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                      <div className="flex items-center gap-2 text-emerald-800 font-semibold mb-2">
+                        <span className="relative flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                        </span>
+                        Automatic Sync Active
+                      </div>
+                      <div className="text-sm text-emerald-900/80 space-y-1">
+                        <p><strong>From:</strong> {new Date(mailboxStatus.dateRangeSyncFrom).toLocaleDateString(undefined, { timeZone: 'UTC' })}</p>
+                        <p><strong>Until:</strong> {new Date(mailboxStatus.dateRangeSyncTo).toLocaleDateString(undefined, { timeZone: 'UTC' })}</p>
+                        <p><strong>Last synced:</strong> {mailboxStatus.dateRangeLastSyncedAt ? new Date(mailboxStatus.dateRangeLastSyncedAt).toLocaleString() : "Pending..."}</p>
+                      </div>
+                    </div>
+                    <div className="text-sm font-semibold text-slate-800 mt-4 mb-1">Change Sync Range</div>
+                  </div>
+                )}
+
+                <div className={`grid gap-4 ${mailboxStatus?.dateRangeSyncEnabled ? "pb-4 px-1" : "py-4"}`}>
                   <div className="grid gap-2">
                     <label htmlFor="fromDate" className="text-sm font-medium">From Date</label>
                     <input
@@ -413,29 +438,49 @@ const CandidateList = () => {
                     />
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setIsSyncDialogOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    type="button" 
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white"
-                    onClick={() => {
-                        setIsSyncDialogOpen(false);
-                        const payload = {};
-                        if (syncFromDate || syncToDate) {
-                            payload.fromDate = syncFromDate;
-                            payload.toDate = syncToDate;
-                        }
-                        syncMailboxMutation.mutate(payload);
-                    }}
-                  >
-                    Start Sync
-                  </Button>
+                <DialogFooter className="flex items-center sm:justify-between w-full">
+                  {mailboxStatus?.dateRangeSyncEnabled ? (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      className="mr-auto text-xs h-9"
+                      onClick={() => {
+                        stopAutomaticSyncMutation.mutate(null, {
+                          onSuccess: () => setIsSyncDialogOpen(false)
+                        });
+                      }}
+                      disabled={stopAutomaticSyncMutation.isPending}
+                    >
+                      {stopAutomaticSyncMutation.isPending ? "Stopping..." : "Stop Auto Sync"}
+                    </Button>
+                  ) : (
+                    <div className="mr-auto"></div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setIsSyncDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="button" 
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                      disabled={syncMailboxMutation.isPending}
+                      onClick={() => {
+                          setIsSyncDialogOpen(false);
+                          const payload = {};
+                          if (syncFromDate || syncToDate) {
+                              payload.fromDate = syncFromDate;
+                              payload.toDate = syncToDate;
+                          }
+                          syncMailboxMutation.mutate(payload);
+                      }}
+                    >
+                      {mailboxStatus?.dateRangeSyncEnabled ? "Update Sync" : "Start Sync"}
+                    </Button>
+                  </div>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
