@@ -60,7 +60,8 @@ export default function AdminAnalyticsPage() {
   const [activeParams, setActiveParams] = useState({ preset: "30d" });
 
   const triggerBlobDownload = (blobData, filename) => {
-    const url = window.URL.createObjectURL(new Blob([blobData]));
+    const blob = blobData instanceof Blob ? blobData : new Blob([blobData]);
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     link.setAttribute("download", filename);

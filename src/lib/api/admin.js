@@ -431,7 +431,7 @@ export const exportPlatformAnalyticsCsv = async (params = {}) => {
     params,
     responseType: "blob",
   });
-  return res.data;
+  return res?.data || res;
 };
 
 /**
@@ -443,7 +443,7 @@ export const exportPlatformAnalyticsPdf = async (params = {}) => {
     params,
     responseType: "blob",
   });
-  return res.data;
+  return res?.data || res;
 };
 
 
