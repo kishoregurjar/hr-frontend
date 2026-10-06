@@ -338,6 +338,9 @@ export const startAttempt = async ({
 
   // Attempt live backend start
   if (token) {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("invitationToken", token);
+    }
     try {
       const candidateToken =
         candidateAccessToken ||
