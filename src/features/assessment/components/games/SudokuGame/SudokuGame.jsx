@@ -91,8 +91,25 @@ export default function SudokuGame({ config = {}, onComplete }) {
   const [showHelp, setShowHelp] = useState(false);
   const [cellSize, setCellSize] = useState(52);
   const solvedRef = useRef(false);
+  const conflictsRef = useRef(0);
+  const prevConflictsRef = useRef(0);
+  const erasesRef = useRef(0);
 
-  const { formatted, startTimer, stopTimer, time } = useGameTimer();
+  const { formatted, startTimer, stopTimer, resetTimer, time } = useGameTimer();
+
+  const handleSandboxRestart = () => {
+    setWin(false);
+    solvedRef.current = false;
+    conflictsRef.current = 0;
+    prevConflictsRef.current = 0;
+    erasesRef.current = 0;
+    setBoard(cloneBoard(initialBoard));
+    setSelected(null);
+    setHistory([]);
+    setNotes(Array.from({ length: 6 }, () => Array.from({ length: 6 }, () => new Set())));
+    resetTimer();
+    startTimer();
+  };
 
   useEffect(() => {
     startTimer();
@@ -170,6 +187,13 @@ export default function SudokuGame({ config = {}, onComplete }) {
     return conflicts;
   }, [board, size, boxRows, boxCols]);
 
+  useEffect(() => {
+    if (conflictCells.size > prevConflictsRef.current) {
+      conflictsRef.current += 1;
+    }
+    prevConflictsRef.current = conflictCells.size;
+  }, [conflictCells.size]);
+
   // Win condition check
   useEffect(() => {
     if (win || solvedRef.current) return;
@@ -220,6 +244,7 @@ export default function SudokuGame({ config = {}, onComplete }) {
     const [r, c] = selected;
     if (initialBoard[r][c] !== 0) return;
 
+    erasesRef.current += 1;
     setHistory((prev) => [...prev, cloneBoard(board)]);
     setBoard((prev) => {
       const next = cloneBoard(prev);
@@ -275,12 +300,19 @@ export default function SudokuGame({ config = {}, onComplete }) {
 
   const handleContinue = () => {
     const rawScore = 100;
+    const computedAccuracy = Math.max(
+      50,
+      Math.round(100 - conflictsRef.current * 4 - erasesRef.current * 2)
+    );
+
     onComplete?.({
       rawScore,
       score: rawScore,
       normalizedScore: rawScore,
-      accuracy: 100,
+      accuracy: computedAccuracy,
       timeSpent: time,
+      conflicts: conflictsRef.current,
+      erases: erasesRef.current,
       finalState: { board },
     });
   };
@@ -422,8 +454,10 @@ export default function SudokuGame({ config = {}, onComplete }) {
         isOpen={win}
         score={100}
         time={formatted}
+        isSandbox={Boolean(config?.isSandbox || config?.isPreview)}
         message="Masterful! The Mini Sudoku grid is completely and accurately filled!"
         onContinue={handleContinue}
+        onRestart={handleSandboxRestart}
       />
     </div>
   );

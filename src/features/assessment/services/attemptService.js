@@ -62,10 +62,12 @@ export const attemptService = {
     });
   },
 
-  submit: async ({ attemptId, assessment }) => {
+  submit: async ({ attemptId, assessment, responses, gameResults }) => {
     const attempt = await submitAttempt({
       attemptId,
       assessment,
+      responses,
+      gameResults,
     });
 
     if (attempt?.assignmentId) {

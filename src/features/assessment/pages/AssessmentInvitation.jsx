@@ -48,18 +48,25 @@ const AssessmentInvitation = ({ token }) => {
       sessionStorage.setItem("candidate_invitation_token", token);
     }
 
-    startAssessmentMutation.mutate(candidateInfo, {
-      onSuccess: ({ attempt }) => {
-        const attemptId = attempt?.id || attempt?._id;
-        if (attemptId && !attemptId.startsWith("att_") && typeof window !== "undefined") {
-          sessionStorage.setItem("candidate_attempt_id", attemptId);
-        }
-        const targetPath = token
-          ? `/assessment/attempt/${attemptId}?token=${encodeURIComponent(token)}`
-          : `/assessment/attempt/${attemptId}`;
-        router.push(targetPath);
+    startAssessmentMutation.mutate(
+      {
+        ...candidateInfo,
+        assignment: data?.assignment,
+        assessment: data?.assessment,
       },
-    });
+      {
+        onSuccess: ({ attempt }) => {
+          const attemptId = attempt?.id || attempt?._id;
+          if (attemptId && !attemptId.startsWith("att_") && typeof window !== "undefined") {
+            sessionStorage.setItem("candidate_attempt_id", attemptId);
+          }
+          const targetPath = token
+            ? `/assessment/attempt/${attemptId}?token=${encodeURIComponent(token)}`
+            : `/assessment/attempt/${attemptId}`;
+          router.push(targetPath);
+        },
+      }
+    );
   };
 
   // ── 1. Loading ──────────────────────────────────────────────

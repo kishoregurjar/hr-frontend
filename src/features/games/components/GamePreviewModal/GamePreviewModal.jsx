@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
   Brain,
@@ -14,17 +14,20 @@ import {
   Maximize2,
   ShieldAlert,
   ArrowLeft,
+  BookOpen,
 } from "lucide-react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import GameDispatcher from "@/features/assessment/components/GameRuntime/GameDispatcher";
+import { getEffectiveGameRuntimeConfig } from "@/features/games/utils/gameConfigStore";
+import HowToPlayModal from "@/features/assessment/components/games/shared/HowToPlayModal";
+import { GAME_RULES } from "@/features/assessment/components/games/shared/gameRules";
 
 const GamePreviewModal = ({ game, open, onOpenChange }) => {
   const [mounted, setMounted] = useState(false);
   const [restartKey, setRestartKey] = useState(0);
-  const [gameResult, setGameResult] = useState(null);
+  const [showRules, setShowRules] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -37,7 +40,6 @@ const GamePreviewModal = ({ game, open, onOpenChange }) => {
   useEffect(() => {
     if (open) {
       setRestartKey((prev) => prev + 1);
-      setGameResult(null);
 
       // Lock body scroll in full screen mode
       const prevOverflow = document.body.style.overflow;
@@ -58,19 +60,36 @@ const GamePreviewModal = ({ game, open, onOpenChange }) => {
     }
   }, [open, game, handleClose]);
 
+  // Load configured company game settings
+  const effectiveConfig = useMemo(() => {
+    if (!game) return {};
+    return getEffectiveGameRuntimeConfig(game.slug || game.id, {
+      difficulty: game.difficulty,
+      duration: game.duration,
+      isSandbox: true,
+      isPreview: true,
+    });
+  }, [game, restartKey]);
+
+  // Detect matching rules for instructions guide
+  const activeRules = useMemo(() => {
+    if (!game) return null;
+    const gameKey = String(game.slug || game.id || "").toLowerCase();
+    if (gameKey.includes("zip")) return GAME_RULES.zip;
+    if (gameKey.includes("tango")) return GAME_RULES.tango;
+    if (gameKey.includes("sudoku")) return GAME_RULES.sudoku;
+    if (gameKey.includes("mahjong")) return GAME_RULES.mahjong;
+    return null;
+  }, [game]);
+
   if (!mounted || !open || !game) return null;
 
   const handleRestart = () => {
     setRestartKey((prev) => prev + 1);
-    setGameResult(null);
-    toast.info("Game restarted in full-screen test mode.");
   };
 
-  const handleGameComplete = (result) => {
-    setGameResult(result || { completed: true });
-    toast.success("Game challenge completed!", {
-      description: `Test run finished with score: ${result?.score ?? 100} pts.`,
-    });
+  const handleGameComplete = () => {
+    handleClose();
   };
 
   const getDifficultyBadgeColor = (diff) => {
@@ -86,9 +105,11 @@ const GamePreviewModal = ({ game, open, onOpenChange }) => {
     }
   };
 
+  const currentDiff = effectiveConfig.difficulty || game.difficulty;
+
   const modalContent = (
     <div className="fixed inset-0 z-[9999] w-screen h-screen bg-slate-50 text-slate-900 flex flex-col font-sans select-none overflow-hidden animate-in fade-in duration-200">
-      {/* ── 1. SIGNATURE EXECUTIVE FULL-SCREEN HEADER ── */}
+      {/* ── 1. EXECUTIVE FULL-SCREEN HEADER ── */}
       <header className="h-16 px-5 sm:px-8 bg-white/95 backdrop-blur-xl border-b border-slate-200/90 flex items-center justify-between gap-4 shrink-0 z-20 shadow-2xs">
         {/* Left: Brand & Game Title */}
         <div className="flex items-center gap-3.5 min-w-0">
@@ -114,8 +135,8 @@ const GamePreviewModal = ({ game, open, onOpenChange }) => {
                 <h2 className="text-sm sm:text-base font-black text-slate-900 tracking-tight truncate">
                   {game.title}
                 </h2>
-                <Badge className={`text-[10px] font-extrabold uppercase px-2 py-0.5 border ${getDifficultyBadgeColor(game.difficulty)}`}>
-                  {game.difficulty}
+                <Badge className={`text-[10px] font-extrabold uppercase px-2 py-0.5 border ${getDifficultyBadgeColor(currentDiff)}`}>
+                  {currentDiff}
                 </Badge>
               </div>
               <p className="text-[11px] text-slate-500 font-medium truncate flex items-center gap-1.5">
@@ -130,11 +151,24 @@ const GamePreviewModal = ({ game, open, onOpenChange }) => {
         {/* Center: Recruiter Sandbox Tag */}
         <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold">
           <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-          <span>Recruiter Full-Screen Sandbox Mode</span>
+          <span>Recruiter Practice Sandbox Mode</span>
         </div>
 
         {/* Right: Quick Actions */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
+          {activeRules && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowRules(true)}
+              className="h-9 px-3 rounded-xl bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border-slate-200 text-xs font-bold gap-1.5 shadow-2xs cursor-pointer transition"
+            >
+              <BookOpen className="h-3.5 w-3.5 text-blue-600" />
+              <span className="hidden sm:inline">Rules & Guide</span>
+            </Button>
+          )}
+
           <Button
             type="button"
             variant="outline"
@@ -143,14 +177,14 @@ const GamePreviewModal = ({ game, open, onOpenChange }) => {
             className="h-9 px-3.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border-slate-200 text-xs font-bold gap-1.5 shadow-2xs cursor-pointer transition"
           >
             <RotateCcw className="h-3.5 w-3.5 text-blue-600" />
-            Restart Challenge
+            <span className="hidden sm:inline">Restart Puzzle</span>
           </Button>
 
           <Button
             type="button"
             size="sm"
             onClick={handleClose}
-            className="h-9 px-4 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold gap-1.5 shadow-2xs cursor-pointer transition"
+            className="h-9 px-3.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold gap-1.5 shadow-2xs cursor-pointer transition"
           >
             <X className="h-3.5 w-3.5 text-rose-600" />
             <span>Close (Esc)</span>
@@ -163,33 +197,6 @@ const GamePreviewModal = ({ game, open, onOpenChange }) => {
         {/* Subtle Ambient Light Glow */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
 
-        {/* Challenge Complete Banner */}
-        {gameResult && (
-          <div className="w-full max-w-lg mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 flex items-center justify-between gap-4 shadow-md backdrop-blur-md animate-in fade-in slide-in-from-top-4 z-10">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-700 shrink-0">
-                <Trophy className="h-5 w-5" />
-              </div>
-              <div>
-                <h4 className="text-xs font-black uppercase tracking-wider text-emerald-800">
-                  Challenge Completed!
-                </h4>
-                <p className="text-xs text-emerald-700 font-medium mt-0.5">
-                  Test score: <strong className="text-slate-900 font-bold">{gameResult.score ?? 100} pts</strong>
-                </p>
-              </div>
-            </div>
-            <Button
-              size="sm"
-              onClick={handleRestart}
-              className="h-8 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-emerald-600/20 cursor-pointer transition shrink-0"
-            >
-              <RotateCcw className="h-3 w-3" />
-              Play Again
-            </Button>
-          </div>
-        )}
-
         {/* Game Arena Container */}
         <div className="w-full max-w-5xl flex items-center justify-center relative z-10">
           <GameDispatcher
@@ -199,11 +206,8 @@ const GamePreviewModal = ({ game, open, onOpenChange }) => {
               gameSlug: game.slug || game.id,
               gameType: game.slug || game.id,
               title: game.title,
-              difficulty: game.difficulty,
-              config: {
-                difficulty: game.difficulty,
-                duration: game.duration,
-              },
+              difficulty: currentDiff,
+              config: effectiveConfig,
             }}
             onComplete={handleGameComplete}
           />
@@ -214,8 +218,8 @@ const GamePreviewModal = ({ game, open, onOpenChange }) => {
       <footer className="h-10 px-6 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-500 font-medium shrink-0 z-20 shadow-2xs">
         <div className="flex items-center gap-2">
           <Zap className="h-3.5 w-3.5 text-amber-500" />
-          <span className="hidden sm:inline">Recruiter Evaluation Sandbox • Candidate assessment results are not recorded in this mode.</span>
-          <span className="sm:hidden">Recruiter Test Mode</span>
+          <span className="hidden sm:inline">Recruiter Evaluation Sandbox • Candidate assessment scores and attempts are not recorded in this mode.</span>
+          <span className="sm:hidden">Recruiter Sandbox Mode</span>
         </div>
 
         <div className="flex items-center gap-3 text-[11px] text-slate-400">
@@ -225,6 +229,15 @@ const GamePreviewModal = ({ game, open, onOpenChange }) => {
           <span>to Exit</span>
         </div>
       </footer>
+
+      {/* Instructions & Rules Drawer */}
+      {activeRules && (
+        <HowToPlayModal
+          isOpen={showRules}
+          onClose={() => setShowRules(false)}
+          rules={activeRules}
+        />
+      )}
     </div>
   );
 

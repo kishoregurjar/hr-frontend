@@ -361,11 +361,18 @@ export default function MahjongGame({ config = {}, onComplete }) {
   const [isShuffleHighlighted, setIsShuffleHighlighted] = useState(false);
 
   const handleContinue = () => {
+    const totalTiles = (dimConfig.rows || 4) * (dimConfig.cols || 6);
+    const optimalMoves = Math.max(1, Math.floor(totalTiles / 2));
+    const computedAccuracy = Math.min(
+      100,
+      Math.max(50, Math.round((optimalMoves / Math.max(optimalMoves, moves || optimalMoves)) * 100))
+    );
+
     const finalResult = {
       rawScore: 100,
       score: 100,
       normalizedScore: 100,
-      accuracy: 100,
+      accuracy: computedAccuracy,
       moves,
       timeTaken: formatted,
       timeSeconds: time || 0,
@@ -406,7 +413,21 @@ export default function MahjongGame({ config = {}, onComplete }) {
     slotSize: 0,
   });
 
-  const { formatted, startTimer, stopTimer, time } = useGameTimer();
+  const { formatted, startTimer, stopTimer, resetTimer, time } = useGameTimer();
+
+  const handleSandboxRestart = () => {
+    setWin(false);
+    solvedRef.current = false;
+    setBoard(config?.board || createBoard(difficulty));
+    setSelected(null);
+    setScore(0);
+    setMoves(0);
+    setCombo(1);
+    setHintsLeft(config?.maxHints ?? 3);
+    setShufflesLeft(config?.maxShuffles ?? 3);
+    resetTimer();
+    startTimer();
+  };
 
   useEffect(() => {
     startTimer();
@@ -1276,8 +1297,10 @@ export default function MahjongGame({ config = {}, onComplete }) {
         isOpen={win}
         score={100}
         time={formatted}
+        isSandbox={Boolean(config?.isSandbox || config?.isPreview)}
         message="Masterful! All Mahjong tiles cleared with pure strategy and focus!"
         onContinue={handleContinue}
+        onRestart={handleSandboxRestart}
       />
     </div>
   );

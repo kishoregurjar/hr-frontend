@@ -19,6 +19,15 @@ import { getAssessmentReview } from "../utils";
 const AssessmentAttempt = ({ attemptId }) => {
   const [isReviewing, setIsReviewing] = useState(false);
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
+  const [submissionResult, setSubmissionResult] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem(`submission_result_${attemptId}`);
+        return cached ? JSON.parse(cached) : null;
+      } catch {}
+    }
+    return null;
+  });
 
   const {
     data: attempt,
@@ -44,15 +53,48 @@ const AssessmentAttempt = ({ attemptId }) => {
   };
 
   const handleSubmit = () => {
+    let localSavedResponses = {};
+    let localSavedGameResults = {};
+    if (typeof window !== "undefined") {
+      try {
+        localSavedResponses = JSON.parse(
+          sessionStorage.getItem(`candidate_responses_${attempt?.id || attemptId}`) || "{}"
+        );
+      } catch {}
+      try {
+        localSavedGameResults = JSON.parse(
+          sessionStorage.getItem(`candidate_game_results_${attempt?.id || attemptId}`) ||
+          sessionStorage.getItem("candidate_game_results") ||
+          "{}"
+        );
+      } catch {}
+    }
+
     submitAttempt.mutate(
       {
         attemptId: attempt?.id || attemptId,
         assessment: effectiveAssessment,
+        responses: localSavedResponses,
+        gameResults: localSavedGameResults,
       },
       {
-        onSuccess: () => {
+        onSuccess: (result) => {
           setSubmitDialogOpen(false);
           setIsReviewing(false);
+          const enrichedResult = {
+            ...(result || {}),
+            gameResults: {
+              ...(result?.gameResults || {}),
+              ...localSavedGameResults,
+            },
+          };
+          setSubmissionResult(enrichedResult);
+          try {
+            sessionStorage.setItem(
+              `submission_result_${attempt?.id || attemptId}`,
+              JSON.stringify(enrichedResult)
+            );
+          } catch {}
         },
       }
     );
@@ -174,32 +216,50 @@ const AssessmentAttempt = ({ attemptId }) => {
     games: rawCandidateGames,
   };
 
+  let localSavedResponses = {};
+  let localSavedGameResults = {};
+  if (typeof window !== "undefined") {
+    try {
+      localSavedResponses = JSON.parse(
+        sessionStorage.getItem(`candidate_responses_${attempt?.id || attemptId}`) || "{}"
+      );
+    } catch {}
+    try {
+      localSavedGameResults = JSON.parse(
+        sessionStorage.getItem(`candidate_game_results_${attempt?.id || attemptId}`) ||
+        sessionStorage.getItem("candidate_game_results") ||
+        "{}"
+      );
+    } catch {}
+  }
+
+  const mergedAttempt = {
+    ...attempt,
+    responses: {
+      ...(attempt?.responses || {}),
+      ...localSavedResponses,
+    },
+    gameResults: {
+      ...(attempt?.gameResults || {}),
+      ...localSavedGameResults,
+      ...(submissionResult?.gameResults || {}),
+    },
+  };
+
   // ── 4. Completed State ──────────────────────────────────────
   const rawAttemptStatus = String(attempt?.status || "").toUpperCase();
-  if (rawAttemptStatus === "COMPLETED" || rawAttemptStatus === "SUBMITTED") {
+  if (rawAttemptStatus === "COMPLETED" || rawAttemptStatus === "SUBMITTED" || submissionResult) {
     return (
-      <AssessmentCompleted assessment={effectiveAssessment} attempt={attempt} />
+      <AssessmentCompleted
+        assessment={effectiveAssessment}
+        attempt={mergedAttempt}
+        submissionResult={submissionResult}
+      />
     );
   }
 
   // ── 5. Review Mode ──────────────────────────────────────────
   if (isReviewing) {
-    let localSavedResponses = {};
-    if (typeof window !== "undefined") {
-      try {
-        localSavedResponses = JSON.parse(
-          sessionStorage.getItem(`candidate_responses_${attempt?.id || attemptId}`) || "{}"
-        );
-      } catch { }
-    }
-
-    const mergedAttempt = {
-      ...attempt,
-      responses: {
-        ...(attempt?.responses || {}),
-        ...localSavedResponses,
-      },
-    };
 
     const reviewData = getAssessmentReview({ assessment: effectiveAssessment, attempt: mergedAttempt });
 

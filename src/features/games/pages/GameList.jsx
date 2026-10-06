@@ -38,27 +38,103 @@ const GameList = () => {
   const [status, setStatus] = useState("all");
   const [sortBy, setSortBy] = useState("popular");
 
-  // Dynamic live game usage map calculated from company assessments
-  const gameUsageMap = useMemo(() => {
-    const map = {};
-    if (Array.isArray(assessments)) {
-      assessments.forEach((assessment) => {
-        const gameList =
-          assessment.selectedGameIds ||
-          assessment.games ||
-          assessment.AssessmentGames ||
-          assessment.assessmentGames ||
-          [];
-        gameList.forEach((g) => {
-          const gameKey = String(
-            typeof g === "object" ? g.slug || g.gameId || g.id || g.code || g.title : g
-          ).toLowerCase();
-          map[gameKey] = (map[gameKey] || 0) + 1;
-        });
+  // Canonical slug helper to accurately match game across various IDs, codes, slugs, and titles
+  const getCanonicalSlug = (input) => {
+    if (!input) return "";
+    const str = String(
+      typeof input === "object"
+        ? [
+            input.slug,
+            input.code,
+            input.game?.code,
+            input.game?.slug,
+            input.game?.name,
+            input.name,
+            input.title,
+            input.gameId,
+            input.id,
+          ]
+            .filter(Boolean)
+            .join(" ")
+        : input
+    ).toLowerCase().trim();
+
+    if (str.includes("zip") || str.includes("pathfinder")) return "zip";
+    if (str.includes("tango")) return "tango";
+    if (str.includes("sudoku")) return "sudoku";
+    if (str.includes("mahjong")) return "mahjong";
+    return "";
+  };
+
+  // Map of raw/database IDs to canonical slugs
+  const idToCanonical = useMemo(() => {
+    const map = new Map();
+    if (Array.isArray(rawGames)) {
+      rawGames.forEach((g) => {
+        const canonical = getCanonicalSlug(g);
+        if (canonical) {
+          if (g.id) map.set(String(g.id).toLowerCase(), canonical);
+          if (g.code) map.set(String(g.code).toLowerCase(), canonical);
+          if (g.slug) map.set(String(g.slug).toLowerCase(), canonical);
+          if (g.name) map.set(String(g.name).toLowerCase(), canonical);
+          if (g.title) map.set(String(g.title).toLowerCase(), canonical);
+        }
       });
     }
     return map;
-  }, [assessments]);
+  }, [rawGames]);
+
+  // Dynamic live game usage map calculated accurately from company assessments
+  const gameUsageMap = useMemo(() => {
+    const map = {};
+    const safeAssessments = Array.isArray(assessments)
+      ? assessments
+      : Array.isArray(assessments?.items)
+      ? assessments.items
+      : Array.isArray(assessments?.data)
+      ? assessments.data
+      : [];
+
+    safeAssessments.forEach((assessment) => {
+      // Gather all game references present in this assessment
+      const rawRefs = [
+        ...(Array.isArray(assessment.games) ? assessment.games : []),
+        ...(Array.isArray(assessment.AssessmentGames) ? assessment.AssessmentGames : []),
+        ...(Array.isArray(assessment.assessmentGames) ? assessment.assessmentGames : []),
+        ...(Array.isArray(assessment.selectedGameIds) ? assessment.selectedGameIds : []),
+        ...(Array.isArray(assessment.gameIds) ? assessment.gameIds : []),
+      ];
+
+      // Track distinct canonical games used in this single assessment
+      const gamesInAssessment = new Set();
+
+      rawRefs.forEach((item) => {
+        if (!item) return;
+
+        // Try canonical resolution directly
+        let canonical = getCanonicalSlug(item);
+
+        // If not directly resolved (e.g. an opaque DB id), look it up in idToCanonical
+        if (!canonical) {
+          const rawId = String(
+            (typeof item === "object" ? item.gameId || item.id || item.code : item) || ""
+          ).toLowerCase().trim();
+          canonical = idToCanonical.get(rawId) || "";
+        }
+
+        if (canonical) {
+          gamesInAssessment.add(canonical);
+        }
+      });
+
+      // Increment count once per distinct game for this assessment
+      gamesInAssessment.forEach((canonicalKey) => {
+        map[canonicalKey] = (map[canonicalKey] || 0) + 1;
+      });
+    });
+
+    return map;
+  }, [assessments, idToCanonical]);
 
   useEffect(() => {
     const handleGameStatusChange = () => {
@@ -123,11 +199,13 @@ const GameList = () => {
       const statusText = isActive ? "Active" : "Inactive";
       const skill = game.skill || "Logical Problem Solving";
 
+      const canonicalKey = getCanonicalSlug(game);
       const slugKey = String(slug || id).toLowerCase();
       const titleKey = String(title).toLowerCase();
       const usedIn =
-        gameUsageMap[slugKey] ||
-        gameUsageMap[titleKey] ||
+        (canonicalKey && gameUsageMap[canonicalKey] !== undefined ? gameUsageMap[canonicalKey] : undefined) ??
+        gameUsageMap[slugKey] ??
+        gameUsageMap[titleKey] ??
         (game.usedIn !== undefined ? game.usedIn : game.assessmentsUsedIn || 0);
 
       return {

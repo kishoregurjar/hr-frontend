@@ -6,7 +6,10 @@ import { createAssessmentResult } from "./results";
 import { calculateAttemptScore } from "@/lib/scoring/calculateAttemptScore";
 
 export const startAssessmentWorkflow = async (token, candidateInfo = {}) => {
-  const assignment = await getAssignmentByToken(token);
+  const assignment =
+    candidateInfo?.assignment ||
+    (await getAssignmentByToken(token).catch(() => null)) ||
+    {};
 
   if (assignment.isExpired && assignment.status !== "Completed") {
     throw new Error("Assessment invitation has expired.");
@@ -16,9 +19,14 @@ export const startAssessmentWorkflow = async (token, candidateInfo = {}) => {
     throw new Error("Assessment has already been completed.");
   }
 
-  const assessment = assignment.assessment || (await getAssessmentById(assignment.assessmentId).catch(() => null));
+  const assessment =
+    candidateInfo?.assessment ||
+    assignment.assessment ||
+    (assignment.assessmentId ? await getAssessmentById(assignment.assessmentId).catch(() => null) : null);
 
-  const startedAssignment = await startAssignment(token);
+  const startedAssignment = assignment.id
+    ? { ...assignment, status: "In Progress" }
+    : await startAssignment(token);
 
   const attempt = await startAttempt({
     assignmentId: startedAssignment.id,
