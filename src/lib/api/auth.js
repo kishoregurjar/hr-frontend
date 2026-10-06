@@ -618,7 +618,7 @@ export const activateOwnerApi = async ({ token, password }) => {
   // Clear any stale browser session (old recruiter/company keys) before storing new session
   clearAllAuthStorage();
 
-  const user = normalizeUser(res);
+  const user = normalizeUser(res) || normalizeUser(data);
 
   setAuthSession(accessToken, user, refreshToken);
   return data;

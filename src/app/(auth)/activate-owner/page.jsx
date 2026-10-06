@@ -148,10 +148,8 @@ function ActivateOwnerContent() {
       const companies = payload?.companies || payload?.data?.companies || [];
       const primaryCompany = (Array.isArray(companies) && companies[0]) || payload?.company;
 
-      const rawPlatformRole = String(
-        userData?.role ||
-        ""
-      ).toUpperCase().trim();
+      const userRole = userData?.role || payload?.user?.role || response?.user?.role || "";
+      const rawPlatformRole = String(userRole).toUpperCase().trim();
 
       const isPlatformAdmin =
         rawPlatformRole === "SUPER_ADMIN" ||
