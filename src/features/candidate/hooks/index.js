@@ -18,4 +18,5 @@ export {
   useConnectGoogleMailbox,
   useSyncMailboxNow,
   useDisconnectMailbox,
+  useStopAutomaticSync,
 } from "./useMailbox";

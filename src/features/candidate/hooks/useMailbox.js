@@ -7,6 +7,7 @@ import {
   getGoogleConnectUrl,
   syncMailboxNow,
   disconnectMailbox,
+  stopAutomaticSync,
 } from "@/lib/api/mailbox";
 import { CANDIDATE_QUERY_KEYS } from "../constants";
 
@@ -120,6 +121,25 @@ export const useDisconnectMailbox = () => {
     },
     onError: (err) => {
       const msg = err?.response?.data?.message || err?.message || "Failed to disconnect mailbox.";
+      toast.error(msg);
+    },
+  });
+};
+
+/**
+ * 5. Hook to stop automatic sync
+ */
+export const useStopAutomaticSync = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: stopAutomaticSync,
+    onSuccess: () => {
+      toast.success("Automatic sync stopped.");
+      queryClient.invalidateQueries({ queryKey: MAILBOX_QUERY_KEY });
+    },
+    onError: (err) => {
+      const msg = err?.response?.data?.message || err?.message || "Failed to stop automatic sync.";
       toast.error(msg);
     },
   });
