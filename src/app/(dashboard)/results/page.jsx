@@ -428,7 +428,7 @@ export default function ResultsAndRankingPage() {
         <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs flex items-center justify-between transition hover:shadow-md">
           <div>
             <p className="text-xs font-medium text-muted-foreground">
-              Evaluations Scored
+              Total Candidates
             </p>
             <h2 className="mt-1.5 text-3xl font-black text-slate-900 tracking-tight">
               {results.length}
@@ -443,7 +443,7 @@ export default function ResultsAndRankingPage() {
         <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs flex items-center justify-between transition hover:shadow-md">
           <div>
             <p className="text-xs font-medium text-muted-foreground">
-              Mean Batch Score
+              Average Score
             </p>
             <h2 className="mt-1.5 text-3xl font-black text-slate-900 tracking-tight">
               {results.length > 0
@@ -462,7 +462,7 @@ export default function ResultsAndRankingPage() {
         <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs flex items-center justify-between transition hover:shadow-md">
           <div>
             <p className="text-xs font-medium text-muted-foreground">
-              Top Tier Shortlist
+              Top Candidates
             </p>
             <h2 className="mt-1.5 text-3xl font-black text-slate-900 tracking-tight">
               {results.filter((r) => (r.percentage || 0) >= 85).length}
