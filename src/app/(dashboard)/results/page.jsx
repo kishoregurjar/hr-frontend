@@ -423,7 +423,7 @@ export default function ResultsAndRankingPage() {
       </div>
 
       {/* ── 2. EXACT DESIGN SYSTEM KPI STAT CARDS ── */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {/* Card 1: Total Completed Tests */}
         <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs flex items-center justify-between transition hover:shadow-md">
           <div>
@@ -470,21 +470,6 @@ export default function ResultsAndRankingPage() {
           </div>
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100/90 text-slate-700">
             <Sparkles className="h-5 w-5" />
-          </div>
-        </div>
-
-        {/* Card 4: Proctoring Integrity */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs flex items-center justify-between transition hover:shadow-md">
-          <div>
-            <p className="text-xs font-medium text-muted-foreground">
-              Proctoring Integrity
-            </p>
-            <h2 className="mt-1.5 text-3xl font-black text-slate-900 tracking-tight">
-              {results.length > 0 ? "98.2%" : "100%"}
-            </h2>
-          </div>
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100/90 text-slate-700">
-            <Send className="h-5 w-5" />
           </div>
         </div>
       </div>
