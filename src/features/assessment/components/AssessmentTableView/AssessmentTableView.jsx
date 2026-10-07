@@ -31,6 +31,9 @@ import { getAssessmentSummary } from "../../utils";
 
 const AssessmentTableView = ({
   assessments = [],
+  selectedIds = [],
+  onToggleSelect,
+  onSelectAllVisible,
   onViewDetails,
   onInvite,
   onPublish,
@@ -38,6 +41,10 @@ const AssessmentTableView = ({
   onRestore,
   isPendingId = null,
 }) => {
+  const allVisibleSelected =
+    assessments.length > 0 &&
+    assessments.every((a) => selectedIds.includes(a.id));
+
   const getStatusBadge = (status) => {
     const s = String(status || "").toUpperCase();
     if (s === "PUBLISHED" || s === "ACTIVE") {
@@ -75,6 +82,16 @@ const AssessmentTableView = ({
       <Table>
         <TableHeader className="bg-slate-50/80 border-b border-slate-200/80">
           <TableRow className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+            {/* Selection Column Header */}
+            <TableHead className="w-10 py-3.5 pl-4 pr-1 text-center">
+              <input
+                type="checkbox"
+                aria-label="Select all visible assessments"
+                checked={allVisibleSelected}
+                onChange={onSelectAllVisible}
+                className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer transition"
+              />
+            </TableHead>
             <TableHead className="py-3.5 px-4 font-bold text-[11px] text-slate-600 uppercase tracking-wider">
               Assessment Name & Description
             </TableHead>
@@ -95,6 +112,7 @@ const AssessmentTableView = ({
 
         <TableBody className="divide-y divide-slate-100">
           {assessments.map((assessment) => {
+            const isSelected = selectedIds.includes(assessment.id);
             const { gameCount, questionCount, totalSections } = getAssessmentSummary(assessment);
 
             const quizWeight = assessment?.quizWeight ?? (gameCount > 0 && questionCount > 0 ? 40 : (questionCount > 0 ? 100 : 0));
@@ -108,8 +126,21 @@ const AssessmentTableView = ({
             return (
               <TableRow
                 key={assessment.id}
-                className="hover:bg-slate-50/60 transition-colors group text-xs"
+                className={`transition-colors group text-xs ${
+                  isSelected ? "bg-blue-50/50 hover:bg-blue-50/70" : "hover:bg-slate-50/60"
+                }`}
               >
+                {/* Checkbox Column */}
+                <TableCell className="w-10 py-3.5 pl-4 pr-1 text-center">
+                  <input
+                    type="checkbox"
+                    aria-label={`Select ${title}`}
+                    checked={isSelected}
+                    onChange={() => onToggleSelect?.(assessment.id)}
+                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer transition"
+                  />
+                </TableCell>
+
                 {/* 1. Assessment Title & Description */}
                 <TableCell className="py-3.5 px-4 max-w-[280px]">
                   <div className="space-y-1">

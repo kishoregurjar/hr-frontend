@@ -11,6 +11,7 @@ import {
   Filter,
   Eye,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,10 +32,12 @@ import {
   AssessmentTableView,
   AssessmentDetailsDrawer,
   AssessmentCardSkeleton,
+  BulkDeleteAssessmentDialog,
 } from "../components";
 import {
   useAssessmentsQuery,
   useAssessmentStatusMutation,
+  useBulkDeleteAssessments,
 } from "../hooks";
 import { getAssessmentById } from "@/lib/api/assessments";
 
@@ -49,6 +52,12 @@ const AssessmentList = () => {
   const [actionAssessmentId, setActionAssessmentId] = useState(null);
   const [selectedDrawerAssessment, setSelectedDrawerAssessment] = useState(null);
   const [isDrawerLoading, setIsDrawerLoading] = useState(false);
+
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
+  const [isDeleteAllMode, setIsDeleteAllMode] = useState(false);
+
+  const bulkDeleteMutation = useBulkDeleteAssessments();
 
   const {
     data: assessments = [],
@@ -125,6 +134,55 @@ const AssessmentList = () => {
     return filteredAssessments.slice(startIndex, startIndex + PAGE_SIZE);
   }, [filteredAssessments, validPage]);
 
+  const handleToggleSelect = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllVisible = () => {
+    const pageIds = paginatedAssessments.map((a) => a.id).filter(Boolean);
+    const allPageSelected =
+      pageIds.length > 0 && pageIds.every((id) => selectedIds.includes(id));
+
+    if (allPageSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !pageIds.includes(id)));
+    } else {
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+    }
+  };
+
+  const handleOpenDeleteAll = () => {
+    setIsDeleteAllMode(true);
+    setIsBulkDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    const deletingCount = selectedIds.length;
+    const isAll = isDeleteAllMode;
+
+    bulkDeleteMutation.mutate(
+      { ids: selectedIds, all: isDeleteAllMode },
+      {
+        onSuccess: (res) => {
+          setSelectedIds([]);
+          setIsBulkDeleteDialogOpen(false);
+          const msg =
+            res?.message ||
+            (isAll
+              ? "All assessments permanently deleted!"
+              : `${deletingCount} assessment(s) permanently deleted!`);
+          toast.success(msg);
+        },
+        onError: (err) => {
+          toast.error(
+            err?.response?.data?.message || err?.message || "Failed to delete assessments."
+          );
+        },
+      }
+    );
+  };
+
   const statsSummary = useMemo(() => {
     const total = assessments.length;
     const publishedCount = assessments.filter(
@@ -155,7 +213,7 @@ const AssessmentList = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
           <Button
             variant="outline"
             size="sm"
@@ -166,6 +224,20 @@ const AssessmentList = () => {
             <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
             Refresh
           </Button>
+
+          {assessments.length > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleOpenDeleteAll}
+              className="h-9 px-3 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 text-xs font-bold gap-1.5 cursor-pointer shadow-2xs transition"
+              title="Permanently delete all assessments"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>Delete All</span>
+            </Button>
+          )}
 
           <Link href="/assessments/create" className="w-full sm:w-auto">
             <Button className="w-full sm:w-auto h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20 cursor-pointer">
@@ -234,6 +306,9 @@ const AssessmentList = () => {
       ) : (
         <AssessmentTableView
           assessments={paginatedAssessments}
+          selectedIds={selectedIds}
+          onToggleSelect={handleToggleSelect}
+          onSelectAllVisible={handleSelectAllVisible}
           onViewDetails={handleViewDetails}
           onPublish={handlePublish}
           onArchive={handleArchive}
@@ -311,6 +386,45 @@ const AssessmentList = () => {
         onOpenChange={(open) => !open && setSelectedDrawerAssessment(null)}
         assessment={selectedDrawerAssessment}
         isLoading={isDrawerLoading}
+      />
+
+      {/* ── 6. FLOATING BULK SELECTION ACTION BAR ── */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-slate-900 text-white shadow-2xl border border-slate-800 animate-in fade-in slide-in-from-bottom-4">
+          <span className="text-xs font-bold">
+            {selectedIds.length} assessment{selectedIds.length > 1 ? "s" : ""} selected
+          </span>
+          <div className="h-4 w-px bg-slate-700" />
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => {
+              setIsDeleteAllMode(false);
+              setIsBulkDeleteDialogOpen(true);
+            }}
+            className="h-7 px-3 text-xs font-bold rounded-xl bg-rose-600 hover:bg-rose-700 text-white gap-1.5 cursor-pointer"
+          >
+            <Trash2 className="h-3 w-3" />
+            Delete Selected
+          </Button>
+          <button
+            type="button"
+            onClick={() => setSelectedIds([])}
+            className="text-xs text-slate-400 hover:text-white transition ml-1 cursor-pointer font-medium"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {/* ── 7. PERMANENT BULK / ALL DELETE CONFIRMATION MODAL ── */}
+      <BulkDeleteAssessmentDialog
+        open={isBulkDeleteDialogOpen}
+        onOpenChange={setIsBulkDeleteDialogOpen}
+        count={isDeleteAllMode ? assessments.length : selectedIds.length}
+        isAll={isDeleteAllMode}
+        onConfirm={handleConfirmDelete}
+        isPending={bulkDeleteMutation.isPending}
       />
     </div>
   );

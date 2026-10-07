@@ -109,10 +109,26 @@ export const updateAssessment = async (id, payload) => {
 
 
 /**
- * 5. Delete Assessment (Soft Delete) — DELETE /api/v1/assessments/:id
+ * 5. Delete Assessment (Permanent Hard Delete) — DELETE /api/v1/assessments/:id
  */
 export const deleteAssessment = async (id) => {
   const res = await axiosClient.delete(`/assessments/${id}`);
+  return res?.data?.data || res?.data || res;
+};
+
+/**
+ * 5a. Bulk Delete Selected Assessments (Permanent Hard Delete) — DELETE /api/v1/assessments/bulk
+ */
+export const bulkDeleteAssessments = async (ids = []) => {
+  const res = await axiosClient.delete("/assessments/bulk", { data: { ids } });
+  return res?.data?.data || res?.data || res;
+};
+
+/**
+ * 5b. Delete All Assessments (Permanent Hard Delete) — DELETE /api/v1/assessments/all
+ */
+export const deleteAllAssessments = async () => {
+  const res = await axiosClient.delete("/assessments/all");
   return res?.data?.data || res?.data || res;
 };
 
