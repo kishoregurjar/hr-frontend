@@ -9,23 +9,26 @@ import {
 import { QUESTION_STATUS } from "../../constants";
 
 const QuestionStats = ({ questions = [] }) => {
-  const total = questions.length;
+  const visible = questions.filter(
+    (q) => String(q.status || "").toUpperCase() !== "ARCHIVED"
+  );
+  const total = visible.length;
 
-  const active = questions.filter(
+  const active = visible.filter(
     (q) =>
       q.status === QUESTION_STATUS.ACTIVE ||
       String(q.status || "").toUpperCase() === "ACTIVE" ||
       String(q.status || "").toUpperCase() === "PUBLISHED"
   ).length;
 
-  const draft = questions.filter(
+  const draft = visible.filter(
     (q) =>
       q.status === QUESTION_STATUS.DRAFT ||
       String(q.status || "").toUpperCase() === "DRAFT"
   ).length;
 
   const categories = new Set(
-    questions.map((q) => q.category).filter(Boolean)
+    visible.map((q) => q.category).filter(Boolean)
   ).size;
 
   return (

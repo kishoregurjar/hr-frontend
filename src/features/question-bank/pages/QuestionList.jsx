@@ -13,6 +13,7 @@ import {
   LayoutGrid,
   Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/features/auth/context";
@@ -118,12 +119,26 @@ const QuestionList = () => {
   };
 
   const handleConfirmDelete = () => {
+    const deletingCount = selectedIds.length;
+    const isAll = isDeleteAllMode;
+
     bulkDeleteMutation.mutate(
       { ids: selectedIds, all: isDeleteAllMode },
       {
-        onSuccess: () => {
+        onSuccess: (res) => {
           setSelectedIds([]);
           setIsBulkDeleteDialogOpen(false);
+          const msg =
+            res?.message ||
+            (isAll
+              ? "All questions deleted successfully!"
+              : `${deletingCount} question(s) deleted successfully!`);
+          toast.success(msg);
+        },
+        onError: (err) => {
+          toast.error(
+            err?.response?.data?.message || err?.message || "Failed to delete questions."
+          );
         },
       }
     );
