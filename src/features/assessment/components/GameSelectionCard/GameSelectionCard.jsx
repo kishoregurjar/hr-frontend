@@ -1,14 +1,23 @@
 "use client";
 
-import { Check, Plus, Gamepad2, Brain, Sparkles } from "lucide-react";
+import { Check, Plus, Gamepad2, Brain, Sparkles, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-const GameSelectionCard = ({ game, selected, onToggle }) => {
+const GameSelectionCard = ({ game, selected, onToggle, difficulty, onDifficultyChange }) => {
+  const currentDiff = difficulty || game.difficulty?.toUpperCase() || "EASY";
+  const diffLabel = currentDiff.charAt(0).toUpperCase() + currentDiff.slice(1).toLowerCase();
+
   const difficultyColor =
-    game.difficulty === "Easy"
+    currentDiff === "EASY"
       ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-      : game.difficulty === "Medium"
+      : currentDiff === "MEDIUM"
       ? "bg-amber-50 text-amber-700 border-amber-300"
       : "bg-rose-50 text-rose-700 border-rose-300";
 
@@ -61,9 +70,38 @@ const GameSelectionCard = ({ game, selected, onToggle }) => {
             </Badge>
           )}
 
-          {game.difficulty && (
+          {selected ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div 
+                  className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full flex items-center gap-1 cursor-pointer transition hover:opacity-80 border ${difficultyColor}`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {diffLabel}
+                  <ChevronDown className="h-3 w-3" />
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-32 rounded-xl p-1 shadow-lg border-slate-200">
+                {["EASY", "MEDIUM", "HARD"].map((lvl) => (
+                  <DropdownMenuItem
+                    key={lvl}
+                    className="text-xs font-bold rounded-lg cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDifficultyChange?.(lvl);
+                    }}
+                  >
+                    <span className={lvl === currentDiff ? "text-blue-600" : "text-slate-700"}>
+                      {lvl.charAt(0) + lvl.slice(1).toLowerCase()}
+                    </span>
+                    {lvl === currentDiff && <Check className="h-3.5 w-3.5 ml-auto text-blue-600" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
             <Badge className={`text-[10px] font-extrabold uppercase px-2 py-0.5 ${difficultyColor}`}>
-              {game.difficulty}
+              {diffLabel}
             </Badge>
           )}
         </div>

@@ -41,9 +41,27 @@ const AssessmentReview = ({
 }) => {
   // ── Mode 1: HR Builder Mode (Creating / Editing Assessment) ──────────
   if (onPublish || onSaveDraft) {
-    const selectedGames = games.filter((g) =>
-      (assessment?.selectedGameIds ?? []).map(String).includes(String(g.id))
-    );
+    const selectedGameIdsList = assessment?.selectedGameIds || assessment?.games || [];
+    const selectedGamesMap = new Map();
+    selectedGameIdsList.forEach(g => {
+      if (typeof g === "object" && g !== null) {
+        const id = g.id || g.gameId || g._id;
+        if (id) selectedGamesMap.set(String(id), g);
+      } else if (g) {
+        selectedGamesMap.set(String(g), { id: g });
+      }
+    });
+
+    const selectedGames = games
+      .filter((g) => selectedGamesMap.has(String(g.id)))
+      .map((g) => {
+        const selectedGameData = selectedGamesMap.get(String(g.id));
+        const assessmentDifficulty = selectedGameData?.config?.difficulty || selectedGameData?.difficulty;
+        return {
+          ...g,
+          difficulty: assessmentDifficulty || g.difficulty
+        };
+      });
 
     const selectedQuestions = questions.filter((q) =>
       (assessment?.selectedQuestionIds ?? []).map(String).includes(String(q.id))
