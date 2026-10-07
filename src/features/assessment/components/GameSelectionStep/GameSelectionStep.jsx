@@ -17,11 +17,26 @@ const GameSelectionStep = ({
   error,
 }) => {
   const [search, setSearch] = useState("");
-  const [selectedIds, setSelectedIds] = useState(selectedGameIds);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [gameConfigs, setGameConfigs] = useState({});
 
   useEffect(() => {
     if (selectedGameIds) {
-      setSelectedIds(selectedGameIds);
+      const ids = [];
+      const configs = {};
+      selectedGameIds.forEach((item) => {
+        if (typeof item === "object" && item !== null) {
+          const id = item.gameId || item.id;
+          if (id) {
+            ids.push(id);
+            if (item.config) configs[id] = item.config;
+          }
+        } else if (item) {
+          ids.push(item);
+        }
+      });
+      setSelectedIds(ids);
+      setGameConfigs(configs);
     }
   }, [selectedGameIds]);
 
@@ -51,16 +66,27 @@ const GameSelectionStep = ({
     filteredGameIds.length > 0 &&
     filteredGameIds.every((id) => selectedIds.includes(id));
 
+  const emitChange = (ids, configs) => {
+    const payload = ids.map((id) => {
+      const defaultDiff = games.find((g) => g.id === id)?.difficulty?.toUpperCase() || "EASY";
+      return {
+        id,
+        config: configs[id] || { difficulty: defaultDiff },
+      };
+    });
+    onSelectionChange?.(payload);
+  };
+
   const handleSelectAll = () => {
     const combined = Array.from(new Set([...selectedIds, ...filteredGameIds]));
     setSelectedIds(combined);
-    onSelectionChange?.(combined);
+    emitChange(combined, gameConfigs);
   };
 
   const handleDeselectAll = () => {
     const remaining = selectedIds.filter((id) => !filteredGameIds.includes(id));
     setSelectedIds(remaining);
-    onSelectionChange?.(remaining);
+    emitChange(remaining, gameConfigs);
   };
 
   const handleToggle = (gameId) => {
@@ -69,11 +95,28 @@ const GameSelectionStep = ({
       : [...selectedIds, gameId];
 
     setSelectedIds(updatedIds);
-    onSelectionChange?.(updatedIds);
+    emitChange(updatedIds, gameConfigs);
+  };
+
+  const handleDifficultyChange = (gameId, difficulty) => {
+    const nextConfigs = {
+      ...gameConfigs,
+      [gameId]: { ...gameConfigs[gameId], difficulty },
+    };
+    setGameConfigs(nextConfigs);
+    
+    // Auto-select if not already selected
+    let nextIds = selectedIds;
+    if (!selectedIds.includes(gameId)) {
+      nextIds = [...selectedIds, gameId];
+      setSelectedIds(nextIds);
+    }
+    
+    emitChange(nextIds, nextConfigs);
   };
 
   const handleContinue = () => {
-    onContinue(selectedIds);
+    onContinue();
   };
 
   return (
@@ -142,6 +185,8 @@ const GameSelectionStep = ({
               game={game}
               selected={selectedIds.includes(game.id)}
               onToggle={handleToggle}
+              difficulty={gameConfigs[game.id]?.difficulty}
+              onDifficultyChange={(diff) => handleDifficultyChange(game.id, diff)}
             />
           ))}
         </div>

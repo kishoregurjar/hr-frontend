@@ -15,35 +15,35 @@ export const toAssessmentPayload = (assessment, status) => {
   let resolvedDifficulty = assessment.difficulty;
   if (!resolvedDifficulty || resolvedDifficulty === "MEDIUM") {
     try {
-      const selectedIds = [
+      const allGames = [
         ...(assessment.selectedGameIds || assessment.gameIds || assessment.games || []),
-      ].map((g) => (typeof g === "object" ? g.slug || g.gameId || g.id : g)).filter(Boolean);
+      ];
 
-      for (const id of selectedIds) {
-        const conf = getCompanyGameConfig(id);
-        if (conf?.difficulty) {
-          resolvedDifficulty = conf.difficulty;
+      for (const g of allGames) {
+        if (typeof g === "object" && g?.config?.difficulty) {
+          resolvedDifficulty = g.config.difficulty;
           break;
+        }
+      }
+
+      if (!resolvedDifficulty) {
+        const allConfigs = getAllCompanyGameConfigs();
+        for (const g of allGames) {
+          const id = typeof g === "object" ? g.slug || g.gameId || g.id : g;
+          if (!id) continue;
+          
+          const key = String(id).toLowerCase();
+          const conf = allConfigs[key] || allConfigs[id];
+          if (conf?.difficulty) {
+            resolvedDifficulty = conf.difficulty;
+            break;
+          }
         }
       }
     } catch {}
   }
 
-  const rawGames = [...(assessment.selectedGameIds || assessment.gameIds || assessment.games || [])];
-  const formattedGames = rawGames.map((g) => {
-    const gId = typeof g === "object" ? (g.gameId || g.id || g.slug || g.code) : g;
-    const conf = getCompanyGameConfig(gId);
-    return {
-      id: gId,
-      config: conf
-        ? {
-            difficulty: String(conf.difficulty || "medium").toLowerCase(),
-            duration: conf.duration,
-            passingScore: conf.passingScore,
-          }
-        : null,
-    };
-  }).filter(Boolean);
+
 
   return {
     title: assessment.title?.trim() ?? "",
@@ -65,8 +65,24 @@ export const toAssessmentPayload = (assessment, status) => {
     shuffleQuestions: Boolean(assessment.shuffleQuestions ?? true),
     showResultToCandidate: Boolean(assessment.showResultToCandidate ?? false),
 
-    gameIds: formattedGames.map((g) => g.id),
-    games: formattedGames,
+    gameIds: [...(assessment.selectedGameIds || assessment.gameIds || assessment.games || [])]
+      .filter(Boolean)
+      .map((g) => {
+        if (typeof g === "object") {
+          return { id: g.gameId || g.id || g._id, config: g.config || null };
+        }
+        return g; // primitive
+      })
+      .filter((g) => typeof g === "object" ? Boolean(g.id) : Boolean(g)),
+    games: [...(assessment.selectedGameIds || assessment.gameIds || assessment.games || [])]
+      .filter(Boolean)
+      .map((g) => {
+        if (typeof g === "object") {
+          return { id: g.gameId || g.id || g._id, config: g.config || null };
+        }
+        return g; // primitive
+      })
+      .filter((g) => typeof g === "object" ? Boolean(g.id) : Boolean(g)),
     questionIds: [...(assessment.selectedQuestionIds || assessment.questionIds || assessment.questions || [])].map(q => typeof q === "object" ? (q.questionId || q.id) : q).filter(Boolean),
     questions: [...(assessment.selectedQuestionIds || assessment.questionIds || assessment.questions || [])].map(q => typeof q === "object" ? (q.questionId || q.id) : q).filter(Boolean),
   };
@@ -91,19 +107,29 @@ export const toAssessmentBuilder = (assessment) => {
       : null) ||
     [];
 
+  const extractGameIdsWithConfig = (gamesArray) => {
+    return gamesArray
+      .map((g) => {
+        if (!g) return null;
+        if (typeof g === "object") {
+          const id = g.gameId || g.id || g._id;
+          if (!id) return null;
+          return { id, config: g.config || null };
+        }
+        return g;
+      })
+      .filter(Boolean);
+  };
+
   const extractedGameIds =
     (Array.isArray(assessment.gameIds) && assessment.gameIds.length > 0
-      ? assessment.gameIds
+      ? extractGameIdsWithConfig(assessment.gameIds)
       : null) ||
     (Array.isArray(assessment.games)
-      ? assessment.games
-        .map((g) => g?.gameId || g?.id || g?._id)
-        .filter(Boolean)
+      ? extractGameIdsWithConfig(assessment.games)
       : null) ||
     (Array.isArray(assessment.AssessmentGames)
-      ? assessment.AssessmentGames
-        .map((g) => g?.gameId || g?.id)
-        .filter(Boolean)
+      ? extractGameIdsWithConfig(assessment.AssessmentGames)
       : null) ||
     [];
 
