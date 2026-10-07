@@ -20,13 +20,24 @@ const normalizeKey = (key = "") => {
   return str.replace(/^game_/, "").replace(/-/g, "_");
 };
 
+const getStorageKey = () => {
+  if (typeof window === "undefined") return STORAGE_KEY;
+  const compId =
+    localStorage.getItem("companyId") ||
+    localStorage.getItem("active_company_id") ||
+    sessionStorage.getItem("companyId") ||
+    "";
+  return compId ? `${STORAGE_KEY}_${compId}` : STORAGE_KEY;
+};
+
 export const getAllCompanyGameConfigs = () => {
   if (typeof window === "undefined") {
     return {};
   }
 
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const key = getStorageKey();
+    const raw = localStorage.getItem(key) || (key !== STORAGE_KEY ? localStorage.getItem(STORAGE_KEY) : null);
     if (!raw) return {};
     return JSON.parse(raw);
   } catch {
@@ -61,6 +72,8 @@ export const saveCompanyGameConfig = (gameSlugOrId, newConfig = {}) => {
 
   if (typeof window !== "undefined") {
     try {
+      const storageKey = getStorageKey();
+      localStorage.setItem(storageKey, JSON.stringify(updated));
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       window.dispatchEvent(new CustomEvent("hirequest_game_configs_updated", { detail: updated }));
     } catch { }
