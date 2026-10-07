@@ -11,6 +11,7 @@ import {
   Filter,
   LayoutList,
   LayoutGrid,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,8 +29,9 @@ import {
   BulkQuestionImportDialog,
   ManageCategoriesDialog,
   QuestionGridSkeleton,
+  BulkDeleteDialog,
 } from "../components";
-import { useQuestions } from "../hooks";
+import { useQuestions, useBulkDeleteQuestions } from "../hooks";
 
 const QuestionList = () => {
   const { user } = useAuth();
@@ -46,6 +48,11 @@ const QuestionList = () => {
     "";
 
   const [viewMode, setViewMode] = useState("table");
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
+  const [isDeleteAllMode, setIsDeleteAllMode] = useState(false);
+
+  const bulkDeleteMutation = useBulkDeleteQuestions();
 
   const {
     questions,
@@ -81,6 +88,47 @@ const QuestionList = () => {
     difficulty !== "all" ||
     status !== "all";
 
+  const handleToggleSelect = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllVisible = () => {
+    const pageIds = (questions || []).map((q) => q.id).filter(Boolean);
+    const allPageSelected =
+      pageIds.length > 0 && pageIds.every((id) => selectedIds.includes(id));
+
+    if (allPageSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !pageIds.includes(id)));
+    } else {
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+    }
+  };
+
+  const handleOpenDeleteSelected = () => {
+    if (selectedIds.length === 0) return;
+    setIsDeleteAllMode(false);
+    setIsBulkDeleteDialogOpen(true);
+  };
+
+  const handleOpenDeleteAll = () => {
+    setIsDeleteAllMode(true);
+    setIsBulkDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    bulkDeleteMutation.mutate(
+      { ids: selectedIds, all: isDeleteAllMode },
+      {
+        onSuccess: () => {
+          setSelectedIds([]);
+          setIsBulkDeleteDialogOpen(false);
+        },
+      }
+    );
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
       {/* ── 1. TOP ACTION TOOLBAR ── */}
@@ -97,6 +145,19 @@ const QuestionList = () => {
           <ManageCategoriesDialog />
           <BulkQuestionImportDialog />
           <AddQuestionDialog />
+          {(totalQuestions > 0 || allQuestions.length > 0) && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleOpenDeleteAll}
+              className="h-9 px-3 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 text-xs font-bold gap-1.5 cursor-pointer shadow-2xs transition"
+              title="Delete all questions in bank"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>Delete All</span>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -157,6 +218,41 @@ const QuestionList = () => {
         </div>
       </div>
 
+      {/* ── 3.5 Bulk Action Bar (When items selected) ── */}
+      {selectedIds.length > 0 && (
+        <div className="rounded-2xl border border-blue-200 bg-blue-50/80 p-3 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="flex items-center gap-2.5 text-xs">
+            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-600 text-white font-bold text-[11px] shadow-xs">
+              {selectedIds.length}
+            </span>
+            <span className="font-extrabold text-slate-800">
+              {selectedIds.length} {selectedIds.length === 1 ? "question" : "questions"} selected
+            </span>
+            <span className="text-slate-300">•</span>
+            <button
+              type="button"
+              onClick={() => setSelectedIds([])}
+              className="text-blue-600 hover:text-blue-800 font-bold hover:underline cursor-pointer"
+            >
+              Deselect all
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              onClick={handleOpenDeleteSelected}
+              className="h-8 px-3.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold gap-1.5 shadow-xs cursor-pointer transition"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>Delete Selected ({selectedIds.length})</span>
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* ── 4. Questions Content (Table or Grid) / Empty State ── */}
       {isLoading ? (
         <QuestionGridSkeleton />
@@ -191,13 +287,27 @@ const QuestionList = () => {
           )}
         </div>
       ) : viewMode === "table" ? (
-        <QuestionTableView questions={questions} currentPage={currentPage} pageSize={pageSize} />
+        <QuestionTableView
+          questions={questions}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          selectedIds={selectedIds}
+          onToggleSelect={handleToggleSelect}
+          onSelectAll={handleSelectAllVisible}
+          allSelected={questions.length > 0 && questions.every((q) => selectedIds.includes(q.id))}
+          isIndeterminate={
+            questions.some((q) => selectedIds.includes(q.id)) &&
+            !questions.every((q) => selectedIds.includes(q.id))
+          }
+        />
       ) : (
         <QuestionGrid
           questions={questions}
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
+          selectedIds={selectedIds}
+          onToggleSelect={handleToggleSelect}
         />
       )}
 
@@ -264,6 +374,16 @@ const QuestionList = () => {
           </div>
         </div>
       )}
+
+      {/* ── 5. Bulk / All Delete Confirmation Modal ── */}
+      <BulkDeleteDialog
+        open={isBulkDeleteDialogOpen}
+        onOpenChange={setIsBulkDeleteDialogOpen}
+        count={isDeleteAllMode ? (totalQuestions || allQuestions.length) : selectedIds.length}
+        isAll={isDeleteAllMode}
+        onConfirm={handleConfirmDelete}
+        isPending={bulkDeleteMutation.isPending}
+      />
     </div>
   );
 };

@@ -2,6 +2,8 @@ import {
   createQuestion,
   bulkCreateQuestions,
   deleteQuestion,
+  bulkDeleteQuestions,
+  deleteAllQuestions,
   getQuestionById,
   getQuestions,
   updateQuestion,
@@ -30,5 +32,13 @@ export const questionsService = {
 
   remove: async (id) => {
     return deleteQuestion(id);
+  },
+
+  bulkRemove: async (ids) => {
+    return bulkDeleteQuestions(ids);
+  },
+
+  removeAll: async () => {
+    return deleteAllQuestions();
   },
 };
