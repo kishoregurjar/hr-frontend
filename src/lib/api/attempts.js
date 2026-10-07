@@ -625,24 +625,34 @@ export const saveQuizResponse = async ({
         }
       : {};
 
-    await axiosClient.post(
-      "/attempts/save-answer",
-      {
-        attemptId,
-        questionId,
-        attemptQuestionId: questionId,
-        selectedOptionIds: opts,
-        ...(currentToken ? { token: currentToken, invitationToken: currentToken } : {}),
-        ...(candidateToken
-          ? {
-              candidateAccessToken: candidateToken,
-              candidateSessionToken: candidateToken,
-              sessionToken: candidateToken,
-            }
-          : {}),
-      },
-      { headers }
-    );
+    const saveAnswerKey = `save_answer_${attemptId}_${questionId}_${JSON.stringify(opts)}`;
+    let pendingPromise = inFlightRequests.get(saveAnswerKey);
+
+    if (!pendingPromise) {
+      pendingPromise = axiosClient.post(
+        "/attempts/save-answer",
+        {
+          attemptId,
+          questionId,
+          attemptQuestionId: questionId,
+          selectedOptionIds: opts,
+          ...(currentToken ? { token: currentToken, invitationToken: currentToken } : {}),
+          ...(candidateToken
+            ? {
+                candidateAccessToken: candidateToken,
+                candidateSessionToken: candidateToken,
+                sessionToken: candidateToken,
+              }
+            : {}),
+        },
+        { headers }
+      ).finally(() => {
+        setTimeout(() => inFlightRequests.delete(saveAnswerKey), 500);
+      });
+      inFlightRequests.set(saveAnswerKey, pendingPromise);
+    }
+
+    await pendingPromise;
   } catch (err) {
     console.warn("Real-time autosave API notice:", err?.message);
   }
