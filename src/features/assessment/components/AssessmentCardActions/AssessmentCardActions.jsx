@@ -55,13 +55,13 @@ const AssessmentCardActions = ({
   };
 
   const handleDelete = () => {
-    if (window.confirm(`Are you sure you want to delete "${assessment.title}"?`)) {
+    if (window.confirm(`Are you sure you want to permanently delete "${assessment.title}"? This action cannot be undone.`)) {
       deleteMutation.mutate(assessment.id, {
         onSuccess: () => {
-          toast.success("Assessment deleted successfully!");
+          toast.success("Assessment permanently deleted!");
         },
         onError: (err) => {
-          toast.error(err?.message || "Failed to delete assessment");
+          toast.error(err?.response?.data?.message || err?.message || "Failed to delete assessment");
         },
       });
     }

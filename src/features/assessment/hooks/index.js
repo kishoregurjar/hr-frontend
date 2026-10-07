@@ -5,6 +5,7 @@ export { default as useAssessmentQuery } from "./useAssessmentQuery";
 export { default as useUpdateAssessment } from "./useUpdateAssessment";
 export { default as useAssessmentStatusMutation } from "./useAssessmentStatusMutation";
 export { default as useDeleteAssessment } from "./useDeleteAssessment";
+export { default as useBulkDeleteAssessments } from "./useBulkDeleteAssessments";
 export { default as useDuplicateAssessment } from "./useDuplicateAssessment";
 export { default as useStartAttempt } from "./useStartAttempt";
 export { default as useInvitationQuery } from "./useInvitationQuery";
