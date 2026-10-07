@@ -13,7 +13,7 @@ const SOCKET_URL =
   process.env.NEXT_PUBLIC_SOCKET_URL ||
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  "https://walkingdreamzhrmanagement.up.railway.app";
+  "https://hr-backend-production-6cbb.up.railway.app";
 
 export function SocketProvider({ children }) {
   const queryClient = useQueryClient();

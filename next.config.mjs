@@ -7,7 +7,7 @@ const __dirname = path.dirname(__filename);
 const rawBackendDestination =
   process.env.NEXT_PUBLIC_API_URL ||
   process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "https://walkingdreamzhrmanagement.up.railway.app";
+  "https://hr-backend-production-6cbb.up.railway.app";
 
 // Auto-sanitize: remove any trailing /api/v1 or slashes to prevent /api/v1/api/v1 duplicate routes
 const backendDestination = rawBackendDestination
