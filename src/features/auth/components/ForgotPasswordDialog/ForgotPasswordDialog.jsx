@@ -36,9 +36,9 @@ const ForgotPasswordDialog = ({ initialEmail = "" }) => {
     setIsLoading(true);
 
     try {
-      await forgotPasswordApi(email.trim());
+      const res = await forgotPasswordApi(email.trim());
       setIsSent(true);
-      toast.success("Password reset link sent to your email!");
+      toast.success(res?.message || "Password reset request processed.");
     } catch (err) {
       setError(err?.message || "Failed to send reset link. Please check your email.");
       toast.error(err?.message || "Failed to send reset link.");
@@ -90,10 +90,10 @@ const ForgotPasswordDialog = ({ initialEmail = "" }) => {
             </div>
             <div className="space-y-1">
               <h3 className="text-base font-bold text-slate-900">
-                Check Your Inbox
+                Request Processed
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                We have sent password reset instructions to: <br />
+                If an account exists with this email, a password reset link has been sent to: <br />
                 <span className="font-semibold text-slate-800">{email}</span>
               </p>
             </div>
@@ -107,7 +107,7 @@ const ForgotPasswordDialog = ({ initialEmail = "" }) => {
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+          <div className="space-y-4 pt-2">
             {error && (
               <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive font-medium">
                 {error}
@@ -134,7 +134,8 @@ const ForgotPasswordDialog = ({ initialEmail = "" }) => {
             </div>
 
             <Button
-              type="submit"
+              type="button"
+              onClick={handleSubmit}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
               disabled={isLoading}
             >
@@ -150,7 +151,7 @@ const ForgotPasswordDialog = ({ initialEmail = "" }) => {
                 </>
               )}
             </Button>
-          </form>
+          </div>
         )}
       </DialogContent>
     </Dialog>
