@@ -5,12 +5,16 @@ import {
 import { QUESTION_QUERY_KEYS } from "../constants/queryKeys";
 import { questionsService } from "../services";
 
-const useDeleteQuestion = () => {
+const useBulkDeleteQuestions = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id) =>
-      questionsService.remove(id),
+    mutationFn: async ({ ids, all = false }) => {
+      if (all) {
+        return questionsService.removeAll();
+      }
+      return questionsService.bulkRemove(ids);
+    },
 
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -23,4 +27,4 @@ const useDeleteQuestion = () => {
   });
 };
 
-export default useDeleteQuestion;
+export default useBulkDeleteQuestions;

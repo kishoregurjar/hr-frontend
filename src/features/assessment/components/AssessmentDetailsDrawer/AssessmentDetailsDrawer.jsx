@@ -96,7 +96,7 @@ const AssessmentDetailsDrawer = ({
         </DialogHeader>
 
         {/* ── KPI Meta Badges Grid ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 py-4 w-full min-w-0">
           <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
             <div className="flex items-center gap-1.5 text-slate-500 text-[11px] font-semibold">
               <Clock className="h-3.5 w-3.5 text-blue-600" />
@@ -148,21 +148,21 @@ const AssessmentDetailsDrawer = ({
           <div className="space-y-4 pt-1">
           {/* Module 1: Cognitive Games */}
           <div className="rounded-xl border border-slate-200/80 p-4 space-y-3 bg-white shadow-2xs">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-              <div className="flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center">
+            <div className="flex items-start sm:items-center justify-between border-b border-slate-100 pb-2.5 flex-col sm:flex-row gap-3 sm:gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="h-7 w-7 shrink-0 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center">
                   <Gamepad2 className="h-4 w-4" />
                 </div>
-                <div>
-                  <h4 className="font-extrabold text-xs text-slate-900">
+                <div className="min-w-0">
+                  <h4 className="font-extrabold text-xs text-slate-900 truncate">
                     Module 1: Cognitive & Behavioral Challenges
                   </h4>
-                  <p className="text-[10.5px] text-slate-500 font-medium">
+                  <p className="text-[10.5px] text-slate-500 font-medium truncate sm:whitespace-normal">
                     Evaluates problem-solving agility, memory, and cognitive pattern recognition.
                   </p>
                 </div>
               </div>
-              <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 text-[10px] font-bold">
+              <Badge className="bg-indigo-50 shrink-0 text-indigo-700 border-indigo-200 text-[10px] font-bold self-start sm:self-auto">
                 Weight: {gameWeight}%
               </Badge>
             </div>
@@ -170,7 +170,7 @@ const AssessmentDetailsDrawer = ({
             {cognitiveGames.length === 0 ? (
               <p className="text-xs text-slate-400 italic py-2">No cognitive games configured in this module.</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 w-full min-w-0">
                 {cognitiveGames.map((g, idx) => {
                   const gameTitle = g?.game?.name || (typeof g === "object" ? g.title || g.name || "Cognitive Game" : String(g));
                   const gameCategory = typeof g?.category === "string"
@@ -181,21 +181,21 @@ const AssessmentDetailsDrawer = ({
                   return (
                     <div
                       key={idx}
-                      className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200/70 bg-slate-50/50 text-xs"
+                      className="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-2.5 p-2.5 rounded-xl border border-slate-200/70 bg-slate-50/50 text-xs w-full min-w-0"
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="h-5 w-5 rounded-md bg-indigo-100 text-indigo-700 font-bold text-[10px] flex items-center justify-center">
+                      <div className="flex items-start gap-2 min-w-0 flex-1 w-full">
+                        <span className="h-5 w-5 shrink-0 rounded-md bg-indigo-100 text-indigo-700 font-bold text-[10px] flex items-center justify-center mt-0.5">
                           {idx + 1}
                         </span>
-                        <span className="font-bold text-slate-800 truncate max-w-[150px]">
+                        <span className="font-bold text-slate-800 break-words whitespace-normal leading-tight min-w-0">
                           {gameTitle}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <Badge variant="outline" className="text-[9.5px] font-semibold text-slate-600 bg-white">
+                      <div className="flex items-center gap-1.5 shrink-0 pl-7 2xl:pl-0">
+                        <Badge variant="outline" className="text-[9.5px] font-semibold text-slate-600 bg-white shrink-0">
                           {gameCategory}
                         </Badge>
-                        <Badge className={`text-[9.5px] font-extrabold uppercase px-1.5 py-0.5 ${
+                        <Badge className={`text-[9.5px] font-extrabold uppercase px-1.5 py-0.5 shrink-0 ${
                           String(gameDiff).toLowerCase() === "easy"
                             ? "bg-emerald-50 text-emerald-700 border-emerald-300"
                             : String(gameDiff).toLowerCase() === "hard"
@@ -214,21 +214,21 @@ const AssessmentDetailsDrawer = ({
 
           {/* Module 2: Technical & Domain MCQs */}
           <div className="rounded-xl border border-slate-200/80 p-4 space-y-3 bg-white shadow-2xs">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-              <div className="flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center">
+            <div className="flex items-start sm:items-center justify-between border-b border-slate-100 pb-2.5 flex-col sm:flex-row gap-3 sm:gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="h-7 w-7 shrink-0 rounded-lg bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center">
                   <HelpCircle className="h-4 w-4" />
                 </div>
-                <div>
-                  <h4 className="font-extrabold text-xs text-slate-900">
+                <div className="min-w-0">
+                  <h4 className="font-extrabold text-xs text-slate-900 truncate">
                     Module 2: Technical & Domain MCQ Quiz
                   </h4>
-                  <p className="text-[10.5px] text-slate-500 font-medium">
+                  <p className="text-[10.5px] text-slate-500 font-medium truncate sm:whitespace-normal">
                     Evaluates core technical concepts, problem resolution, and domain proficiency.
                   </p>
                 </div>
               </div>
-              <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] font-bold">
+              <Badge className="bg-blue-50 shrink-0 text-blue-700 border-blue-200 text-[10px] font-bold self-start sm:self-auto">
                 Weight: {quizWeight}%
               </Badge>
             </div>
@@ -246,23 +246,23 @@ const AssessmentDetailsDrawer = ({
                   return (
                     <div
                       key={q.id || idx}
-                      className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200/70 bg-slate-50/40 text-xs"
+                      className="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-2.5 p-2.5 rounded-xl border border-slate-200/70 bg-slate-50/40 text-xs w-full min-w-0"
                     >
-                      <div className="flex items-center gap-2 min-w-0 pr-2">
-                        <span className="h-5 w-5 shrink-0 rounded-md bg-blue-100 text-blue-700 font-bold text-[10px] flex items-center justify-center">
+                      <div className="flex items-start gap-2 min-w-0 flex-1 w-full">
+                        <span className="h-5 w-5 shrink-0 rounded-md bg-blue-100 text-blue-700 font-bold text-[10px] flex items-center justify-center mt-0.5">
                           {idx + 1}
                         </span>
-                        <p className="font-semibold text-slate-800 truncate">
+                        <p className="font-semibold text-slate-800 break-words whitespace-normal leading-tight min-w-0">
                           {qText}
                         </p>
                       </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <Badge variant="outline" className="text-[9.5px] font-semibold text-slate-600 bg-white">
+                      <div className="flex items-center gap-1.5 shrink-0 pl-7 2xl:pl-0">
+                        <Badge variant="outline" className="text-[9.5px] font-semibold text-slate-600 bg-white shrink-0">
                           {qCat}
                         </Badge>
                         <Badge
                           variant="outline"
-                          className={`text-[9.5px] font-bold ${qDiff === "Easy"
+                          className={`text-[9.5px] font-bold shrink-0 ${qDiff === "Easy"
                             ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                             : qDiff === "Hard"
                               ? "bg-rose-50 text-rose-700 border-rose-200"

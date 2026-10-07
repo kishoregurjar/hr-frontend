@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { QuestionCard } from "..";
 import { fadeInUp } from "@/lib/animations";
 
-const QuestionGrid = ({ questions }) => {
+const QuestionGrid = ({ questions, selectedIds = [], onToggleSelect }) => {
   return (
     <div className="grid gap-8 md:grid-cols-2 2xl:grid-cols-3">
       {questions.map((question, index) => (
@@ -14,7 +14,11 @@ const QuestionGrid = ({ questions }) => {
             delay: index * 0.08,
           }}
         >
-          <QuestionCard question={question} />
+          <QuestionCard
+            question={question}
+            isSelected={selectedIds.includes(question.id)}
+            onToggleSelect={() => onToggleSelect?.(question.id)}
+          />
         </motion.div>
       ))}
     </div>

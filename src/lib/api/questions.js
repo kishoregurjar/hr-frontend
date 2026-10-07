@@ -466,6 +466,22 @@ export const deleteQuestion = async (id) => {
 };
 
 /**
+ * Bulk Delete Questions — LIVE API: DELETE /api/v1/questions/bulk
+ */
+export const bulkDeleteQuestions = async (ids = []) => {
+  const res = await axiosClient.delete("/questions/bulk", { data: { ids } });
+  return res?.data?.data || res?.data || res;
+};
+
+/**
+ * Delete All Questions — LIVE API: DELETE /api/v1/questions/all
+ */
+export const deleteAllQuestions = async () => {
+  const res = await axiosClient.delete("/questions/all");
+  return res?.data?.data || res?.data || res;
+};
+
+/**
  * Publish Question — LIVE API: POST /api/v1/questions/:id/publish
  */
 export const publishQuestion = async (id) => {
