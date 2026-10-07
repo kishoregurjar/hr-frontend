@@ -1,4 +1,4 @@
-import { getAllCompanyGameConfigs } from "@/features/games/utils/gameConfigStore";
+import { getAllCompanyGameConfigs, getCompanyGameConfig } from "@/features/games/utils/gameConfigStore";
 
 const safeNum = (val, fallback) => {
   const n = Number(val);
@@ -13,16 +13,14 @@ export const toAssessmentPayload = (assessment, status) => {
 
   // Compute dominant difficulty from configured games if not explicitly set
   let resolvedDifficulty = assessment.difficulty;
-  if (!resolvedDifficulty) {
+  if (!resolvedDifficulty || resolvedDifficulty === "MEDIUM") {
     try {
       const selectedIds = [
         ...(assessment.selectedGameIds || assessment.gameIds || assessment.games || []),
       ].map((g) => (typeof g === "object" ? g.slug || g.gameId || g.id : g)).filter(Boolean);
 
-      const allConfigs = getAllCompanyGameConfigs();
       for (const id of selectedIds) {
-        const key = String(id).toLowerCase();
-        const conf = allConfigs[key] || allConfigs[id];
+        const conf = getCompanyGameConfig(id);
         if (conf?.difficulty) {
           resolvedDifficulty = conf.difficulty;
           break;
@@ -30,6 +28,22 @@ export const toAssessmentPayload = (assessment, status) => {
       }
     } catch {}
   }
+
+  const rawGames = [...(assessment.selectedGameIds || assessment.gameIds || assessment.games || [])];
+  const formattedGames = rawGames.map((g) => {
+    const gId = typeof g === "object" ? (g.gameId || g.id || g.slug || g.code) : g;
+    const conf = getCompanyGameConfig(gId);
+    return {
+      id: gId,
+      config: conf
+        ? {
+            difficulty: String(conf.difficulty || "medium").toLowerCase(),
+            duration: conf.duration,
+            passingScore: conf.passingScore,
+          }
+        : null,
+    };
+  }).filter(Boolean);
 
   return {
     title: assessment.title?.trim() ?? "",
@@ -51,8 +65,8 @@ export const toAssessmentPayload = (assessment, status) => {
     shuffleQuestions: Boolean(assessment.shuffleQuestions ?? true),
     showResultToCandidate: Boolean(assessment.showResultToCandidate ?? false),
 
-    gameIds: [...(assessment.selectedGameIds || assessment.gameIds || assessment.games || [])].map(g => typeof g === "object" ? (g.gameId || g.id) : g).filter(Boolean),
-    games: [...(assessment.selectedGameIds || assessment.gameIds || assessment.games || [])].map(g => typeof g === "object" ? (g.gameId || g.id) : g).filter(Boolean),
+    gameIds: formattedGames.map((g) => g.id),
+    games: formattedGames,
     questionIds: [...(assessment.selectedQuestionIds || assessment.questionIds || assessment.questions || [])].map(q => typeof q === "object" ? (q.questionId || q.id) : q).filter(Boolean),
     questions: [...(assessment.selectedQuestionIds || assessment.questionIds || assessment.questions || [])].map(q => typeof q === "object" ? (q.questionId || q.id) : q).filter(Boolean),
   };
