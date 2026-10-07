@@ -15,3 +15,4 @@ export { default as QuestionCardSkeleton } from "./QuestionCardSkeleton";
 export { default as QuestionGridSkeleton } from "./QuestionGridSkeleton";
 export { default as ManageCategoriesDialog } from "./ManageCategoriesDialog";
 export { default as QuestionTableView } from "./QuestionTableView/QuestionTableView";
+export { default as BulkDeleteDialog } from "./BulkDeleteDialog";

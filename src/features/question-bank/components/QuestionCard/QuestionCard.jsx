@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/formatters";
 import { EditQuestionDialog, DeleteQuestionDialog, QuestionPreviewSheet } from "..";
 
-const QuestionCard = ({ question }) => {
+const QuestionCard = ({ question, isSelected = false, onToggleSelect }) => {
   const difficultyColor =
     question.difficulty === "Easy"
       ? "bg-emerald-50 text-emerald-700 border-emerald-300"
@@ -28,14 +28,28 @@ const QuestionCard = ({ question }) => {
       transition={{ duration: 0.2 }}
       className="h-full"
     >
-      <div className="h-full rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs hover:shadow-md hover:border-blue-300 transition-all flex flex-col justify-between group">
+      <div
+        className={`h-full rounded-2xl border bg-white p-5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group ${
+          isSelected
+            ? "border-blue-500 ring-2 ring-blue-500/20 bg-blue-50/15"
+            : "border-slate-200/90 hover:border-blue-300"
+        }`}
+      >
         <div className="space-y-3.5">
-          {/* Header row with Status & Difficulty */}
+          {/* Header row with Checkbox, Status & Difficulty */}
           <div className="flex items-center justify-between gap-2">
-            <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10.5px] font-bold gap-1 px-2.5 py-0.5">
-              <Tag className="h-3 w-3 text-blue-600" />
-              {question.category || "General"}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={onToggleSelect}
+                className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer transition"
+              />
+              <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10.5px] font-bold gap-1 px-2.5 py-0.5">
+                <Tag className="h-3 w-3 text-blue-600" />
+                {question.category || "General"}
+              </Badge>
+            </div>
 
             <div className="flex items-center gap-1.5">
               <Badge className={`text-[10px] font-extrabold uppercase px-2 py-0.5 ${difficultyColor}`}>
