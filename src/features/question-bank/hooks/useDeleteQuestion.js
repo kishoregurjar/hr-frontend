@@ -16,6 +16,9 @@ const useDeleteQuestion = () => {
       queryClient.invalidateQueries({
         queryKey: QUESTION_QUERY_KEYS.all,
       });
+      queryClient.refetchQueries({
+        queryKey: QUESTION_QUERY_KEYS.all,
+      });
     },
   });
 };

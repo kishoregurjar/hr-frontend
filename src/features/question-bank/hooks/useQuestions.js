@@ -61,6 +61,10 @@ const useQuestions = () => {
       data = data.filter(
         (item) => String(item.status).toLowerCase() === status.toLowerCase()
       );
+    } else {
+      data = data.filter(
+        (item) => String(item.status).toUpperCase() !== "ARCHIVED"
+      );
     }
 
     switch (sortBy) {
