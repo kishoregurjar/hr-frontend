@@ -407,3 +407,44 @@ export const getAuditLogs = async (params = {}) => {
   }
 };
 
+/**
+ * 19. Fetch Platform-Wide Live Telemetry Analytics
+ * Endpoint: GET /api/v1/super-admin/analytics
+ */
+export const getAdminAnalytics = async (params = {}) => {
+  try {
+    const res = await axiosClient.get("/super-admin/analytics", { params });
+    const data = res?.data?.data || res?.data || res;
+    return data;
+  } catch (err) {
+    console.error("Failed to fetch admin analytics:", err);
+    throw err;
+  }
+};
+
+/**
+ * 20. Export Platform-Wide Analytics as CSV Blob
+ * Endpoint: GET /api/v1/super-admin/analytics/export/csv
+ */
+export const exportPlatformAnalyticsCsv = async (params = {}) => {
+  const res = await axiosClient.get("/super-admin/analytics/export/csv", {
+    params,
+    responseType: "blob",
+  });
+  return res?.data || res;
+};
+
+/**
+ * 21. Export Platform-Wide Analytics as PDF Blob
+ * Endpoint: GET /api/v1/super-admin/analytics/export/pdf
+ */
+export const exportPlatformAnalyticsPdf = async (params = {}) => {
+  const res = await axiosClient.get("/super-admin/analytics/export/pdf", {
+    params,
+    responseType: "blob",
+  });
+  return res?.data || res;
+};
+
+
+

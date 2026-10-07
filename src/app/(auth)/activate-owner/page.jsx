@@ -16,7 +16,7 @@ import {
   Building2,
   Sparkles,
 } from "lucide-react";
-import { activateOwnerApi, normalizeUser, setAuthSession } from "@/lib/api/auth";
+import { activateOwnerApi, verifyOwnerActivationApi, normalizeUser, setAuthSession, clearAllAuthStorage } from "@/lib/api/auth";
 import { AUTH_STORAGE_KEYS } from "@/features/auth/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,16 +39,50 @@ function ActivateOwnerContent() {
   const [redirectUrl, setRedirectUrl] = useState("/dashboard");
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    let isMounted = true;
+    
+    const verifyToken = async () => {
       if (!token || token.trim().length === 0) {
-        setTokenValid(false);
-      } else {
-        setTokenValid(true);
+        if (isMounted) {
+          setTokenValid(false);
+          setIsVerifying(false);
+        }
+        return;
       }
-      setIsVerifying(false);
-    }, 500);
 
-    return () => clearTimeout(timer);
+      try {
+        await verifyOwnerActivationApi(token);
+        if (isMounted) {
+          setTokenValid(true);
+          setIsVerifying(false);
+        }
+      } catch (err) {
+        if (isMounted) {
+          const errMsg =
+            err?.response?.data?.message ||
+            err?.message ||
+            "Activation failed. The link may have expired or already been used.";
+
+          if (
+            errMsg.toLowerCase().includes("already active") ||
+            errMsg.toLowerCase().includes("already used") ||
+            errMsg.toLowerCase().includes("already been used") ||
+            errMsg.toLowerCase().includes("sign in directly")
+          ) {
+            setIsAlreadyActive(true);
+          } else {
+            setTokenValid(false);
+          }
+          setIsVerifying(false);
+        }
+      }
+    };
+
+    verifyToken();
+
+    return () => {
+      isMounted = false;
+    };
   }, [token]);
 
   // Password strength calculation
@@ -114,16 +148,15 @@ function ActivateOwnerContent() {
       const companies = payload?.companies || payload?.data?.companies || [];
       const primaryCompany = (Array.isArray(companies) && companies[0]) || payload?.company;
 
-      const rawPlatformRole = String(
-        userData?.role ||
-        ""
-      ).toUpperCase().trim();
+      const userRole = userData?.role || payload?.user?.role || response?.user?.role || "";
+      const rawPlatformRole = String(userRole).toUpperCase().trim();
 
       const isPlatformAdmin =
         rawPlatformRole === "SUPER_ADMIN" ||
         rawPlatformRole === "PLATFORM_ADMIN";
 
       if (typeof window !== "undefined" && accessToken) {
+        clearAllAuthStorage();
         const normalizedUser = normalizeUser(response) || userData || {};
 
         if (!isPlatformAdmin) {
@@ -146,11 +179,11 @@ function ActivateOwnerContent() {
               normalizedUser.activeCompany.role = "OWNER";
             }
           }
-        }
 
-        if (primaryCompany?.id) normalizedUser.companyId = primaryCompany.id;
-        if (primaryCompany?.name) normalizedUser.companyName = primaryCompany.name;
-        if (primaryCompany?.logoUrl || primaryCompany?.logo) normalizedUser.companyLogo = primaryCompany.logoUrl || primaryCompany.logo;
+          if (primaryCompany?.id) normalizedUser.companyId = primaryCompany.id;
+          if (primaryCompany?.name) normalizedUser.companyName = primaryCompany.name;
+          if (primaryCompany?.logoUrl || primaryCompany?.logo) normalizedUser.companyLogo = primaryCompany.logoUrl || primaryCompany.logo;
+        }
 
         setAuthSession(accessToken, normalizedUser, refreshToken);
       }

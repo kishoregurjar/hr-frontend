@@ -119,6 +119,44 @@ export const normalizeUser = (resData, fallbackEmail = "") => {
     fallbackEmail ||
     (typeof window !== "undefined" ? localStorage.getItem("user_email") || "" : "");
 
+  const rawPlatformRole = String(
+    rawUser?.role ||
+    rawUser?.rawRole ||
+    payload?.role ||
+    resData?.role ||
+    ""
+  )
+    .toUpperCase()
+    .trim()
+    .replace(/\s+/g, "_");
+
+  const isPlatformAdmin =
+    rawPlatformRole === "SUPER_ADMIN" ||
+    rawPlatformRole === "PLATFORM_ADMIN" ||
+    rawUser?.isSuperAdmin === true;
+
+  if (isPlatformAdmin) {
+    return {
+      id: rawUser.id || rawUser._id || `user-${Date.now()}`,
+      name: formattedName,
+      fullName: formattedName,
+      email: email,
+      company: "",
+      companyName: "",
+      companyId: "",
+      companyLogo: "",
+      companyRole: null,
+      role: "SUPER_ADMIN",
+      rawRole: rawPlatformRole || "SUPER_ADMIN",
+      displayRole: "Super Admin",
+      isOwner: false,
+      isAdmin: false,
+      isSuperAdmin: true,
+      activeCompany: null,
+      companies: [],
+    };
+  }
+
   const explicitCompanyRole =
     primaryCompany?.role ||
     rawUser?.activeCompany?.role ||
@@ -555,6 +593,15 @@ export const logoutAllApi = async () => {
 };
 
 /**
+ * Verify Owner Activation Token — Public Guest Call
+ * Endpoint: GET /api/v1/auth/owner/activate/verify?token=...
+ */
+export const verifyOwnerActivationApi = async (token) => {
+  const res = await axiosClient.get(`/auth/owner/activate/verify?token=${encodeURIComponent(token)}`);
+  return res?.data?.data || res?.data || res;
+};
+
+/**
  * Owner Account Activation API — Public Guest Call
  * Endpoint: POST /api/v1/auth/owner/activate
  * Payload: { token: string, password: string }
@@ -567,7 +614,11 @@ export const activateOwnerApi = async ({ token, password }) => {
   const data = res?.data?.data || res?.data || res;
   const refreshToken = data?.refreshToken || res?.refreshToken || res?.data?.refreshToken;
   const accessToken = data?.accessToken || data?.token || res?.accessToken;
-  const user = normalizeUser(res);
+
+  // Clear any stale browser session (old recruiter/company keys) before storing new session
+  clearAllAuthStorage();
+
+  const user = normalizeUser(res) || normalizeUser(data);
 
   setAuthSession(accessToken, user, refreshToken);
   return data;

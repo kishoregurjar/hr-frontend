@@ -24,6 +24,15 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/features/auth/context";
 import useSocketStore from "@/store/useSocketStore";
 
@@ -41,6 +50,7 @@ import {
   useMailboxStatus,
   useConnectGoogleMailbox,
   useSyncMailboxNow,
+  useStopAutomaticSync,
 } from "../hooks";
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -71,6 +81,9 @@ const CandidateList = () => {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [singleAssignCandidate, setSingleAssignCandidate] = useState(null);
   const [drawerCandidate, setDrawerCandidate] = useState(null);
+  const [isSyncDialogOpen, setIsSyncDialogOpen] = useState(false);
+  const [syncFromDate, setSyncFromDate] = useState("");
+  const [syncToDate, setSyncToDate] = useState("");
 
   const {
     data: candidates = [],
@@ -291,6 +304,7 @@ const CandidateList = () => {
   const { data: mailboxStatus, refetch: refetchMailboxStatus } = useMailboxStatus();
   const connectGoogleMutation = useConnectGoogleMailbox();
   const syncMailboxMutation = useSyncMailboxNow();
+  const stopAutomaticSyncMutation = useStopAutomaticSync();
 
   const inboundCareerEmail =
     mailboxStatus?.email ||
@@ -347,20 +361,129 @@ const CandidateList = () => {
 
         <div className="flex items-center gap-2 shrink-0 self-start md:self-auto">
           {mailboxStatus?.connected ? (
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => syncMailboxMutation.mutate()}
-              disabled={syncMailboxMutation.isPending}
-              className="text-xs h-8 px-3 gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-xs cursor-pointer"
-            >
-              {syncMailboxMutation.isPending ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <RefreshCw className="h-3.5 w-3.5" />
-              )}
-              Sync Mailbox
-            </Button>
+            <Dialog open={isSyncDialogOpen} onOpenChange={setIsSyncDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={syncMailboxMutation.isPending || mailboxStatus?.isSyncingNow}
+                  className="text-xs h-8 px-3 gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {syncMailboxMutation.isPending || mailboxStatus?.isSyncingNow ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-3.5 w-3.5" />
+                  )}
+                  {syncMailboxMutation.isPending || mailboxStatus?.isSyncingNow ? "Syncing..." : "Sync Mailbox"}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Sync Mailbox</DialogTitle>
+                  <DialogDescription>
+                    {mailboxStatus?.dateRangeSyncEnabled
+                      ? "An automatic future-date sync is currently active. New resumes are being continuously parsed."
+                      : "Select a date range to sync resumes received during that period. Leave dates empty to perform a standard backfill sync."}
+                  </DialogDescription>
+                </DialogHeader>
+                
+                {mailboxStatus?.dateRangeSyncEnabled && (
+                  <div className="px-1 pt-4 pb-2">
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                      <div className="flex items-center gap-2 text-emerald-800 font-semibold mb-2">
+                        <span className="relative flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                        </span>
+                        Automatic Sync Active
+                      </div>
+                      <div className="text-sm text-emerald-900/80 space-y-1">
+                        <p><strong>From:</strong> {new Date(mailboxStatus.dateRangeSyncFrom).toLocaleDateString(undefined, { timeZone: 'UTC' })}</p>
+                        <p><strong>Until:</strong> {new Date(mailboxStatus.dateRangeSyncTo).toLocaleDateString(undefined, { timeZone: 'UTC' })}</p>
+                        <p><strong>Last synced:</strong> {mailboxStatus.dateRangeLastSyncedAt ? new Date(mailboxStatus.dateRangeLastSyncedAt).toLocaleString() : "Pending..."}</p>
+                      </div>
+                    </div>
+                    <div className="text-sm font-semibold text-slate-800 mt-4 mb-1">Change Sync Range</div>
+                  </div>
+                )}
+
+                <div className={`grid gap-4 ${mailboxStatus?.dateRangeSyncEnabled ? "pb-4 px-1" : "py-4"}`}>
+                  <div className="grid gap-2">
+                    <label htmlFor="fromDate" className="text-sm font-medium">From Date</label>
+                    <input
+                      id="fromDate"
+                      type="date"
+                      value={syncFromDate}
+                      onChange={(e) => setSyncFromDate(e.target.value)}
+                      className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <div className="flex justify-between items-center">
+                        <label htmlFor="toDate" className="text-sm font-medium">To Date</label>
+                        <button 
+                            type="button" 
+                            className="text-xs text-indigo-600 hover:underline"
+                            onClick={() => setSyncToDate(new Date().toISOString().split('T')[0])}
+                        >
+                            Set to Today
+                        </button>
+                    </div>
+                    <input
+                      id="toDate"
+                      type="date"
+                      value={syncToDate}
+                      onChange={(e) => setSyncToDate(e.target.value)}
+                      className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                </div>
+                <DialogFooter className="flex items-center sm:justify-between w-full">
+                  {mailboxStatus?.dateRangeSyncEnabled ? (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      className="mr-auto text-xs h-9"
+                      onClick={() => {
+                        stopAutomaticSyncMutation.mutate(null, {
+                          onSuccess: () => setIsSyncDialogOpen(false)
+                        });
+                      }}
+                      disabled={stopAutomaticSyncMutation.isPending}
+                    >
+                      {stopAutomaticSyncMutation.isPending ? "Stopping..." : "Stop Auto Sync"}
+                    </Button>
+                  ) : (
+                    <div className="mr-auto"></div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setIsSyncDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="button" 
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                      disabled={syncMailboxMutation.isPending}
+                      onClick={() => {
+                          setIsSyncDialogOpen(false);
+                          const payload = {};
+                          if (syncFromDate || syncToDate) {
+                              payload.fromDate = syncFromDate;
+                              payload.toDate = syncToDate;
+                          }
+                          syncMailboxMutation.mutate(payload);
+                      }}
+                    >
+                      {mailboxStatus?.dateRangeSyncEnabled ? "Update Sync" : "Start Sync"}
+                    </Button>
+                  </div>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           ) : (
             <Button
               type="button"
