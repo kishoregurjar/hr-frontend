@@ -19,7 +19,7 @@ const SortFilter = ({ value, onChange }) => {
         </SelectValue>
       </SelectTrigger>
 
-      <SelectContent>
+      <SelectContent> 
         {QUESTION_SORT_OPTIONS.map((option) => (
           <SelectItem key={option.value} value={option.value}>
             {option.label}
