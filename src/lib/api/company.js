@@ -231,6 +231,34 @@ export const removeMember = async (memberId) => {
 };
 
 /**
+ * Deactivate Member
+ * PATCH /api/v1/companies/me/members/:memberId/deactivate
+ */
+export const deactivateMember = async (memberId) => {
+  try {
+    const res = await axiosClient.patch(`/companies/me/members/${memberId}/deactivate`);
+    return res?.data?.data || res?.data || res;
+  } catch {
+    const res = await axiosClient.patch(`/company/members/${memberId}/deactivate`);
+    return res?.data?.data || res?.data || res;
+  }
+};
+
+/**
+ * Reactivate Member
+ * PATCH /api/v1/companies/me/members/:memberId/reactivate
+ */
+export const reactivateMember = async (memberId) => {
+  try {
+    const res = await axiosClient.patch(`/companies/me/members/${memberId}/reactivate`);
+    return res?.data?.data || res?.data || res;
+  } catch {
+    const res = await axiosClient.patch(`/company/members/${memberId}/reactivate`);
+    return res?.data?.data || res?.data || res;
+  }
+};
+
+/**
  * 7. Transfer Ownership (Only OWNER)
  * POST /api/v1/companies/me/ownership/transfer
  */
