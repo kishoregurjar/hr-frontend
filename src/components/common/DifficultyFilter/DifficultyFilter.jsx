@@ -7,17 +7,26 @@ import {
 } from "@/components/ui/select";
 import { DIFFICULTY_OPTIONS } from "@/constants";
 
-const DifficultyFilter = ({ value, onChange, placeholder = "Difficulty", className = "w-full md:w-44" }) => {
+const DifficultyFilter = ({ value, onChange, placeholder = "All Difficulties", className = "w-full md:w-44" }) => {
+  const currentOption = DIFFICULTY_OPTIONS.find((opt) => opt.value === value);
+  const displayLabel = currentOption
+    ? currentOption.value === "all"
+      ? "All Difficulties"
+      : currentOption.label
+    : "All Difficulties";
+
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className={className}>
-        <SelectValue placeholder={placeholder} />
+        <SelectValue placeholder={placeholder}>
+          {displayLabel}
+        </SelectValue>
       </SelectTrigger>
 
       <SelectContent>
         {DIFFICULTY_OPTIONS.map((option) => (
           <SelectItem key={option.value} value={option.value}>
-            {option.label}
+            {option.value === "all" ? "All Difficulties" : option.label}
           </SelectItem>
         ))}
       </SelectContent>
