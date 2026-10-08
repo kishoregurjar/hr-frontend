@@ -36,6 +36,8 @@ import {
   getCompanyMembers,
   updateMemberRole,
   removeMember,
+  deactivateMember,
+  reactivateMember,
   transferOwnership,
   sendMemberInvitation,
   getCompanyInvitations,
@@ -340,14 +342,29 @@ export default function CompanySettingsPage() {
     }
   };
 
-  const handleRemoveMember = async (memberId) => {
-    if (!confirm("Are you sure you want to remove this member from your company?")) return;
+  const handleDeactivateMember = async (memberId) => {
+    if (!confirm("Deactivate this account?\nThis user will no longer be able to log in until the account is reactivated.")) return;
     try {
-      await removeMember(memberId);
-      toast.success("Member removed from company.");
-      setMembers((prev) => prev.filter((m) => m.id !== memberId));
+      await deactivateMember(memberId);
+      toast.success("Member deactivated.");
+      setMembers((prev) =>
+        prev.map((m) => (m.id === memberId ? { ...m, user: { ...m.user, status: "DEACTIVATED" } } : m))
+      );
     } catch (err) {
-      toast.error(err.message || "Failed to remove member.");
+      toast.error(err.message || "Failed to deactivate member.");
+    }
+  };
+
+  const handleReactivateMember = async (memberId) => {
+    if (!confirm("Reactivate this account?\nThis user will be able to log in again.")) return;
+    try {
+      await reactivateMember(memberId);
+      toast.success("Member reactivated.");
+      setMembers((prev) =>
+        prev.map((m) => (m.id === memberId ? { ...m, user: { ...m.user, status: "ACTIVE" } } : m))
+      );
+    } catch (err) {
+      toast.error(err.message || "Failed to reactivate member.");
     }
   };
 
@@ -677,6 +694,7 @@ export default function CompanySettingsPage() {
                       <tr className="border-b bg-slate-50/70 text-slate-600 text-xs font-bold uppercase tracking-wider">
                         <th className="py-3 px-4">Member</th>
                         <th className="py-3 px-4">Role</th>
+                        <th className="py-3 px-4">Status</th>
                         <th className="py-3 px-4">Joined Date</th>
                         <th className="py-3 px-4 text-right">Actions</th>
                       </tr>
@@ -721,6 +739,17 @@ export default function CompanySettingsPage() {
                                 </Badge>
                               )}
                             </td>
+                            <td className="py-4 px-4 text-xs font-bold">
+                              {member.user?.status === "DEACTIVATED" ? (
+                                <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50">
+                                  DEACTIVATED
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">
+                                  ACTIVE
+                                </Badge>
+                              )}
+                            </td>
                             <td className="py-4 px-4 text-xs text-muted-foreground">
                               {member.createdAt
                                 ? new Date(member.createdAt).toLocaleDateString()
@@ -738,14 +767,27 @@ export default function CompanySettingsPage() {
                                     <option value="ADMIN">ADMIN</option>
                                   </select>
 
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleRemoveMember(member.id)}
-                                    className="text-red-600 hover:bg-red-50 h-8 px-2"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                                  {member.user?.status === "DEACTIVATED" ? (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleReactivateMember(member.id)}
+                                      className="text-emerald-600 hover:bg-emerald-50 h-8 px-3 font-semibold"
+                                    >
+                                      <CheckCircle2 className="h-4 w-4 mr-1.5" />
+                                      Reactivate
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleDeactivateMember(member.id)}
+                                      className="text-amber-600 hover:bg-amber-50 h-8 px-3 font-semibold"
+                                    >
+                                      <AlertCircle className="h-4 w-4 mr-1.5" />
+                                      Deactivate
+                                    </Button>
+                                  )}
                                 </div>
                               ) : (
                                 <span className="text-xs text-muted-foreground font-medium">
