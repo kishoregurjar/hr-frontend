@@ -91,9 +91,14 @@ export default function ResultsAndRankingPage() {
 
     // For each assessment, sort candidates by score descending and assign actual rank
     groups.forEach((groupItems) => {
-      const totalCandidatesInAssessment = groupItems.length;
+      const qualifiedCount = groupItems.filter((i) => i.status === "QUALIFIED").length;
 
       const sortedGroup = [...groupItems].sort((a, b) => {
+        // Qualified candidates come before FAILED / IN_REVIEW
+        const isQualA = a.status === "QUALIFIED" ? 1 : 0;
+        const isQualB = b.status === "QUALIFIED" ? 1 : 0;
+        if (isQualB !== isQualA) return isQualB - isQualA;
+
         const scoreA = Number(a.score ?? a.percentage ?? 0);
         const scoreB = Number(b.score ?? b.percentage ?? 0);
         if (scoreB !== scoreA) return scoreB - scoreA;
@@ -106,16 +111,27 @@ export default function ResultsAndRankingPage() {
       let currentRank = 0;
       let previousScore = null;
 
-      sortedGroup.forEach((item, index) => {
+      sortedGroup.forEach((item) => {
+        // Only QUALIFIED candidates get a numerical leaderboard rank
+        // FAILED candidates are unranked
+        if (item.status === "FAILED") {
+          enriched.push({
+            ...item,
+            assessmentRank: null,
+            assessmentTotalCandidates: qualifiedCount,
+          });
+          return;
+        }
+
         const itemScore = Number(item.score ?? item.percentage ?? 0);
         if (previousScore === null || itemScore !== previousScore) {
-          currentRank = index + 1;
+          currentRank += 1;
         }
 
         enriched.push({
           ...item,
           assessmentRank: currentRank,
-          assessmentTotalCandidates: totalCandidatesInAssessment,
+          assessmentTotalCandidates: qualifiedCount,
         });
 
         previousScore = itemScore;
@@ -259,14 +275,11 @@ export default function ResultsAndRankingPage() {
       .sort((a, b) => {
         if (sortBy === "rank") {
           // If a specific assessment is selected, strictly sort by assessmentRank (1, 2, 3...)
-          if (selectedAssessment !== "ALL") {
-            return (a.assessmentRank || 999) - (b.assessmentRank || 999);
-          }
-          // When "ALL" assessments are selected, sort by rank first, then highest score
-          const rankA = a.assessmentRank || 999;
-          const rankB = b.assessmentRank || 999;
+          // Unranked/Failed candidates (null rank) go to the bottom
+          const rankA = a.assessmentRank !== null && a.assessmentRank !== undefined ? a.assessmentRank : 999999;
+          const rankB = b.assessmentRank !== null && b.assessmentRank !== undefined ? b.assessmentRank : 999999;
           if (rankA !== rankB) return rankA - rankB;
-          return (Number(b.score) || 0) - (Number(a.score) || 0);
+          return (Number(b.score ?? b.percentage) || 0) - (Number(a.score ?? a.percentage) || 0);
         }
         if (sortBy === "score") {
           return (Number(b.score) || Number(b.percentage) || 0) - (Number(a.score) || Number(a.percentage) || 0);
@@ -278,29 +291,34 @@ export default function ResultsAndRankingPage() {
       });
   }, [rankedResults, search, selectedAssessment, statusFilter, sortBy]);
 
-  // Podium candidates: When specific assessment is picked, show its top 3 candidates.
-  // When "ALL" is picked, show the top ranker (Rank #1) of each assessment, sorted by highest score.
+  // Podium candidates: Only QUALIFIED candidates can appear on the podium (top 3)
   const podiumCandidates = useMemo(() => {
+    const qualifiedOnly = filteredResults.filter(
+      (r) => r.status === "QUALIFIED" && r.assessmentRank !== null && r.assessmentRank !== undefined
+    );
+
     if (selectedAssessment !== "ALL") {
-      return filteredResults.slice(0, 3);
+      return qualifiedOnly.slice(0, 3);
     }
     const leadersMap = new Map();
-    rankedResults.forEach((item) => {
-      const key = String(item.assessmentId || item.assessmentTitle || "default").trim().toLowerCase();
-      const existing = leadersMap.get(key);
-      if (!existing) {
-        leadersMap.set(key, item);
-      } else {
-        const currentScore = Number(item.score ?? item.percentage ?? 0);
-        const existingScore = Number(existing.score ?? existing.percentage ?? 0);
-        if (
-          item.assessmentRank < existing.assessmentRank ||
-          (item.assessmentRank === existing.assessmentRank && currentScore > existingScore)
-        ) {
+    rankedResults
+      .filter((r) => r.status === "QUALIFIED" && r.assessmentRank !== null && r.assessmentRank !== undefined)
+      .forEach((item) => {
+        const key = String(item.assessmentId || item.assessmentTitle || "default").trim().toLowerCase();
+        const existing = leadersMap.get(key);
+        if (!existing) {
           leadersMap.set(key, item);
+        } else {
+          const currentScore = Number(item.score ?? item.percentage ?? 0);
+          const existingScore = Number(existing.score ?? existing.percentage ?? 0);
+          if (
+            item.assessmentRank < existing.assessmentRank ||
+            (item.assessmentRank === existing.assessmentRank && currentScore > existingScore)
+          ) {
+            leadersMap.set(key, item);
+          }
         }
-      }
-    });
+      });
 
     const topLeaders = Array.from(leadersMap.values()).sort(
       (a, b) => (Number(b.score ?? b.percentage) || 0) - (Number(a.score ?? a.percentage) || 0)
@@ -326,7 +344,7 @@ export default function ResultsAndRankingPage() {
     const rows = filteredResults
       .map(
         (r, i) =>
-          `#${r.assessmentRank || (i + 1)},"${r.candidateName}","${r.email}","${r.assessmentTitle}",${r.score}/${r.maxScore},${r.percentage}%,${r.status},"${r.timeSpent}",${r.integrityScore}%`
+          `${r.assessmentRank ? `#${r.assessmentRank}` : "Unranked"},"${r.candidateName}","${r.email}","${r.assessmentTitle}",${r.score}/${r.maxScore},${r.percentage}%,${r.status},"${r.timeSpent}",${r.integrityScore}%`
       )
       .join("\n");
 
@@ -339,7 +357,17 @@ export default function ResultsAndRankingPage() {
     toast.success("Rankings report exported as CSV!");
   };
 
-  const getRankMedal = (rank, totalCandidates = 1) => {
+  const getRankMedal = (rank, totalCandidates = 1, status = "") => {
+    // FAILED or unranked candidates do NOT receive medals or ranks
+    if (status === "FAILED" || rank === null || rank === undefined) {
+      return (
+        <div className="flex flex-col items-center justify-center">
+          <span className="font-bold text-slate-400 text-sm leading-none">—</span>
+          <span className="text-[9.5px] text-slate-400 font-semibold mt-0.5">Unranked</span>
+        </div>
+      );
+    }
+
     const numRank = Number(rank) || 1;
     if (numRank === 1) {
       return (
@@ -691,7 +719,7 @@ export default function ResultsAndRankingPage() {
 
                     {/* Rank */}
                     <td className="py-4 px-4 text-center font-extrabold">
-                      {getRankMedal(item.assessmentRank, item.assessmentTotalCandidates)}
+                      {getRankMedal(item.assessmentRank, item.assessmentTotalCandidates, item.status)}
                     </td>
 
                     {/* Candidate */}
