@@ -8,10 +8,15 @@ import {
 import { QUESTION_SORT_OPTIONS } from "@/constants";
 
 const SortFilter = ({ value, onChange }) => {
+  const currentOption = QUESTION_SORT_OPTIONS.find((opt) => opt.value === value);
+  const displayLabel = currentOption ? currentOption.label : "Sort By: Latest";
+
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="w-[180px]">
-        <SelectValue placeholder="Sort By" />
+        <SelectValue placeholder="Sort By">
+          {displayLabel}
+        </SelectValue>
       </SelectTrigger>
 
       <SelectContent>

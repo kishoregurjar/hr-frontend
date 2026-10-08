@@ -23,14 +23,21 @@ const CategoryFilter = ({ value, onChange }) => {
       .catch(() => setCategories([]));
   }, []);
 
+  const displayLabel =
+    !value || value === "all" || value === "Category"
+      ? "All Categories"
+      : value;
+
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="w-[180px]">
-        <SelectValue placeholder="Category" />
+        <SelectValue placeholder="All Categories">
+          {displayLabel}
+        </SelectValue>
       </SelectTrigger>
 
       <SelectContent>
-        <SelectItem value="all">Category: All</SelectItem>
+        <SelectItem value="all">All Categories</SelectItem>
         {categories.map((cat) => {
           const catName = cat.name || cat.title || String(cat);
           return (
