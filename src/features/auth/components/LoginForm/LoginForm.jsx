@@ -4,13 +4,13 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  User,
   Lock,
   Mail,
   Loader2,
   CheckCircle2,
   Eye,
   EyeOff,
-  ArrowRight,
   AlertCircle,
   AlertTriangle,
   Info,
@@ -197,41 +197,37 @@ const LoginForm = () => {
       )}
 
       {/* Email Field */}
-      <div className="space-y-1.5">
-        <Label htmlFor="email" className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-          Email Address
-        </Label>
+      <div className="space-y-1">
         <div className="relative">
-          <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
           <Input
             id="email"
             type="email"
-            placeholder="name@company.com"
+            placeholder="vishnu@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="pl-10 h-11 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition shadow-2xs"
+            className="pl-10 h-11 sm:h-12 rounded-xl border-slate-200 bg-white text-xs sm:text-sm font-normal text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition shadow-2xs"
             required
             autoComplete="email"
+            aria-label="Email Address"
           />
         </div>
       </div>
 
       {/* Password Field */}
-      <div className="space-y-1.5">
-        <Label htmlFor="password" className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-          Password
-        </Label>
+      <div className="space-y-1">
         <div className="relative">
-          <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
           <Input
             id="password"
             type={showPassword ? "text" : "password"}
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="pl-10 pr-10 h-11 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition shadow-2xs"
+            className="pl-10 pr-10 h-11 sm:h-12 rounded-xl border-slate-200 bg-white text-xs sm:text-sm font-normal text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition shadow-2xs"
             required
             autoComplete="current-password"
+            aria-label="Password"
           />
           <button
             type="button"
@@ -256,7 +252,7 @@ const LoginForm = () => {
             type="checkbox"
             checked={rememberMe}
             onChange={(e) => setRememberMe(e.target.checked)}
-            className="h-4 w-4 rounded-md border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
+            className="h-4 w-4 rounded-md border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer accent-blue-600"
           />
           <span>Remember me</span>
         </label>
@@ -268,7 +264,7 @@ const LoginForm = () => {
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all mt-2 cursor-pointer"
+        className="w-full h-11 sm:h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-md shadow-blue-500/25 transition-all mt-2 cursor-pointer"
       >
         {isSubmitting ? (
           <>
@@ -276,12 +272,20 @@ const LoginForm = () => {
             Signing in...
           </>
         ) : (
-          <span className="flex items-center justify-center gap-1.5">
-            <span>Sign In</span>
-            <ArrowRight className="h-3.5 w-3.5" />
-          </span>
+          "Sign In"
         )}
       </Button>
+
+      {/* Footer text */}
+      <p className="text-center text-xs text-slate-500 pt-4">
+        Don&apos;t have an account?{" "}
+        <Link
+          href="mailto:support@hirequest.com"
+          className="font-bold text-slate-900 hover:underline"
+        >
+          Contact Admin
+        </Link>
+      </p>
     </form>
   );
 };
