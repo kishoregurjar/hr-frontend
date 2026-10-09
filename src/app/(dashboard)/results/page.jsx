@@ -850,102 +850,176 @@ export default function ResultsAndRankingPage() {
       {/* ── 6. DETAILED CANDIDATE SCORECARD MODAL ── */}
       {selectedCandidate && (
         <Dialog open={Boolean(selectedCandidate)} onOpenChange={() => setSelectedCandidate(null)}>
-          <DialogContent className="max-w-xl p-0 overflow-hidden rounded-3xl border-slate-200 shadow-2xl font-sans bg-white">
-            <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 p-6 text-white relative">
-              <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-2xl bg-white/10 border border-white/20 text-white flex items-center justify-center font-black text-lg shadow-inner">
-                  {selectedCandidate.candidateName.charAt(0)}
-                </div>
-                <div>
-                  <DialogTitle className="text-xl font-extrabold text-white tracking-tight">
-                    {selectedCandidate.candidateName}
-                  </DialogTitle>
-                  <DialogDescription className="text-xs text-slate-300 mt-0.5">
-                    {selectedCandidate.email} • {selectedCandidate.assessmentTitle}
-                  </DialogDescription>
-                </div>
+          <DialogContent className="max-w-xl p-7 sm:p-8 rounded-[28px] border-slate-100 shadow-2xl font-sans bg-white space-y-6">
+            {/* Header: Candidate Info */}
+            <div className="flex items-center gap-4">
+              <div className="h-14 w-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-2xl shadow-xs shrink-0">
+                {selectedCandidate.candidateName.charAt(0).toLowerCase()}
+              </div>
+              <div className="space-y-0.5">
+                <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">
+                  {selectedCandidate.candidateName}
+                </DialogTitle>
+                <DialogDescription className="text-sm text-slate-500 font-medium">
+                  {selectedCandidate.email} • {selectedCandidate.assessmentTitle}
+                </DialogDescription>
               </div>
             </div>
 
-            <div className="p-6 space-y-5">
-              {/* Score Highlight Box */}
-              <div className="grid grid-cols-4 gap-2.5 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-center">
-                <div>
-                  <span className="text-[10.5px] font-bold uppercase text-slate-400">Rank</span>
-                  <p className="text-2xl font-black text-amber-600">
-                    {selectedCandidate.status === "QUALIFIED" && selectedCandidate.assessmentRank ? (
-                      <>
-                        #{selectedCandidate.assessmentRank}
-                        {selectedCandidate.assessmentTotalCandidates > 1 && (
-                          <span className="text-xs text-slate-400 font-normal"> / {selectedCandidate.assessmentTotalCandidates}</span>
-                        )}
-                      </>
-                    ) : (
-                      <span className="text-base text-slate-400 font-bold">Unranked</span>
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-[10.5px] font-bold uppercase text-slate-400">Total Score</span>
-                  <p className="text-2xl font-black text-slate-900">{selectedCandidate.score}/100</p>
-                </div>
-                <div>
-                  <span className="text-[10.5px] font-bold uppercase text-slate-400">Time Taken</span>
-                  <p className="text-2xl font-black text-slate-900">{selectedCandidate.timeSpent}</p>
-                </div>
-                <div>
-                  <span className="text-[10.5px] font-bold uppercase text-slate-400">Integrity</span>
-                  <p className="text-2xl font-black text-emerald-600">{selectedCandidate.integrityScore}%</p>
-                </div>
+            {/* Score Highlight Box */}
+            <div className="grid grid-cols-4 gap-2 p-4 sm:p-5 rounded-2xl bg-slate-50/70 border border-slate-200/70 text-center">
+              <div>
+                <span className="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Rank</span>
+                <p className="text-2xl font-black mt-1">
+                  {selectedCandidate.status === "QUALIFIED" && selectedCandidate.assessmentRank ? (
+                    <span className="text-amber-600">
+                      #{selectedCandidate.assessmentRank}
+                      {selectedCandidate.assessmentTotalCandidates > 1 && (
+                        <span className="text-xs text-slate-400 font-normal"> / {selectedCandidate.assessmentTotalCandidates}</span>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400">Unranked</span>
+                  )}
+                </p>
               </div>
-
-              {/* Cognitive Trait Bars */}
-              <div className="space-y-3">
-                <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500">
-                  Calibrated Cognitive Trait Performance
-                </h4>
-
-                <div className="space-y-2.5">
-                  <div>
-                    <div className="flex justify-between text-xs font-semibold text-slate-800 mb-1">
-                      <span>Problem Solving & Logical Reasoning</span>
-                      <span className="font-bold text-blue-600">{selectedCandidate.cognitiveTraits?.problemSolving ?? 0}%</span>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                      <div className="h-full rounded-full bg-blue-600" style={{ width: `${selectedCandidate.cognitiveTraits?.problemSolving ?? 0}%` }} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between text-xs font-semibold text-slate-800 mb-1">
-                      <span>Working Memory Recall</span>
-                      <span className="font-bold text-purple-600">{selectedCandidate.cognitiveTraits?.memoryRecall ?? 0}%</span>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                      <div className="h-full rounded-full bg-purple-600" style={{ width: `${selectedCandidate.cognitiveTraits?.memoryRecall ?? 0}%` }} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between text-xs font-semibold text-slate-800 mb-1">
-                      <span>Mental Processing Agility</span>
-                      <span className="font-bold text-emerald-600">{selectedCandidate.cognitiveTraits?.processingSpeed ?? 0}%</span>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                      <div className="h-full rounded-full bg-emerald-600" style={{ width: `${selectedCandidate.cognitiveTraits?.processingSpeed ?? 0}%` }} />
-                    </div>
-                  </div>
-                </div>
+              <div>
+                <span className="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Total Score</span>
+                <p className="text-2xl font-black text-slate-900 mt-1">{selectedCandidate.score}/100</p>
               </div>
-
-              <div className="flex justify-end pt-3 border-t border-slate-100">
-                <Button
-                  onClick={() => setSelectedCandidate(null)}
-                  className="rounded-xl px-5 text-xs font-bold"
-                >
-                  Close Scorecard
-                </Button>
+              <div>
+                <span className="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Time Taken</span>
+                <p className="text-2xl font-black text-slate-900 mt-1">{selectedCandidate.timeSpent}</p>
               </div>
+              <div>
+                <span className="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Integrity</span>
+                <p className="text-2xl font-black text-emerald-600 mt-1">{selectedCandidate.integrityScore}%</p>
+              </div>
+            </div>
+
+            {/* Calibrated Cognitive Trait Performance */}
+            <div className="space-y-4">
+              <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-500">
+                Calibrated Cognitive Trait Performance
+              </h4>
+
+              <div className="grid grid-cols-3 gap-4 pt-1 text-center">
+                {/* 1. Problem Solving */}
+                {(() => {
+                  const val = Math.min(100, Math.max(0, selectedCandidate.cognitiveTraits?.problemSolving ?? 0));
+                  const r = 46;
+                  const c = 2 * Math.PI * r;
+                  const offset = c - (val / 100) * c;
+                  return (
+                    <div className="flex flex-col items-center">
+                      <div className="relative w-28 h-28 flex items-center justify-center">
+                        <svg className="w-28 h-28 -rotate-90" viewBox="0 0 110 110">
+                          <circle cx="55" cy="55" r={r} stroke="#e2e8f0" strokeWidth="10" fill="none" />
+                          <circle
+                            cx="55"
+                            cy="55"
+                            r={r}
+                            stroke="#2563eb"
+                            strokeWidth="10"
+                            strokeDasharray={c}
+                            strokeDashoffset={offset}
+                            strokeLinecap="round"
+                            fill="none"
+                            className="transition-all duration-700 ease-out"
+                          />
+                        </svg>
+                        <span className="absolute text-2xl font-black text-slate-900 tracking-tight">
+                          {val}%
+                        </span>
+                      </div>
+                      <p className="text-xs font-bold text-slate-800 mt-3 max-w-[125px] leading-snug">
+                        Problem Solving & Logical Reasoning
+                      </p>
+                    </div>
+                  );
+                })()}
+
+                {/* 2. Working Memory Recall */}
+                {(() => {
+                  const val = Math.min(100, Math.max(0, selectedCandidate.cognitiveTraits?.memoryRecall ?? 0));
+                  const r = 46;
+                  const c = 2 * Math.PI * r;
+                  const offset = c - (val / 100) * c;
+                  return (
+                    <div className="flex flex-col items-center">
+                      <div className="relative w-28 h-28 flex items-center justify-center">
+                        <svg className="w-28 h-28 -rotate-90" viewBox="0 0 110 110">
+                          <circle cx="55" cy="55" r={r} stroke="#e2e8f0" strokeWidth="10" fill="none" />
+                          <circle
+                            cx="55"
+                            cy="55"
+                            r={r}
+                            stroke="#9333ea"
+                            strokeWidth="10"
+                            strokeDasharray={c}
+                            strokeDashoffset={offset}
+                            strokeLinecap="round"
+                            fill="none"
+                            className="transition-all duration-700 ease-out"
+                          />
+                        </svg>
+                        <span className="absolute text-2xl font-black text-slate-900 tracking-tight">
+                          {val}%
+                        </span>
+                      </div>
+                      <p className="text-xs font-bold text-slate-800 mt-3 max-w-[125px] leading-snug">
+                        Working Memory Recall
+                      </p>
+                    </div>
+                  );
+                })()}
+
+                {/* 3. Mental Processing Agility */}
+                {(() => {
+                  const val = Math.min(100, Math.max(0, selectedCandidate.cognitiveTraits?.processingSpeed ?? 0));
+                  const r = 46;
+                  const c = 2 * Math.PI * r;
+                  const offset = c - (val / 100) * c;
+                  return (
+                    <div className="flex flex-col items-center">
+                      <div className="relative w-28 h-28 flex items-center justify-center">
+                        <svg className="w-28 h-28 -rotate-90" viewBox="0 0 110 110">
+                          <circle cx="55" cy="55" r={r} stroke="#e2e8f0" strokeWidth="10" fill="none" />
+                          <circle
+                            cx="55"
+                            cy="55"
+                            r={r}
+                            stroke="#059669"
+                            strokeWidth="10"
+                            strokeDasharray={c}
+                            strokeDashoffset={offset}
+                            strokeLinecap="round"
+                            fill="none"
+                            className="transition-all duration-700 ease-out"
+                          />
+                        </svg>
+                        <span className="absolute text-2xl font-black text-slate-900 tracking-tight">
+                          {val}%
+                        </span>
+                      </div>
+                      <p className="text-xs font-bold text-slate-800 mt-3 max-w-[125px] leading-snug">
+                        Mental Processing Agility
+                      </p>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Bottom: Close Button */}
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setSelectedCandidate(null)}
+                className="h-11 px-7 rounded-full bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm shadow-md transition-all cursor-pointer"
+              >
+                Close Scorecard
+              </button>
             </div>
           </DialogContent>
         </Dialog>
