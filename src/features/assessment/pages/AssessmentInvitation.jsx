@@ -7,6 +7,7 @@ import { useStartAssessment } from "@/features/attempt/hooks";
 import { enterFullscreen } from "@/features/attempt/utils";
 
 import {
+  AssessmentAlreadyCompleted,
   AssessmentCompleted,
   AssessmentPreStart,
   AssessmentUnavailable,
@@ -99,7 +100,14 @@ const AssessmentInvitation = ({ token }) => {
 
   // ── 3. Completed State ──────────────────────────────────────
   if (rawStatus === "completed" || rawStatus === "submitted") {
-    return <AssessmentCompleted assessment={assessment} attempt={assignment} />;
+    return (
+      <AssessmentAlreadyCompleted
+        assessment={assessment}
+        assignment={assignment}
+        candidate={candidate}
+        attempt={existingAttempt || assignment?.attempt}
+      />
+    );
   }
 
   // ── 4. Expired State ────────────────────────────────────────

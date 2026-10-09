@@ -208,6 +208,8 @@ export const getAssignmentByToken = async (rawToken) => {
       invitationToken: inv.token || rawToken,
       expiresAt: inv.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       isExpired: inv.expiresAt ? new Date(inv.expiresAt).getTime() <= Date.now() : false,
+      submittedAt: inv.submittedAt || inv.attempt?.submittedAt || inv.completedAt || null,
+      attempt: inv.attempt || null,
       candidate: {
         id: inv.candidateId || candidate?.id || inv.id,
         name: candidateName,
