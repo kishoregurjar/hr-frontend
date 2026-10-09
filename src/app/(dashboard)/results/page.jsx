@@ -938,19 +938,7 @@ export default function ResultsAndRankingPage() {
                 </div>
               </div>
 
-              {/* Module Section Breakdown */}
-              <div className="grid grid-cols-2 gap-3 text-xs pt-3 border-t border-slate-100">
-                <div className="p-3 rounded-xl border border-slate-200 bg-white">
-                  <span className="text-slate-500 font-medium">MCQ Section:</span>
-                  <p className="font-extrabold text-slate-900 text-sm mt-0.5">{selectedCandidate.mcqScore}</p>
-                </div>
-                <div className="p-3 rounded-xl border border-slate-200 bg-white">
-                  <span className="text-slate-500 font-medium">Cognitive Games Section:</span>
-                  <p className="font-extrabold text-slate-900 text-sm mt-0.5">{selectedCandidate.gameScore}</p>
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-2">
+              <div className="flex justify-end pt-3 border-t border-slate-100">
                 <Button
                   onClick={() => setSelectedCandidate(null)}
                   className="rounded-xl px-5 text-xs font-bold"
