@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/select";
 import { QUESTION_STATUS_OPTIONS } from "../constants";
 
-const StatusFilter = ({ value, onChange }) => {
+const StatusFilter = ({ value, onChange, className = "w-full sm:w-[160px] md:w-[180px]" }) => {
   const currentOption = QUESTION_STATUS_OPTIONS.find((opt) => opt.value === value);
   const displayLabel = currentOption
     ? currentOption.value === "all"
@@ -17,7 +17,7 @@ const StatusFilter = ({ value, onChange }) => {
 
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-[180px]">
+      <SelectTrigger className={className}>
         <SelectValue placeholder="All Statuses">
           {displayLabel}
         </SelectValue>

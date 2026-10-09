@@ -213,13 +213,13 @@ const AssessmentList = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
           <Button
             variant="outline"
             size="sm"
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="h-9 px-3 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold gap-1.5 shadow-2xs cursor-pointer"
+            className="h-9 px-3 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold gap-1.5 shadow-2xs cursor-pointer justify-center"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
             Refresh
@@ -231,7 +231,7 @@ const AssessmentList = () => {
               variant="outline"
               size="sm"
               onClick={handleOpenDeleteAll}
-              className="h-9 px-3 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 text-xs font-bold gap-1.5 cursor-pointer shadow-2xs transition"
+              className="h-9 px-3 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 text-xs font-bold gap-1.5 cursor-pointer shadow-2xs transition justify-center"
               title="Permanently delete all assessments"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -239,8 +239,8 @@ const AssessmentList = () => {
             </Button>
           )}
 
-          <Link href="/assessments/create" className="w-full sm:w-auto">
-            <Button className="w-full sm:w-auto h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20 cursor-pointer">
+          <Link href="/assessments/create" className={`${assessments.length > 0 ? "col-span-2" : "col-span-1"} sm:col-span-1 w-full sm:w-auto`}>
+            <Button className="w-full sm:w-auto h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20 cursor-pointer justify-center">
               <Plus className="h-3.5 w-3.5" />
               Build Assessment
             </Button>

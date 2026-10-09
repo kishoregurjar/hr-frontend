@@ -324,7 +324,7 @@ const CandidateList = () => {
           </span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
           <EmailExtractorDialog triggerText="Extract from Emails" />
           <AddCandidateDialog />
         </div>
@@ -332,17 +332,17 @@ const CandidateList = () => {
 
       {/* ── 1.5. INBOUND CAREERS MAILBOX CALLOUT ── */}
       <div className="rounded-2xl border border-indigo-100/90 bg-gradient-to-r from-indigo-50/90 via-purple-50/50 to-blue-50/80 p-3.5 px-4 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <div className="h-9 w-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
             <Mail className="h-4.5 w-4.5" />
           </div>
-          <div className="text-xs">
+          <div className="text-xs min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-slate-900">Recruiter Mailbox:</span>
+              <span className="font-bold text-slate-900 shrink-0">Recruiter Mailbox:</span>
               {mailboxStatus?.connected ? (
-                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-xs py-0.5 px-2.5 flex items-center gap-1.5 font-semibold">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  {mailboxStatus?.email || user?.email || "Connected"}
+                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-xs py-0.5 px-2.5 flex items-center gap-1.5 font-semibold max-w-[220px] truncate">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                  <span className="truncate">{mailboxStatus?.email || user?.email || "Connected"}</span>
                 </Badge>
               ) : (
                 <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs py-0.5 px-2.5 flex items-center gap-1.5 font-semibold">
@@ -524,17 +524,17 @@ const CandidateList = () => {
         </div>
 
         {/* Dropdowns */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <Filter className="h-3.5 w-3.5 text-slate-400" />
-            <span className="text-xs font-bold text-slate-600">Status:</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-wrap items-center gap-2.5 sm:gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-1.5 w-full sm:w-auto">
+            <Filter className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+            <span className="text-xs font-bold text-slate-600 shrink-0">Status:</span>
             <select
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="h-9 px-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:bg-white transition cursor-pointer"
+              className="h-9 px-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:bg-white transition cursor-pointer flex-1 sm:flex-initial"
             >
               <option value="ALL">All Statuses</option>
               <option value="NEW">New Applicant</option>

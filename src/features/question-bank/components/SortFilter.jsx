@@ -7,13 +7,13 @@ import {
 } from "@/components/ui/select";
 import { QUESTION_SORT_OPTIONS } from "@/constants";
 
-const SortFilter = ({ value, onChange }) => {
+const SortFilter = ({ value, onChange, className = "w-full sm:w-[160px] md:w-[180px]" }) => {
   const currentOption = QUESTION_SORT_OPTIONS.find((opt) => opt.value === value);
   const displayLabel = currentOption ? currentOption.label : "Sort By: Latest";
 
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-[180px]">
+      <SelectTrigger className={className}>
         <SelectValue placeholder="Sort By">
           {displayLabel}
         </SelectValue>

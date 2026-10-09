@@ -32,7 +32,7 @@ const DashboardLayout = ({ children }) => {
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#f8fafc] text-slate-900 font-sans antialiased">
+    <div className="flex flex-col h-screen w-full max-w-full overflow-hidden bg-[#f8fafc] text-slate-900 font-sans antialiased">
       {/* ── Top Support / Impersonation Banner ── */}
       {impersonatedCompany && (
         <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 text-white px-4 py-2 text-xs font-semibold flex flex-wrap items-center justify-between gap-3 shadow-md z-50 shrink-0">

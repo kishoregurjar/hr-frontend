@@ -431,10 +431,10 @@ export default function CompanySettingsPage() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12 font-sans">
       {/* ── Navigation Tabs ── */}
-      <div className="flex items-center gap-2 border-b">
+      <div className="flex items-center gap-1 sm:gap-2 border-b overflow-x-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex-nowrap -mx-4 px-4 sm:mx-0 sm:px-0">
         <button
           onClick={() => setActiveTab("profile")}
-          className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${
+          className={`pb-3 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition-all flex items-center gap-2 shrink-0 whitespace-nowrap cursor-pointer ${
             activeTab === "profile"
               ? "border-blue-600 text-blue-600"
               : "border-transparent text-muted-foreground hover:text-foreground"
@@ -446,7 +446,7 @@ export default function CompanySettingsPage() {
 
         <button
           onClick={() => setActiveTab("members")}
-          className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${
+          className={`pb-3 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition-all flex items-center gap-2 shrink-0 whitespace-nowrap cursor-pointer ${
             activeTab === "members"
               ? "border-blue-600 text-blue-600"
               : "border-transparent text-muted-foreground hover:text-foreground"
@@ -458,7 +458,7 @@ export default function CompanySettingsPage() {
 
         <button
           onClick={() => setActiveTab("invitations")}
-          className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${
+          className={`pb-3 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition-all flex items-center gap-2 shrink-0 whitespace-nowrap cursor-pointer ${
             activeTab === "invitations"
               ? "border-blue-600 text-blue-600"
               : "border-transparent text-muted-foreground hover:text-foreground"
@@ -824,7 +824,7 @@ export default function CompanySettingsPage() {
 
                 <form
                   onSubmit={handleSendInvite}
-                  className="flex flex-col sm:flex-row items-end gap-3 max-w-2xl"
+                  className="flex flex-col sm:flex-row sm:items-end gap-3 max-w-2xl"
                 >
                   <div className="flex-1 space-y-1.5 w-full">
                     <label className="text-xs font-bold text-slate-700">Email Address *</label>

@@ -71,7 +71,7 @@ export default function AdminLayoutClient({ children }) {
         <AdminWelcomeOverlay />
       </Suspense>
 
-      <div className="flex h-screen w-screen overflow-hidden bg-[#f8fafc] text-slate-900 font-sans antialiased">
+      <div className="flex h-screen w-full max-w-full overflow-hidden bg-[#f8fafc] text-slate-900 font-sans antialiased">
         {/* Super Admin Fixed Sidebar */}
         <AdminSidebar
           isOpen={sidebarOpen}
