@@ -354,7 +354,7 @@ export default function ResultsAndRankingPage() {
     a.href = url;
     a.download = `candidate_rankings_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
-    toast.success("Rankings report exported as CSV!");
+    toast.success("Rankings report downloaded successfully!");
   };
 
   const getRankMedal = (rank, totalCandidates = 1, status = "") => {
@@ -445,7 +445,7 @@ export default function ResultsAndRankingPage() {
             className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20 cursor-pointer"
           >
             <Download className="h-3.5 w-3.5" />
-            Export CSV
+            Download Report
           </Button>
         </div>
       </div>
