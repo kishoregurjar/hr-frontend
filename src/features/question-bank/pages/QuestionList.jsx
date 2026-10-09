@@ -156,7 +156,7 @@ const QuestionList = () => {
           </span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
           <ManageCategoriesDialog />
           <BulkQuestionImportDialog />
           <AddQuestionDialog />
@@ -193,15 +193,15 @@ const QuestionList = () => {
           />
         </div>
 
-        {/* Filter Dropdowns & View Mode Toggle */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Filter Dropdowns & View Mode Toggle: 2 cols on mobile, flex on desktop */}
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full lg:w-auto">
           <CategoryFilter value={category} onChange={setCategory} />
           <DifficultyFilter value={difficulty} onChange={setDifficulty} />
           <StatusFilter value={status} onChange={setStatus} />
           <SortFilter value={sortBy} onChange={setSortBy} />
 
           {/* View Mode Toggle */}
-          <div className="flex items-center rounded-xl bg-slate-100 p-1 border border-slate-200 shrink-0 ml-1">
+          <div className="col-span-2 sm:col-span-1 flex items-center justify-center sm:justify-start rounded-xl bg-slate-100 p-1 border border-slate-200 shrink-0 sm:ml-1">
             <button
               type="button"
               onClick={() => setViewMode("table")}

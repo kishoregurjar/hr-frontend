@@ -181,15 +181,15 @@ export default function InvitationsPage() {
 
       {/* ── 2. Filters Toolbar ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-slate-400" />
-          <span className="text-xs font-bold text-slate-600">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <FileText className="h-4 w-4 text-slate-400 shrink-0" />
+          <span className="text-xs font-bold text-slate-600 shrink-0">
             Filter by Assessment:
           </span>
           <select
             value={assessmentFilter}
             onChange={(e) => setAssessmentFilter(e.target.value)}
-            className="h-9 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+            className="h-9 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30 flex-1 sm:flex-initial max-w-full sm:max-w-xs truncate"
           >
             <option value="ALL">All Assessments ({dynamicInvitations.length})</option>
             {assessments.map((a) => (

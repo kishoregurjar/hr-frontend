@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { getQuestionCategories } from "@/lib/api/questions";
 
-const CategoryFilter = ({ value, onChange }) => {
+const CategoryFilter = ({ value, onChange, className = "w-full sm:w-[160px] md:w-[180px]" }) => {
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
@@ -30,7 +30,7 @@ const CategoryFilter = ({ value, onChange }) => {
 
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-[180px]">
+      <SelectTrigger className={className}>
         <SelectValue placeholder="All Categories">
           {displayLabel}
         </SelectValue>

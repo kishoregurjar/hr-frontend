@@ -569,7 +569,7 @@ export default function ResultsAndRankingPage() {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2.5 w-full md:w-auto">
           {/* Assessment Filter */}
           <select
             value={selectedAssessment}
@@ -577,7 +577,7 @@ export default function ResultsAndRankingPage() {
               setSelectedAssessment(e.target.value);
               setSelectedCandidateIds([]);
             }}
-            className="h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer max-w-[200px] truncate"
+            className="w-full sm:w-auto h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer max-w-full sm:max-w-[200px] truncate"
           >
             <option value="ALL">All Assessments</option>
             {availableAssessments.map((title) => (
@@ -591,7 +591,7 @@ export default function ResultsAndRankingPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer"
+            className="w-full sm:w-auto h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer"
           >
             <option value="ALL">All Statuses</option>
             <option value="QUALIFIED">Qualified</option>
@@ -603,7 +603,7 @@ export default function ResultsAndRankingPage() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer"
+            className="w-full sm:w-auto h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer"
           >
             <option value="rank">Highest Score First</option>
             <option value="speed">Fastest Completion</option>
@@ -850,32 +850,32 @@ export default function ResultsAndRankingPage() {
       {/* ── 6. DETAILED CANDIDATE SCORECARD MODAL ── */}
       {selectedCandidate && (
         <Dialog open={Boolean(selectedCandidate)} onOpenChange={() => setSelectedCandidate(null)}>
-          <DialogContent className="max-w-xl p-7 sm:p-8 rounded-[28px] border-slate-100 shadow-2xl font-sans bg-white space-y-6">
+          <DialogContent className="max-w-xl w-[94vw] sm:w-full p-4 sm:p-7 md:p-8 rounded-2xl sm:rounded-[28px] border-slate-100 shadow-2xl font-sans bg-white space-y-5 sm:space-y-6 max-h-[90vh] overflow-y-auto">
             {/* Header: Candidate Info */}
-            <div className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-2xl shadow-xs shrink-0">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-xl sm:text-2xl shadow-xs shrink-0">
                 {selectedCandidate.candidateName.charAt(0).toLowerCase()}
               </div>
-              <div className="space-y-0.5">
-                <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">
+              <div className="space-y-0.5 min-w-0 flex-1">
+                <DialogTitle className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight truncate">
                   {selectedCandidate.candidateName}
                 </DialogTitle>
-                <DialogDescription className="text-sm text-slate-500 font-medium">
+                <DialogDescription className="text-xs sm:text-sm text-slate-500 font-medium truncate">
                   {selectedCandidate.email} • {selectedCandidate.assessmentTitle}
                 </DialogDescription>
               </div>
             </div>
 
-            {/* Score Highlight Box */}
-            <div className="grid grid-cols-4 gap-2 p-4 sm:p-5 rounded-2xl bg-slate-50/70 border border-slate-200/70 text-center">
-              <div>
-                <span className="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Rank</span>
-                <p className="text-2xl font-black mt-1">
+            {/* Score Highlight Box: 2 cols on mobile, 4 cols on tablet/desktop */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-2 p-3 sm:p-5 rounded-xl sm:rounded-2xl bg-slate-50/70 border border-slate-200/70 text-center">
+              <div className="p-1">
+                <span className="text-[10px] sm:text-[11px] font-bold uppercase text-slate-400 tracking-wider">Rank</span>
+                <p className="text-xl sm:text-2xl font-black mt-0.5 sm:mt-1">
                   {selectedCandidate.status === "QUALIFIED" && selectedCandidate.assessmentRank ? (
                     <span className="text-amber-600">
                       #{selectedCandidate.assessmentRank}
                       {selectedCandidate.assessmentTotalCandidates > 1 && (
-                        <span className="text-xs text-slate-400 font-normal"> / {selectedCandidate.assessmentTotalCandidates}</span>
+                        <span className="text-[11px] sm:text-xs text-slate-400 font-normal"> / {selectedCandidate.assessmentTotalCandidates}</span>
                       )}
                     </span>
                   ) : (
@@ -883,27 +883,27 @@ export default function ResultsAndRankingPage() {
                   )}
                 </p>
               </div>
-              <div>
-                <span className="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Total Score</span>
-                <p className="text-2xl font-black text-slate-900 mt-1">{selectedCandidate.score}/100</p>
+              <div className="p-1">
+                <span className="text-[10px] sm:text-[11px] font-bold uppercase text-slate-400 tracking-wider">Total Score</span>
+                <p className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5 sm:mt-1">{selectedCandidate.score}/100</p>
               </div>
-              <div>
-                <span className="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Time Taken</span>
-                <p className="text-2xl font-black text-slate-900 mt-1">{selectedCandidate.timeSpent}</p>
+              <div className="p-1">
+                <span className="text-[10px] sm:text-[11px] font-bold uppercase text-slate-400 tracking-wider">Time Taken</span>
+                <p className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5 sm:mt-1">{selectedCandidate.timeSpent}</p>
               </div>
-              <div>
-                <span className="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Integrity</span>
-                <p className="text-2xl font-black text-emerald-600 mt-1">{selectedCandidate.integrityScore}%</p>
+              <div className="p-1">
+                <span className="text-[10px] sm:text-[11px] font-bold uppercase text-slate-400 tracking-wider">Integrity</span>
+                <p className="text-xl sm:text-2xl font-black text-emerald-600 mt-0.5 sm:mt-1">{selectedCandidate.integrityScore}%</p>
               </div>
             </div>
 
             {/* Calibrated Cognitive Trait Performance */}
-            <div className="space-y-4">
-              <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-500">
+            <div className="space-y-3 sm:space-y-4">
+              <h4 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-wider text-slate-500">
                 Calibrated Cognitive Trait Performance
               </h4>
 
-              <div className="grid grid-cols-3 gap-4 pt-1 text-center">
+              <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-1 text-center">
                 {/* 1. Problem Solving */}
                 {(() => {
                   const val = Math.min(100, Math.max(0, selectedCandidate.cognitiveTraits?.problemSolving ?? 0));
@@ -912,8 +912,8 @@ export default function ResultsAndRankingPage() {
                   const offset = c - (val / 100) * c;
                   return (
                     <div className="flex flex-col items-center">
-                      <div className="relative w-28 h-28 flex items-center justify-center">
-                        <svg className="w-28 h-28 -rotate-90" viewBox="0 0 110 110">
+                      <div className="relative w-20 h-20 sm:w-28 sm:h-28 flex items-center justify-center">
+                        <svg className="w-20 h-20 sm:w-28 sm:h-28 -rotate-90" viewBox="0 0 110 110">
                           <circle cx="55" cy="55" r={r} stroke="#e2e8f0" strokeWidth="10" fill="none" />
                           <circle
                             cx="55"
@@ -928,12 +928,12 @@ export default function ResultsAndRankingPage() {
                             className="transition-all duration-700 ease-out"
                           />
                         </svg>
-                        <span className="absolute text-2xl font-black text-slate-900 tracking-tight">
+                        <span className="absolute text-lg sm:text-2xl font-black text-slate-900 tracking-tight">
                           {val}%
                         </span>
                       </div>
-                      <p className="text-xs font-bold text-slate-800 mt-3 max-w-[125px] leading-snug">
-                        Problem Solving & Logical Reasoning
+                      <p className="text-[10.5px] sm:text-xs font-bold text-slate-800 mt-2 sm:mt-3 max-w-[125px] leading-snug">
+                        Problem Solving & Logic
                       </p>
                     </div>
                   );
@@ -947,8 +947,8 @@ export default function ResultsAndRankingPage() {
                   const offset = c - (val / 100) * c;
                   return (
                     <div className="flex flex-col items-center">
-                      <div className="relative w-28 h-28 flex items-center justify-center">
-                        <svg className="w-28 h-28 -rotate-90" viewBox="0 0 110 110">
+                      <div className="relative w-20 h-20 sm:w-28 sm:h-28 flex items-center justify-center">
+                        <svg className="w-20 h-20 sm:w-28 sm:h-28 -rotate-90" viewBox="0 0 110 110">
                           <circle cx="55" cy="55" r={r} stroke="#e2e8f0" strokeWidth="10" fill="none" />
                           <circle
                             cx="55"
@@ -963,11 +963,11 @@ export default function ResultsAndRankingPage() {
                             className="transition-all duration-700 ease-out"
                           />
                         </svg>
-                        <span className="absolute text-2xl font-black text-slate-900 tracking-tight">
+                        <span className="absolute text-lg sm:text-2xl font-black text-slate-900 tracking-tight">
                           {val}%
                         </span>
                       </div>
-                      <p className="text-xs font-bold text-slate-800 mt-3 max-w-[125px] leading-snug">
+                      <p className="text-[10.5px] sm:text-xs font-bold text-slate-800 mt-2 sm:mt-3 max-w-[125px] leading-snug">
                         Working Memory Recall
                       </p>
                     </div>
@@ -982,8 +982,8 @@ export default function ResultsAndRankingPage() {
                   const offset = c - (val / 100) * c;
                   return (
                     <div className="flex flex-col items-center">
-                      <div className="relative w-28 h-28 flex items-center justify-center">
-                        <svg className="w-28 h-28 -rotate-90" viewBox="0 0 110 110">
+                      <div className="relative w-20 h-20 sm:w-28 sm:h-28 flex items-center justify-center">
+                        <svg className="w-20 h-20 sm:w-28 sm:h-28 -rotate-90" viewBox="0 0 110 110">
                           <circle cx="55" cy="55" r={r} stroke="#e2e8f0" strokeWidth="10" fill="none" />
                           <circle
                             cx="55"
@@ -998,12 +998,12 @@ export default function ResultsAndRankingPage() {
                             className="transition-all duration-700 ease-out"
                           />
                         </svg>
-                        <span className="absolute text-2xl font-black text-slate-900 tracking-tight">
+                        <span className="absolute text-lg sm:text-2xl font-black text-slate-900 tracking-tight">
                           {val}%
                         </span>
                       </div>
-                      <p className="text-xs font-bold text-slate-800 mt-3 max-w-[125px] leading-snug">
-                        Mental Processing Agility
+                      <p className="text-[10.5px] sm:text-xs font-bold text-slate-800 mt-2 sm:mt-3 max-w-[125px] leading-snug">
+                        Processing Agility
                       </p>
                     </div>
                   );
@@ -1016,7 +1016,7 @@ export default function ResultsAndRankingPage() {
               <button
                 type="button"
                 onClick={() => setSelectedCandidate(null)}
-                className="h-11 px-7 rounded-full bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm shadow-md transition-all cursor-pointer"
+                className="w-full sm:w-auto h-10 sm:h-11 px-7 rounded-xl sm:rounded-full bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
               >
                 Close Scorecard
               </button>

@@ -66,16 +66,16 @@ const LoginPage = () => {
 
       {/* Main Content Grid */}
       <div className="relative z-10 flex-1 flex items-center justify-center py-8 lg:py-12">
-        <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+        <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center">
           {/* Left Hero Section */}
-          <div className="lg:col-span-6 xl:col-span-7 space-y-8">
-            <div className="space-y-5">
-              <h1 className="text-5xl sm:text-6xl xl:text-7xl font-black tracking-tight text-slate-900 leading-[1.1]">
-                Find <br />
-                Great Talent <br />
+          <div className="lg:col-span-6 xl:col-span-7 space-y-6 sm:space-y-8">
+            <div className="space-y-3 sm:space-y-5">
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-slate-900 leading-[1.15] sm:leading-[1.1]">
+                Find <br className="hidden sm:inline" />
+                Great Talent <br className="hidden sm:inline" />
                 <span className="text-blue-600">Faster</span>
               </h1>
-              <p className="text-base sm:text-lg text-slate-500 font-normal max-w-lg leading-relaxed">
+              <p className="text-sm sm:text-base lg:text-lg text-slate-500 font-normal max-w-lg leading-relaxed">
                 A modern recruitment platform to post jobs, manage candidates, conduct assessments and hire the best talent.
               </p>
             </div>

@@ -361,12 +361,12 @@ const AssessmentPreStart = ({
         </header>
 
         {/* ── 2. Stepper Bar (Plain Minimalist Pills) ── */}
-        <nav aria-label="Progress" className="flex flex-wrap items-center gap-2.5 pt-1">
+        <nav aria-label="Progress" className="flex items-center gap-2 pt-1 overflow-x-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex-nowrap -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
           {/* Step 1: Company Info */}
           <button
             type="button"
             onClick={() => setStep(1)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
               step === 1
                 ? "bg-[#303331] text-white shadow-xs"
                 : "bg-[#f1f5f9] text-[#64748b] hover:bg-slate-200/80"
@@ -386,7 +386,7 @@ const AssessmentPreStart = ({
           <button
             type="button"
             onClick={() => setStep(2)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
               step === 2
                 ? "bg-[#303331] text-white shadow-xs"
                 : "bg-[#f1f5f9] text-[#64748b] hover:bg-slate-200/80"
@@ -406,7 +406,7 @@ const AssessmentPreStart = ({
           <button
             type="button"
             onClick={() => candidateName && email && setStep(3)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
               step === 3
                 ? "bg-[#303331] text-white shadow-xs"
                 : isEmailVerified
@@ -433,7 +433,7 @@ const AssessmentPreStart = ({
             type="button"
             onClick={() => isEmailVerified && setStep(4)}
             disabled={!isEmailVerified}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full text-xs font-bold transition-all shrink-0 whitespace-nowrap ${
               step === 4
                 ? "bg-[#303331] text-white shadow-xs"
                 : "bg-[#f1f5f9] text-[#64748b] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-200/80 cursor-pointer"
@@ -712,8 +712,8 @@ const AssessmentPreStart = ({
                 </div>
 
                 {/* Inputs & Verify Button Row */}
-                <div className="flex flex-wrap items-center gap-3 pt-1">
-                  <div className="flex items-center gap-2 sm:gap-2.5" onPaste={handleOtpPaste}>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
+                  <div className="flex items-center justify-between sm:justify-start gap-1.5 sm:gap-2.5 max-w-full" onPaste={handleOtpPaste}>
                     {otpDigits.map((digit, idx) => (
                       <input
                         key={idx}
@@ -737,7 +737,7 @@ const AssessmentPreStart = ({
                     type="button"
                     onClick={handleVerifyOtp}
                     disabled={isVerifyingOtp || otpDigits.some((d) => !d)}
-                    className="h-11 sm:h-12 px-6 font-bold text-xs bg-[#303331] hover:bg-[#424644] text-white rounded-xl shadow-xs transition-all gap-2 disabled:opacity-50 shrink-0"
+                    className="w-full sm:w-auto h-11 sm:h-12 px-6 font-bold text-xs bg-[#303331] hover:bg-[#424644] text-white rounded-xl shadow-xs transition-all gap-2 disabled:opacity-50 shrink-0 cursor-pointer"
                   >
                     {isVerifyingOtp ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
