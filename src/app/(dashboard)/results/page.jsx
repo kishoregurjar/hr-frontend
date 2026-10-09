@@ -873,9 +873,15 @@ export default function ResultsAndRankingPage() {
                 <div>
                   <span className="text-[10.5px] font-bold uppercase text-slate-400">Rank</span>
                   <p className="text-2xl font-black text-amber-600">
-                    #{selectedCandidate.assessmentRank || 1}
-                    {selectedCandidate.assessmentTotalCandidates > 1 && (
-                      <span className="text-xs text-slate-400 font-normal"> / {selectedCandidate.assessmentTotalCandidates}</span>
+                    {selectedCandidate.status === "QUALIFIED" && selectedCandidate.assessmentRank ? (
+                      <>
+                        #{selectedCandidate.assessmentRank}
+                        {selectedCandidate.assessmentTotalCandidates > 1 && (
+                          <span className="text-xs text-slate-400 font-normal"> / {selectedCandidate.assessmentTotalCandidates}</span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-base text-slate-400 font-bold">Unranked</span>
                     )}
                   </p>
                 </div>
@@ -903,30 +909,30 @@ export default function ResultsAndRankingPage() {
                   <div>
                     <div className="flex justify-between text-xs font-semibold text-slate-800 mb-1">
                       <span>Problem Solving & Logical Reasoning</span>
-                      <span className="font-bold text-blue-600">{selectedCandidate.cognitiveTraits?.problemSolving || 85}%</span>
+                      <span className="font-bold text-blue-600">{selectedCandidate.cognitiveTraits?.problemSolving ?? 0}%</span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                      <div className="h-full rounded-full bg-blue-600" style={{ width: `${selectedCandidate.cognitiveTraits?.problemSolving || 85}%` }} />
+                      <div className="h-full rounded-full bg-blue-600" style={{ width: `${selectedCandidate.cognitiveTraits?.problemSolving ?? 0}%` }} />
                     </div>
                   </div>
 
                   <div>
                     <div className="flex justify-between text-xs font-semibold text-slate-800 mb-1">
                       <span>Working Memory Recall</span>
-                      <span className="font-bold text-purple-600">{selectedCandidate.cognitiveTraits?.memoryRecall || 80}%</span>
+                      <span className="font-bold text-purple-600">{selectedCandidate.cognitiveTraits?.memoryRecall ?? 0}%</span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                      <div className="h-full rounded-full bg-purple-600" style={{ width: `${selectedCandidate.cognitiveTraits?.memoryRecall || 80}%` }} />
+                      <div className="h-full rounded-full bg-purple-600" style={{ width: `${selectedCandidate.cognitiveTraits?.memoryRecall ?? 0}%` }} />
                     </div>
                   </div>
 
                   <div>
                     <div className="flex justify-between text-xs font-semibold text-slate-800 mb-1">
                       <span>Mental Processing Agility</span>
-                      <span className="font-bold text-emerald-600">{selectedCandidate.cognitiveTraits?.processingSpeed || 85}%</span>
+                      <span className="font-bold text-emerald-600">{selectedCandidate.cognitiveTraits?.processingSpeed ?? 0}%</span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                      <div className="h-full rounded-full bg-emerald-600" style={{ width: `${selectedCandidate.cognitiveTraits?.processingSpeed || 85}%` }} />
+                      <div className="h-full rounded-full bg-emerald-600" style={{ width: `${selectedCandidate.cognitiveTraits?.processingSpeed ?? 0}%` }} />
                     </div>
                   </div>
                 </div>
