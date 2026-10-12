@@ -180,25 +180,25 @@ const AssessmentAttempt = ({ attemptId }) => {
     );
   }
 
+  let localSavedResponses = {};
+  if (typeof window !== "undefined") {
+    try {
+      localSavedResponses = JSON.parse(
+        sessionStorage.getItem(`candidate_responses_${attempt?.id || attemptId}`) || "{}"
+      );
+    } catch { }
+  }
+
+  const mergedAttempt = {
+    ...attempt,
+    responses: {
+      ...(attempt?.responses || {}),
+      ...localSavedResponses,
+    },
+  };
+
   // ── 5. Review Mode ──────────────────────────────────────────
   if (isReviewing) {
-    let localSavedResponses = {};
-    if (typeof window !== "undefined") {
-      try {
-        localSavedResponses = JSON.parse(
-          sessionStorage.getItem(`candidate_responses_${attempt?.id || attemptId}`) || "{}"
-        );
-      } catch { }
-    }
-
-    const mergedAttempt = {
-      ...attempt,
-      responses: {
-        ...(attempt?.responses || {}),
-        ...localSavedResponses,
-      },
-    };
-
     const reviewData = getAssessmentReview({ assessment: effectiveAssessment, attempt: mergedAttempt });
 
     return (
