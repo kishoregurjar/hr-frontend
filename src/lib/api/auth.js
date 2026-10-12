@@ -423,6 +423,11 @@ export const clearAllAuthStorage = () => {
     "cached_admin_companies",
     "cached_admin_metrics",
     "user_email",
+    "saved_email",
+    "email",
+    "rememberMe",
+    "remember_me",
+    "username",
     "hirequest_attempts_cache",
     "invitationToken",
   ];
