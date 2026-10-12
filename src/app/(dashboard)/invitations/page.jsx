@@ -9,6 +9,8 @@ import {
   Sparkles,
   FileText,
   Inbox,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +35,8 @@ export default function InvitationsPage() {
     "";
 
   const [assessmentFilter, setAssessmentFilter] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [preselectedAssessmentId, setPreselectedAssessmentId] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -107,6 +111,47 @@ export default function InvitationsPage() {
       inv.assessmentTitle.toLowerCase().includes(assessmentFilter.toLowerCase())
     );
   }, [dynamicInvitations, assessmentFilter]);
+
+  // Reset pagination to first page when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [assessmentFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredInvitations.length / pageSize));
+  const validPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [totalPages, currentPage]);
+
+  const startIndex = filteredInvitations.length === 0 ? 0 : (validPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, filteredInvitations.length);
+
+  const paginatedInvitations = useMemo(() => {
+    return filteredInvitations.slice(startIndex, startIndex + pageSize);
+  }, [filteredInvitations, startIndex, pageSize]);
+
+  // Generate smart pagination numbers
+  const paginationPages = useMemo(() => {
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pageSet = new Set([1, totalPages, validPage, validPage - 1, validPage + 1]);
+    const sorted = Array.from(pageSet)
+      .filter((p) => p >= 1 && p <= totalPages)
+      .sort((a, b) => a - b);
+
+    const result = [];
+    for (let i = 0; i < sorted.length; i++) {
+      if (i > 0 && sorted[i] - sorted[i - 1] > 1) {
+        result.push(`ellipsis-${i}`);
+      }
+      result.push(sorted[i]);
+    }
+    return result;
+  }, [totalPages, validPage]);
 
   const getStatusBadge = (status) => {
     const s = String(status || "").toUpperCase();
@@ -201,7 +246,13 @@ export default function InvitationsPage() {
         </div>
 
         <p className="text-xs text-slate-500 font-medium">
-          Showing <span className="font-bold text-slate-900">{filteredInvitations.length}</span> dispatched invitations
+          Showing{" "}
+          <span className="font-bold text-slate-900">
+            {filteredInvitations.length === 0 ? 0 : startIndex + 1}
+          </span>{" "}
+          to{" "}
+          <span className="font-bold text-slate-900">{endIndex}</span> of{" "}
+          <span className="font-bold text-slate-900">{filteredInvitations.length}</span> dispatched invitations
         </p>
       </div>
 
@@ -240,7 +291,7 @@ export default function InvitationsPage() {
                 </td>
               </tr>
             ) : (
-              filteredInvitations.map((inv) => (
+              paginatedInvitations.map((inv) => (
                 <tr key={inv.id} className="hover:bg-slate-50/70 transition">
                   {/* Candidate */}
                   <td className="py-4 px-5">
@@ -292,7 +343,92 @@ export default function InvitationsPage() {
         </table>
       </div>
 
-      {/* ── 4. Modals ── */}
+      {/* ── 4. Pagination Controls ── */}
+      {filteredInvitations.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs">
+            <span>
+              Showing <span className="font-bold text-slate-800">{startIndex + 1}</span> to{" "}
+              <span className="font-bold text-slate-800">{endIndex}</span> of{" "}
+              <span className="font-bold text-slate-800">{filteredInvitations.length}</span> invitations
+            </span>
+            <div className="hidden sm:flex items-center gap-1.5 ml-2 border-l pl-3">
+              <span className="text-[11px] text-slate-400">Rows per page:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="h-7 rounded-md border border-slate-200 bg-white px-1.5 text-[11px] font-semibold text-slate-700 shadow-2xs focus:border-blue-500 focus:outline-hidden"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={validPage === 1}
+                className="h-8 px-2.5 text-xs font-semibold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="h-3.5 w-3.5 mr-0.5" />
+                Prev
+              </Button>
+
+              <div className="flex items-center gap-1">
+                {paginationPages.map((pageItem, idx) => {
+                  if (typeof pageItem === "string" && pageItem.startsWith("ellipsis")) {
+                    return (
+                      <span key={pageItem || idx} className="px-1 text-slate-400 font-bold select-none">
+                        ...
+                      </span>
+                    );
+                  }
+
+                  const pageNum = Number(pageItem);
+                  const isActive = validPage === pageNum;
+
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={isActive ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`h-8 w-8 p-0 text-xs font-bold transition-all cursor-pointer ${
+                        isActive
+                          ? "bg-blue-600 text-white hover:bg-blue-700 shadow-xs"
+                          : "text-slate-700 hover:bg-slate-100"
+                      }`}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={validPage === totalPages}
+                className="h-8 px-2.5 text-xs font-semibold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next
+                <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── 5. Modals ── */}
       <AssignAssessmentDialog
         open={isAssignDialogOpen}
         onOpenChange={(next) => {
