@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Trophy,
@@ -29,6 +29,8 @@ import {
   Calendar,
   Video,
   CheckSquare,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/features/auth/context";
@@ -159,6 +161,8 @@ export default function ResultsAndRankingPage() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [sortBy, setSortBy] = useState("rank");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Detailed Candidate Scorecard Modal
   const [selectedCandidate, setSelectedCandidate] = useState(null);
@@ -179,9 +183,11 @@ export default function ResultsAndRankingPage() {
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedCandidateIds(filteredResults.map((r) => r.id));
+      const pageIds = paginatedResults.map((r) => r.id);
+      setSelectedCandidateIds((prev) => Array.from(new Set([...prev, ...pageIds])));
     } else {
-      setSelectedCandidateIds([]);
+      const pageIds = new Set(paginatedResults.map((r) => r.id));
+      setSelectedCandidateIds((prev) => prev.filter((id) => !pageIds.has(id)));
     }
   };
 
@@ -290,6 +296,47 @@ export default function ResultsAndRankingPage() {
         return String(a.candidateName || "").localeCompare(String(b.candidateName || ""));
       });
   }, [rankedResults, search, selectedAssessment, statusFilter, sortBy]);
+
+  // Reset pagination to first page when any filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, selectedAssessment, statusFilter, sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredResults.length / pageSize));
+  const validPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [totalPages, currentPage]);
+
+  const startIndex = filteredResults.length === 0 ? 0 : (validPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, filteredResults.length);
+
+  const paginatedResults = useMemo(() => {
+    return filteredResults.slice(startIndex, startIndex + pageSize);
+  }, [filteredResults, startIndex, pageSize]);
+
+  // Helper for generating page numbers with smart ellipsis
+  const paginationPages = useMemo(() => {
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pageSet = new Set([1, totalPages, validPage, validPage - 1, validPage + 1]);
+    const sorted = Array.from(pageSet)
+      .filter((p) => p >= 1 && p <= totalPages)
+      .sort((a, b) => a - b);
+
+    const result = [];
+    for (let i = 0; i < sorted.length; i++) {
+      if (i > 0 && sorted[i] - sorted[i - 1] > 1) {
+        result.push(`ellipsis-${i}`);
+      }
+      result.push(sorted[i]);
+    }
+    return result;
+  }, [totalPages, validPage]);
 
   // Podium candidates: Only QUALIFIED candidates can appear on the podium (top 3)
   const podiumCandidates = useMemo(() => {
@@ -662,11 +709,11 @@ export default function ResultsAndRankingPage() {
                     <input
                       type="checkbox"
                       checked={
-                        filteredResults.length > 0 &&
-                        selectedCandidateIds.length === filteredResults.length
+                        paginatedResults.length > 0 &&
+                        paginatedResults.every((item) => selectedCandidateIds.includes(item.id))
                       }
                       onChange={handleSelectAll}
-                      aria-label="Select all candidates"
+                      aria-label="Select all candidates on this page"
                       className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
                     />
                   </th>
@@ -697,7 +744,7 @@ export default function ResultsAndRankingPage() {
                   </td>
                 </tr>
               ) : (
-                filteredResults.map((item, index) => (
+                paginatedResults.map((item, index) => (
                   <tr
                     key={item.id}
                     className={`hover:bg-slate-50/70 transition group ${
@@ -845,6 +892,91 @@ export default function ResultsAndRankingPage() {
             </tbody>
           </table>
         </div>
+
+        {/* ── Pagination Footer ── */}
+        {filteredResults.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t text-xs text-muted-foreground bg-slate-50/40">
+            <div className="flex items-center gap-2 text-xs">
+              <span>
+                Showing <span className="font-bold text-slate-800">{startIndex + 1}</span> to{" "}
+                <span className="font-bold text-slate-800">{endIndex}</span> of{" "}
+                <span className="font-bold text-slate-800">{filteredResults.length}</span> candidates
+              </span>
+              <div className="hidden sm:flex items-center gap-1.5 ml-2 border-l border-slate-200 pl-3">
+                <span className="text-[11px] text-slate-400">Rows per page:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="h-7 rounded-md border border-slate-200 bg-white px-1.5 text-[11px] font-semibold text-slate-700 shadow-2xs focus:border-blue-500 focus:outline-hidden"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1.5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={validPage === 1}
+                  className="h-8 px-2.5 text-xs font-semibold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5 mr-0.5" />
+                  Prev
+                </Button>
+
+                <div className="flex items-center gap-1">
+                  {paginationPages.map((pageItem, idx) => {
+                    if (typeof pageItem === "string" && pageItem.startsWith("ellipsis")) {
+                      return (
+                        <span key={pageItem || idx} className="px-1 text-slate-400 font-bold select-none">
+                          ...
+                        </span>
+                      );
+                    }
+
+                    const pageNum = Number(pageItem);
+                    const isActive = validPage === pageNum;
+
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={isActive ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`h-8 w-8 p-0 text-xs font-bold transition-all cursor-pointer ${
+                          isActive
+                            ? "bg-blue-600 text-white hover:bg-blue-700 shadow-xs"
+                            : "text-slate-700 hover:bg-slate-100"
+                        }`}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={validPage === totalPages}
+                  className="h-8 px-2.5 text-xs font-semibold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Next
+                  <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── 6. DETAILED CANDIDATE SCORECARD MODAL ── */}
