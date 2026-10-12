@@ -553,7 +553,27 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
                     {/* Games Progress List in Right Panel */}
                     <div className="space-y-1.5">
                       {gameList.map((g, gIdx) => {
-                        const res = attempt?.gameResults?.[g.id] || attempt?.gameResults?.[g.slug];
+                        let sessionResults = {};
+                        if (typeof window !== "undefined") {
+                          try {
+                            sessionResults = JSON.parse(
+                              sessionStorage.getItem(`candidate_game_results_${attempt?.id}`) ||
+                              sessionStorage.getItem("candidate_game_results") ||
+                              "{}"
+                            );
+                          } catch {}
+                        }
+                        const res =
+                          attempt?.gameResults?.[g.id] ||
+                          attempt?.gameResults?.[g.slug] ||
+                          attempt?.gameResults?.[g.gameId] ||
+                          attempt?.gameResults?.[g.code] ||
+                          attempt?.gameResults?.[`game-${gIdx + 1}`] ||
+                          sessionResults[g.id] ||
+                          sessionResults[g.slug] ||
+                          sessionResults[g.gameId] ||
+                          sessionResults[g.code] ||
+                          sessionResults[`game-${gIdx + 1}`];
                         const isCompleted = Boolean(res);
                         const isSkipped = Boolean(res?.skipped);
                         const isCurrentActiveGame = isSectionActive && gIdx === activeGameIndex;
@@ -561,29 +581,36 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
                         return (
                           <div
                             key={g.id || g.slug || gIdx}
-                            onClick={() => {
-                              jumpToQuestion(sIdx, 0);
-                              setActiveGameIndex(gIdx);
-                            }}
-                            className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold transition-all select-none cursor-pointer ${
-                              isCurrentActiveGame
-                                ? "bg-blue-50/90 border-blue-400 text-blue-900 shadow-2xs ring-1 ring-blue-300/60"
-                                : isCompleted
-                                ? isSkipped
-                                  ? "bg-amber-50/50 border-amber-300/80 text-amber-800"
-                                  : "bg-emerald-50/50 border-emerald-300/80 text-emerald-800"
-                                : "bg-slate-100/50 border-slate-200/60 text-slate-400 opacity-60"
+                            onClick={
+                              isCompleted
+                                ? undefined
+                                : () => {
+                                    jumpToQuestion(sIdx, 0);
+                                    setActiveGameIndex(gIdx);
+                                  }
+                            }
+                            title={isCompleted ? `${g.title || "Game"} (Completed & Locked)` : undefined}
+                            aria-disabled={isCompleted}
+                            className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold transition-all select-none ${
+                              isCompleted
+                                ? "cursor-not-allowed opacity-80 " +
+                                  (isSkipped
+                                    ? "bg-amber-50/50 border-amber-300/80 text-amber-800"
+                                    : "bg-emerald-50/50 border-emerald-300/80 text-emerald-800")
+                                : isCurrentActiveGame
+                                ? "bg-blue-50/90 border-blue-400 text-blue-900 shadow-2xs ring-1 ring-blue-300/60 cursor-pointer"
+                                : "bg-slate-100/50 border-slate-200/60 text-slate-400 opacity-60 cursor-pointer"
                             }`}
                           >
                             <div className="flex items-center gap-2 truncate">
                               <span
                                 className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-black ${
-                                  isCurrentActiveGame
-                                    ? "bg-blue-600 text-white shadow-xs"
-                                    : isCompleted
+                                  isCompleted
                                     ? isSkipped
                                       ? "bg-amber-600 text-white"
                                       : "bg-emerald-600 text-white"
+                                    : isCurrentActiveGame
+                                    ? "bg-blue-600 text-white shadow-xs"
                                     : "bg-slate-200 text-slate-500"
                                 }`}
                               >
@@ -596,11 +623,15 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
 
                             {isCompleted ? (
                               isSkipped ? (
-                                <span className="text-[9px] font-extrabold text-amber-600 uppercase bg-amber-100/80 px-1.5 py-0.5 rounded">
+                                <span className="flex items-center gap-1 text-[9px] font-extrabold text-amber-600 uppercase bg-amber-100/80 px-1.5 py-0.5 rounded">
+                                  <Lock className="h-2.5 w-2.5" />
                                   Skipped
                                 </span>
                               ) : (
-                                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                                <span className="flex items-center gap-1 text-emerald-600">
+                                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                                  <Lock className="h-3 w-3 shrink-0 text-emerald-600/70" />
+                                </span>
                               )
                             ) : isCurrentActiveGame ? (
                               <span className="flex items-center gap-1 text-[8.5px] font-black text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded-full uppercase shrink-0">
