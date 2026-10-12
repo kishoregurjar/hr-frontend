@@ -227,7 +227,7 @@ const AssessmentAttempt = ({ attemptId }) => {
   return (
     <AssessmentRuntime
       assessment={effectiveAssessment}
-      attempt={attempt}
+      attempt={mergedAttempt}
       onReview={() => setIsReviewing(true)}
     />
   );

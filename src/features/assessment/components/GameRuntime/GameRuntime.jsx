@@ -14,34 +14,79 @@ import { useSaveGameResult } from "../../hooks";
 
 const DEFAULT_GAME_TIME_SECONDS = 10 * 60; // 10 Minutes per game
 
-const GameRuntime = ({ section, attempt, onComplete, onTimeTick, onActiveGameChange }) => {
+const GameRuntime = ({
+  section,
+  attempt,
+  onComplete,
+  onTimeTick,
+  onActiveGameChange,
+  activeGameIndex: externalGameIndex,
+}) => {
   const games =
     Array.isArray(section.games) && section.games.length > 0
       ? section.games
       : [section];
 
+  const getGameResult = (g, idx) => {
+    if (!g) return null;
+    let sessionResults = {};
+    if (typeof window !== "undefined") {
+      try {
+        sessionResults = JSON.parse(
+          sessionStorage.getItem(`candidate_game_results_${attempt?.id}`) ||
+          sessionStorage.getItem("candidate_game_results") ||
+          "{}"
+        );
+      } catch {}
+    }
+    return (
+      attempt?.gameResults?.[g.id] ||
+      attempt?.gameResults?.[g.slug] ||
+      attempt?.gameResults?.[g.gameId] ||
+      attempt?.gameResults?.[g.code] ||
+      (typeof idx === "number" ? attempt?.gameResults?.[`game-${idx + 1}`] : null) ||
+      sessionResults[g.id] ||
+      sessionResults[g.slug] ||
+      sessionResults[g.gameId] ||
+      sessionResults[g.code] ||
+      (typeof idx === "number" ? sessionResults[`game-${idx + 1}`] : null) ||
+      (games.length === 1 ? attempt?.gameResults?.[section.id] || sessionResults[section.id] : null) ||
+      null
+    );
+  };
+
   // Find first incomplete game index or start at 0
   const findInitialIndex = () => {
-    const idx = games.findIndex((g) => {
-      const res =
-        attempt?.gameResults?.[g.id] ||
-        attempt?.gameResults?.[g.slug];
-      return !res;
-    });
+    const idx = games.findIndex((g, i) => !getGameResult(g, i));
     return idx !== -1 ? idx : 0;
   };
 
-  const [activeGameIndex, setActiveGameIndex] = useState(findInitialIndex);
+  const [activeGameIndex, setActiveGameIndex] = useState(
+    typeof externalGameIndex === "number" ? externalGameIndex : findInitialIndex
+  );
+
+  useEffect(() => {
+    if (typeof externalGameIndex === "number" && externalGameIndex !== activeGameIndex) {
+      const targetGame = games[externalGameIndex];
+      const targetRes = getGameResult(targetGame, externalGameIndex);
+      if (targetRes) {
+        const firstIncompleteIdx = games.findIndex((g, i) => !getGameResult(g, i));
+        if (firstIncompleteIdx !== -1 && firstIncompleteIdx !== externalGameIndex) {
+          setActiveGameIndex(firstIncompleteIdx);
+          return;
+        }
+      }
+      setActiveGameIndex(externalGameIndex);
+    }
+  }, [externalGameIndex]);
+
   const currentGame = games[activeGameIndex] || games[0];
 
   useEffect(() => {
     onActiveGameChange?.(activeGameIndex);
   }, [activeGameIndex, onActiveGameChange]);
 
-  const existingResult =
-    attempt?.gameResults?.[currentGame.id] ||
-    attempt?.gameResults?.[currentGame.slug] ||
-    (games.length === 1 ? attempt?.gameResults?.[section.id] : null);
+  const existingResult = getGameResult(currentGame, activeGameIndex);
 
   const [completedResult, setCompletedResult] = useState(existingResult ?? null);
 
@@ -49,15 +94,34 @@ const GameRuntime = ({ section, attempt, onComplete, onTimeTick, onActiveGameCha
     existingResult ? GAME_STATE.COMPLETED : GAME_STATE.READY
   );
 
+  useEffect(() => {
+    if (existingResult) {
+      setCompletedResult(existingResult);
+      setGameState(GAME_STATE.COMPLETED);
+    } else {
+      setCompletedResult(null);
+      setGameState(GAME_STATE.READY);
+    }
+  }, [activeGameIndex, existingResult]);
+
   // 10-Minute Game Countdown State
   const gameDurationSec = (currentGame.durationMinutes || currentGame.duration || 10) * 60;
   const [gameTimeRemaining, setGameTimeRemaining] = useState(gameDurationSec);
   const timerIntervalRef = useRef(null);
 
+  useEffect(() => {
+    const dur = (currentGame.durationMinutes || currentGame.duration || 10) * 60;
+    setGameTimeRemaining(dur);
+  }, [activeGameIndex, currentGame]);
+
   const saveGameResult = useSaveGameResult();
 
   // Handle Game Start
   const handleStart = () => {
+    if (existingResult || completedResult) {
+      toast.warning("This game challenge has already been completed and locked.");
+      return;
+    }
     setGameTimeRemaining(gameDurationSec);
     setGameState(GAME_STATE.PLAYING);
   };
@@ -103,23 +167,65 @@ const GameRuntime = ({ section, attempt, onComplete, onTimeTick, onActiveGameCha
   };
 
   const handleGameComplete = (result) => {
+    if (existingResult) {
+      toast.info("This game challenge has already been completed.");
+      return;
+    }
+
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
 
+    const rawSlug = String(currentGame.slug || currentGame.code || currentGame.id || "").toLowerCase();
+    const canonicalKey = rawSlug.includes("zip") || rawSlug.includes("path")
+      ? "zip"
+      : rawSlug.includes("tango")
+      ? "tango"
+      : rawSlug.includes("sudoku")
+      ? "sudoku"
+      : rawSlug.includes("mahjong")
+      ? "mahjong"
+      : rawSlug;
+
     const saveKey = currentGame.id || currentGame.slug || section.id;
-    const timeSpent = gameDurationSec - gameTimeRemaining;
+    const timeSpent = Math.max(0, gameDurationSec - gameTimeRemaining);
     const finalResult = {
       ...result,
-      timeTaken: result.timeTaken || timeSpent || 60,
+      gameId: currentGame.id,
+      slug: canonicalKey,
+      timeTaken: result.timeTaken || timeSpent || result.timeSpent || 60,
+      timeSpent: timeSpent || result.timeSpent || result.timeTaken || 60,
     };
     
     // 1. Instant Optimistic UI: Immediately show the completed screen without network lag
     setCompletedResult(finalResult);
     setGameState(GAME_STATE.COMPLETED);
 
-    // 2. Background Auto-Save: Silently synchronize result with backend database
+    // 2. Client-side Real-Time Session Storage (Fail-safe persistence)
+    if (typeof window !== "undefined") {
+      try {
+        const attemptId = attempt?.id;
+        const candidateAttemptId = sessionStorage.getItem("candidate_attempt_id");
+        const storeKeys = [
+          attemptId ? `candidate_game_results_${attemptId}` : null,
+          candidateAttemptId ? `candidate_game_results_${candidateAttemptId}` : null,
+          "candidate_game_results",
+        ].filter(Boolean);
+
+        storeKeys.forEach((key) => {
+          const existing = JSON.parse(sessionStorage.getItem(key) || "{}");
+          existing[saveKey] = finalResult;
+          existing[canonicalKey] = finalResult;
+          existing[`game-${activeGameIndex + 1}`] = finalResult;
+          sessionStorage.setItem(key, JSON.stringify(existing));
+        });
+      } catch (err) {
+        console.warn("[GameRuntime] Session storage persistence notice:", err);
+      }
+    }
+
+    // 3. Background Auto-Save: Silently synchronize result with backend database
     saveGameResult.mutate(
       {
-        attemptId: attempt.id,
+        attemptId: attempt?.id,
         sectionId: saveKey,
         result: finalResult,
       },
@@ -153,6 +259,7 @@ const GameRuntime = ({ section, attempt, onComplete, onTimeTick, onActiveGameCha
       accuracy: 0,
       moves: 0,
       timeTaken: 0,
+      timeSpent: 0,
       skipped: true,
       status: "SKIPPED",
       completedAt: new Date().toISOString(),
@@ -163,17 +270,29 @@ const GameRuntime = ({ section, attempt, onComplete, onTimeTick, onActiveGameCha
 
   const handleNextGame = () => {
     if (activeGameIndex < games.length - 1) {
-      const nextIdx = activeGameIndex + 1;
-      const nextGame = games[nextIdx];
-      const nextExisting =
-        attempt?.gameResults?.[nextGame.id] ||
-        attempt?.gameResults?.[nextGame.slug];
-
-      setActiveGameIndex(nextIdx);
-      setCompletedResult(nextExisting ?? null);
-      const nextDuration = (nextGame.durationMinutes || nextGame.duration || 10) * 60;
-      setGameTimeRemaining(nextDuration);
-      setGameState(nextExisting ? GAME_STATE.COMPLETED : GAME_STATE.READY);
+      const nextIdx = games.findIndex((g, i) => i > activeGameIndex && !getGameResult(g, i));
+      if (nextIdx !== -1) {
+        const nextGame = games[nextIdx];
+        const nextExisting = getGameResult(nextGame, nextIdx);
+        setActiveGameIndex(nextIdx);
+        setCompletedResult(nextExisting ?? null);
+        const nextDuration = (nextGame.durationMinutes || nextGame.duration || 10) * 60;
+        setGameTimeRemaining(nextDuration);
+        setGameState(nextExisting ? GAME_STATE.COMPLETED : GAME_STATE.READY);
+      } else {
+        const anyIncompleteIdx = games.findIndex((g, i) => !getGameResult(g, i));
+        if (anyIncompleteIdx !== -1) {
+          const nextGame = games[anyIncompleteIdx];
+          const nextExisting = getGameResult(nextGame, anyIncompleteIdx);
+          setActiveGameIndex(anyIncompleteIdx);
+          setCompletedResult(nextExisting ?? null);
+          const nextDuration = (nextGame.durationMinutes || nextGame.duration || 10) * 60;
+          setGameTimeRemaining(nextDuration);
+          setGameState(nextExisting ? GAME_STATE.COMPLETED : GAME_STATE.READY);
+        } else {
+          onComplete?.();
+        }
+      }
     } else {
       onComplete?.();
     }
@@ -261,4 +380,3 @@ const GameRuntime = ({ section, attempt, onComplete, onTimeTick, onActiveGameCha
 };
 
 export default GameRuntime;
-
