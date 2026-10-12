@@ -23,6 +23,10 @@ const LoginPage = () => {
       return;
     }
 
+    if (!isLoading && !isAuthenticated) {
+      clearAllAuthStorage();
+    }
+
     if (!isLoading && isAuthenticated && user) {
       const role = (user?.role || "").toUpperCase();
       const isSuperAdmin =

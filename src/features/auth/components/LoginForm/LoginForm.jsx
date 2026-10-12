@@ -35,15 +35,24 @@ const LoginForm = () => {
 
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(true);
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errorType, setErrorType] = useState(null); // 'INVALID_CREDENTIALS' | 'ACCOUNT_SUSPENDED' | 'COMPANY_SUSPENDED' | 'PENDING_ACTIVATION' | 'GENERAL'
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (initialEmail) {
-      setEmail(initialEmail);
+    setEmail(initialEmail || "");
+    setPassword("");
+    setRememberMe(false);
+
+    // Force clear any delayed browser autofill when arriving without an explicit email param
+    if (!initialEmail) {
+      const timer = setTimeout(() => {
+        setEmail("");
+        setPassword("");
+      }, 50);
+      return () => clearTimeout(timer);
     }
   }, [initialEmail]);
 
@@ -127,7 +136,26 @@ const LoginForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 font-sans">
+    <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4 font-sans">
+      {/* Hidden dummy fields to capture aggressive browser autofill */}
+      <input
+        type="text"
+        name="fake_autofill_username"
+        tabIndex={-1}
+        autoComplete="username"
+        style={{ position: "absolute", opacity: 0, height: 0, width: 0, pointerEvents: "none", zIndex: -1 }}
+        aria-hidden="true"
+        readOnly
+      />
+      <input
+        type="password"
+        name="fake_autofill_password"
+        tabIndex={-1}
+        autoComplete="current-password"
+        style={{ position: "absolute", opacity: 0, height: 0, width: 0, pointerEvents: "none", zIndex: -1 }}
+        aria-hidden="true"
+        readOnly
+      />
       {/* Session Expired Banner */}
       {isExpiredSession && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50/90 p-3.5 text-xs text-amber-800 font-semibold flex items-center gap-2.5">
@@ -202,13 +230,14 @@ const LoginForm = () => {
           <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
           <Input
             id="email"
+            name="email"
             type="email"
             placeholder="vishnu@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="pl-10 h-11 sm:h-12 rounded-xl border-slate-200 bg-white text-xs sm:text-sm font-normal text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition shadow-2xs"
             required
-            autoComplete="email"
+            autoComplete="off"
             aria-label="Email Address"
           />
         </div>
@@ -220,13 +249,14 @@ const LoginForm = () => {
           <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
           <Input
             id="password"
+            name="password"
             type={showPassword ? "text" : "password"}
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="pl-10 pr-10 h-11 sm:h-12 rounded-xl border-slate-200 bg-white text-xs sm:text-sm font-normal text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition shadow-2xs"
             required
-            autoComplete="current-password"
+            autoComplete="new-password"
             aria-label="Password"
           />
           <button
