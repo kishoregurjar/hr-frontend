@@ -114,11 +114,25 @@ const AssignAssessmentDialog = ({
           handleOpenChange(false);
         },
         onError: (err) => {
-          toast.error(
+          const rawMessage =
             err?.response?.data?.message ||
-              err?.message ||
-              "Failed to assign assessment."
-          );
+            err?.message ||
+            "";
+
+          const isDuplicate =
+            err?.response?.status === 409 ||
+            err?.status === 409 ||
+            err?.response?.data?.code === "CONFLICT" ||
+            err?.response?.data?.code === "INVITATION_ALREADY_EXISTS" ||
+            err?.code === "CONFLICT" ||
+            rawMessage.toLowerCase().includes("already has an active invitation") ||
+            rawMessage.toLowerCase().includes("active invitation already exists");
+
+          const errorMessage = isDuplicate
+            ? "This candidate already has an active invitation for this assessment."
+            : rawMessage || "Failed to assign assessment.";
+
+          toast.error(errorMessage);
         },
       }
     );
@@ -237,7 +251,24 @@ const AssignAssessmentDialog = ({
           {assignAssessment.error && (
             <div className="rounded-xl border border-rose-200 bg-rose-50 p-3">
               <p className="text-xs text-rose-700 font-semibold">
-                {assignAssessment.error.message || "Unable to assign assessment."}
+                {(() => {
+                  const rawMessage =
+                    assignAssessment.error?.response?.data?.message ||
+                    assignAssessment.error?.message ||
+                    "";
+                  const isDuplicate =
+                    assignAssessment.error?.response?.status === 409 ||
+                    assignAssessment.error?.status === 409 ||
+                    assignAssessment.error?.response?.data?.code === "CONFLICT" ||
+                    assignAssessment.error?.response?.data?.code === "INVITATION_ALREADY_EXISTS" ||
+                    assignAssessment.error?.code === "CONFLICT" ||
+                    rawMessage.toLowerCase().includes("already has an active invitation") ||
+                    rawMessage.toLowerCase().includes("active invitation already exists");
+
+                  return isDuplicate
+                    ? "This candidate already has an active invitation for this assessment."
+                    : rawMessage || "Unable to assign assessment.";
+                })()}
               </p>
             </div>
           )}
