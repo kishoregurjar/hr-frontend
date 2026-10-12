@@ -15,11 +15,8 @@ export const assignmentService = {
     return getAssignmentByToken(token);
   },
 
-  assign: async ({ assessmentId, candidateIds }) => {
-    return assignAssessment({
-      assessmentId,
-      candidateIds,
-    });
+  assign: async (payload) => {
+    return assignAssessment(payload);
   },
 
   sendInvitation: async (assignmentId) => {

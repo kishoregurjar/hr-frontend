@@ -126,7 +126,15 @@ const processQueue = (error, token = null) => {
 
 // Response Interceptor: Extract data and handle automatic silent token refresh
 axiosClient.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    if (response?.data && response.data.success === false) {
+      const err = new Error(response.data.message || "Request failed");
+      err.status = response.status;
+      err.response = response;
+      return Promise.reject(err);
+    }
+    return response.data;
+  },
   async (error) => {
     const originalRequest = error?.config;
     const status = error?.response?.status;

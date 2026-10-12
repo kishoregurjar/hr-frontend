@@ -9,11 +9,7 @@ const useAssignAssessment = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ assessmentId, candidateIds }) =>
-      assignmentService.assign({
-        assessmentId,
-        candidateIds,
-      }),
+    mutationFn: (variables) => assignmentService.assign(variables),
 
     onSuccess: () => {
       queryClient.invalidateQueries({

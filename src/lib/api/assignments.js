@@ -414,50 +414,71 @@ export const assignAssessment = async ({ assessmentId, candidateIds, email, firs
   const isBulk = candidateList.length > 1 || (candidateIds && candidateIds.length > 1);
 
   if (isBulk && assessmentId) {
-    try {
-      const validCandidateIds = candidateIds && candidateIds.length > 0
-        ? [...new Set(candidateIds.filter(Boolean))]
-        : undefined;
+    const validCandidateIds = candidateIds && candidateIds.length > 0
+      ? [...new Set(candidateIds.filter(Boolean))]
+      : undefined;
 
-      const formattedCandidates = candidateList.map((c) => {
-        if (typeof c === "string") return c;
-        const cEmail = c.email || "";
-        const cFirstName = c.firstName || c.name?.split(" ")?.[0] || "Candidate";
-        const cLastName = c.lastName || c.name?.split(" ")?.slice(1)?.join(" ") || "";
-        return {
-          email: cEmail,
-          firstName: cFirstName,
-          lastName: cLastName,
-        };
-      }).filter((c) => (typeof c === "string" ? Boolean(c) : Boolean(c.email)));
+    const formattedCandidates = candidateList.map((c) => {
+      if (typeof c === "string") return c;
+      const cEmail = c.email || "";
+      const cFirstName = c.firstName || c.name?.split(" ")?.[0] || "Candidate";
+      const cLastName = c.lastName || c.name?.split(" ")?.slice(1)?.join(" ") || "";
+      return {
+        candidateId: c.candidateId || c.id,
+        email: cEmail,
+        firstName: cFirstName,
+        lastName: cLastName,
+      };
+    }).filter((c) => (typeof c === "string" ? Boolean(c) : Boolean(c.email || c.candidateId)));
 
-      const bulkPayload = {};
-      if (validCandidateIds && validCandidateIds.length > 0) {
-        bulkPayload.candidateIds = validCandidateIds;
-      }
-      if (formattedCandidates.length > 0) {
-        bulkPayload.candidates = formattedCandidates;
-      }
-
-      const res = await axiosClient.post(
-        `/attempts/assessments/${assessmentId}/invitations/bulk`,
-        bulkPayload
-      );
-      const data = res?.data?.data || res?.data || res;
-      return Array.isArray(data?.results) ? data.results : Array.isArray(data) ? data : [data];
-    } catch (bulkErr) {
-      console.warn("Unified bulk invitation attempt error:", bulkErr?.message);
+    const bulkPayload = {};
+    if (validCandidateIds && validCandidateIds.length > 0) {
+      bulkPayload.candidateIds = validCandidateIds;
     }
+    if (formattedCandidates.length > 0) {
+      bulkPayload.candidates = formattedCandidates;
+    }
+
+    const res = await axiosClient.post(
+      `/attempts/assessments/${assessmentId}/invitations/bulk`,
+      bulkPayload
+    );
+    const data = res?.data?.data || res?.data || res;
+
+    // Check if bulk invitation had any successful creations or was all duplicates
+    const summary = data?.summary;
+    if (summary && summary.created === 0 && summary.duplicate > 0) {
+      const duplicateErr = new Error(
+        summary.duplicate === 1
+          ? "This candidate already has an active invitation for this assessment."
+          : "All selected candidates already have active invitations for this assessment."
+      );
+      duplicateErr.status = 409;
+      duplicateErr.code = "CONFLICT";
+      duplicateErr.response = {
+        status: 409,
+        data: {
+          success: false,
+          code: "CONFLICT",
+          message: duplicateErr.message,
+        },
+      };
+      throw duplicateErr;
+    }
+
+    return Array.isArray(data?.results) ? data.results : Array.isArray(data) ? data : [data];
   }
 
   // 2. Single Candidate Invitation
+  const targetCandidateId = candidateIds?.[0] || candidateList[0]?.candidateId || candidateList[0]?.id;
   const targetEmail = email || candidateList[0]?.email;
   const targetFirstName = firstName || candidateList[0]?.firstName || candidateList[0]?.name?.split(" ")?.[0] || "Candidate";
   const targetLastName = lastName || candidateList[0]?.lastName || candidateList[0]?.name?.split(" ")?.slice(1)?.join(" ") || "";
 
-  if (assessmentId && targetEmail) {
+  if (assessmentId && (targetEmail || targetCandidateId)) {
     try {
       const res = await axiosClient.post(`/attempts/assessments/${assessmentId}/invitations`, {
+        candidateId: targetCandidateId,
         email: targetEmail,
         firstName: targetFirstName,
         lastName: targetLastName,
@@ -465,70 +486,26 @@ export const assignAssessment = async ({ assessmentId, candidateIds, email, firs
       const data = res?.data?.data || res?.data || res;
       return Array.isArray(data) ? data : [data];
     } catch (err1) {
-      console.warn("Unified attempts invitation attempt:", err1?.message);
+      // If error is 404 (endpoint path not found), fallback to /invitations
+      const status1 = err1?.response?.status || err1?.status;
+      if (status1 === 404) {
+        const res = await axiosClient.post("/invitations", {
+          assessmentId,
+          candidateId: targetCandidateId,
+          email: targetEmail,
+          firstName: targetFirstName,
+          lastName: targetLastName,
+          candidates: candidates.length > 0 ? candidates : undefined,
+        });
+        const data = res?.data?.data || res?.data || res;
+        return Array.isArray(data) ? data : [data];
+      }
+      // Re-throw any real API error (409 Conflict, 400 Bad Request, etc.)
+      throw err1;
     }
   }
 
-  // 3. Secondary fallback: /invitations
-  try {
-    const res = await axiosClient.post("/invitations", {
-      assessmentId,
-      candidateId: candidateIds?.[0],
-      email: targetEmail,
-      firstName: targetFirstName,
-      lastName: targetLastName,
-      candidates: candidates.length > 0 ? candidates : undefined,
-    });
-    if (res?.data) return Array.isArray(res.data) ? res.data : [res.data];
-  } catch (err2) {
-    console.warn("Live invitation API fallback:", err2?.message);
-  }
-
-  await delay(500);
-
-  if (!assessmentId) {
-    throw new Error("Assessment is required.");
-  }
-
-  if (!candidateIds || candidateIds.length === 0) {
-    throw new Error("Select at least one candidate.");
-  }
-
-  const now = new Date();
-  const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const createdAssignments = [];
-
-  candidateIds.forEach((candidateId) => {
-    const alreadyAssigned = assignments.some(
-      (assignment) =>
-        String(assignment.candidateId) === String(candidateId) &&
-        String(assignment.assessmentId) === String(assessmentId)
-    );
-
-    if (alreadyAssigned) return;
-
-    const token = createToken();
-    const assignment = {
-      id: crypto.randomUUID(),
-      candidateId,
-      assessmentId,
-      status: "Invited",
-      assignedAt: now.toISOString(),
-      token,
-      invitationToken: token,
-      invitedAt: now.toISOString(),
-      expiresAt: expiresAt.toISOString(),
-      startedAt: null,
-      completedAt: null,
-      resendCount: 0,
-      lastResentAt: null,
-    };
-
-    assignments.push(assignment);
-    createdAssignments.push(assignment);
-  });
-
-  return createdAssignments;
+  throw new Error("Candidate information is required to assign an assessment.");
 };
 
 export const sendInvitation = async (assignmentId) => {
