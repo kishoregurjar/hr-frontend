@@ -142,7 +142,16 @@ const GameRuntime = ({
 
   // Handle Game Start: Begins active gameplay; does NOT reset the pooled module timer!
   const handleStart = () => {
-    if (existingResult || completedResult) {
+    const isThisGameCompleted = Boolean(
+      getGameResult(currentGame, activeGameIndex) ||
+      (completedResult && (
+        completedResult.gameId === currentGame.id ||
+        completedResult.slug === currentGame.slug ||
+        completedResult.gameIndex === activeGameIndex
+      ))
+    );
+
+    if (isThisGameCompleted) {
       toast.warning("This game challenge has already been completed and locked.");
       return;
     }
@@ -196,7 +205,7 @@ const GameRuntime = ({
   };
 
   const handleGameComplete = (result) => {
-    if (existingResult) {
+    if (getGameResult(currentGame, activeGameIndex)) {
       toast.info("This game challenge has already been completed.");
       return;
     }
@@ -216,10 +225,12 @@ const GameRuntime = ({
 
     const saveKey = currentGame.id || currentGame.slug || section.id;
     const timeSpent = Math.max(0, gameDurationSec - gameTimeRemaining);
+    const completedGameIdx = activeGameIndex;
     const finalResult = {
       ...result,
       gameId: currentGame.id,
       slug: canonicalKey,
+      gameIndex: completedGameIdx,
       timeTaken: result.timeTaken || timeSpent || result.timeSpent || 60,
       timeSpent: timeSpent || result.timeSpent || result.timeTaken || 60,
     };
@@ -262,10 +273,17 @@ const GameRuntime = ({
         onSuccess: (updatedAttempt) => {
           const res =
             updatedAttempt?.gameResults?.[saveKey] ||
+            updatedAttempt?.gameResults?.[canonicalKey] ||
             updatedAttempt?.gameResults?.[currentGame.slug] ||
             finalResult;
 
-          setCompletedResult(res);
+          // Crucial fix: Only set completedResult if candidate is still viewing this completed game
+          setActiveGameIndex((currentIdx) => {
+            if (currentIdx === completedGameIdx) {
+              setCompletedResult(res);
+            }
+            return currentIdx;
+          });
         },
         onError: (err) => {
           console.warn("[GameRuntime] Background sync warning:", err?.message);

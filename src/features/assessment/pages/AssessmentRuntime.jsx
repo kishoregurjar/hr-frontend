@@ -260,7 +260,6 @@ const AssessmentAttempt = ({ attemptId }) => {
 
   // ── 5. Review Mode ──────────────────────────────────────────
   if (isReviewing) {
-
     const reviewData = getAssessmentReview({ assessment: effectiveAssessment, attempt: mergedAttempt });
 
     return (
