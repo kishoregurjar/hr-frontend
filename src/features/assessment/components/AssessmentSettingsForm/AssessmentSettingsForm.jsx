@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Clock, Trophy, Repeat, Shuffle, Eye, ArrowLeft, ArrowRight } from "lucide-react";
+import { Clock, Trophy, Repeat, ArrowLeft, ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +16,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 
 import { assessmentSettingsSchema } from "../../validations";
 
@@ -175,56 +174,6 @@ const AssessmentSettingsForm = ({
             />
           </div>
 
-          {/* Toggle Switches */}
-          <div className="space-y-3 pt-2">
-            <FormField
-              control={form.control}
-              name="shuffleQuestions"
-              render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition hover:bg-slate-50">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-xs font-extrabold text-slate-900 flex items-center gap-2">
-                      <Shuffle className="h-3.5 w-3.5 text-blue-600" />
-                      Randomize Question Order
-                    </FormLabel>
-                    <FormDescription className="text-[11px] text-slate-500">
-                      Shuffles MCQ question sequences dynamically to prevent collusion.
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="showResultToCandidate"
-              render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition hover:bg-slate-50">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-xs font-extrabold text-slate-900 flex items-center gap-2">
-                      <Eye className="h-3.5 w-3.5 text-emerald-600" />
-                      Candidate Scorecard Visibility
-                    </FormLabel>
-                    <FormDescription className="text-[11px] text-slate-500">
-                      Allow candidates to view their provisional score breakdown immediately after submission.
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
 
           {/* Navigation Buttons */}
           <div className="flex items-center justify-between border-t border-slate-100 pt-6">
