@@ -31,6 +31,9 @@ import {
   CheckSquare,
   ChevronLeft,
   ChevronRight,
+  Gamepad2,
+  AlertCircle,
+  BookOpen,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/features/auth/context";
@@ -982,7 +985,7 @@ export default function ResultsAndRankingPage() {
       {/* ── 6. DETAILED CANDIDATE SCORECARD MODAL ── */}
       {selectedCandidate && (
         <Dialog open={Boolean(selectedCandidate)} onOpenChange={() => setSelectedCandidate(null)}>
-          <DialogContent className="max-w-xl w-[94vw] sm:w-full p-4 sm:p-7 md:p-8 rounded-2xl sm:rounded-[28px] border-slate-100 shadow-2xl font-sans bg-white space-y-5 sm:space-y-6 max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl w-[94vw] sm:w-full p-4 sm:p-7 md:p-8 rounded-2xl sm:rounded-[28px] border-slate-100 shadow-2xl font-sans bg-white space-y-5 sm:space-y-6 max-h-[90vh] overflow-y-auto">
             {/* Header: Candidate Info */}
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-xl sm:text-2xl shadow-xs shrink-0">
@@ -1142,6 +1145,112 @@ export default function ResultsAndRankingPage() {
                 })()}
               </div>
             </div>
+
+            {/* Technical Quiz Performance Breakdown */}
+            {selectedCandidate.quizBreakdown && (
+              <div className="space-y-3 pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                    <BookOpen className="h-3.5 w-3.5 text-blue-600" />
+                    Technical Quiz Breakdown
+                  </h4>
+                  <span className="text-[11px] font-bold text-slate-500">
+                    {selectedCandidate.quizBreakdown.total} Questions • {selectedCandidate.quizBreakdown.percentage}% Accuracy
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2.5 sm:gap-3 text-center">
+                  {/* Correct */}
+                  <div className="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-100 flex flex-col items-center justify-center">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 flex items-center gap-1">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> Correct
+                    </span>
+                    <span className="text-xl sm:text-2xl font-black text-emerald-700 mt-0.5 font-mono">
+                      {selectedCandidate.quizBreakdown.correct}
+                    </span>
+                    <span className="text-[10px] text-emerald-600/80 font-medium">Full Marks</span>
+                  </div>
+
+                  {/* Incorrect */}
+                  <div className="p-3 rounded-2xl bg-rose-50/70 border border-rose-100 flex flex-col items-center justify-center">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-700 flex items-center gap-1">
+                      <XCircle className="h-3.5 w-3.5 text-rose-600" /> Incorrect
+                    </span>
+                    <span className="text-xl sm:text-2xl font-black text-rose-700 mt-0.5 font-mono">
+                      {selectedCandidate.quizBreakdown.incorrect}
+                    </span>
+                    <span className="text-[10px] text-rose-600/80 font-medium">Wrong Answers</span>
+                  </div>
+
+                  {/* Skipped */}
+                  <div className="p-3 rounded-2xl bg-amber-50/70 border border-amber-100 flex flex-col items-center justify-center">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 flex items-center gap-1">
+                      <AlertCircle className="h-3.5 w-3.5 text-amber-600" /> Skipped
+                    </span>
+                    <span className="text-xl sm:text-2xl font-black text-amber-700 mt-0.5 font-mono">
+                      {selectedCandidate.quizBreakdown.skipped}
+                    </span>
+                    <span className="text-[10px] text-amber-600/80 font-medium">Unanswered</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Cognitive Games Performance & Accuracy Breakdown */}
+            {Array.isArray(selectedCandidate.gamesBreakdown) && selectedCandidate.gamesBreakdown.length > 0 && (
+              <div className="space-y-3 pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                    <Gamepad2 className="h-3.5 w-3.5 text-indigo-600" />
+                    Cognitive Games Performance & Accuracy
+                  </h4>
+                  <span className="text-[11px] font-bold text-slate-500">
+                    {selectedCandidate.gamesBreakdown.length} Games Assessed
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {selectedCandidate.gamesBreakdown.map((g) => (
+                    <div
+                      key={g.id}
+                      className="p-3 rounded-2xl bg-slate-50/80 border border-slate-200/80 flex items-center justify-between gap-2.5"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs font-black text-slate-900 truncate">
+                            {g.title}
+                          </p>
+                          <Badge
+                            className={`text-[8.5px] font-black uppercase px-1.5 py-0 ${
+                              g.status === "Completed"
+                                ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                                : "bg-amber-100 text-amber-800 border-amber-200"
+                            }`}
+                          >
+                            {g.status}
+                          </Badge>
+                        </div>
+                        <p className="text-[11px] text-slate-500 font-medium mt-0.5 flex items-center gap-1.5">
+                          <Clock className="h-3 w-3 text-slate-400" />
+                          <span>{g.timeFormatted}</span>
+                          <span>•</span>
+                          <span>Score: {g.score}/100</span>
+                        </p>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                          Accuracy
+                        </span>
+                        <span className="text-sm font-black font-mono text-indigo-600">
+                          {g.accuracy}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Bottom: Close Button */}
             <div className="flex justify-end pt-2">
