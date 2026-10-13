@@ -200,7 +200,7 @@ export default function NQueensGame({ config = {}, onComplete }) {
 
   // INITIAL STATE IS 100% EMPTY (Zero crowns pre-filled)
   // cell state: null | "X" | "Q"
-  const [board, setBoard] = useState({});
+  const [board, setBoard] = useState(() => config?.board || {});
   const [history, setHistory] = useState([]);
   const [movesCount, setMovesCount] = useState(0);
   const [showHelp, setShowHelp] = useState(false);
@@ -210,15 +210,21 @@ export default function NQueensGame({ config = {}, onComplete }) {
   const startTimeRef = useRef(Date.now());
   const completedRef = useRef(false);
 
-  // Reset to initial empty state when config changes
+  // Only reset if the puzzle identity or difficulty actually changes (prevents wiping in-progress progress on parent re-renders/navigation)
+  const puzzleKey = config?.id || config?.puzzleId || config?.difficulty || "default";
+  const prevPuzzleKeyRef = useRef(puzzleKey);
+
   useEffect(() => {
-    setBoard({});
-    setHistory([]);
-    setMovesCount(0);
-    setWin(false);
-    completedRef.current = false;
-    startTimeRef.current = Date.now();
-  }, [config]);
+    if (prevPuzzleKeyRef.current !== puzzleKey) {
+      prevPuzzleKeyRef.current = puzzleKey;
+      setBoard(config?.board || {});
+      setHistory([]);
+      setMovesCount(0);
+      setWin(false);
+      completedRef.current = false;
+      startTimeRef.current = Date.now();
+    }
+  }, [puzzleKey, config?.board]);
 
   // Dynamic cell sizing: perfectly crisp 1:1 square
   const cellSize = size <= 6 ? 62 : size === 7 ? 56 : size === 8 ? 52 : 46;
