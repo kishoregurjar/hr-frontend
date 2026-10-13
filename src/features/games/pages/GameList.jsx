@@ -63,6 +63,7 @@ const GameList = () => {
     if (str.includes("tango")) return "tango";
     if (str.includes("sudoku")) return "sudoku";
     if (str.includes("mahjong")) return "mahjong";
+    if (str.includes("queen")) return "nqueens";
     return "";
   };
 

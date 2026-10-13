@@ -262,9 +262,10 @@ export const buildRuntimeSections = (assessment) => {
       else if (gameTitleStr.includes("sudoku")) resolvedSlug = "sudoku";
       else if (gameTitleStr.includes("tango")) resolvedSlug = "tango";
       else if (gameTitleStr.includes("zip") || gameTitleStr.includes("path")) resolvedSlug = "zip";
+      else if (gameTitleStr.includes("queen")) resolvedSlug = "nqueens";
       else if (gameTitleStr.includes("pattern") || gameTitleStr.includes("memory")) resolvedSlug = "pattern_memory";
       else {
-        const fallbackSlugs = ["mahjong", "sudoku", "zip", "tango"];
+        const fallbackSlugs = ["mahjong", "sudoku", "zip", "tango", "nqueens"];
         resolvedSlug = fallbackSlugs[index % fallbackSlugs.length];
       }
       catalogInfo = GAME_CATALOG_MAP[resolvedSlug] || GAME_CATALOG_MAP[String(resolvedSlug).toLowerCase()] || gamesCatalog[0];

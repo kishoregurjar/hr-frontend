@@ -5,6 +5,7 @@ import ZipGame from "../games/ZipGame";
 import TangoGame from "../games/TangoGame";
 import SudokuGame from "../games/SudokuGame";
 import MahjongGame from "../games/MahjongGame";
+import NQueensGame from "../games/NQueensGame";
 
 const GameDispatcher = ({ section, onComplete }) => {
   const rawType = String(
@@ -35,6 +36,11 @@ const GameDispatcher = ({ section, onComplete }) => {
   // 4. Mahjong Tile Match
   if (rawType.includes("mahjong")) {
     return <MahjongGame config={section.config || section.gameData} onComplete={onComplete} />;
+  }
+
+  // 5. N-Queens Spatial Deduction
+  if (rawType.includes("queen")) {
+    return <NQueensGame config={section.config || section.gameData} onComplete={onComplete} />;
   }
 
   // Legacy fallback games

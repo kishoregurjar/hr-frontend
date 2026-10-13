@@ -59,6 +59,21 @@ const GAME_BRIEFS = {
       "Respect = (equal) and x (opposite) relation markers between adjacent cells.",
     ],
   },
+  nqueens: {
+    slug: "nqueens",
+    title: "Queens Deductive Reasoning",
+    description: "Authentic Queens grid puzzle. Place exactly one Queen in each row, column, and color region without any two queens touching.",
+    category: "Constraint Satisfaction",
+    duration: "8 Mins",
+    skill: "Deductive Logic & Spatial Planning",
+    scoring: "Region Accuracy, Speed & Move Efficiency",
+    instructions: [
+      "The entire board starts completely empty.",
+      "Your goal is to have exactly one 👑 in each row, column, and color region.",
+      "Tap once to place ✕ and tap twice for 👑.",
+      "Two 👑 cannot touch each other, not even diagonally.",
+    ],
+  },
 };
 
 const resolveGameBrief = (section) => {
@@ -68,6 +83,7 @@ const resolveGameBrief = (section) => {
   if (rawKey.includes("sudoku")) return GAME_BRIEFS.sudoku;
   if (rawKey.includes("zip") || rawKey.includes("path")) return GAME_BRIEFS.zip;
   if (rawKey.includes("tango")) return GAME_BRIEFS.tango;
+  if (rawKey.includes("queen")) return GAME_BRIEFS.nqueens;
 
   return (
     GAME_BRIEFS[rawKey] || {

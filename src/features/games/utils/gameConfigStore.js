@@ -14,6 +14,7 @@ const normalizeKey = (key = "") => {
   if (str.includes("sudoku")) return "sudoku";
   if (str.includes("zip") || str.includes("pathfinder")) return "zip";
   if (str.includes("tango")) return "tango";
+  if (str.includes("queen")) return "nqueens";
   if (str.includes("pattern")) return "pattern_memory";
   if (str.includes("maze")) return "maze_escape";
   if (str.includes("card") || str.includes("memory")) return "card_match";

@@ -44,4 +44,14 @@ export const GAME_RULES = {
       "Clear all tiles from the board to achieve 100% completion!",
     ],
   },
+  nqueens: {
+    title: "How To Play Queens",
+    steps: [
+      "Your goal is to have <b>exactly one 👑 (Queen)</b> in each <b>row, column, and color region</b>.",
+      "Tap once to place <b>✕</b> and tap twice for <b>👑</b>. Use <b>✕</b> to mark where 👑 cannot be placed.",
+      "Two 👑 <b>cannot touch each other, not even diagonally</b>.",
+      "The entire board starts completely empty. Plan your moves carefully!",
+      "Place all required Queens with zero conflicts to complete the puzzle.",
+    ],
+  },
 };

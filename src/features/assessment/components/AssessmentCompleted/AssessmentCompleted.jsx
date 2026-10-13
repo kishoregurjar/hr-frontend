@@ -105,6 +105,7 @@ export default function AssessmentCompleted({
       if (k.includes("tango")) return "Tango Spatial Deduction";
       if (k.includes("sudoku")) return "Mini Sudoku 6x6 Challenge";
       if (k.includes("mahjong")) return "Mahjong Tile Match Strategy";
+      if (k.includes("queen")) return "N-Queens Spatial Deduction";
       return (typeof key === "object" && (key?.title || key?.name)) || key || "Cognitive Challenge";
     };
 
@@ -118,6 +119,7 @@ export default function AssessmentCompleted({
       if (k.includes("tango")) return "tango";
       if (k.includes("sudoku")) return "sudoku";
       if (k.includes("mahjong")) return "mahjong";
+      if (k.includes("queen")) return "nqueens";
       return k;
     };
 
