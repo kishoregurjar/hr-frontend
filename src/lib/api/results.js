@@ -411,42 +411,37 @@ export const getAllResults = async () => {
         }
       }
 
-      // 1. Technical Quiz Breakdown (Correct / Incorrect / Skipped / Total)
+      // 1. Technical Quiz Breakdown (100% Dynamic from actual database answers)
       let quizBreakdown = null;
-      if (Array.isArray(item.answers) && item.answers.length > 0) {
-        const correct = item.answers.filter((a) => a.isCorrect === true).length;
-        const total = item.attemptQuestions?.length || item.answers.length;
-        const incorrect = item.answers.filter((a) => a.isCorrect === false).length;
+      const totalQuizQuestions =
+        item.attemptQuestions?.length ||
+        item.assessment?.questions?.length ||
+        (Array.isArray(item.answers) ? item.answers.length : 0);
+
+      if (totalQuizQuestions > 0 || (Array.isArray(item.answers) && item.answers.length > 0)) {
+        const answersList = Array.isArray(item.answers) ? item.answers : [];
+        const correct = answersList.filter((a) => a.isCorrect === true).length;
+        const incorrect = answersList.filter((a) => a.isCorrect === false).length;
+        const total = Math.max(totalQuizQuestions, correct + incorrect);
         const skipped = Math.max(0, total - (correct + incorrect));
         quizBreakdown = {
           correct,
           incorrect,
           skipped,
           total,
-          percentage: total > 0 ? Math.round((correct / total) * 100) : 0,
-        };
-      } else {
-        const total = 4;
-        const correct = Math.max(0, Math.min(total, Math.round((scoreNum / 100) * total)));
-        const incorrect = Math.max(0, total - correct);
-        quizBreakdown = {
-          correct,
-          incorrect,
-          skipped: 0,
-          total,
-          percentage: scoreNum,
+          percentage: total > 0 ? Math.round((correct / total) * 100) : scoreNum,
         };
       }
 
-      // 2. Cognitive Games Breakdown (Game title, score, accuracy, time)
+      // 2. Cognitive Games Breakdown (100% Dynamic from actual database gameResults & assessment.games)
       let gamesBreakdown = [];
       if (Array.isArray(item.gameResults) && item.gameResults.length > 0) {
         gamesBreakdown = item.gameResults.map((gr, gIdx) => {
-          const gameTitle = gr.game?.name || gr.game?.title || `Cognitive Game ${gIdx + 1}`;
+          const gameTitle = gr.game?.name || gr.game?.code || `Game ${gIdx + 1}`;
           const metrics = gr.metrics && typeof gr.metrics === "object" ? gr.metrics : {};
-          const rawAcc = typeof gr.accuracy === "number" ? gr.accuracy : (typeof metrics.accuracy === "number" ? metrics.accuracy : gr.score || 80);
-          const timeSec = Number(metrics.timeTaken || metrics.timeSpent || metrics.timeSeconds || 60);
-          const timeFormatted = `${Math.floor(timeSec / 60)}m ${timeSec % 60}s`;
+          const rawAcc = typeof gr.accuracy === "number" ? gr.accuracy : (typeof metrics.accuracy === "number" ? metrics.accuracy : gr.score || 0);
+          const timeSec = Number(metrics.timeTaken || metrics.timeSpent || metrics.timeSeconds || 0);
+          const timeFormatted = timeSec > 0 ? `${Math.floor(timeSec / 60)}m ${timeSec % 60}s` : "0s";
           return {
             id: gr.gameId || `game-${gIdx}`,
             title: gameTitle,
@@ -456,12 +451,18 @@ export const getAllResults = async () => {
             timeFormatted,
           };
         });
-      } else {
-        gamesBreakdown = [
-          { id: "zip-grid", title: "Zip Grid Pathfinder", status: "Completed", score: Math.min(100, Math.round(scoreNum * 1.05) || 84), accuracy: 84, timeFormatted: "1m 13s" },
-          { id: "tango", title: "Tango Spatial Deduction", status: "Completed", score: Math.min(100, Math.round(scoreNum * 0.75) || 50), accuracy: 50, timeFormatted: "49s" },
-          { id: "mahjong", title: "Mahjong Tile Match Strategy", status: "Completed", score: Math.min(100, Math.round(scoreNum * 0.95) || 71), accuracy: 71, timeFormatted: "22s" },
-        ];
+      } else if (Array.isArray(item.assessment?.games) && item.assessment.games.length > 0) {
+        gamesBreakdown = item.assessment.games.map((ag, gIdx) => {
+          const gameTitle = ag.game?.name || ag.game?.code || `Game ${gIdx + 1}`;
+          return {
+            id: ag.game?.id || `ag-${gIdx}`,
+            title: gameTitle,
+            status: "Pending",
+            score: 0,
+            accuracy: 0,
+            timeFormatted: "0s",
+          };
+        });
       }
 
       return {
