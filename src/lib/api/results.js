@@ -462,29 +462,63 @@ export const getAllResults = async () => {
         } catch {}
       }
 
+      const getCanonicalGameKey = (str) => {
+        const s = String(str || "").toLowerCase();
+        if (s.includes("zip") || s.includes("path")) return "zip";
+        if (s.includes("tango")) return "tango";
+        if (s.includes("sudoku")) return "sudoku";
+        if (s.includes("mahjong")) return "mahjong";
+        if (s.includes("queen")) return "nqueens";
+        return s;
+      };
+
       const resultMap = new Map();
+      const setInResultMap = (key, val) => {
+        if (!key) return;
+        const kStr = String(key).toLowerCase().trim();
+        resultMap.set(kStr, val);
+        const canon = getCanonicalGameKey(kStr);
+        if (canon) resultMap.set(canon, val);
+      };
+
       dbGameResults.forEach((gr) => {
-        if (gr.gameId) resultMap.set(String(gr.gameId), gr);
-        if (gr.game?.code) resultMap.set(String(gr.game.code).toLowerCase(), gr);
-        if (gr.game?.name) resultMap.set(String(gr.game.name).toLowerCase(), gr);
+        if (gr.gameId) setInResultMap(gr.gameId, gr);
+        if (gr.game?.code) setInResultMap(gr.game.code, gr);
+        if (gr.game?.name) setInResultMap(gr.game.name, gr);
+        if (gr.metrics?.slug) setInResultMap(gr.metrics.slug, gr);
+        if (gr.metrics?.title) setInResultMap(gr.metrics.title, gr);
+        if (gr.metrics?.name) setInResultMap(gr.metrics.name, gr);
       });
 
       if (localGameMap && typeof localGameMap === "object") {
         Object.entries(localGameMap).forEach(([k, gData]) => {
           if (gData && typeof gData === "object") {
-            const key = String(k).toLowerCase();
-            if (!resultMap.has(key)) {
-              resultMap.set(key, {
-                gameId: gData.gameId || k,
-                score: gData.score,
-                metrics: gData,
-                accuracy: gData.accuracy,
-                game: { name: gData.title || gData.name || k, code: k },
-              });
-            }
+            const entry = {
+              gameId: gData.gameId || k,
+              score: gData.score,
+              metrics: gData,
+              accuracy: gData.accuracy,
+              game: { name: gData.title || gData.name || k, code: k },
+            };
+            setInResultMap(k, entry);
+            if (gData.slug) setInResultMap(gData.slug, entry);
+            if (gData.title) setInResultMap(gData.title, entry);
+            if (gData.name) setInResultMap(gData.name, entry);
+            if (gData.gameIndex !== undefined) setInResultMap(`game-${gData.gameIndex + 1}`, entry);
           }
         });
       }
+
+      const formatGameTime = (rawTime) => {
+        const num = Number(rawTime || 0);
+        if (!num || num <= 0) return "0s";
+        // Convert milliseconds to seconds if value > 500
+        const secs = num > 500 ? Math.round(num / 1000) : Math.round(num);
+        if (secs <= 0) return "0s";
+        const m = Math.floor(secs / 60);
+        const s = secs % 60;
+        return m > 0 ? `${m}m ${s}s` : `${s}s`;
+      };
 
       if (assessmentGames.length > 0) {
         gamesBreakdown = assessmentGames.map((ag, gIdx) => {
@@ -492,13 +526,25 @@ export const getAllResults = async () => {
           const gId = ag.gameId || agGame.id;
           const codeKey = (agGame.code || "").toLowerCase();
           const nameKey = (agGame.name || "").toLowerCase();
+          const canonCode = getCanonicalGameKey(codeKey);
+          const canonName = getCanonicalGameKey(nameKey);
 
           const gr =
-            resultMap.get(String(gId)) ||
+            resultMap.get(String(gId).toLowerCase()) ||
+            (canonName && resultMap.get(canonName)) ||
+            (canonCode && resultMap.get(canonCode)) ||
             (codeKey && resultMap.get(codeKey)) ||
             (nameKey && resultMap.get(nameKey)) ||
             resultMap.get(`game-${gIdx + 1}`) ||
             resultMap.get(`game_${gIdx + 1}`) ||
+            Array.from(resultMap.entries()).find(([k]) => {
+              if (canonName === "nqueens" && (k.includes("queen") || k.includes("nqueens"))) return true;
+              if (canonName === "zip" && (k.includes("zip") || k.includes("path"))) return true;
+              if (canonName === "tango" && k.includes("tango")) return true;
+              if (canonName === "sudoku" && k.includes("sudoku")) return true;
+              if (canonName === "mahjong" && k.includes("mahjong")) return true;
+              return false;
+            })?.[1] ||
             null;
 
           const gameTitle = agGame.name || agGame.code || `Game ${gIdx + 1}`;
@@ -511,15 +557,16 @@ export const getAllResults = async () => {
               (Number(gr.score ?? 0) === 0 && (Number(metrics.timeTaken ?? 0) === 0 || Number(metrics.moves ?? 0) === 0))
             );
             const rawAcc = typeof gr.accuracy === "number" ? gr.accuracy : (typeof metrics.accuracy === "number" ? metrics.accuracy : gr.score || 0);
-            const timeSec = Number(metrics.timeTaken || metrics.timeSpent || metrics.timeSeconds || 0);
-            const timeFormatted = timeSec > 0 ? `${Math.floor(timeSec / 60)}m ${timeSec % 60}s` : "0s";
+            const timeRaw = metrics.timeTaken || metrics.timeSpent || metrics.timeSeconds || 0;
+            const timeFormatted = isSkipped ? "0s" : formatGameTime(timeRaw);
+
             return {
               id: gId || `game-${gIdx}`,
               title: gameTitle,
               status: isSkipped ? "Skipped" : "Completed",
               score: isSkipped ? 0 : Math.round(Number(gr.score ?? 0)),
               accuracy: isSkipped ? 0 : Math.min(100, Math.max(0, Math.round(rawAcc))),
-              timeFormatted: isSkipped ? "0s" : timeFormatted,
+              timeFormatted,
             };
           }
 
@@ -544,15 +591,16 @@ export const getAllResults = async () => {
             (Number(gr.score ?? 0) === 0 && (Number(metrics.timeTaken ?? 0) === 0 || Number(metrics.moves ?? 0) === 0))
           );
           const rawAcc = typeof gr.accuracy === "number" ? gr.accuracy : (typeof metrics.accuracy === "number" ? metrics.accuracy : gr.score || 0);
-          const timeSec = Number(metrics.timeTaken || metrics.timeSpent || metrics.timeSeconds || 0);
-          const timeFormatted = timeSec > 0 ? `${Math.floor(timeSec / 60)}m ${timeSec % 60}s` : "0s";
+          const timeRaw = metrics.timeTaken || metrics.timeSpent || metrics.timeSeconds || 0;
+          const timeFormatted = isSkipped ? "0s" : formatGameTime(timeRaw);
+
           return {
             id: gr.gameId || `game-${gIdx}`,
             title: gameTitle,
             status: isSkipped ? "Skipped" : "Completed",
             score: isSkipped ? 0 : Math.round(Number(gr.score ?? 0)),
             accuracy: isSkipped ? 0 : Math.min(100, Math.max(0, Math.round(rawAcc))),
-            timeFormatted: isSkipped ? "0s" : timeFormatted,
+            timeFormatted,
           };
         });
       }
