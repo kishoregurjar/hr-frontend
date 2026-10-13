@@ -5,3 +5,4 @@ export { default as ZipGame } from "./ZipGame";
 export { default as TangoGame } from "./TangoGame";
 export { default as SudokuGame } from "./SudokuGame";
 export { default as MahjongGame } from "./MahjongGame";
+export { default as NQueensGame } from "./NQueensGame";

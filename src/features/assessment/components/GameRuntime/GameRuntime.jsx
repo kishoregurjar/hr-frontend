@@ -149,6 +149,8 @@ const GameRuntime = ({
       ? "sudoku"
       : rawSlug.includes("mahjong")
       ? "mahjong"
+      : rawSlug.includes("queen")
+      ? "nqueens"
       : rawSlug;
 
     const saveKey = currentGame.id || currentGame.slug || section.id;

@@ -79,6 +79,7 @@ const GamePreviewModal = ({ game, open, onOpenChange }) => {
     if (gameKey.includes("tango")) return GAME_RULES.tango;
     if (gameKey.includes("sudoku")) return GAME_RULES.sudoku;
     if (gameKey.includes("mahjong")) return GAME_RULES.mahjong;
+    if (gameKey.includes("queen")) return GAME_RULES.nqueens;
     return null;
   }, [game]);
 
