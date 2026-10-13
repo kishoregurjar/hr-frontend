@@ -28,6 +28,9 @@ const GameRuntime = ({
       ? section.games
       : [section];
 
+  const getGameKey = (g, idx) =>
+    String(g?.slug || g?.id || g?.code || (typeof idx === "number" ? `game-${idx + 1}` : "game-0")).toLowerCase();
+
   const getGameResult = (g, idx) => {
     if (!g) return null;
     let sessionResults = {};
@@ -40,19 +43,60 @@ const GameRuntime = ({
         );
       } catch {}
     }
+    const rawSlug = String(g.slug || g.code || g.id || "").toLowerCase();
+    const canonSlug = rawSlug.includes("zip") || rawSlug.includes("path")
+      ? "zip"
+      : rawSlug.includes("tango")
+      ? "tango"
+      : rawSlug.includes("sudoku")
+      ? "sudoku"
+      : rawSlug.includes("mahjong")
+      ? "mahjong"
+      : rawSlug;
+
     return (
       attempt?.gameResults?.[g.id] ||
       attempt?.gameResults?.[g.slug] ||
+      attempt?.gameResults?.[canonSlug] ||
       attempt?.gameResults?.[g.gameId] ||
       attempt?.gameResults?.[g.code] ||
       (typeof idx === "number" ? attempt?.gameResults?.[`game-${idx + 1}`] : null) ||
       sessionResults[g.id] ||
       sessionResults[g.slug] ||
+      sessionResults[canonSlug] ||
       sessionResults[g.gameId] ||
       sessionResults[g.code] ||
       (typeof idx === "number" ? sessionResults[`game-${idx + 1}`] : null) ||
       (games.length === 1 ? attempt?.gameResults?.[section.id] || sessionResults[section.id] : null) ||
       null
+    );
+  };
+
+  const getStoredGameStatuses = () => {
+    if (typeof window !== "undefined" && attempt?.id) {
+      try {
+        const stored = sessionStorage.getItem(`candidate_game_statuses_${attempt.id}`);
+        if (stored) return JSON.parse(stored);
+      } catch {}
+    }
+    return {};
+  };
+
+  const [startedGameKeys, setStartedGameKeys] = useState(() => {
+    const statuses = getStoredGameStatuses();
+    return new Set(
+      Object.keys(statuses).filter((k) => statuses[k] === GAME_STATE.PLAYING)
+    );
+  });
+
+  const isGameStarted = (g, idx) => {
+    if (!g) return false;
+    const gKey = getGameKey(g, idx);
+    const rawSlug = String(g.slug || g.code || g.id || "").toLowerCase();
+    return (
+      startedGameKeys.has(gKey) ||
+      startedGameKeys.has(rawSlug) ||
+      (typeof idx === "number" && startedGameKeys.has(`game-${idx + 1}`))
     );
   };
 
@@ -91,19 +135,15 @@ const GameRuntime = ({
 
   const [completedResult, setCompletedResult] = useState(existingResult ?? null);
 
-  const [gameState, setGameState] = useState(
-    existingResult ? GAME_STATE.COMPLETED : GAME_STATE.READY
-  );
-
   useEffect(() => {
-    if (existingResult) {
-      setCompletedResult(existingResult);
-      setGameState(GAME_STATE.COMPLETED);
-    } else {
-      setCompletedResult(null);
-      setGameState(GAME_STATE.READY);
-    }
+    setCompletedResult(existingResult ?? null);
   }, [activeGameIndex, existingResult]);
+
+  const gameState = existingResult
+    ? GAME_STATE.COMPLETED
+    : isGameStarted(currentGame, activeGameIndex)
+    ? GAME_STATE.PLAYING
+    : GAME_STATE.READY;
 
   // ── Module-Level Pooled Countdown State ──
   // Shared across ALL games in Module 1 (e.g. 40 Mins total)
@@ -156,7 +196,28 @@ const GameRuntime = ({
       return;
     }
     setGameTimeRemaining(gameDurationSec);
-    setGameState(GAME_STATE.PLAYING);
+
+    const gKey = getGameKey(currentGame, activeGameIndex);
+    const rawSlug = String(currentGame.slug || currentGame.code || currentGame.id || "").toLowerCase();
+    const idxKey = `game-${activeGameIndex + 1}`;
+
+    setStartedGameKeys((prev) => {
+      const next = new Set(prev);
+      next.add(gKey);
+      next.add(rawSlug);
+      next.add(idxKey);
+      return next;
+    });
+
+    if (typeof window !== "undefined" && attempt?.id) {
+      try {
+        const statuses = getStoredGameStatuses();
+        statuses[gKey] = GAME_STATE.PLAYING;
+        statuses[rawSlug] = GAME_STATE.PLAYING;
+        statuses[idxKey] = GAME_STATE.PLAYING;
+        sessionStorage.setItem(`candidate_game_statuses_${attempt.id}`, JSON.stringify(statuses));
+      } catch {}
+    }
   };
 
   // Continuous Module Timer sync effect
@@ -199,20 +260,20 @@ const GameRuntime = ({
         status: "TIMED_OUT",
         completedAt: new Date().toISOString(),
       };
-      handleGameComplete(timeoutResult);
+      handleGameComplete(timeoutResult, currentGame, activeGameIndex);
     }
     onComplete?.();
   };
 
-  const handleGameComplete = (result) => {
-    if (getGameResult(currentGame, activeGameIndex)) {
+  const handleGameComplete = (result, targetGame = currentGame, targetIdx = activeGameIndex) => {
+    if (getGameResult(targetGame, targetIdx)) {
       toast.info("This game challenge has already been completed.");
       return;
     }
 
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
 
-    const rawSlug = String(currentGame.slug || currentGame.code || currentGame.id || "").toLowerCase();
+    const rawSlug = String(targetGame.slug || targetGame.code || targetGame.id || "").toLowerCase();
     const canonicalKey = rawSlug.includes("zip") || rawSlug.includes("path")
       ? "zip"
       : rawSlug.includes("tango")
@@ -225,21 +286,30 @@ const GameRuntime = ({
       ? "nqueens"
       : rawSlug;
 
-    const saveKey = currentGame.id || currentGame.slug || section.id;
+    const gKey = getGameKey(targetGame, targetIdx);
+    const saveKey = targetGame.id || targetGame.slug || section.id;
     const timeSpent = Math.max(0, gameDurationSec - gameTimeRemaining);
-    const completedGameIdx = activeGameIndex;
+    const completedGameIdx = targetIdx;
     const finalResult = {
       ...result,
-      gameId: currentGame.id,
+      gameId: targetGame.id,
       slug: canonicalKey,
       gameIndex: completedGameIdx,
       timeTaken: result.timeTaken || timeSpent || result.timeSpent || 60,
       timeSpent: timeSpent || result.timeSpent || result.timeTaken || 60,
     };
-    
+
+    // Remove finished game from active/started tracking
+    setStartedGameKeys((prev) => {
+      const next = new Set(prev);
+      next.delete(gKey);
+      next.delete(rawSlug);
+      next.delete(`game-${targetIdx + 1}`);
+      return next;
+    });
+
     // 1. Instant Optimistic UI: Immediately show the completed screen without network lag
     setCompletedResult(finalResult);
-    setGameState(GAME_STATE.COMPLETED);
 
     // 2. Client-side Real-Time Session Storage (Fail-safe persistence)
     if (typeof window !== "undefined") {
@@ -256,9 +326,17 @@ const GameRuntime = ({
           const existing = JSON.parse(sessionStorage.getItem(key) || "{}");
           existing[saveKey] = finalResult;
           existing[canonicalKey] = finalResult;
-          existing[`game-${activeGameIndex + 1}`] = finalResult;
+          existing[`game-${targetIdx + 1}`] = finalResult;
           sessionStorage.setItem(key, JSON.stringify(existing));
         });
+
+        if (attemptId) {
+          const statuses = JSON.parse(sessionStorage.getItem(`candidate_game_statuses_${attemptId}`) || "{}");
+          delete statuses[gKey];
+          delete statuses[rawSlug];
+          delete statuses[`game-${targetIdx + 1}`];
+          sessionStorage.setItem(`candidate_game_statuses_${attemptId}`, JSON.stringify(statuses));
+        }
       } catch (err) {
         console.warn("[GameRuntime] Session storage persistence notice:", err);
       }
@@ -276,7 +354,7 @@ const GameRuntime = ({
           const res =
             updatedAttempt?.gameResults?.[saveKey] ||
             updatedAttempt?.gameResults?.[canonicalKey] ||
-            updatedAttempt?.gameResults?.[currentGame.slug] ||
+            updatedAttempt?.gameResults?.[targetGame.slug] ||
             finalResult;
 
           // Crucial fix: Only set completedResult if candidate is still viewing this completed game
@@ -312,7 +390,7 @@ const GameRuntime = ({
       completedAt: new Date().toISOString(),
     };
 
-    handleGameComplete(skippedResult);
+    handleGameComplete(skippedResult, currentGame, activeGameIndex);
   };
 
   const handleNextGame = () => {
@@ -325,7 +403,6 @@ const GameRuntime = ({
         setCompletedResult(nextExisting ?? null);
         const nextDuration = (nextGame.durationMinutes || nextGame.duration || 10) * 60;
         setGameTimeRemaining(nextDuration);
-        setGameState(nextExisting ? GAME_STATE.COMPLETED : GAME_STATE.READY);
       } else {
         const anyIncompleteIdx = games.findIndex((g, i) => !getGameResult(g, i));
         if (anyIncompleteIdx !== -1) {
@@ -335,7 +412,6 @@ const GameRuntime = ({
           setCompletedResult(nextExisting ?? null);
           const nextDuration = (nextGame.durationMinutes || nextGame.duration || 10) * 60;
           setGameTimeRemaining(nextDuration);
-          setGameState(nextExisting ? GAME_STATE.COMPLETED : GAME_STATE.READY);
         } else {
           onComplete?.();
         }
@@ -349,7 +425,6 @@ const GameRuntime = ({
         setCompletedResult(nextExisting ?? null);
         const nextDuration = (nextGame.durationMinutes || nextGame.duration || 10) * 60;
         setGameTimeRemaining(nextDuration);
-        setGameState(nextExisting ? GAME_STATE.COMPLETED : GAME_STATE.READY);
       } else {
         onComplete?.();
       }
@@ -380,45 +455,63 @@ const GameRuntime = ({
         />
       )}
 
-      {gameState === GAME_STATE.PLAYING && (
-        <div className="space-y-3">
-          {/* Active Game Top Bar with Shared Module Countdown Clock */}
-          <div className="flex items-center justify-between px-2 py-1.5 rounded-xl bg-slate-100/70 border border-slate-200/80">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-700">
-                Game {activeGameIndex + 1} of {games.length}: <strong className="text-slate-900">{currentGame.title}</strong>
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {/* Module Countdown Badge */}
-              <div
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg border font-mono text-xs font-black tracking-wider transition-all ${
-                  isLowTime
-                    ? "bg-rose-50 border-rose-300 text-rose-600 animate-pulse shadow-xs"
-                    : "bg-white border-slate-200 text-blue-700 shadow-2xs"
-                }`}
-              >
-                <Clock className="h-3.5 w-3.5" />
-                <span>{formatTime(effectiveSeconds)} Module Time</span>
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleSkipGame}
-                className="h-7 px-2.5 text-xs font-bold text-slate-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg gap-1 cursor-pointer border-slate-200"
-              >
-                <SkipForward className="h-3 w-3 text-slate-400" />
-                Skip
-              </Button>
-            </div>
+      {/* ── Active Gameplay Stage (Top bar + dispatchers for all started games) ── */}
+      <div className={gameState === GAME_STATE.PLAYING ? "space-y-3" : "hidden"}>
+        {/* Active Game Top Bar with Shared Module Countdown Clock */}
+        <div className="flex items-center justify-between px-2 py-1.5 rounded-xl bg-slate-100/70 border border-slate-200/80">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-700">
+              Game {activeGameIndex + 1} of {games.length}: <strong className="text-slate-900">{currentGame.title}</strong>
+            </span>
           </div>
 
-          <GameDispatcher section={currentGame} onComplete={handleGameComplete} />
+          <div className="flex items-center gap-3">
+            {/* Module Countdown Badge */}
+            <div
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg border font-mono text-xs font-black tracking-wider transition-all ${
+                isLowTime
+                  ? "bg-rose-50 border-rose-300 text-rose-600 animate-pulse shadow-xs"
+                  : "bg-white border-slate-200 text-blue-700 shadow-2xs"
+              }`}
+            >
+              <Clock className="h-3.5 w-3.5" />
+              <span>{formatTime(effectiveSeconds)} Module Time</span>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleSkipGame}
+              className="h-7 px-2.5 text-xs font-bold text-slate-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg gap-1 cursor-pointer border-slate-200"
+            >
+              <SkipForward className="h-3 w-3 text-slate-400" />
+              Skip
+            </Button>
+          </div>
         </div>
-      )}
+
+        {/* Dispatcher Container: Keeps all started games mounted, displays active one */}
+        {games.map((g, idx) => {
+          const isStarted = isGameStarted(g, idx);
+          const isCompleted = Boolean(getGameResult(g, idx));
+          if (!isStarted || isCompleted) return null;
+
+          const isCurrent = idx === activeGameIndex;
+
+          return (
+            <div
+              key={g.id || g.slug || `game-${idx}`}
+              className={isCurrent ? "block" : "hidden"}
+            >
+              <GameDispatcher
+                section={g}
+                onComplete={(result) => handleGameComplete(result, g, idx)}
+              />
+            </div>
+          );
+        })}
+      </div>
 
       {gameState === GAME_STATE.COMPLETED && (
         <GameCompleted

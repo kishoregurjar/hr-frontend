@@ -320,7 +320,33 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
               : "p-3 sm:p-5 lg:h-full lg:overflow-hidden"
           }`}
         >
-          {isQuizSection ? (
+          {/* Game Section View - Zero-Scroll Viewport Fitted (Preserved across Quiz navigation) */}
+          {gameSection && (
+            <div
+              className={`flex-1 min-h-0 overflow-hidden flex flex-col justify-center ${
+                isQuizSection ? "hidden" : ""
+              }`}
+            >
+              <GameRuntime
+                key={gameSection.id || "game-module-runtime"}
+                section={gameSection}
+                attempt={attempt}
+                moduleTimeRemaining={moduleRemainingSeconds}
+                activeGameIndex={activeGameIndex}
+                onActiveGameChange={setActiveGameIndex}
+                onComplete={() => {
+                  if (currentSectionIndex < sections.length - 1) {
+                    setCurrentSectionIndex(currentSectionIndex + 1);
+                    setCurrentQuestionIndex(0);
+                  } else {
+                    onReview?.();
+                  }
+                }}
+              />
+            </div>
+          )}
+
+          {isQuizSection && (
             <div className="space-y-6">
               {/* Question Header & Title */}
               <div className="border-b border-slate-200 pb-4">
@@ -415,26 +441,6 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
                   );
                 })}
               </RadioGroup>
-            </div>
-          ) : (
-            /* Game Section View - Zero-Scroll Viewport Fitted */
-            <div className="flex-1 min-h-0 overflow-hidden flex flex-col justify-center">
-              <GameRuntime
-                key={currentSection.id || `game-${currentSection.slug}`}
-                section={currentSection}
-                attempt={attempt}
-                moduleTimeRemaining={moduleRemainingSeconds}
-                activeGameIndex={activeGameIndex}
-                onActiveGameChange={setActiveGameIndex}
-                onComplete={() => {
-                  if (currentSectionIndex < sections.length - 1) {
-                    setCurrentSectionIndex(currentSectionIndex + 1);
-                    setCurrentQuestionIndex(0);
-                  } else {
-                    onReview?.();
-                  }
-                }}
-              />
             </div>
           )}
 
