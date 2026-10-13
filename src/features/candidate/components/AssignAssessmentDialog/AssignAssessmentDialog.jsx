@@ -265,9 +265,13 @@ const AssignAssessmentDialog = ({
                     rawMessage.toLowerCase().includes("already has an active invitation") ||
                     rawMessage.toLowerCase().includes("active invitation already exists");
 
-                  return isDuplicate
-                    ? "This candidate already has an active invitation for this assessment."
-                    : rawMessage || "Unable to assign assessment.";
+                  if (isDuplicate) {
+                    return "This candidate already has an active invitation for this assessment.";
+                  }
+                  if (rawMessage.toLowerCase().includes("database request validation") || rawMessage.toLowerCase().includes("invalid_query_argument")) {
+                    return "Unable to process invitation for one or more selected candidates. Please verify candidate details.";
+                  }
+                  return rawMessage || "Unable to assign assessment.";
                 })()}
               </p>
             </div>

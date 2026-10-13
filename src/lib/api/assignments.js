@@ -439,34 +439,60 @@ export const assignAssessment = async ({ assessmentId, candidateIds, email, firs
       bulkPayload.candidates = formattedCandidates;
     }
 
-    const res = await axiosClient.post(
-      `/attempts/assessments/${assessmentId}/invitations/bulk`,
-      bulkPayload
-    );
-    const data = res?.data?.data || res?.data || res;
-
-    // Check if bulk invitation had any successful creations or was all duplicates
-    const summary = data?.summary;
-    if (summary && summary.created === 0 && summary.duplicate > 0) {
-      const duplicateErr = new Error(
-        summary.duplicate === 1
-          ? "This candidate already has an active invitation for this assessment."
-          : "All selected candidates already have active invitations for this assessment."
+    try {
+      const res = await axiosClient.post(
+        `/attempts/assessments/${assessmentId}/invitations/bulk`,
+        bulkPayload
       );
-      duplicateErr.status = 409;
-      duplicateErr.code = "CONFLICT";
-      duplicateErr.response = {
-        status: 409,
-        data: {
-          success: false,
-          code: "CONFLICT",
-          message: duplicateErr.message,
-        },
-      };
-      throw duplicateErr;
-    }
+      const data = res?.data?.data || res?.data || res;
 
-    return Array.isArray(data?.results) ? data.results : Array.isArray(data) ? data : [data];
+      // Check if bulk invitation had any successful creations or was all duplicates
+      const summary = data?.summary;
+      if (summary && summary.created === 0 && summary.duplicate > 0) {
+        const duplicateErr = new Error(
+          summary.duplicate === 1
+            ? "This candidate already has an active invitation for this assessment."
+            : "All selected candidates already have active invitations for this assessment."
+        );
+        duplicateErr.status = 409;
+        duplicateErr.code = "CONFLICT";
+        duplicateErr.response = {
+          status: 409,
+          data: {
+            success: false,
+            code: "CONFLICT",
+            message: duplicateErr.message,
+          },
+        };
+        throw duplicateErr;
+      }
+
+      return Array.isArray(data?.results) ? data.results : Array.isArray(data) ? data : [data];
+    } catch (bulkErr) {
+      if (bulkErr?.status === 409 || bulkErr?.response?.status === 409) {
+        throw bulkErr;
+      }
+      console.warn("Bulk invitation endpoint failed, falling back to sequential invitations:", bulkErr?.message);
+
+      const singleResults = await Promise.allSettled(
+        formattedCandidates.map((c) =>
+          axiosClient.post(`/attempts/assessments/${assessmentId}/invitations`, {
+            candidateId: c.candidateId,
+            email: c.email,
+            firstName: c.firstName,
+            lastName: c.lastName,
+          })
+        )
+      );
+      const successful = singleResults
+        .filter((r) => r.status === "fulfilled")
+        .map((r) => r.value?.data?.data || r.value?.data);
+
+      if (successful.length > 0) {
+        return successful;
+      }
+      throw bulkErr;
+    }
   }
 
   // 2. Single Candidate Invitation
