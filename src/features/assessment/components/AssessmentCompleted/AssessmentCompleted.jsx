@@ -238,196 +238,94 @@ export default function AssessmentCompleted({
   const isConfidential = assessment?.showResultToCandidate === false;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 py-10 px-4 sm:px-6 lg:px-8 font-sans">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 py-12 px-4 sm:px-6 lg:px-8 font-sans">
+      <div className="max-w-2xl mx-auto space-y-6">
         {/* ── 1. HERO SUCCESS BANNER ── */}
-        <div className="relative overflow-hidden rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xl shadow-slate-900/5 text-center">
+        <div className="relative overflow-hidden rounded-3xl border border-slate-200/90 bg-white p-8 sm:p-10 shadow-xl shadow-slate-900/5 text-center">
           {/* Subtle Ambient Light Glow */}
-          <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-80 h-32 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-80 h-32 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          {/* Trophy Badge */}
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/10 via-blue-500/10 to-indigo-500/15 border border-emerald-200/80 text-emerald-600 shadow-sm relative">
-            <Trophy className="h-8 w-8 text-emerald-600" />
-            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-white shadow-xs">
-              <Sparkles className="h-2.5 w-2.5" />
+          {/* Trophy / Check Badge */}
+          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/15 via-blue-500/10 to-indigo-500/15 border border-emerald-200/90 text-emerald-600 shadow-sm relative">
+            <Trophy className="h-10 w-10 text-emerald-600" />
+            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white shadow-xs">
+              <CheckCircle2 className="h-3.5 w-3.5" />
             </span>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
             Assessment Submitted Successfully!
           </h1>
-          <p className="mt-2 text-xs sm:text-sm text-slate-500 font-medium max-w-lg mx-auto leading-relaxed">
-            Your responses and cognitive telemetry performance have been securely verified and saved to the recruitment system.
+          <p className="mt-3 text-sm text-slate-500 font-medium max-w-md mx-auto leading-relaxed">
+            Thank you for completing the assessment. Your responses and cognitive exercises have been securely recorded and sent to the recruitment team.
           </p>
 
-          <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-[11px] font-semibold text-slate-600">
-            <Clock className="h-3 w-3 text-slate-500" />
+          <div className="mt-5 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100/80 border border-slate-200 text-xs font-semibold text-slate-600">
+            <Clock className="h-3.5 w-3.5 text-slate-500" />
             <span>Submitted on {submittedAt}</span>
           </div>
-
-          {/* If recruiter set confidential mode */}
-          {isConfidential && (
-            <div className="mt-6 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium max-w-md mx-auto text-center">
-              <Award className="h-5 w-5 text-blue-600 mx-auto mb-1.5" />
-              <span>Assessment evaluation is under review by the hiring team. Detailed answer keys are confidential per company policy.</span>
-            </div>
-          )}
         </div>
 
-        {/* ── 2. PERFORMANCE SCORECARD (If not confidential) ── */}
-        {!isConfidential && (
-          <div className="space-y-6 animate-in fade-in-50 duration-300">
-            {/* Top Stat Gauges */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-              {/* Overall Score */}
-              <div className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-2xs space-y-1">
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                  Quiz Score
-                </span>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl sm:text-3xl font-black text-blue-600 font-mono">
-                    {quizStats.percentage}%
-                  </span>
-                  <Badge
-                    className={`text-[9px] font-extrabold uppercase px-1.5 py-0.2 ${
-                      quizStats.result === "PASSED"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : "bg-rose-50 text-rose-700 border-rose-200"
-                    }`}
-                  >
-                    {quizStats.result}
-                  </Badge>
-                </div>
-                <p className="text-[11px] text-slate-500 font-medium">
-                  {quizStats.correct} of {quizStats.total} Questions
-                  {quizStats.overallPercentage && quizStats.overallPercentage !== quizStats.percentage ? (
-                    <span className="block text-[10px] text-indigo-600 font-bold mt-0.5">
-                      Overall Composite: {quizStats.overallPercentage}%
-                    </span>
-                  ) : null}
-                </p>
-              </div>
+        {/* ── 2. WHAT HAPPENS NEXT CARD ── */}
+        <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xs space-y-5">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-blue-600" />
+            What Happens Next?
+          </h2>
 
-              {/* Correct Answers */}
-              <div className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-2xs space-y-1">
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3" /> Correct
-                </span>
-                <p className="text-2xl sm:text-3xl font-black text-emerald-700 font-mono">
-                  {quizStats.correct}
-                </p>
-                <p className="text-[11px] text-slate-500 font-medium">Full marks earned</p>
+          <div className="space-y-4 text-xs sm:text-sm">
+            <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-slate-50/80 border border-slate-100">
+              <div className="h-8 w-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">
+                1
               </div>
-
-              {/* Incorrect Answers */}
-              <div className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-2xs space-y-1">
-                <span className="text-[10px] font-black uppercase tracking-wider text-rose-600 flex items-center gap-1">
-                  <XCircle className="h-3 w-3" /> Incorrect
-                </span>
-                <p className="text-2xl sm:text-3xl font-black text-rose-700 font-mono">
-                  {quizStats.incorrect}
+              <div className="space-y-0.5">
+                <p className="font-bold text-slate-900">Submission Recorded</p>
+                <p className="text-slate-500 font-medium leading-relaxed">
+                  Your answers and game telemetry have been securely stored in the recruitment system.
                 </p>
-                <p className="text-[11px] text-slate-500 font-medium">Missed answers</p>
-              </div>
-
-              {/* Skipped / Unanswered */}
-              <div className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-2xs space-y-1">
-                <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" /> Skipped
-                </span>
-                <p className="text-2xl sm:text-3xl font-black text-amber-700 font-mono">
-                  {quizStats.unanswered}
-                </p>
-                <p className="text-[11px] text-slate-500 font-medium">Unanswered items</p>
               </div>
             </div>
 
-            {/* ── 3. COGNITIVE GAMES ACCURACY & TELEMETRY BREAKDOWN ── */}
-            {gamesStats && gamesList.length > 0 && (
-              <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-sm space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 shrink-0">
-                      <Gamepad2 className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm sm:text-base font-black text-slate-900 tracking-tight">
-                        Cognitive Games Performance & Accuracy
-                      </h3>
-                      <p className="text-xs text-slate-500 font-medium">
-                        Behavioral and spatial reasoning metrics recorded during interactive challenges
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="px-3 py-1.5 rounded-xl bg-indigo-50/80 border border-indigo-200 text-indigo-900 text-xs font-bold flex items-center gap-2">
-                      <Brain className="h-3.5 w-3.5 text-indigo-600" />
-                      <span>Avg Accuracy: {gamesStats.avgAccuracy}%</span>
-                    </div>
-                    <div className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
-                      {gamesStats.completed}/{gamesStats.total} Solved
-                    </div>
-                  </div>
-                </div>
-
-                {/* Game Cards Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  {gamesList.map((g) => (
-                    <div
-                      key={g.id}
-                      className="p-3.5 rounded-2xl border border-slate-200/80 bg-slate-50/60 hover:bg-white transition flex items-center justify-between gap-3"
-                    >
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-xs font-black text-slate-900 truncate">
-                            {g.title}
-                          </h4>
-                          <Badge
-                            className={`text-[9px] font-black uppercase px-1.5 py-0.2 ${
-                              g.status === "Completed"
-                                ? "bg-emerald-100 text-emerald-800 border-emerald-200"
-                                : "bg-amber-100 text-amber-800 border-amber-200"
-                            }`}
-                          >
-                            {g.status}
-                          </Badge>
-                        </div>
-                        <p className="text-[11px] text-slate-500 font-medium mt-0.5 flex items-center gap-2">
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3 text-slate-400" />
-                            {g.timeFormatted}
-                          </span>
-                          <span>•</span>
-                          <span>Score: {g.score}/100</span>
-                        </p>
-                      </div>
-
-                      {/* Accuracy Pill */}
-                      <div className="text-right shrink-0">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                          Accuracy
-                        </span>
-                        <span
-                          className={`text-sm font-black font-mono ${
-                            g.status === "Completed" ? "text-indigo-600" : "text-slate-400"
-                          }`}
-                        >
-                          {g.accuracy}%
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-slate-50/80 border border-slate-100">
+              <div className="h-8 w-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs shrink-0">
+                2
               </div>
-            )}
-          </div>
-        )}
+              <div className="space-y-0.5">
+                <p className="font-bold text-slate-900">Hiring Team Evaluation</p>
+                <p className="text-slate-500 font-medium leading-relaxed">
+                  The recruitment team will evaluate your performance according to their evaluation criteria.
+                </p>
+              </div>
+            </div>
 
-        {/* ── 5. FOOTER NOTICE ── */}
-        <div className="text-center pt-2 pb-6">
-          <p className="text-xs text-slate-400 font-medium">
-            HireQuest Talent Assessment Platform • You may now safely close this browser window.
+            <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-slate-50/80 border border-slate-100">
+              <div className="h-8 w-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs shrink-0">
+                3
+              </div>
+              <div className="space-y-0.5">
+                <p className="font-bold text-slate-900">Follow-up Communication</p>
+                <p className="text-slate-500 font-medium leading-relaxed">
+                  If shortlisted, the hiring manager will contact you directly via email regarding the next steps.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-100/80 flex items-center gap-3 text-xs text-blue-800">
+            <Award className="h-4 w-4 text-blue-600 shrink-0" />
+            <p className="font-medium">
+              Individual question scores and answers are confidential and accessible only to the recruitment panel.
+            </p>
+          </div>
+        </div>
+
+        {/* ── 3. FOOTER NOTICE ── */}
+        <div className="text-center pt-2 pb-6 space-y-1">
+          <p className="text-xs text-slate-500 font-semibold">
+            You may now safely close this browser window.
+          </p>
+          <p className="text-[11px] text-slate-400">
+            HireQuest Talent Assessment Platform
           </p>
         </div>
       </div>

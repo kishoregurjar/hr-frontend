@@ -268,6 +268,13 @@ const AssessmentBuilder = ({
             toast.success("Assessment updated successfully!");
             router.push("/assessments");
           },
+          onError: (error) => {
+            const message =
+              error?.response?.data?.message ||
+              error?.message ||
+              "Failed to update assessment. Please try again.";
+            toast.error(message);
+          },
           onSettled: () => {
             setSubmitAction(null);
           },
@@ -292,6 +299,13 @@ const AssessmentBuilder = ({
           toast.success("Assessment saved as draft successfully!");
           router.push("/assessments");
         }
+      },
+      onError: (error) => {
+        const message =
+          error?.response?.data?.message ||
+          error?.message ||
+          "An assessment with this title already exists.";
+        toast.error(message);
       },
       onSettled: () => {
         setSubmitAction(null);

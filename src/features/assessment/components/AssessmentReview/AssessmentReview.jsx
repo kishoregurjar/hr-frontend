@@ -103,14 +103,6 @@ const AssessmentReview = ({
           </div>
         )}
 
-        {/* Submission Error Banner */}
-        {displayError && (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700 text-xs">
-            <p className="font-bold">Unable to save assessment</p>
-            <p className="mt-0.5 font-medium">{displayError.message || "Please try again."}</p>
-          </div>
-        )}
-
         {/* 1. Basic Details Summary */}
         <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
