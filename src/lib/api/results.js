@@ -445,45 +445,116 @@ export const getAllResults = async () => {
         };
       }
 
-      // 2. Cognitive Games Breakdown (100% Dynamic from database gameResults, assessment games, or traits)
+      // 2. Cognitive Games Breakdown (100% Dynamic from database gameResults & assessment.games)
       let gamesBreakdown = [];
-      if (Array.isArray(item.gameResults) && item.gameResults.length > 0) {
-        gamesBreakdown = item.gameResults.map((gr, gIdx) => {
+      const assessmentGames = Array.isArray(item.assessment?.games) ? item.assessment.games : [];
+      const dbGameResults = Array.isArray(item.gameResults) ? item.gameResults : [];
+
+      let localGameMap = {};
+      if (typeof window !== "undefined") {
+        try {
+          const aId = item.id || item.attemptId;
+          const rawLocal =
+            (aId ? sessionStorage.getItem(`candidate_game_results_${aId}`) : null) ||
+            sessionStorage.getItem("candidate_game_results") ||
+            "{}";
+          localGameMap = JSON.parse(rawLocal);
+        } catch {}
+      }
+
+      const resultMap = new Map();
+      dbGameResults.forEach((gr) => {
+        if (gr.gameId) resultMap.set(String(gr.gameId), gr);
+        if (gr.game?.code) resultMap.set(String(gr.game.code).toLowerCase(), gr);
+        if (gr.game?.name) resultMap.set(String(gr.game.name).toLowerCase(), gr);
+      });
+
+      if (localGameMap && typeof localGameMap === "object") {
+        Object.entries(localGameMap).forEach(([k, gData]) => {
+          if (gData && typeof gData === "object") {
+            const key = String(k).toLowerCase();
+            if (!resultMap.has(key)) {
+              resultMap.set(key, {
+                gameId: gData.gameId || k,
+                score: gData.score,
+                metrics: gData,
+                accuracy: gData.accuracy,
+                game: { name: gData.title || gData.name || k, code: k },
+              });
+            }
+          }
+        });
+      }
+
+      if (assessmentGames.length > 0) {
+        gamesBreakdown = assessmentGames.map((ag, gIdx) => {
+          const agGame = ag.game || {};
+          const gId = ag.gameId || agGame.id;
+          const codeKey = (agGame.code || "").toLowerCase();
+          const nameKey = (agGame.name || "").toLowerCase();
+
+          const gr =
+            resultMap.get(String(gId)) ||
+            (codeKey && resultMap.get(codeKey)) ||
+            (nameKey && resultMap.get(nameKey)) ||
+            resultMap.get(`game-${gIdx + 1}`) ||
+            resultMap.get(`game_${gIdx + 1}`) ||
+            null;
+
+          const gameTitle = agGame.name || agGame.code || `Game ${gIdx + 1}`;
+          if (gr) {
+            const metrics = gr.metrics && typeof gr.metrics === "object" ? gr.metrics : {};
+            const isSkipped = Boolean(
+              metrics.skipped ||
+              metrics.status === "SKIPPED" ||
+              gr.status === "SKIPPED" ||
+              (Number(gr.score ?? 0) === 0 && (Number(metrics.timeTaken ?? 0) === 0 || Number(metrics.moves ?? 0) === 0))
+            );
+            const rawAcc = typeof gr.accuracy === "number" ? gr.accuracy : (typeof metrics.accuracy === "number" ? metrics.accuracy : gr.score || 0);
+            const timeSec = Number(metrics.timeTaken || metrics.timeSpent || metrics.timeSeconds || 0);
+            const timeFormatted = timeSec > 0 ? `${Math.floor(timeSec / 60)}m ${timeSec % 60}s` : "0s";
+            return {
+              id: gId || `game-${gIdx}`,
+              title: gameTitle,
+              status: isSkipped ? "Skipped" : "Completed",
+              score: isSkipped ? 0 : Math.round(Number(gr.score ?? 0)),
+              accuracy: isSkipped ? 0 : Math.min(100, Math.max(0, Math.round(rawAcc))),
+              timeFormatted: isSkipped ? "0s" : timeFormatted,
+            };
+          }
+
+          return {
+            id: gId || `ag-${gIdx}`,
+            title: gameTitle,
+            status: "Skipped",
+            score: 0,
+            accuracy: 0,
+            timeFormatted: "0s",
+          };
+        });
+      } else if (dbGameResults.length > 0 || resultMap.size > 0) {
+        const allResults = dbGameResults.length > 0 ? dbGameResults : Array.from(resultMap.values());
+        gamesBreakdown = allResults.map((gr, gIdx) => {
           const gameTitle = gr.game?.name || gr.game?.code || `Game ${gIdx + 1}`;
           const metrics = gr.metrics && typeof gr.metrics === "object" ? gr.metrics : {};
+          const isSkipped = Boolean(
+            metrics.skipped ||
+            metrics.status === "SKIPPED" ||
+            gr.status === "SKIPPED" ||
+            (Number(gr.score ?? 0) === 0 && (Number(metrics.timeTaken ?? 0) === 0 || Number(metrics.moves ?? 0) === 0))
+          );
           const rawAcc = typeof gr.accuracy === "number" ? gr.accuracy : (typeof metrics.accuracy === "number" ? metrics.accuracy : gr.score || 0);
           const timeSec = Number(metrics.timeTaken || metrics.timeSpent || metrics.timeSeconds || 0);
           const timeFormatted = timeSec > 0 ? `${Math.floor(timeSec / 60)}m ${timeSec % 60}s` : "0s";
           return {
             id: gr.gameId || `game-${gIdx}`,
             title: gameTitle,
-            status: gr.score !== undefined ? "Completed" : "Skipped",
-            score: gr.score ?? 0,
-            accuracy: Math.min(100, Math.max(0, Math.round(rawAcc))),
-            timeFormatted,
+            status: isSkipped ? "Skipped" : "Completed",
+            score: isSkipped ? 0 : Math.round(Number(gr.score ?? 0)),
+            accuracy: isSkipped ? 0 : Math.min(100, Math.max(0, Math.round(rawAcc))),
+            timeFormatted: isSkipped ? "0s" : timeFormatted,
           };
         });
-      } else if (Array.isArray(item.assessment?.games) && item.assessment.games.length > 0) {
-        gamesBreakdown = item.assessment.games.map((ag, gIdx) => {
-          const gameTitle = ag.game?.name || ag.game?.code || `Game ${gIdx + 1}`;
-          return {
-            id: ag.game?.id || `ag-${gIdx}`,
-            title: gameTitle,
-            status: "Completed",
-            score: scoreNum,
-            accuracy: scoreNum,
-            timeFormatted: timeSpentText !== "N/A" ? timeSpentText : "1m 30s",
-          };
-        });
-      } else if (Array.isArray(dynamicCognitiveTraits) && dynamicCognitiveTraits.length > 0) {
-        gamesBreakdown = dynamicCognitiveTraits.map((t, idx) => ({
-          id: `trait-game-${idx}`,
-          title: t.trait,
-          status: "Completed",
-          score: t.score,
-          accuracy: t.score,
-          timeFormatted: timeSpentText !== "N/A" ? timeSpentText : "1m 20s",
-        }));
       }
 
       return {
