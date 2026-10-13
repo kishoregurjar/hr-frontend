@@ -238,9 +238,9 @@ export default function AssessmentCompleted({
   const isConfidential = assessment?.showResultToCandidate === false;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 py-12 px-4 sm:px-6 lg:px-8 font-sans">
-      <div className="max-w-2xl mx-auto space-y-6">
-        {/* ── 1. HERO SUCCESS BANNER ── */}
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 py-16 px-4 sm:px-6 lg:px-8 font-sans flex items-center justify-center">
+      <div className="max-w-xl w-full space-y-4">
+        {/* ── HERO SUCCESS CARD ── */}
         <div className="relative overflow-hidden rounded-3xl border border-slate-200/90 bg-white p-8 sm:p-10 shadow-xl shadow-slate-900/5 text-center">
           {/* Subtle Ambient Light Glow */}
           <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-80 h-32 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -264,66 +264,13 @@ export default function AssessmentCompleted({
             <Clock className="h-3.5 w-3.5 text-slate-500" />
             <span>Submitted on {submittedAt}</span>
           </div>
-        </div>
 
-        {/* ── 2. WHAT HAPPENS NEXT CARD ── */}
-        <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xs space-y-5">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-blue-600" />
-            What Happens Next?
-          </h2>
-
-          <div className="space-y-4 text-xs sm:text-sm">
-            <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-slate-50/80 border border-slate-100">
-              <div className="h-8 w-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">
-                1
-              </div>
-              <div className="space-y-0.5">
-                <p className="font-bold text-slate-900">Submission Recorded</p>
-                <p className="text-slate-500 font-medium leading-relaxed">
-                  Your answers and game telemetry have been securely stored in the recruitment system.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-slate-50/80 border border-slate-100">
-              <div className="h-8 w-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs shrink-0">
-                2
-              </div>
-              <div className="space-y-0.5">
-                <p className="font-bold text-slate-900">Hiring Team Evaluation</p>
-                <p className="text-slate-500 font-medium leading-relaxed">
-                  The recruitment team will evaluate your performance according to their evaluation criteria.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-slate-50/80 border border-slate-100">
-              <div className="h-8 w-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs shrink-0">
-                3
-              </div>
-              <div className="space-y-0.5">
-                <p className="font-bold text-slate-900">Follow-up Communication</p>
-                <p className="text-slate-500 font-medium leading-relaxed">
-                  If shortlisted, the hiring manager will contact you directly via email regarding the next steps.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-100/80 flex items-center gap-3 text-xs text-blue-800">
-            <Award className="h-4 w-4 text-blue-600 shrink-0" />
-            <p className="font-medium">
-              Individual question scores and answers are confidential and accessible only to the recruitment panel.
-            </p>
-          </div>
-        </div>
-
-        {/* ── 3. FOOTER NOTICE ── */}
-        <div className="text-center pt-2 pb-6 space-y-1">
-          <p className="text-xs text-slate-500 font-semibold">
+          <div className="mt-6 pt-6 border-t border-slate-100 text-xs text-slate-400 font-medium">
             You may now safely close this browser window.
-          </p>
+          </div>
+        </div>
+
+        <div className="text-center">
           <p className="text-[11px] text-slate-400">
             HireQuest Talent Assessment Platform
           </p>
