@@ -96,32 +96,89 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
     e.preventDefault();
     setPasswordError(null);
 
-    if (!currentPassword) {
+    const trimmedCurrent = currentPassword.trim();
+    const trimmedNew = newPassword;
+    const trimmedConfirm = confirmPassword;
+
+    if (!trimmedCurrent) {
       setPasswordError("Please enter your current password.");
       return;
     }
 
-    if (newPassword.length < 8) {
+    if (!trimmedNew) {
+      setPasswordError("Please enter a new password.");
+      return;
+    }
+
+    if (trimmedNew.length < 8) {
       setPasswordError("New password must be at least 8 characters long.");
       return;
     }
 
-    if (newPassword !== confirmPassword) {
-      setPasswordError("New passwords do not match.");
+    if (trimmedNew.length > 64) {
+      setPasswordError("New password cannot exceed 64 characters.");
+      return;
+    }
+
+    if (!/[A-Z]/.test(trimmedNew)) {
+      setPasswordError("New password must contain at least one uppercase letter (A-Z).");
+      return;
+    }
+
+    if (!/[a-z]/.test(trimmedNew)) {
+      setPasswordError("New password must contain at least one lowercase letter (a-z).");
+      return;
+    }
+
+    if (!/\d/.test(trimmedNew)) {
+      setPasswordError("New password must contain at least one number (0-9).");
+      return;
+    }
+
+    if (!/[@$!%*?#&^()_\-+=]/.test(trimmedNew)) {
+      setPasswordError("New password must contain at least one special character (e.g. @, #, $, %, !, &).");
+      return;
+    }
+
+    if (trimmedCurrent === trimmedNew) {
+      setPasswordError("New password cannot be the same as your current password.");
+      return;
+    }
+
+    if (trimmedNew !== trimmedConfirm) {
+      setPasswordError("New password and confirmation password do not match.");
       return;
     }
 
     setIsChangingPassword(true);
     try {
-      await changePasswordApi({ currentPassword, newPassword });
+      await changePasswordApi({ currentPassword: trimmedCurrent, newPassword: trimmedNew });
       toast.success("Password updated successfully!");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
       onClose();
     } catch (err) {
-      setPasswordError(err.message || "Failed to update password. Please check your current password.");
-      toast.error(err.message || "Failed to update password.");
+      const errCode = err?.response?.data?.code || err?.code;
+      const details = err?.response?.data?.details || err?.details;
+      const firstDetail = Array.isArray(details) && details[0]?.message ? details[0].message : null;
+      const rawMsg = firstDetail || err?.response?.data?.message || err?.message || "";
+
+      let friendlyMsg = rawMsg;
+      if (
+        errCode === "INCORRECT_CURRENT_PASSWORD" ||
+        rawMsg.toLowerCase().includes("current password is incorrect") ||
+        rawMsg.toLowerCase().includes("current password")
+      ) {
+        friendlyMsg = "Your current password is incorrect. Please check and try again.";
+      } else if (errCode === "SAME_PASSWORD" || rawMsg.toLowerCase().includes("same as your current password")) {
+        friendlyMsg = "New password cannot be the same as your current password.";
+      } else if (rawMsg === "Request validation failed." || !rawMsg) {
+        friendlyMsg = firstDetail || "Password validation failed. Please check the requirements below.";
+      }
+
+      setPasswordError(friendlyMsg);
+      toast.error(friendlyMsg);
     } finally {
       setIsChangingPassword(false);
     }
@@ -343,7 +400,10 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
                   <input
                     type={showPasswords ? "text" : "password"}
                     value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    onChange={(e) => {
+                      setCurrentPassword(e.target.value);
+                      if (passwordError) setPasswordError(null);
+                    }}
                     placeholder="Enter your current password"
                     required
                     className="w-full h-10 pl-10 pr-10 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition shadow-2xs"
@@ -351,7 +411,7 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
                   <button
                     type="button"
                     onClick={() => setShowPasswords((p) => !p)}
-                    className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600"
+                    className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600 cursor-pointer"
                   >
                     {showPasswords ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -368,12 +428,18 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
                   <input
                     type={showPasswords ? "text" : "password"}
                     value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="At least 8 characters (with letters & numbers)"
+                    onChange={(e) => {
+                      setNewPassword(e.target.value);
+                      if (passwordError) setPasswordError(null);
+                    }}
+                    placeholder="Min 8 characters (e.g. Developer123#)"
                     required
                     className="w-full h-10 pl-10 pr-10 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition shadow-2xs"
                   />
                 </div>
+                <p className="text-[11px] text-slate-500 leading-tight">
+                  Must include at least 8 characters with uppercase, lowercase, a number and a symbol.
+                </p>
               </div>
 
               {/* Confirm Password */}
@@ -386,7 +452,10 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
                   <input
                     type={showPasswords ? "text" : "password"}
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      if (passwordError) setPasswordError(null);
+                    }}
                     placeholder="Re-enter your new password"
                     required
                     className="w-full h-10 pl-10 pr-10 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition shadow-2xs"
