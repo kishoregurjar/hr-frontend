@@ -231,7 +231,7 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
         }`}
       >
         {/* ── 1. Top Dynamic Company Workspace Header ── */}
-        <div className="h-[70px] flex items-center justify-between px-4 py-3 border-b border-slate-200/80">
+        <div className="h-[70px] flex items-center justify-between px-5 py-3 border-b border-slate-200/80">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             {companyLogo ? (
               <img
@@ -245,10 +245,10 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <span className="font-extrabold text-sm tracking-tight text-slate-900 leading-tight truncate block">
+              <span className="font-extrabold text-base tracking-tight text-slate-900 leading-tight truncate block">
                 {companyName || "HireQuest"}
               </span>
-              <span className="text-[11px] text-slate-500 font-medium block truncate mt-0.5">
+              <span className="text-xs text-slate-500 font-medium block truncate mt-0.5">
                 {companyDomain || (isInspecting ? "Impersonated Workspace" : "Recruitment Workspace")}
               </span>
             </div>
@@ -300,14 +300,14 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
             className="flex items-center gap-2.5 min-w-0 text-left hover:opacity-85 transition cursor-pointer flex-1 py-0.5"
             title="Account & Security Settings"
           >
-            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
               {getInitials(displayName)}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-slate-900 truncate leading-tight">
+              <p className="text-sm font-bold text-slate-900 truncate leading-tight">
                 {displayName}
               </p>
-              <p className="text-[10px] text-slate-500 truncate font-medium mt-0.5">
+              <p className="text-xs text-slate-500 truncate font-medium mt-0.5">
                 {userEmail || userRole}
               </p>
             </div>
