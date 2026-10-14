@@ -61,7 +61,7 @@ const CandidateForm = ({
           <User className="h-4 w-4 absolute left-3.5 top-3 text-slate-400" />
           <Input
             id="candidate-name"
-            placeholder="e.g. Rohit Panchal"
+            placeholder="e.g. John Doe"
             className="h-10 pl-9.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-medium focus:bg-white focus:ring-2 focus:ring-blue-500/30 transition shadow-2xs"
             {...register("name")}
           />
@@ -83,7 +83,7 @@ const CandidateForm = ({
           <Input
             id="candidate-email"
             type="email"
-            placeholder="e.g. rohit@hirequest.com"
+            placeholder="candidate@example.com"
             className="h-10 pl-9.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-medium focus:bg-white focus:ring-2 focus:ring-blue-500/30 transition shadow-2xs"
             {...register("email")}
           />
@@ -105,7 +105,7 @@ const CandidateForm = ({
           <Input
             id="candidate-phone"
             type="tel"
-            placeholder="e.g. +91 9876543210"
+            placeholder="e.g. +1 555-0123"
             className="h-10 pl-9.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-medium focus:bg-white focus:ring-2 focus:ring-blue-500/30 transition shadow-2xs"
             {...register("phone")}
           />

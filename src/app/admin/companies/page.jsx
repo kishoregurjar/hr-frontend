@@ -451,7 +451,7 @@ function AdminCompaniesContent() {
                     <Input
                       value={companyForm.name}
                       onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
-                      placeholder="e.g. GammaStack Technologies"
+                      placeholder="e.g. Acme Corporation"
                       required
                       className="pl-10 h-11 rounded-xl text-xs sm:text-sm font-medium border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600 shadow-2xs"
                     />
@@ -468,7 +468,7 @@ function AdminCompaniesContent() {
                     <Input
                       value={companyForm.domain}
                       onChange={(e) => setCompanyForm({ ...companyForm, domain: e.target.value })}
-                      placeholder="e.g. gammastack.com"
+                      placeholder="e.g. acme.com"
                       className="pl-10 h-11 rounded-xl text-xs sm:text-sm font-medium border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600 shadow-2xs"
                     />
                   </div>
@@ -485,7 +485,7 @@ function AdminCompaniesContent() {
                       type="email"
                       value={companyForm.ownerEmail}
                       onChange={(e) => setCompanyForm({ ...companyForm, ownerEmail: e.target.value })}
-                      placeholder="owner@gammastack.com"
+                      placeholder="owner@company.com"
                       required
                       className="pl-10 h-11 rounded-xl text-xs sm:text-sm font-medium border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600 shadow-2xs"
                     />

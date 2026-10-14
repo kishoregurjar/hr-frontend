@@ -118,7 +118,7 @@ export default function InviteAdminModal({ isOpen, onClose, onSuccess }) {
             <label className="block text-slate-700 font-semibold">Full Name</label>
             <input
               type="text"
-              placeholder="e.g. Rahul Sharma"
+              placeholder="e.g. Sarah Connor"
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={submitting}
@@ -130,7 +130,7 @@ export default function InviteAdminModal({ isOpen, onClose, onSuccess }) {
             <label className="block text-slate-700 font-semibold">Email Address</label>
             <input
               type="email"
-              placeholder="e.g. rahul@example.com"
+              placeholder="admin@company.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={submitting}

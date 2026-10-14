@@ -625,7 +625,7 @@ export default function CompanySettingsPage() {
                       value={formData.address}
                       onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                       className="w-full h-10 px-3 rounded-xl border bg-background text-sm focus:ring-2 focus:ring-blue-600 outline-none"
-                      placeholder="123 Innovation Drive, Suite 400"
+                      placeholder="Street address, Suite / Floor"
                     />
                   </div>
 

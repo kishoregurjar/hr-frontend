@@ -140,7 +140,7 @@ const RegisterForm = () => {
             <Input
               id="firstName"
               type="text"
-              placeholder="e.g. Rohit"
+              placeholder="e.g. John"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               className="pl-10 h-11 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500/30 transition shadow-2xs"
@@ -156,7 +156,7 @@ const RegisterForm = () => {
           <Input
             id="lastName"
             type="text"
-            placeholder="e.g. Panchal"
+            placeholder="e.g. Doe"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
             className="h-11 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500/30 transition shadow-2xs"
