@@ -574,7 +574,7 @@ const AssessmentPreStart = ({
                     <User className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
                     <input
                       type="text"
-                      placeholder="e.g. Rohit Panchal"
+                      placeholder="e.g. John Doe"
                       value={candidateName}
                       onChange={(e) => {
                         setCandidateName(e.target.value);
@@ -595,7 +595,7 @@ const AssessmentPreStart = ({
                     <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
                     <input
                       type="email"
-                      placeholder="e.g. rohit@example.com"
+                      placeholder="candidate@example.com"
                       value={email}
                       onChange={(e) => {
                         setEmail(e.target.value);
@@ -617,7 +617,7 @@ const AssessmentPreStart = ({
                     <Phone className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
                     <input
                       type="tel"
-                      placeholder="e.g. +91 98765 43210"
+                      placeholder="e.g. +1 555-0123"
                       value={mobileNumber}
                       onChange={(e) => setMobileNumber(e.target.value)}
                       className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 bg-white text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#303331]/20 focus:border-[#303331]"

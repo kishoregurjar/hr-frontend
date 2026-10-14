@@ -258,7 +258,7 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
                           setNameInput(e.target.value);
                           if (nameError) setNameError(null);
                         }}
-                        placeholder="Enter your full name (e.g. Shivam Singh)"
+                        placeholder="Enter your full name"
                         className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition shadow-2xs"
                       />
                     </div>

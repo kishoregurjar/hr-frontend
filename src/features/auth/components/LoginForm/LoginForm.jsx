@@ -232,7 +232,7 @@ const LoginForm = () => {
             id="email"
             name="email"
             type="email"
-            placeholder="vishnu@example.com"
+            placeholder="name@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="pl-10 h-11 sm:h-12 rounded-xl border-slate-200 bg-white text-xs sm:text-sm font-normal text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition shadow-2xs"

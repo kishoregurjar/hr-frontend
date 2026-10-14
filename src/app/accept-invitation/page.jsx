@@ -499,7 +499,7 @@ function AcceptInvitationContent() {
               <Input
                 id="name"
                 type="text"
-                placeholder="e.g. Rohit Panchal"
+                placeholder="Enter your full name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="pl-10 h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500/30 shadow-2xs"

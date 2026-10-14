@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   ShieldCheck,
   Lock,
@@ -85,27 +86,11 @@ function ActivateOwnerContent() {
     };
   }, [token]);
 
-  // Password strength calculation
-  const getPasswordStrength = (pwd) => {
-    let score = 0;
-    if (pwd.length >= 8) score += 1;
-    if (/[A-Z]/.test(pwd)) score += 1;
-    if (/[0-9]/.test(pwd)) score += 1;
-    if (/[^A-Za-z0-9]/.test(pwd)) score += 1;
-    return score;
-  };
-
-  const strength = getPasswordStrength(password);
-
-  const getStrengthLabel = () => {
-    if (!password) return { label: "None", color: "bg-slate-200", text: "text-slate-400", width: "0%" };
-    if (strength <= 1) return { label: "Weak", color: "bg-rose-500", text: "text-rose-500", width: "25%" };
-    if (strength === 2) return { label: "Fair", color: "bg-amber-500", text: "text-amber-500", width: "50%" };
-    if (strength === 3) return { label: "Good", color: "bg-blue-600", text: "text-blue-600", width: "75%" };
-    return { label: "Strong", color: "bg-emerald-600", text: "text-emerald-600", width: "100%" };
-  };
-
-  const strengthMeta = getStrengthLabel();
+  const hasMinLength = password.length >= 8;
+  const hasUpper = /[A-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[^A-Za-z0-9]/.test(password);
+  const isPasswordValid = hasMinLength && hasUpper && hasNumber && hasSpecial;
   const passwordsMatch = password && confirmPassword && password === confirmPassword;
 
   const handleSubmit = async (e) => {
@@ -116,8 +101,28 @@ function ActivateOwnerContent() {
       return;
     }
 
-    if (password.length < 8) {
+    if (!hasMinLength) {
       toast.error("Password must be at least 8 characters long.");
+      return;
+    }
+
+    if (!hasUpper) {
+      toast.error("Uppercase Letter is missing! Password must contain at least one uppercase letter (A-Z).");
+      return;
+    }
+
+    if (!hasNumber) {
+      toast.error("Number (0-9) is missing! Password must contain at least one number.");
+      return;
+    }
+
+    if (!hasSpecial) {
+      toast.error("Special Symbol is missing! Password must contain at least one special symbol (!@#$%^&* etc.).");
+      return;
+    }
+
+    if (!confirmPassword) {
+      toast.error("Please confirm your password.");
       return;
     }
 
@@ -350,7 +355,7 @@ function ActivateOwnerContent() {
   // State 2: Valid Link - Set Password Form
   return (
     <div className="space-y-5">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
         {/* New Password */}
         <div className="space-y-1.5">
           <Label className="text-xs font-bold uppercase tracking-wider text-slate-600">
@@ -363,8 +368,6 @@ function ActivateOwnerContent() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Minimum 8 characters"
-              required
-              minLength={8}
               className="pl-10 pr-10 h-11 rounded-xl border-slate-200 text-xs focus:border-blue-500 focus:ring-blue-500/20"
             />
             <button
@@ -375,22 +378,6 @@ function ActivateOwnerContent() {
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-
-          {/* Password Strength Meter */}
-          {password && (
-            <div className="space-y-1 pt-1">
-              <div className="flex items-center justify-between text-[10.5px]">
-                <span className="text-slate-500 font-medium">Password Strength:</span>
-                <span className={`font-bold ${strengthMeta.text}`}>{strengthMeta.label}</span>
-              </div>
-              <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className={`h-full transition-all duration-300 ${strengthMeta.color}`}
-                  style={{ width: strengthMeta.width }}
-                />
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Confirm Password */}
@@ -405,7 +392,6 @@ function ActivateOwnerContent() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Re-enter your password"
-              required
               className="pl-10 pr-10 h-11 rounded-xl border-slate-200 text-xs focus:border-blue-500 focus:ring-blue-500/20"
             />
             <button
@@ -436,20 +422,20 @@ function ActivateOwnerContent() {
         <div className="rounded-2xl bg-slate-50 border border-slate-200/80 p-3.5 space-y-1.5 text-xs text-slate-600">
           <div className="font-semibold text-slate-800 text-[11px]">Security Criteria:</div>
           <div className="grid grid-cols-2 gap-1 text-[11px]">
-            <div className={`flex items-center gap-1.5 ${password.length >= 8 ? "text-emerald-600 font-medium" : "text-slate-500"}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${password.length >= 8 ? "bg-emerald-600" : "bg-slate-300"}`} />
+            <div className={`flex items-center gap-1.5 transition-colors ${hasMinLength ? "text-emerald-600 font-semibold" : password.length > 0 ? "text-rose-500 font-medium" : "text-slate-500"}`}>
+              <span className={`h-1.5 w-1.5 rounded-full transition-colors ${hasMinLength ? "bg-emerald-600" : password.length > 0 ? "bg-rose-500" : "bg-slate-300"}`} />
               8+ Characters
             </div>
-            <div className={`flex items-center gap-1.5 ${/[A-Z]/.test(password) ? "text-emerald-600 font-medium" : "text-slate-500"}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${/[A-Z]/.test(password) ? "bg-emerald-600" : "bg-slate-300"}`} />
+            <div className={`flex items-center gap-1.5 transition-colors ${hasUpper ? "text-emerald-600 font-semibold" : password.length > 0 ? "text-rose-500 font-medium" : "text-slate-500"}`}>
+              <span className={`h-1.5 w-1.5 rounded-full transition-colors ${hasUpper ? "bg-emerald-600" : password.length > 0 ? "bg-rose-500" : "bg-slate-300"}`} />
               Uppercase Letter
             </div>
-            <div className={`flex items-center gap-1.5 ${/[0-9]/.test(password) ? "text-emerald-600 font-medium" : "text-slate-500"}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${/[0-9]/.test(password) ? "bg-emerald-600" : "bg-slate-300"}`} />
+            <div className={`flex items-center gap-1.5 transition-colors ${hasNumber ? "text-emerald-600 font-semibold" : password.length > 0 ? "text-rose-500 font-medium" : "text-slate-500"}`}>
+              <span className={`h-1.5 w-1.5 rounded-full transition-colors ${hasNumber ? "bg-emerald-600" : password.length > 0 ? "bg-rose-500" : "bg-slate-300"}`} />
               Number (0-9)
             </div>
-            <div className={`flex items-center gap-1.5 ${/[^A-Za-z0-9]/.test(password) ? "text-emerald-600 font-medium" : "text-slate-500"}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${/[^A-Za-z0-9]/.test(password) ? "bg-emerald-600" : "bg-slate-300"}`} />
+            <div className={`flex items-center gap-1.5 transition-colors ${hasSpecial ? "text-emerald-600 font-semibold" : password.length > 0 ? "text-rose-500 font-medium" : "text-slate-500"}`}>
+              <span className={`h-1.5 w-1.5 rounded-full transition-colors ${hasSpecial ? "bg-emerald-600" : password.length > 0 ? "bg-rose-500" : "bg-slate-300"}`} />
               Special Symbol
             </div>
           </div>
@@ -458,7 +444,7 @@ function ActivateOwnerContent() {
         {/* Submit Button */}
         <Button
           type="submit"
-          disabled={isSubmitting || password.length < 8 || !passwordsMatch}
+          disabled={isSubmitting || !password || !confirmPassword}
           className="w-full h-11 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           {isSubmitting ? (
