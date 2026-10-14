@@ -88,24 +88,38 @@ const AssignAssessmentDialog = ({
     const firstCandidateName = firstCandidate.name || "";
     const nameParts = typeof firstCandidateName === "string" ? firstCandidateName.split(" ") : [];
 
+    const existingCandidateIds = activeCandidates
+      .map((c) => c.id)
+      .filter(Boolean);
+
+    const adHocCandidates = activeCandidates
+      .filter((c) => !c.id)
+      .map((c) => {
+        const cName = c.name || "";
+        const cParts = typeof cName === "string" ? cName.split(" ") : [];
+        return {
+          email: c.email,
+          firstName: c.firstName || cParts[0] || "Candidate",
+          lastName: c.lastName || cParts.slice(1).join(" ") || "",
+        };
+      });
+
+    const mutatePayload = {
+      assessmentId,
+      email: firstCandidate.email,
+      firstName: firstCandidate.firstName || nameParts[0] || "Candidate",
+      lastName: firstCandidate.lastName || nameParts.slice(1).join(" ") || "",
+    };
+
+    if (existingCandidateIds.length > 0) {
+      mutatePayload.candidateIds = existingCandidateIds;
+    }
+    if (adHocCandidates.length > 0) {
+      mutatePayload.candidates = adHocCandidates;
+    }
+
     assignAssessment.mutate(
-      {
-        assessmentId,
-        candidateIds: activeCandidates.map((candidate) => candidate.id),
-        email: firstCandidate.email,
-        firstName: firstCandidate.firstName || nameParts[0] || "Candidate",
-        lastName: firstCandidate.lastName || nameParts.slice(1).join(" ") || "",
-        candidates: activeCandidates.map((c) => {
-          const cName = c.name || "";
-          const cParts = typeof cName === "string" ? cName.split(" ") : [];
-          return {
-            candidateId: c.id,
-            email: c.email,
-            firstName: c.firstName || cParts[0] || "Candidate",
-            lastName: c.lastName || cParts.slice(1).join(" ") || "",
-          };
-        }),
-      },
+      mutatePayload,
       {
         onSuccess: () => {
           toast.success("Assessment assigned and invitation sent successfully!");
