@@ -32,6 +32,11 @@ const GAME_CATALOG_MAP = gamesCatalog.reduce((acc, g) => {
     acc[g.code] = g;
     acc[String(g.code).toLowerCase()] = g;
   }
+  if (g.id === "nqueens" || g.slug === "nqueens") {
+    acc["n_queens"] = g;
+    acc["n-queens"] = g;
+    acc["N_QUEENS"] = g;
+  }
   return acc;
 }, {});
 
@@ -254,15 +259,21 @@ export const buildRuntimeSections = (assessment) => {
 
     let catalogInfo = GAME_CATALOG_MAP[resolvedSlug] || GAME_CATALOG_MAP[String(resolvedSlug).toLowerCase()] || {};
 
-    if (!catalogInfo.id) {
-      const gObj = typeof gameItem === "object" ? (gameItem.game || gameItem) : {};
-      const gameTitleStr = String(gObj.title || gObj.name || gameItem?.title || gameItem?.name || "").toLowerCase();
+    const gObj = typeof gameItem === "object" ? (gameItem.game || gameItem) : {};
+    const gameCodeOrSlug = String(gameItem?.code || gameItem?.slug || gObj?.code || gObj?.slug || resolvedSlug || "").toLowerCase();
+    const gameTitleStr = String(gObj.title || gObj.name || gameItem?.title || gameItem?.name || "").toLowerCase();
 
-      if (gameTitleStr.includes("mahjong")) resolvedSlug = "mahjong";
+    if (!catalogInfo.id) {
+      if (gameCodeOrSlug.includes("queen")) resolvedSlug = "nqueens";
+      else if (gameCodeOrSlug.includes("mahjong")) resolvedSlug = "mahjong";
+      else if (gameCodeOrSlug.includes("sudoku")) resolvedSlug = "sudoku";
+      else if (gameCodeOrSlug.includes("tango")) resolvedSlug = "tango";
+      else if (gameCodeOrSlug.includes("zip") || gameCodeOrSlug.includes("path")) resolvedSlug = "zip";
+      else if (gameTitleStr.includes("queen")) resolvedSlug = "nqueens";
+      else if (gameTitleStr.includes("mahjong")) resolvedSlug = "mahjong";
       else if (gameTitleStr.includes("sudoku")) resolvedSlug = "sudoku";
       else if (gameTitleStr.includes("tango")) resolvedSlug = "tango";
       else if (gameTitleStr.includes("zip") || gameTitleStr.includes("path")) resolvedSlug = "zip";
-      else if (gameTitleStr.includes("queen")) resolvedSlug = "nqueens";
       else if (gameTitleStr.includes("pattern") || gameTitleStr.includes("memory")) resolvedSlug = "pattern_memory";
       else {
         const fallbackSlugs = ["mahjong", "sudoku", "zip", "tango", "nqueens"];
@@ -271,7 +282,9 @@ export const buildRuntimeSections = (assessment) => {
       catalogInfo = GAME_CATALOG_MAP[resolvedSlug] || GAME_CATALOG_MAP[String(resolvedSlug).toLowerCase()] || gamesCatalog[0];
     }
 
-    const title = (typeof gameItem === "object" && (gameItem?.title || gameItem?.game?.title || gameItem?.game?.name)) || catalogInfo.title || `Game ${index + 1}: ${catalogInfo.title || "Challenge"}`;
+    const rawTitle = (typeof gameItem === "object" && (gameItem?.title || gameItem?.game?.title || gameItem?.game?.name)) || "";
+    const isMisnamedQueens = (gameCodeOrSlug.includes("queen") || String(resolvedSlug).includes("queen")) && rawTitle.toLowerCase().includes("mahjong");
+    const title = (!isMisnamedQueens && rawTitle) || catalogInfo.title || `Game ${index + 1}: ${catalogInfo.title || "Challenge"}`;
 
     const itemConfig = typeof gameItem === "object" ? (gameItem.config || {}) : {};
     const apiDifficulty = typeof gameItem === "object" ? (gameItem.difficulty || gameItem.game?.difficulty || itemConfig.difficulty) : null;

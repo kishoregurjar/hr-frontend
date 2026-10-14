@@ -138,7 +138,12 @@ axiosClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error?.config;
     const status = error?.response?.status;
-    const responseData = error?.response?.data;
+    const validationDetails =
+      Array.isArray(responseData?.details) && responseData.details.length > 0
+        ? responseData.details
+        : Array.isArray(responseData?.error?.details) && responseData.error.details.length > 0
+        ? responseData.error.details
+        : null;
 
     let message =
       typeof responseData?.message === "string"
@@ -151,6 +156,20 @@ axiosClient.interceptors.response.use(
             ? "No account found with this email. Please check your credentials or register first."
             : error?.message) ||
           "An error occurred while connecting to the server.";
+
+    if (
+      validationDetails &&
+      (message === "Request validation failed." ||
+        message === "Validation Error" ||
+        message === "Validation error" ||
+        message === "Request failed")
+    ) {
+      const firstDetail = validationDetails[0];
+      const detailMsg = typeof firstDetail === "string" ? firstDetail : firstDetail?.message;
+      if (detailMsg) {
+        message = detailMsg;
+      }
+    }
 
     if (status === 404 && originalRequest?.url?.includes("/auth/login")) {
       message = "No account found with this email. Please register first or check your email.";
@@ -316,6 +335,8 @@ axiosClient.interceptors.response.use(
 
     const finalErr = new Error(message);
     finalErr.status = status;
+    finalErr.code = responseData?.code || responseData?.error?.code;
+    finalErr.details = validationDetails;
     finalErr.response = error?.response;
     return Promise.reject(finalErr);
   }
