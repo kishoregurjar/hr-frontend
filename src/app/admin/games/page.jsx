@@ -318,16 +318,14 @@ export default function AdminGamesPage() {
           if ((g.id && g.id === gameId) || (g.code && g.code === gameId)) {
             return {
               ...g,
-              isActive: isGlobal ? currentIsActive : g.isActive,
+              isActive: g.isActive,
               isCompanyActive: currentIsActive,
-              status: isGlobal ? (currentIsActive ? "ACTIVE" : "INACTIVE") : g.status,
               companyStatus: currentIsActive ? "Active" : "Inactive",
             };
           }
           return g;
         })
       );
-      fetchGames();
     } finally {
       setTogglingId(null);
     }
