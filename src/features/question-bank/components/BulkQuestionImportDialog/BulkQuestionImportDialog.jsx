@@ -322,8 +322,9 @@ const BulkQuestionImportDialog = () => {
       ],
     }));
 
-    const CHUNK_SIZE = 4;
     const totalQuestions = payload.length;
+    // Smart Dynamic Batching: <= 25 questions import in 1 call, otherwise smooth chunks of 20
+    const CHUNK_SIZE = totalQuestions <= 25 ? totalQuestions : 20;
     const totalChunks = Math.ceil(totalQuestions / CHUNK_SIZE);
 
     setIsImporting(true);
