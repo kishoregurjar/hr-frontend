@@ -67,6 +67,17 @@ export const AuthProvider = ({ children }) => {
             currentUser?.isSuperAdmin === true;
 
           if (currentUser && !isSuperAdmin) {
+            const userCompanies = session?.companies || currentUser?.companies || [];
+            if (userCompanies.length > 0 && userCompanies.every((c) => c.status === "SUSPENDED")) {
+              clearAllAuthStorage();
+              setToken(null);
+              setUser(null);
+              if (typeof window !== "undefined") {
+                window.location.href = "/login?suspended=true";
+              }
+              return;
+            }
+
             try {
               let compName = currentUser.companyName || currentUser.company;
               let compId = currentUser.companyId;
@@ -131,7 +142,12 @@ export const AuthProvider = ({ children }) => {
           setUser(null);
         }
       } catch (err) {
-        if (err?.response?.status === 401) {
+        if (
+          err?.response?.status === 401 ||
+          err?.response?.status === 403 ||
+          err?.code === "COMPANY_SUSPENDED" ||
+          err?.message?.includes("suspended")
+        ) {
           clearAllAuthStorage();
           setToken(null);
           setUser(null);

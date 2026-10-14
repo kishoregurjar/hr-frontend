@@ -35,7 +35,6 @@ const LoginForm = () => {
 
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errorType, setErrorType] = useState(null); // 'INVALID_CREDENTIALS' | 'ACCOUNT_SUSPENDED' | 'COMPANY_SUSPENDED' | 'PENDING_ACTIVATION' | 'GENERAL'
   const [errorMessage, setErrorMessage] = useState("");
@@ -44,7 +43,6 @@ const LoginForm = () => {
   useEffect(() => {
     setEmail(initialEmail || "");
     setPassword("");
-    setRememberMe(false);
 
     // Force clear any delayed browser autofill when arriving without an explicit email param
     if (!initialEmail) {
@@ -275,18 +273,8 @@ const LoginForm = () => {
         </div>
       </div>
 
-      {/* Options Row: Remember Me & Forgot Password */}
-      <div className="flex items-center justify-between text-xs pt-1">
-        <label className="flex items-center gap-2 text-slate-600 font-medium cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={rememberMe}
-            onChange={(e) => setRememberMe(e.target.checked)}
-            className="h-4 w-4 rounded-md border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer accent-blue-600"
-          />
-          <span>Remember me</span>
-        </label>
-
+      {/* Options Row: Forgot Password */}
+      <div className="flex items-center justify-end text-xs pt-1">
         <ForgotPasswordDialog initialEmail={email} />
       </div>
 
