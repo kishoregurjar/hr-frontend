@@ -138,6 +138,7 @@ axiosClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error?.config;
     const status = error?.response?.status;
+    const responseData = error?.response?.data;
     const validationDetails =
       Array.isArray(responseData?.details) && responseData.details.length > 0
         ? responseData.details
@@ -221,7 +222,12 @@ axiosClient.interceptors.response.use(
       status === 403 &&
       (responseData?.error?.code === "COMPANY_SUSPENDED" ||
        responseData?.code === "COMPANY_SUSPENDED" ||
-       (typeof message === "string" && message.toLowerCase().includes("company account has been suspended")));
+       (typeof message === "string" && (
+         message.toLowerCase().includes("company has been suspended") ||
+         message.toLowerCase().includes("company account has been suspended") ||
+         message.toLowerCase().includes("company is currently suspended") ||
+         message.toLowerCase().includes("company suspended")
+       )));
 
     if (isCompanySuspended) {
       if (typeof window !== "undefined") {
@@ -230,6 +236,11 @@ axiosClient.interceptors.response.use(
         localStorage.removeItem("accessToken");
         localStorage.removeItem("jwt");
         localStorage.removeItem("hirequest_refresh_token");
+        localStorage.removeItem("companyId");
+        localStorage.removeItem("active_company_id");
+        localStorage.removeItem("companyName");
+        localStorage.removeItem("companyLogo");
+        localStorage.removeItem(AUTH_STORAGE_KEYS.USER);
         window.location.href = "/login?suspended=true";
       }
       return Promise.reject(new Error("Your company account has been suspended. Please contact the administrator."));
