@@ -54,10 +54,9 @@ export function SocketProvider({ children }) {
 
     socketInstance.on("GAME_STATUS_UPDATED", (data) => {
       if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("GAME_STATUS_UPDATED"));
-        window.dispatchEvent(new Event("gameStatusChanged"));
+        window.dispatchEvent(new CustomEvent("GAME_STATUS_UPDATED", { detail: data }));
       }
-      queryClient.invalidateQueries({ queryKey: ["games"], refetchType: "all" });
+      queryClient.invalidateQueries({ queryKey: ["games"] });
     });
 
     socketInstance.on("ATTEMPT_STARTED", (data) => {

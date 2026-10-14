@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   Gamepad2,
   Sliders,
@@ -28,7 +28,6 @@ import {
   bulkToggleCompanyGameStatus,
   getAdminCompanies,
 } from "@/lib/api/admin";
-import useSocketStore from "@/store/useSocketStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,7 +40,6 @@ import {
 } from "@/components/ui/dialog";
 
 export default function AdminGamesPage() {
-  const { socket } = useSocketStore();
   const [games, setGames] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState("GLOBAL");
@@ -69,7 +67,11 @@ export default function AdminGamesPage() {
     fetchCompanies();
   }, []);
 
-  const fetchGames = async (showToast = false) => {
+  const isFetchingRef = useRef(false);
+
+  const fetchGames = useCallback(async (showToast = false, force = false) => {
+    if (isFetchingRef.current && !force) return;
+    isFetchingRef.current = true;
     try {
       if (showToast) setRefreshing(true);
       let list = [];
@@ -89,28 +91,28 @@ export default function AdminGamesPage() {
       console.error("Failed to load games:", err);
       toast.error("Failed to load games catalog");
     } finally {
+      isFetchingRef.current = false;
       setLoading(false);
       setRefreshing(false);
     }
-  };
-
-  useEffect(() => {
-    setLoading(true);
-    fetchGames();
   }, [selectedCompanyId, isMultiMode, selectedCompanyIds]);
 
   useEffect(() => {
+    setLoading(true);
+    fetchGames(false, true);
+  }, [fetchGames]);
+
+  useEffect(() => {
+    let timer = null;
     const handleStatusChange = () => {
-      fetchGames();
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        fetchGames();
+      }, 300);
     };
 
     if (typeof window !== "undefined") {
-      window.addEventListener("gameStatusChanged", handleStatusChange);
       window.addEventListener("GAME_STATUS_UPDATED", handleStatusChange);
-    }
-
-    if (socket) {
-      socket.on("GAME_STATUS_UPDATED", handleStatusChange);
     }
 
     let bc;
@@ -118,22 +120,19 @@ export default function AdminGamesPage() {
       bc = new BroadcastChannel("hirequest_realtime");
       bc.onmessage = (event) => {
         if (event.data?.type === "GAME_STATUS_CHANGED" || event.data?.type === "GAME_STATUS_UPDATED") {
-          fetchGames();
+          handleStatusChange();
         }
       };
     } catch {}
 
     return () => {
+      if (timer) clearTimeout(timer);
       if (typeof window !== "undefined") {
-        window.removeEventListener("gameStatusChanged", handleStatusChange);
         window.removeEventListener("GAME_STATUS_UPDATED", handleStatusChange);
-      }
-      if (socket) {
-        socket.off("GAME_STATUS_UPDATED", handleStatusChange);
       }
       if (bc) bc.close();
     };
-  }, [selectedCompanyId, isMultiMode, selectedCompanyIds, socket]);
+  }, [fetchGames]);
 
   const isGameActiveInScope = (game) => {
     if (isMultiMode) {
@@ -229,12 +228,9 @@ export default function AdminGamesPage() {
       );
 
       if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("gameStatusChanged"));
-        window.dispatchEvent(new Event("GAME_STATUS_UPDATED"));
         try {
           const bc = new BroadcastChannel("hirequest_realtime");
           bc.postMessage({ type: "GAME_STATUS_CHANGED" });
-          bc.postMessage({ type: "GAME_STATUS_UPDATED" });
           bc.close();
         } catch {}
       }
@@ -288,7 +284,6 @@ export default function AdminGamesPage() {
       }
 
       if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("gameStatusChanged"));
         try {
           const bc = new BroadcastChannel("hirequest_realtime");
           bc.postMessage({ type: "GAME_STATUS_CHANGED", companyId: selectedCompanyId });
@@ -497,7 +492,7 @@ export default function AdminGamesPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => fetchGames(true)}
+              onClick={() => fetchGames(true, true)}
               disabled={refreshing || loading}
               className="h-9 px-3 gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer"
             >
