@@ -138,7 +138,7 @@ axiosClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error?.config;
     const status = error?.response?.status;
-    const responseData = error?.response?.data;
+    const responseData = error?.response?.data || {};
 
     let message =
       typeof responseData?.message === "string"
