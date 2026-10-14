@@ -434,8 +434,15 @@ export const assignAssessment = async ({ assessmentId, candidateIds, email, firs
     const bulkPayload = {};
     if (validCandidateIds && validCandidateIds.length > 0) {
       bulkPayload.candidateIds = validCandidateIds;
-    }
-    if (formattedCandidates.length > 0) {
+
+      // Only include candidates array if there are ad-hoc candidates not already covered by validCandidateIds
+      const adHocCandidates = formattedCandidates.filter(
+        (c) => !c.candidateId || !validCandidateIds.includes(c.candidateId)
+      );
+      if (adHocCandidates.length > 0) {
+        bulkPayload.candidates = adHocCandidates;
+      }
+    } else if (formattedCandidates.length > 0) {
       bulkPayload.candidates = formattedCandidates;
     }
 
