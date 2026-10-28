@@ -11,5 +11,7 @@ export const PAGE_TITLES = {
   [ROUTES.QUESTION_BANK]: "Question Bank",
   "/questions": "Question Bank",
   "/company": "Company & Team",
+  [ROUTES.SUPPORT]: "Support",
+  "/support": "Support",
   [ROUTES.SETTINGS]: "Settings",
 };

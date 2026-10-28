@@ -142,7 +142,7 @@ const DashboardHeader = () => {
               <span className="font-black text-xs sm:text-sm text-slate-900 tracking-tight truncate max-w-[150px] sm:max-w-[180px]">
                 {companyName || "Workspace"}
               </span>
-              <Badge className="bg-blue-100 text-blue-900 border-blue-300 text-[9px] font-extrabold px-1.5 py-0 uppercase tracking-wider shrink-0 shadow-2xs">
+              <Badge className="bg-indigo-100 text-indigo-900 border-indigo-200 text-[9px] font-extrabold px-1.5 py-0 uppercase tracking-wider shrink-0 shadow-2xs">
                 {userRole}
               </Badge>
             </div>

@@ -40,7 +40,7 @@ const QuestionTableView = ({
                   if (el) el.indeterminate = isIndeterminate;
                 }}
                 onChange={onSelectAll}
-                className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer transition"
+                className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer transition accent-indigo-600"
                 title="Select all on this page"
               />
             </th>
@@ -69,7 +69,7 @@ const QuestionTableView = ({
                 key={question.id || index}
                 className={`transition-colors group ${
                   isSelected
-                    ? "bg-blue-50/60 hover:bg-blue-50/80"
+                    ? "bg-indigo-50/60 hover:bg-indigo-50/80"
                     : "hover:bg-slate-50/80"
                 }`}
               >
@@ -79,7 +79,7 @@ const QuestionTableView = ({
                     type="checkbox"
                     checked={isSelected}
                     onChange={() => onToggleSelect?.(question.id)}
-                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer transition"
+                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer transition accent-indigo-600"
                   />
                 </td>
 
@@ -91,7 +91,7 @@ const QuestionTableView = ({
                 {/* Question Title & Options count */}
                 <td className="py-3.5 px-4">
                   <div className="space-y-1">
-                    <p className="font-extrabold text-slate-900 text-sm leading-snug group-hover:text-blue-600 transition-colors">
+                    <p className="font-extrabold text-slate-900 text-sm leading-snug group-hover:text-indigo-600 transition-colors">
                       {question.question}
                     </p>
                     <div className="flex items-center gap-3 text-[11px] text-slate-400">
@@ -104,8 +104,8 @@ const QuestionTableView = ({
 
                 {/* Category */}
                 <td className="py-3.5 px-4">
-                  <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10.5px] font-bold gap-1 px-2.5 py-0.5 whitespace-nowrap">
-                    <Tag className="h-2.5 w-2.5 text-blue-600" />
+                  <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 text-[10.5px] font-bold gap-1 px-2.5 py-0.5 whitespace-nowrap">
+                    <Tag className="h-2.5 w-2.5 text-indigo-600" />
                     {question.category || "General"}
                   </Badge>
                 </td>

@@ -25,7 +25,7 @@ const GameStats = ({ games = [] }) => {
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
             Total Cognitive Games
           </span>
-          <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+          <div className="h-9 w-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
             <Gamepad2 className="h-4 w-4" />
           </div>
         </div>
@@ -33,7 +33,7 @@ const GameStats = ({ games = [] }) => {
           <p className="text-3xl font-black text-slate-900 tracking-tight">
             {total}
           </p>
-          <p className="text-xs text-blue-600 font-semibold flex items-center gap-1 mt-1">
+          <p className="text-xs text-indigo-600 font-semibold flex items-center gap-1 mt-1">
             <TrendingUp className="h-3.5 w-3.5" />
             Full assessment engine ready
           </p>

@@ -329,9 +329,9 @@ const CandidateTable = ({
                       <Button
                         size="sm"
                         onClick={() => onAssignAssessment && onAssignAssessment(candidate)}
-                        className="h-8 px-3 text-xs font-bold rounded-xl gap-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 shadow-2xs cursor-pointer"
+                        className="h-8 px-3 text-xs font-bold rounded-xl gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-2xs cursor-pointer"
                       >
-                        <Send className="h-3 w-3 text-blue-600" />
+                        <Send className="h-3 w-3 text-indigo-600" />
                         Invite
                       </Button>
 

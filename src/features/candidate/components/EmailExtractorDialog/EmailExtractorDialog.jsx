@@ -161,9 +161,9 @@ const EmailExtractorDialog = ({ triggerText = "Extract from Emails" }) => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
-          className="relative gap-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold text-xs h-10 px-4 rounded-xl shadow-xs transition-all hover:scale-[1.01] cursor-pointer"
+          className="relative gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 font-semibold text-xs h-9 px-4 rounded-xl shadow-2xs transition-all cursor-pointer"
         >
-          <Mail className="h-4 w-4" />
+          <Mail className="h-4 w-4 text-indigo-600" />
           {triggerText}
         </Button>
       </DialogTrigger>

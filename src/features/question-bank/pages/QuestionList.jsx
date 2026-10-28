@@ -146,21 +146,18 @@ const QuestionList = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
-      {/* ── 1. TOP ACTION TOOLBAR ── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-slate-800">Question Repository</span>
-          <span className="text-slate-300">•</span>
-          <span className="text-xs text-slate-500 font-medium">
-            {totalQuestions || allQuestions.length} {(totalQuestions || allQuestions.length) === 1 ? "question" : "questions"} in bank
-          </span>
+      {/* ── 1. TOP ACTIONS ROW (Smart Split Layout) ── */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+        {/* Left: Creation & Management Actions */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+          <AddQuestionDialog />
+          <BulkQuestionImportDialog />
+          <ManageCategoriesDialog />
         </div>
 
-        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
-          <ManageCategoriesDialog />
-          <BulkQuestionImportDialog />
-          <AddQuestionDialog />
-          {(totalQuestions > 0 || allQuestions.length > 0) && (
+        {/* Right: Destructive Action Isolated */}
+        {(totalQuestions > 0 || allQuestions.length > 0) && (
+          <div className="flex items-center self-end sm:self-auto">
             <Button
               type="button"
               variant="outline"
@@ -172,8 +169,8 @@ const QuestionList = () => {
               <Trash2 className="h-3.5 w-3.5" />
               <span>Delete All</span>
             </Button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* ── 2. KPI Stat Cards ── */}
@@ -189,7 +186,7 @@ const QuestionList = () => {
             placeholder="Search questions by title, code snippet, or topic..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-10 w-full pl-9 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:bg-white transition"
+            className="h-10 w-full pl-9 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:bg-white transition"
           />
         </div>
 
@@ -207,7 +204,7 @@ const QuestionList = () => {
               onClick={() => setViewMode("table")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 viewMode === "table"
-                  ? "bg-white text-blue-600 shadow-xs"
+                  ? "bg-white text-indigo-600 shadow-xs"
                   : "text-slate-500 hover:text-slate-800"
               }`}
               title="Table Row View"
@@ -221,7 +218,7 @@ const QuestionList = () => {
               onClick={() => setViewMode("grid")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 viewMode === "grid"
-                  ? "bg-white text-blue-600 shadow-xs"
+                  ? "bg-white text-indigo-600 shadow-xs"
                   : "text-slate-500 hover:text-slate-800"
               }`}
               title="Card Grid View"
@@ -235,9 +232,9 @@ const QuestionList = () => {
 
       {/* ── 3.5 Bulk Action Bar (When items selected) ── */}
       {selectedIds.length > 0 && (
-        <div className="rounded-2xl border border-blue-200 bg-blue-50/80 p-3 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="rounded-2xl border border-indigo-200 bg-indigo-50/80 p-3 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
           <div className="flex items-center gap-2.5 text-xs">
-            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-600 text-white font-bold text-[11px] shadow-xs">
+            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold text-[11px] shadow-xs">
               {selectedIds.length}
             </span>
             <span className="font-extrabold text-slate-800">
@@ -247,7 +244,7 @@ const QuestionList = () => {
             <button
               type="button"
               onClick={() => setSelectedIds([])}
-              className="text-blue-600 hover:text-blue-800 font-bold hover:underline cursor-pointer"
+              className="text-indigo-600 hover:text-indigo-800 font-bold hover:underline cursor-pointer"
             >
               Deselect all
             </button>
@@ -281,7 +278,7 @@ const QuestionList = () => {
         </div>
       ) : questions.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-2xs space-y-3">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 shadow-xs">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-xs">
             <HelpCircle className="h-7 w-7" />
           </div>
           <div>

@@ -26,15 +26,15 @@ const GameCard = ({ game, onPreview, onConfigure }) => {
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xs hover:shadow-lg hover:border-blue-300/80 transition-all flex flex-col justify-between space-y-5 font-sans group">
+    <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xs hover:shadow-lg hover:border-indigo-300/80 transition-all flex flex-col justify-between space-y-5 font-sans group">
       {/* ── Top Header ── */}
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="font-extrabold text-base text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">
+            <h3 className="font-extrabold text-base text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors">
               {game.title}
             </h3>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 mt-1 inline-block">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 mt-1 inline-block">
               {game.category}
             </span>
           </div>
@@ -98,9 +98,9 @@ const GameCard = ({ game, onPreview, onConfigure }) => {
           size="sm"
           disabled={game.status === "Inactive" || game.isActive === false}
           onClick={() => onPreview?.(game)}
-          className="flex-1 h-9 rounded-xl border-slate-200 hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-bold gap-1.5 shadow-2xs cursor-pointer transition disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 h-9 rounded-xl border-slate-200 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 text-xs font-bold gap-1.5 shadow-2xs cursor-pointer transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Play className="h-3.5 w-3.5 text-blue-600 fill-blue-600" />
+          <Play className="h-3.5 w-3.5 text-indigo-600 fill-indigo-600" />
           Test Preview
         </Button>
 
@@ -109,7 +109,7 @@ const GameCard = ({ game, onPreview, onConfigure }) => {
           size="sm"
           disabled={game.status === "Inactive" || game.isActive === false}
           onClick={() => onConfigure?.(game)}
-          className="flex-1 h-9 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold gap-1.5 shadow-sm shadow-blue-500/25 cursor-pointer transition disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 h-9 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold gap-1.5 shadow-sm shadow-indigo-500/20 cursor-pointer transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Settings2 className="h-3.5 w-3.5" />
           Configure

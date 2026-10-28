@@ -39,7 +39,7 @@ const QuestionStats = ({ questions = [] }) => {
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
             Total Questions
           </span>
-          <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+          <div className="h-9 w-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
             <HelpCircle className="h-4 w-4" />
           </div>
         </div>

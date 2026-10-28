@@ -464,43 +464,7 @@ export default function ResultsAndRankingPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
-      {/* ── 1. TOP ACTION TOOLBAR ── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Badge className="bg-amber-50 text-amber-700 border-amber-300 text-[10.5px] font-extrabold gap-1">
-            <Trophy className="h-3 w-3 text-amber-600" />
-            Live Leaderboard
-          </Badge>
-          <span className="text-slate-300">•</span>
-          <span className="text-xs text-slate-500 font-medium">
-            {filteredResults.length} scored {filteredResults.length === 1 ? "candidate" : "candidates"}
-          </span>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2.5">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing || isLoading}
-            className="h-9 px-3 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold gap-1.5 shadow-2xs cursor-pointer"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing || isLoading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
-
-          <Button
-            size="sm"
-            onClick={handleExportCSV}
-            className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20 cursor-pointer"
-          >
-            <Download className="h-3.5 w-3.5" />
-            Download Report
-          </Button>
-        </div>
-      </div>
-
-      {/* ── 2. EXACT DESIGN SYSTEM KPI STAT CARDS ── */}
+      {/* ── 1. EXACT DESIGN SYSTEM KPI STAT CARDS ── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {/* Card 1: Total Completed Tests */}
         <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs flex items-center justify-between transition hover:shadow-md">
@@ -512,7 +476,7 @@ export default function ResultsAndRankingPage() {
               {results.length}
             </h2>
           </div>
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100/90 text-slate-700">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600">
             <Award className="h-5 w-5" />
           </div>
         </div>
@@ -531,7 +495,7 @@ export default function ResultsAndRankingPage() {
                 : 0}%
             </h2>
           </div>
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100/90 text-slate-700">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600">
             <TrendingUp className="h-5 w-5" />
           </div>
         </div>
@@ -546,20 +510,20 @@ export default function ResultsAndRankingPage() {
               {results.filter((r) => (r.percentage || 0) >= 85).length}
             </h2>
           </div>
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100/90 text-slate-700">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 border border-amber-100 text-amber-600">
             <Sparkles className="h-5 w-5" />
           </div>
         </div>
       </div>
 
-      {/* ── 3. PODIUM HIGHLIGHT FOR TOP CANDIDATES (Dynamic Per-Assessment) ── */}
+      {/* ── 2. PODIUM HIGHLIGHT FOR TOP CANDIDATES (Dynamic Per-Assessment) ── */}
       {podiumCandidates.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {podiumCandidates.map((candidate) => (
             <div
               key={candidate.id}
               onClick={() => setSelectedCandidate(candidate)}
-              className="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white via-white to-slate-50 p-5 shadow-2xs hover:shadow-md hover:border-blue-300 transition-all cursor-pointer space-y-3 relative overflow-hidden group"
+              className="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white via-white to-slate-50 p-5 shadow-2xs hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer space-y-3 relative overflow-hidden group"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -589,7 +553,7 @@ export default function ResultsAndRankingPage() {
               </div>
 
               <div>
-                <h4 className="font-extrabold text-base text-slate-900 group-hover:text-blue-600 transition-colors">
+                <h4 className="font-extrabold text-base text-slate-900 group-hover:text-indigo-600 transition-colors">
                   {candidate.candidateName}
                 </h4>
                 <p className="text-xs text-slate-500 mt-0.5 truncate">{candidate.email}</p>
@@ -597,7 +561,7 @@ export default function ResultsAndRankingPage() {
 
               <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-600">
                 <span className="truncate max-w-[200px]">{candidate.assessmentTitle}</span>
-                <span className="text-blue-600 font-bold text-[11px] group-hover:underline flex items-center gap-1 shrink-0">
+                <span className="text-indigo-600 font-bold text-[11px] group-hover:underline flex items-center gap-1 shrink-0">
                   View Scorecard ➔
                 </span>
               </div>
@@ -606,8 +570,9 @@ export default function ResultsAndRankingPage() {
         </div>
       )}
 
-      {/* ── 4. FILTER & SEARCH TOOLBAR ── */}
-      <div className="rounded-2xl border bg-card p-3 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+      {/* ── 3. FILTER & SEARCH TOOLBAR ── */}
+      <div className="rounded-2xl border bg-card p-3 shadow-xs flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3">
+        {/* Search */}
         <div className="relative flex-1 min-w-[240px]">
           <Search className="h-4 w-4 absolute left-3.5 top-3 text-slate-400" />
           <input
@@ -615,11 +580,12 @@ export default function ResultsAndRankingPage() {
             placeholder="Search candidate by name, email, or assessment..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-10 pl-9 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition shadow-2xs"
+            className="w-full h-10 pl-9 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition shadow-2xs"
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2.5 w-full md:w-auto">
+        {/* Filters & Actions */}
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* Assessment Filter */}
           <select
             value={selectedAssessment}
@@ -627,7 +593,7 @@ export default function ResultsAndRankingPage() {
               setSelectedAssessment(e.target.value);
               setSelectedCandidateIds([]);
             }}
-            className="w-full sm:w-auto h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer max-w-full sm:max-w-[200px] truncate"
+            className="h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer max-w-[180px] truncate shadow-2xs"
           >
             <option value="ALL">All Assessments</option>
             {availableAssessments.map((title) => (
@@ -641,7 +607,7 @@ export default function ResultsAndRankingPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full sm:w-auto h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer"
+            className="h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer shadow-2xs"
           >
             <option value="ALL">All Statuses</option>
             <option value="QUALIFIED">Qualified</option>
@@ -653,7 +619,7 @@ export default function ResultsAndRankingPage() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="w-full sm:w-auto h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer"
+            className="h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer shadow-2xs"
           >
             <option value="rank">Highest Score First</option>
             <option value="speed">Fastest Completion</option>
@@ -661,12 +627,12 @@ export default function ResultsAndRankingPage() {
           </select>
 
           {/* Interview Action Button - Only enabled when a specific assessment is selected */}
-          {selectedAssessment !== "ALL" ? (
+          {selectedAssessment !== "ALL" && (
             selectedCandidateIds.length > 0 ? (
               <Button
                 size="sm"
                 onClick={openInterviewModalForSelected}
-                className="h-10 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer transition animate-in fade-in"
+                className="h-10 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-indigo-500/20 cursor-pointer transition animate-in fade-in"
               >
                 <Calendar className="h-3.5 w-3.5" />
                 Invite Selected ({selectedCandidateIds.length})
@@ -692,12 +658,33 @@ export default function ResultsAndRankingPage() {
                 </Button>
               )
             )
-          ) : (
-            <div className="hidden lg:flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 bg-slate-100/80 border border-slate-200/80 px-3 py-2 rounded-xl">
-              <Filter className="h-3 w-3 text-slate-400" />
-              Select an assessment to enable checkboxes & interview invites
-            </div>
           )}
+
+          {/* Divider */}
+          <div className="h-6 w-[1px] bg-slate-200 mx-0.5 hidden sm:block" />
+
+          {/* Refresh Action */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing || isLoading}
+            className="h-10 px-3 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold gap-1.5 shadow-2xs cursor-pointer"
+            title="Refresh Leaderboard"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing || isLoading ? "animate-spin text-indigo-600" : ""}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </Button>
+
+          {/* Download CTA */}
+          <Button
+            size="sm"
+            onClick={handleExportCSV}
+            className="h-10 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-indigo-500/20 cursor-pointer"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Download Report
+          </Button>
         </div>
       </div>
 
@@ -717,7 +704,7 @@ export default function ResultsAndRankingPage() {
                       }
                       onChange={handleSelectAll}
                       aria-label="Select all candidates on this page"
-                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
+                      className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
                     />
                   </th>
                 )}
@@ -734,8 +721,8 @@ export default function ResultsAndRankingPage() {
                 <tr>
                   <td colSpan={selectedAssessment !== "ALL" ? 7 : 6} className="py-16 text-center">
                     <div className="flex flex-col items-center justify-center max-w-sm mx-auto space-y-3">
-                      <div className="h-14 w-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-2xs">
-                        <Trophy className="h-7 w-7 text-blue-500" />
+                      <div className="h-14 w-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-2xs">
+                        <Trophy className="h-7 w-7 text-indigo-600" />
                       </div>
                       <h3 className="font-extrabold text-base text-slate-900">
                         No Assessment Results Yet
@@ -751,7 +738,7 @@ export default function ResultsAndRankingPage() {
                   <tr
                     key={item.id}
                     className={`hover:bg-slate-50/70 transition group ${
-                      selectedCandidateIds.includes(item.id) ? "bg-blue-50/40" : ""
+                      selectedCandidateIds.includes(item.id) ? "bg-indigo-50/40" : ""
                     }`}
                   >
                     {/* Select Checkbox - only shown when specific assessment is selected */}
@@ -762,7 +749,7 @@ export default function ResultsAndRankingPage() {
                           checked={selectedCandidateIds.includes(item.id)}
                           onChange={() => handleToggleSelect(item.id)}
                           aria-label={`Select ${item.candidateName}`}
-                          className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
+                          className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
                         />
                       </td>
                     )}
@@ -882,7 +869,7 @@ export default function ResultsAndRankingPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => setSelectedCandidate(item)}
-                          className="h-8 px-3 rounded-xl border-slate-200 hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-bold gap-1 shadow-2xs cursor-pointer transition"
+                          className="h-8 px-3 rounded-xl border-slate-200 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 text-xs font-bold gap-1 shadow-2xs cursor-pointer transition"
                         >
                           <Eye className="h-3.5 w-3.5" />
                           Scorecard
@@ -1396,7 +1383,7 @@ export default function ResultsAndRankingPage() {
                   !interviewForm.scheduledAt
                 }
                 onClick={handleDispatchInterviewInvites}
-                className="rounded-xl px-5 text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 text-white gap-2 shadow-md shadow-blue-500/20 cursor-pointer"
+                className="rounded-xl px-5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white gap-2 shadow-sm shadow-indigo-500/20 cursor-pointer"
               >
                 {isSendingInvites ? (
                   <>

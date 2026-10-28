@@ -218,7 +218,7 @@ const RecentResultsTable = () => {
                       onClick={() => setCurrentPage(pageNum)}
                       className={`h-8 w-8 p-0 text-xs font-bold transition-all cursor-pointer ${
                         isActive
-                          ? "bg-blue-600 text-white hover:bg-blue-700 shadow-xs"
+                          ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs"
                           : "text-slate-700 hover:bg-slate-100"
                       }`}
                     >
