@@ -34,7 +34,7 @@ const DashboardMetricCards = () => {
 
         <div>
           <div className="flex items-baseline gap-2.5">
-            <p className="text-3xl font-black text-slate-900 tracking-tight">
+            <p className="text-3xl font-bold text-slate-700 tracking-tight">
               {isLoading ? "—" : totalCandidates}
             </p>
             {parsedFromEmail > 0 && (
@@ -63,7 +63,7 @@ const DashboardMetricCards = () => {
 
         <div>
           <div className="flex items-baseline gap-2.5">
-            <p className="text-3xl font-black text-slate-900 tracking-tight">
+            <p className="text-3xl font-bold text-slate-700 tracking-tight">
               {isLoading ? "—" : activeAssessments}
             </p>
             {totalAssessments > 0 && (
@@ -90,7 +90,7 @@ const DashboardMetricCards = () => {
         </div>
 
         <div>
-          <p className="text-3xl font-black text-slate-900 tracking-tight">
+          <p className="text-3xl font-bold text-slate-700 tracking-tight">
             {isLoading ? "—" : invitationsTotal}
           </p>
           <p className="text-xs text-muted-foreground font-medium mt-1">
@@ -112,7 +112,7 @@ const DashboardMetricCards = () => {
 
         <div>
           <div className="flex items-baseline gap-2.5">
-            <p className="text-3xl font-black text-slate-900 tracking-tight">
+            <p className="text-3xl font-bold text-slate-700 tracking-tight">
               {isLoading ? "—" : attemptsSubmitted}
             </p>
             {attemptsTotal > 0 && (

@@ -472,7 +472,7 @@ export default function ResultsAndRankingPage() {
             <p className="text-xs font-medium text-muted-foreground">
               Total Candidates
             </p>
-            <h2 className="mt-1.5 text-3xl font-black text-slate-900 tracking-tight">
+            <h2 className="mt-1.5 text-3xl font-bold text-slate-700 tracking-tight">
               {results.length}
             </h2>
           </div>
@@ -487,7 +487,7 @@ export default function ResultsAndRankingPage() {
             <p className="text-xs font-medium text-muted-foreground">
               Average Score
             </p>
-            <h2 className="mt-1.5 text-3xl font-black text-slate-900 tracking-tight">
+            <h2 className="mt-1.5 text-3xl font-bold text-slate-700 tracking-tight">
               {results.length > 0
                 ? Math.round(
                     results.reduce((acc, r) => acc + (r.percentage || 0), 0) / results.length
@@ -506,7 +506,7 @@ export default function ResultsAndRankingPage() {
             <p className="text-xs font-medium text-muted-foreground">
               Top Candidates
             </p>
-            <h2 className="mt-1.5 text-3xl font-black text-slate-900 tracking-tight">
+            <h2 className="mt-1.5 text-3xl font-bold text-slate-700 tracking-tight">
               {results.filter((r) => (r.percentage || 0) >= 85).length}
             </h2>
           </div>

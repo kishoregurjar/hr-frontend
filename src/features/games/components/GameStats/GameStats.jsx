@@ -30,7 +30,7 @@ const GameStats = ({ games = [] }) => {
           </div>
         </div>
         <div>
-          <p className="text-3xl font-black text-slate-900 tracking-tight">
+          <p className="text-3xl font-bold text-slate-700 tracking-tight">
             {total}
           </p>
           <p className="text-xs text-indigo-600 font-semibold flex items-center gap-1 mt-1">
@@ -51,7 +51,7 @@ const GameStats = ({ games = [] }) => {
           </div>
         </div>
         <div>
-          <p className="text-3xl font-black text-slate-900 tracking-tight">
+          <p className="text-3xl font-bold text-slate-700 tracking-tight">
             {active}
           </p>
           <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1 mt-1">
@@ -72,7 +72,7 @@ const GameStats = ({ games = [] }) => {
           </div>
         </div>
         <div>
-          <p className="text-3xl font-black text-slate-900 tracking-tight">
+          <p className="text-3xl font-bold text-slate-700 tracking-tight">
             {uniqueSkillsCount} {uniqueSkillsCount === 1 ? "Trait" : "Traits"}
           </p>
           <p className="text-xs text-amber-700 font-semibold flex items-center gap-1 mt-1">

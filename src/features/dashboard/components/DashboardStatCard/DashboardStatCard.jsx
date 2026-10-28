@@ -19,7 +19,7 @@ const DashboardStatCard = ({ title, value, icon: Icon }) => {
       </CardHeader>
 
       <CardContent>
-        <div className="text-2xl font-bold">
+        <div className="text-2xl font-bold text-slate-700 tracking-tight">
           {value}
         </div>
       </CardContent>

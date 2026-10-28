@@ -95,10 +95,10 @@ const CandidateExtractorDrawer = ({
       }}
     >
       <DialogContent 
-        className="max-w-4xl max-h-[92vh] overflow-y-auto p-0 rounded-2xl border border-slate-200 bg-white shadow-2xl"
+        className="max-w-4xl h-[90vh] max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
       >
-        {/* ── 1. Top Hero Profile Header ─────────────────────────────── */}
-        <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 text-white rounded-t-2xl relative overflow-hidden">
+        {/* ── 1. Top Hero Profile Header (Fixed) ─────────────────────── */}
+        <div className="shrink-0 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 text-white rounded-t-2xl relative overflow-hidden">
           {/* Subtle Background Glow Accent */}
           <div className="absolute top-0 right-0 -mt-8 -mr-8 h-44 w-44 rounded-full bg-blue-500/10 blur-3xl" />
 
@@ -154,8 +154,9 @@ const CandidateExtractorDrawer = ({
           </div>
         </div>
 
-        {/* ── 2. Center Content: 2-Column Balanced Layout ─────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
+        {/* ── 2. Center Content: 2-Column Balanced Layout (Scrollable) ── */}
+        <div className="flex-1 overflow-y-auto min-h-0 p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column: Contact, Skills & Live Assessment Info (5 Cols) */}
           <div className="lg:col-span-5 space-y-5">
             {/* Contact Details Card */}
@@ -359,9 +360,10 @@ const CandidateExtractorDrawer = ({
             </div>
           </div>
         </div>
+      </div>
 
-        {/* ── 3. Bottom Sticky Action Bar ─────────────────────────────── */}
-        <div className="bg-slate-50/90 border-t border-slate-200 p-4 px-6 flex flex-col sm:flex-row items-center justify-between gap-3 rounded-b-2xl">
+        {/* ── 3. Bottom Action Bar (Fixed at Bottom) ───────────────────── */}
+        <div className="shrink-0 bg-slate-50/95 backdrop-blur-sm border-t border-slate-200 p-4 px-6 flex flex-col sm:flex-row items-center justify-between gap-3 rounded-b-2xl">
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <Button
               variant="outline"

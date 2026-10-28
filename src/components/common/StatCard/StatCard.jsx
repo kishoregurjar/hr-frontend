@@ -27,7 +27,7 @@ const StatCard = ({
               {title}
             </p>
 
-            <h2 className="mt-2 text-3xl font-bold">
+            <h2 className="mt-2 text-3xl font-bold text-slate-700 tracking-tight">
               {value}
             </h2>
           </div>

@@ -1,7 +1,18 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { ClipboardList, Users, Send, CheckCircle2, Loader2, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  ClipboardList,
+  Users,
+  Send,
+  CheckCircle2,
+  Loader2,
+  Sparkles,
+  FileQuestion,
+  PlusCircle,
+  ArrowRight,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -26,6 +37,7 @@ const AssignAssessmentDialog = ({
   onAssigned,
   onSuccess,
 }) => {
+  const router = useRouter();
   const [assessmentId, setAssessmentId] = useState("");
 
   const {
@@ -193,33 +205,84 @@ const AssignAssessmentDialog = ({
             </Badge>
           </div>
 
-          {/* Assessment Dropdown */}
-          <div className="space-y-1.5">
-            <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
-              Select Assessment Module <span className="text-rose-500">*</span>
-            </Label>
+          {/* Assessment Dropdown or Empty State CTA */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                Select Assessment Module <span className="text-rose-500">*</span>
+              </Label>
+              {availableAssessments.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleOpenChange(false);
+                    router.push("/assessments/create");
+                  }}
+                  className="text-[11px] font-bold text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <PlusCircle className="h-3 w-3" />
+                  <span>Build New</span>
+                </button>
+              )}
+            </div>
 
-            <select
-              value={assessmentId}
-              onChange={(e) => setAssessmentId(e.target.value)}
-              disabled={assignAssessment.isPending}
-              className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 shadow-2xs transition cursor-pointer"
-            >
-              {availableAssessments.map((assessment) => {
-                const isPub =
-                  String(assessment?.status || "").toUpperCase() === "PUBLISHED" ||
-                  String(assessment?.status || "").toUpperCase() === "ACTIVE";
-                return (
-                  <option
-                    key={assessment.id}
-                    value={String(assessment.id)}
-                    className="font-medium text-slate-800 py-1"
-                  >
-                    {assessment.title} {assessment.durationMinutes ? `(${assessment.durationMinutes}m)` : ""} {isPub ? "• [Published]" : "• [Draft]"}
-                  </option>
-                );
-              })}
-            </select>
+            {isLoading ? (
+              <div className="flex items-center gap-2 p-3.5 text-xs text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
+                <Loader2 className="h-4 w-4 animate-spin text-blue-600 shrink-0" />
+                <span className="font-medium">Loading configured assessments...</span>
+              </div>
+            ) : availableAssessments.length === 0 ? (
+              <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50/80 via-indigo-50/40 to-slate-50/80 p-4 space-y-3.5 shadow-2xs">
+                <div className="flex items-start gap-3">
+                  <div className="h-9 w-9 rounded-xl bg-blue-100/90 border border-blue-200/80 text-blue-600 flex items-center justify-center shrink-0 shadow-2xs">
+                    <FileQuestion className="h-4.5 w-4.5 text-blue-600" />
+                  </div>
+                  <div className="space-y-0.5 min-w-0">
+                    <h4 className="text-xs font-extrabold text-slate-900">
+                      No Assessments Created Yet
+                    </h4>
+                    <p className="text-[11.5px] text-slate-600 leading-relaxed font-medium">
+                      You must create at least one assessment test before you can dispatch invites to candidates.
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={() => {
+                    handleOpenChange(false);
+                    router.push("/assessments/create");
+                  }}
+                  className="w-full h-9 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
+                >
+                  <PlusCircle className="h-3.5 w-3.5" />
+                  <span>Create Assessment Now</span>
+                  <ArrowRight className="h-3.5 w-3.5 ml-0.5" />
+                </Button>
+              </div>
+            ) : (
+              <select
+                value={assessmentId}
+                onChange={(e) => setAssessmentId(e.target.value)}
+                disabled={assignAssessment.isPending}
+                className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 shadow-2xs transition cursor-pointer"
+              >
+                {availableAssessments.map((assessment) => {
+                  const isPub =
+                    String(assessment?.status || "").toUpperCase() === "PUBLISHED" ||
+                    String(assessment?.status || "").toUpperCase() === "ACTIVE";
+                  return (
+                    <option
+                      key={assessment.id}
+                      value={String(assessment.id)}
+                      className="font-medium text-slate-800 py-1"
+                    >
+                      {assessment.title} {assessment.durationMinutes ? `(${assessment.durationMinutes}m)` : ""} {isPub ? "• [Published]" : "• [Draft]"}
+                    </option>
+                  );
+                })}
+              </select>
+            )}
           </div>
 
           {/* Recipients List Preview */}
@@ -309,9 +372,10 @@ const AssignAssessmentDialog = ({
               disabled={
                 !assessmentId ||
                 candidates.length === 0 ||
+                availableAssessments.length === 0 ||
                 assignAssessment.isPending
               }
-              className="h-9 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-blue-500/25 cursor-pointer"
+              className="h-9 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-blue-500/25 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {assignAssessment.isPending ? (
                 <>
