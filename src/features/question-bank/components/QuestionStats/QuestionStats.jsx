@@ -44,7 +44,7 @@ const QuestionStats = ({ questions = [] }) => {
           </div>
         </div>
         <div>
-          <p className="text-3xl font-black text-slate-900 tracking-tight">
+          <p className="text-3xl font-bold text-slate-700 tracking-tight">
             {total}
           </p>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
@@ -64,7 +64,7 @@ const QuestionStats = ({ questions = [] }) => {
           </div>
         </div>
         <div>
-          <p className="text-3xl font-black text-slate-900 tracking-tight">
+          <p className="text-3xl font-bold text-slate-700 tracking-tight">
             {active}
           </p>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
@@ -84,7 +84,7 @@ const QuestionStats = ({ questions = [] }) => {
           </div>
         </div>
         <div>
-          <p className="text-3xl font-black text-slate-900 tracking-tight">
+          <p className="text-3xl font-bold text-slate-700 tracking-tight">
             {draft}
           </p>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
@@ -104,7 +104,7 @@ const QuestionStats = ({ questions = [] }) => {
           </div>
         </div>
         <div>
-          <p className="text-3xl font-black text-slate-900 tracking-tight">
+          <p className="text-3xl font-bold text-slate-700 tracking-tight">
             {categories}
           </p>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
