@@ -176,18 +176,43 @@ axiosClient.interceptors.response.use(
       message = "No account found with this email. Please register first or check your email.";
     }
 
+    const hasInternalCodeTrace =
+      typeof message === "string" &&
+      (message.includes("Invalid `") ||
+        message.includes("invocation in") ||
+        message.includes("PrismaClient") ||
+        message.includes("FATAL:") ||
+        message.includes("tenant/user") ||
+        message.includes("\x1b") ||
+        message.includes("\u001b") ||
+        message.includes("\\src\\") ||
+        message.includes("/src/"));
+
     if (
       status === 502 ||
       status === 503 ||
       status === 504 ||
+      status === 500 ||
+      hasInternalCodeTrace ||
       error?.code === "ERR_BAD_RESPONSE" ||
       error?.code === "ERR_NETWORK" ||
       (typeof message === "string" &&
         (message.includes("Request failed with status code 502") ||
           message.includes("Request failed with status code 503") ||
-          message.includes("Request failed with status code 504")))
+          message.includes("Request failed with status code 504") ||
+          message.includes("Request failed with status code 500")))
     ) {
-      message = "Server is temporarily updating. Please try again in a few seconds.";
+      if (
+        hasInternalCodeTrace ||
+        status === 503 ||
+        responseData?.code === "DATABASE_CONNECTION_ERROR"
+      ) {
+        message = "Database service is temporarily unavailable. Please try again in a few moments.";
+      } else if (status === 500) {
+        message = "An unexpected server error occurred. Please try again shortly.";
+      } else {
+        message = "Server is temporarily updating. Please try again in a few seconds.";
+      }
     }
 
     // Skip refresh on public auth and candidate test endpoints

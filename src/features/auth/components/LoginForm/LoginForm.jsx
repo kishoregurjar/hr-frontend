@@ -106,28 +106,57 @@ const LoginForm = () => {
         router.push("/dashboard");
       }
     } catch (err) {
-      const status = err?.response?.status;
-      const code = err?.response?.data?.code || "";
+      const status = err?.response?.status || err?.status;
+      const code = err?.response?.data?.code || err?.code || "";
       const rawMsg = err?.response?.data?.message || err?.message || "";
 
+      let resolvedType = "GENERAL";
+      let resolvedMsg = "";
+
+      const hasInternalLeak =
+        typeof rawMsg === "string" &&
+        (rawMsg.includes("Invalid `") ||
+          rawMsg.includes("invocation in") ||
+          rawMsg.includes("PrismaClient") ||
+          rawMsg.includes("FATAL:") ||
+          rawMsg.includes("tenant/user") ||
+          rawMsg.includes("\x1b") ||
+          rawMsg.includes("\u001b") ||
+          rawMsg.includes("\\src\\") ||
+          rawMsg.includes("/src/"));
+
       if (status === 401 || rawMsg.toLowerCase().includes("invalid credentials") || rawMsg.toLowerCase().includes("password")) {
-        setErrorType("INVALID_CREDENTIALS");
-        setErrorMessage("Invalid email address or password. Please try again.");
+        resolvedType = "INVALID_CREDENTIALS";
+        resolvedMsg = "Invalid email address or password. Please try again.";
       } else if (rawMsg.toLowerCase().includes("account suspended") || code === "ACCOUNT_SUSPENDED") {
-        setErrorType("ACCOUNT_SUSPENDED");
-        setErrorMessage("Your user account has been suspended. Please contact your administrator.");
+        resolvedType = "ACCOUNT_SUSPENDED";
+        resolvedMsg = "Your user account has been suspended. Please contact your administrator.";
       } else if (rawMsg.toLowerCase().includes("company suspended") || code === "COMPANY_SUSPENDED") {
-        setErrorType("COMPANY_SUSPENDED");
-        setErrorMessage("Your company account is currently suspended. Please contact Super Admin support.");
+        resolvedType = "COMPANY_SUSPENDED";
+        resolvedMsg = "Your company account is currently suspended. Please contact Super Admin support.";
       } else if (rawMsg.toLowerCase().includes("activation") || rawMsg.toLowerCase().includes("invited") || code === "PENDING_ACTIVATION") {
-        setErrorType("PENDING_ACTIVATION");
-        setErrorMessage("Your account is pending activation. Please check your email for the activation link.");
+        resolvedType = "PENDING_ACTIVATION";
+        resolvedMsg = "Your account is pending activation. Please check your email for the activation link.";
+      } else if (
+        status === 503 ||
+        code === "DATABASE_CONNECTION_ERROR" ||
+        rawMsg.toLowerCase().includes("database service is temporarily unavailable") ||
+        rawMsg.toLowerCase().includes("database") ||
+        hasInternalLeak
+      ) {
+        resolvedType = "GENERAL";
+        resolvedMsg = "Database service is temporarily unavailable. Please try again in a few moments.";
+      } else if (status >= 500) {
+        resolvedType = "GENERAL";
+        resolvedMsg = "An unexpected server error occurred. Please try again shortly.";
       } else {
-        setErrorType("GENERAL");
-        setErrorMessage(rawMsg || "Authentication failed. Please verify your credentials.");
+        resolvedType = "GENERAL";
+        resolvedMsg = rawMsg || "Authentication failed. Please verify your credentials.";
       }
 
-      toast.error(errorMessage || "Login failed");
+      setErrorType(resolvedType);
+      setErrorMessage(resolvedMsg);
+      toast.error(resolvedMsg || "Login failed");
     } finally {
       setIsSubmitting(false);
     }
