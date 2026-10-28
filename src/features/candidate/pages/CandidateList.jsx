@@ -314,52 +314,33 @@ const CandidateList = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
-      {/* ── 1. TOP ACTION TOOLBAR (Streamlined SaaS Layout) ── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-slate-800">Candidate Pipeline</span>
-          <span className="text-slate-300">•</span>
-          <span className="text-xs text-slate-500 font-medium">
-            {filteredCandidates.length} {filteredCandidates.length === 1 ? "candidate" : "candidates"} in directory
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
-          <EmailExtractorDialog triggerText="Extract from Emails" />
-          <AddCandidateDialog />
-        </div>
-      </div>
-
-      {/* ── 1.5. INBOUND CAREERS MAILBOX CALLOUT ── */}
-      <div className="rounded-2xl border border-indigo-100/90 bg-gradient-to-r from-indigo-50/90 via-purple-50/50 to-blue-50/80 p-3.5 px-4 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="h-9 w-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-            <Mail className="h-4.5 w-4.5" />
+      {/* ── 1. UNIFIED TOOLBAR & MAILBOX CALLOUT (Single Row Layout) ── */}
+      <div className="rounded-2xl border border-indigo-100/90 bg-gradient-to-r from-indigo-50/90 via-purple-50/40 to-blue-50/70 p-2.5 px-3.5 flex flex-wrap lg:flex-nowrap items-center justify-between gap-3 shadow-2xs">
+        {/* Left: Compact Inbound Mailbox Status */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="h-8 w-8 rounded-xl bg-indigo-100/90 border border-indigo-200/80 text-indigo-700 flex items-center justify-center shrink-0 shadow-2xs">
+            <Mail className="h-4 w-4" />
           </div>
           <div className="text-xs min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-slate-900 shrink-0">Recruiter Mailbox:</span>
+              <span className="font-bold text-slate-900 shrink-0 text-xs">Recruiter Mailbox:</span>
               {mailboxStatus?.connected ? (
-                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-xs py-0.5 px-2.5 flex items-center gap-1.5 font-semibold max-w-[220px] truncate">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-[11px] py-0.5 px-2 flex items-center gap-1.5 font-semibold max-w-[200px] truncate">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
                   <span className="truncate">{mailboxStatus?.email || user?.email || "Connected"}</span>
                 </Badge>
               ) : (
-                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs py-0.5 px-2.5 flex items-center gap-1.5 font-semibold">
-                  <span className="h-2 w-2 rounded-full bg-amber-500"></span>
+                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[11px] py-0.5 px-2 flex items-center gap-1.5 font-semibold">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
                   Not Connected
                 </Badge>
               )}
             </div>
-            <p className="text-slate-500 text-[11px] mt-0.5 hidden sm:block">
-              {mailboxStatus?.connected
-                ? "Incoming candidate applications & resumes from this email are parsed into your directory."
-                : "Connect your recruiter Google Mailbox to auto-sync resumes from LinkedIn, Indeed, and Naukri."}
-            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 self-start md:self-auto">
+        {/* Right: Actions (Sync Mailbox + Extract + Add Candidate inside same container) */}
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 flex-wrap">
           {mailboxStatus?.connected ? (
             <Dialog open={isSyncDialogOpen} onOpenChange={setIsSyncDialogOpen}>
               <DialogTrigger asChild>
@@ -367,12 +348,12 @@ const CandidateList = () => {
                   type="button"
                   size="sm"
                   disabled={syncMailboxMutation.isPending || mailboxStatus?.isSyncingNow}
-                  className="text-xs h-8 px-3 gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="text-xs h-7.5 px-2.5 gap-1.5 bg-white hover:bg-indigo-50/80 text-indigo-700 border border-indigo-200 font-semibold rounded-xl shadow-2xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
                   {syncMailboxMutation.isPending || mailboxStatus?.isSyncingNow ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
-                    <RefreshCw className="h-3.5 w-3.5" />
+                    <RefreshCw className="h-3 w-3" />
                   )}
                   {syncMailboxMutation.isPending || mailboxStatus?.isSyncingNow ? "Syncing..." : "Sync Mailbox"}
                 </Button>
@@ -500,6 +481,13 @@ const CandidateList = () => {
               Connect Mailbox
             </Button>
           )}
+
+          {/* Separator */}
+          <div className="h-5 w-[1px] bg-indigo-200/80 mx-0.5 hidden sm:block" />
+
+          {/* Action Buttons inside the same unified container */}
+          <EmailExtractorDialog triggerText="Extract from Emails" />
+          <AddCandidateDialog />
         </div>
       </div>
 
@@ -602,7 +590,7 @@ const CandidateList = () => {
                 variant="outline"
                 size="sm"
                 onClick={handleSelectAllFiltered}
-                className="h-8 px-3 rounded-xl border-blue-200 bg-white text-blue-600 hover:text-blue-700 hover:bg-blue-50/70 text-xs font-bold cursor-pointer shadow-2xs"
+                className="h-8 px-3 rounded-xl border-indigo-200 bg-white text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50/70 text-xs font-bold cursor-pointer shadow-2xs"
               >
                 <span>Select All {filteredCandidates.length} Candidates</span>
               </Button>

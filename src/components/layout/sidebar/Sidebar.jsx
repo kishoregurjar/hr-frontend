@@ -14,9 +14,11 @@ import {
   LogOut,
   Building2,
   X,
-  Settings,
   Shield,
   LifeBuoy,
+  Settings,
+  Crown,
+  ChevronUp,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/context";
 import { toast } from "sonner";
@@ -84,9 +86,11 @@ const NAV_ITEMS = [
 export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const [dynamicLogo, setDynamicLogo] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null
@@ -210,19 +214,6 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
     return pathname.startsWith(item.href);
   };
 
-  const handleConfirmLogout = async () => {
-    try {
-      setIsLoggingOut(true);
-      await logout();
-      toast.success("Logged out successfully.");
-      setShowLogoutConfirm(false);
-    } catch {
-      setShowLogoutConfirm(false);
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
-
   return (
     <>
       <aside
@@ -230,33 +221,38 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* ── 1. Top Dynamic Company Workspace Header ── */}
-        <div className="h-[70px] flex items-center justify-between px-5 py-3 border-b border-slate-200/80">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            {companyLogo ? (
-              <img
-                src={companyLogo}
-                alt={companyName || "Company Logo"}
-                className="h-9 w-9 rounded-xl object-contain bg-white border border-slate-200 p-1 shadow-2xs shrink-0"
-              />
-            ) : (
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 font-extrabold text-xs text-white shadow-md shadow-slate-900/10 shrink-0">
-                {getCompanyInitials(companyName)}
-              </div>
-            )}
+        {/* ── 1. Top Dynamic Company Workspace Header (Light Glassmorphic Capsule) ── */}
+        <div className="h-[64px] min-h-[64px] max-h-[64px] shrink-0 flex items-center justify-between px-3 border-b border-slate-100/90 bg-white">
+          <div className="relative flex items-center gap-3 w-full h-[50px] px-2.5 rounded-[22px] bg-gradient-to-b from-white/95 via-slate-50/90 to-slate-100/80 border border-slate-200/70 shadow-[0_4px_16px_rgba(15,23,42,0.06)] backdrop-blur-md transition-all duration-200 group min-w-0 flex-1">
+            {/* Elevated Clean White Logo Box */}
+            <div className="h-[38px] w-[38px] rounded-[16px] bg-white border border-slate-200/80 p-1.5 flex items-center justify-center shrink-0 shadow-xs group-hover:shadow-sm transition-all overflow-hidden">
+              {companyLogo ? (
+                <img
+                  src={companyLogo}
+                  alt={companyName || "Company Logo"}
+                  className="h-full w-full object-contain"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 font-extrabold text-xs text-white">
+                  {getCompanyInitials(companyName)}
+                </div>
+              )}
+            </div>
+
+            {/* Company Name Typography */}
             <div className="min-w-0 flex-1">
-              <span className="font-extrabold text-base tracking-tight text-slate-900 leading-tight truncate block">
+              <span
+                className="font-extrabold text-[14px] text-slate-900 tracking-tight leading-tight truncate block group-hover:text-slate-800 transition-colors"
+                title={companyName || "HireQuest"}
+              >
                 {companyName || "HireQuest"}
-              </span>
-              <span className="text-xs text-slate-500 font-medium block truncate mt-0.5">
-                {companyDomain || (isInspecting ? "Impersonated Workspace" : "Recruitment Workspace")}
               </span>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="lg:hidden p-1.5 text-slate-400 hover:text-slate-700 rounded-lg shrink-0"
+            className="lg:hidden ml-2 p-1.5 text-slate-400 hover:text-slate-700 rounded-lg shrink-0"
             aria-label="Close"
           >
             <X className="h-5 w-5" />
@@ -277,7 +273,7 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
                 onClick={onClose}
                 className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                   active
-                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-indigo-500/20 font-bold"
+                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/25 font-bold"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80"
                 }`}
               >
@@ -292,52 +288,75 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
           })}
         </nav>
 
-        {/* ── 4. User Account Footer with Settings and Logout (Desktop & Mobile) ── */}
-        <div className="p-3 border-t border-slate-200/90 bg-slate-50/70 flex items-center justify-between gap-2 shrink-0">
+        {/* ── 3. Bottom Owner / User Profile (No Company Logo - Pure User Identity) ── */}
+        <div className="relative p-3 border-t border-slate-200/90 bg-slate-50/70 shrink-0">
+          {/* Popup Menu when clicking User Profile */}
+          {isUserMenuOpen && (
+            <div className="absolute bottom-full left-3 right-3 mb-2 rounded-2xl bg-white border border-slate-200/90 shadow-xl shadow-slate-200/60 p-2 z-50 animate-in fade-in slide-in-from-bottom-2 duration-150 font-sans space-y-1">
+              <div className="px-3 py-2 border-b border-slate-100">
+                <p className="text-xs font-bold text-slate-900 truncate">{displayName}</p>
+                <p className="text-[10px] text-slate-500 truncate">{userEmail}</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsUserMenuOpen(false);
+                  setShowAccountSettings(true);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition cursor-pointer text-left"
+              >
+                <Settings className="h-4 w-4 text-slate-500" />
+                <span>Account Settings</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsUserMenuOpen(false);
+                  setShowLogoutConfirm(true);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition cursor-pointer text-left"
+              >
+                <LogOut className="h-4 w-4 text-rose-500" />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          )}
+
+          {/* Trigger Card: Owner Initials + Name + Role */}
           <button
             type="button"
-            onClick={() => setShowAccountSettings(true)}
-            className="flex items-center gap-2.5 min-w-0 text-left hover:opacity-85 transition cursor-pointer flex-1 py-0.5"
-            title="Account & Security Settings"
+            onClick={() => setIsUserMenuOpen((prev) => !prev)}
+            className="w-full flex items-center justify-between gap-2.5 p-1 rounded-xl hover:bg-slate-200/60 transition cursor-pointer text-left"
           >
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
-              {getInitials(displayName)}
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              {/* User Avatar with Initials (No company logo) */}
+              <div className="h-9 w-9 rounded-xl bg-indigo-600 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-xs">
+                {getInitials(displayName)}
+              </div>
+
+              {/* Owner Name & Role */}
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-slate-900 truncate leading-tight">
+                  {displayName}
+                </p>
+                <p className="text-[11px] text-slate-500 font-medium truncate mt-0.5">
+                  {isOwnerOrAdmin ? "Company Owner" : "Recruiter"}
+                </p>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-slate-900 truncate leading-tight">
-                {displayName}
-              </p>
-              <p className="text-xs text-slate-500 truncate font-medium mt-0.5">
-                {userEmail || userRole}
-              </p>
-            </div>
+
+            <ChevronUp
+              className={`h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ${
+                isUserMenuOpen ? "rotate-180 text-slate-700" : ""
+              }`}
+            />
           </button>
-
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              type="button"
-              onClick={() => setShowAccountSettings(true)}
-              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer"
-              title="Account Settings"
-              aria-label="Account Settings"
-            >
-              <Settings className="h-4 w-4" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowLogoutConfirm(true)}
-              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
-              title="Sign Out"
-              aria-label="Sign Out"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
-          </div>
         </div>
       </aside>
 
-      {/* ── Account & Security Settings Modal ── */}
+      {/* ── Account Settings Modal ── */}
       <AccountSettingsModal
         isOpen={showAccountSettings}
         onClose={() => setShowAccountSettings(false)}
@@ -354,7 +373,7 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
               Confirm Sign Out
             </DialogTitle>
             <DialogDescription className="text-center text-xs text-slate-500">
-              Are you sure you want to log out of your <span className="font-semibold text-slate-700">{companyName}</span> account? You will need to sign in again to access the candidate screening portal.
+              Are you sure you want to log out of your account? You will need to sign in again to access the portal.
             </DialogDescription>
           </DialogHeader>
 
@@ -369,7 +388,18 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
             </Button>
             <Button
               type="button"
-              onClick={handleConfirmLogout}
+              onClick={async () => {
+                try {
+                  setIsLoggingOut(true);
+                  await logout();
+                  toast.success("Logged out successfully.");
+                  setShowLogoutConfirm(false);
+                } catch {
+                  setShowLogoutConfirm(false);
+                } finally {
+                  setIsLoggingOut(false);
+                }
+              }}
               disabled={isLoggingOut}
               className="w-full sm:w-auto h-10 px-6 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-500/20 gap-1.5"
             >

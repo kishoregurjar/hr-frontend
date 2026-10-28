@@ -18,4 +18,6 @@ export const ROUTES = {
 
   QUESTION_BANK: "/question-bank",
   QUESTION_SET: "/question-set",
+
+  SUPPORT: "/support",
 };

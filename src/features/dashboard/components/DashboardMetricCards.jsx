@@ -27,7 +27,7 @@ const DashboardMetricCards = () => {
           <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
             Total Candidates
           </span>
-          <div className="h-9 w-9 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center">
+          <div className="h-9 w-9 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center">
             <Users className="h-4 w-4" />
           </div>
         </div>

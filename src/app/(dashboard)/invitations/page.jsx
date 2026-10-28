@@ -187,28 +187,55 @@ export default function InvitationsPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
-      {/* ── 1. TOP ACTION TOOLBAR ── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-slate-800">Tokenized Dispatches</span>
-          <span className="text-slate-300">•</span>
-          <span className="text-xs text-slate-500 font-medium">
-            {filteredInvitations.length} {filteredInvitations.length === 1 ? "invitation" : "invitations"} active
-          </span>
+      {/* ── UNIFIED TOOLBAR & ACTIONS (Single Row Layout) ── */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        {/* Left: Filter by Assessment + Count */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-slate-400 shrink-0" />
+            <span className="text-xs font-bold text-slate-600 shrink-0">
+              Filter by Assessment:
+            </span>
+            <select
+              value={assessmentFilter}
+              onChange={(e) => setAssessmentFilter(e.target.value)}
+              className="h-9 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 max-w-xs truncate shadow-2xs"
+            >
+              <option value="ALL">All Assessments ({dynamicInvitations.length})</option>
+              {assessments.map((a) => (
+                <option key={a.id} value={a.title}>
+                  {a.title}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <span className="text-slate-300 hidden sm:inline">•</span>
+
+          <p className="text-xs text-slate-500 font-medium">
+            Showing{" "}
+            <span className="font-bold text-slate-900">
+              {filteredInvitations.length === 0 ? 0 : startIndex + 1}
+            </span>{" "}
+            to{" "}
+            <span className="font-bold text-slate-900">{endIndex}</span> of{" "}
+            <span className="font-bold text-slate-900">{filteredInvitations.length}</span> invitations
+          </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        {/* Right: Actions */}
+        <div className="flex items-center gap-2.5 self-end sm:self-auto shrink-0">
           {/* Refresh Action */}
           <Button
             variant="outline"
             size="icon"
             onClick={handleRefresh}
-            className="h-9 w-9 rounded-xl border-slate-200 bg-white hover:bg-slate-50 cursor-pointer"
+            className="h-9 w-9 rounded-xl border-slate-200 bg-white hover:bg-slate-50 cursor-pointer shadow-2xs"
             title="Refresh"
           >
             <RefreshCw
               className={`h-4 w-4 text-slate-600 ${
-                isRefreshing ? "animate-spin text-blue-600" : ""
+                isRefreshing ? "animate-spin text-indigo-600" : ""
               }`}
             />
           </Button>
@@ -222,38 +249,6 @@ export default function InvitationsPage() {
             Dispatch Invitations
           </Button>
         </div>
-      </div>
-
-      {/* ── 2. Filters Toolbar ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <FileText className="h-4 w-4 text-slate-400 shrink-0" />
-          <span className="text-xs font-bold text-slate-600 shrink-0">
-            Filter by Assessment:
-          </span>
-          <select
-            value={assessmentFilter}
-            onChange={(e) => setAssessmentFilter(e.target.value)}
-            className="h-9 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30 flex-1 sm:flex-initial max-w-full sm:max-w-xs truncate"
-          >
-            <option value="ALL">All Assessments ({dynamicInvitations.length})</option>
-            {assessments.map((a) => (
-              <option key={a.id} value={a.title}>
-                {a.title}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <p className="text-xs text-slate-500 font-medium">
-          Showing{" "}
-          <span className="font-bold text-slate-900">
-            {filteredInvitations.length === 0 ? 0 : startIndex + 1}
-          </span>{" "}
-          to{" "}
-          <span className="font-bold text-slate-900">{endIndex}</span> of{" "}
-          <span className="font-bold text-slate-900">{filteredInvitations.length}</span> dispatched invitations
-        </p>
       </div>
 
       {/* ── 3. Invitations Table (High Depth & Clarity) ── */}

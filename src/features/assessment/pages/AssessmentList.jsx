@@ -202,18 +202,44 @@ const AssessmentList = () => {
 
   return (
     <div className="space-y-5 max-w-7xl mx-auto font-sans">
-      {/* ── 1. TOP HEADER & PRIMARY CTAs ── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
-            All Assessments
-          </h1>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">
-            {statsSummary}
-          </p>
+      {/* ── 1. UNIFIED TOOLBAR: Search, Filters & Action CTAs (Single Row) ── */}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white p-2.5 sm:p-3 rounded-2xl border border-slate-200/90 shadow-2xs">
+        {/* Left: Search & Status Filter */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-1 min-w-0">
+          <div className="relative flex-1 min-w-[200px] sm:max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+            <Input
+              placeholder="Search by assessment title..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="h-9 pl-9 pr-3 text-xs rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white transition-colors placeholder:text-slate-400"
+            />
+          </div>
+
+          <Select
+            value={statusFilter}
+            onValueChange={(val) => {
+              setStatusFilter(val);
+              setCurrentPage(1);
+            }}
+          >
+            <SelectTrigger className="h-9 w-full sm:w-36 text-xs rounded-xl border-slate-200 bg-slate-50/50 text-slate-700 font-medium">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Statuses</SelectItem>
+              <SelectItem value="PUBLISHED">Published</SelectItem>
+              <SelectItem value="DRAFT">Draft</SelectItem>
+              <SelectItem value="ARCHIVED">Archived</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
+        {/* Right: Refresh & Primary CTAs */}
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 self-end lg:self-auto">
           <Button
             variant="outline"
             size="sm"
@@ -239,48 +265,12 @@ const AssessmentList = () => {
             </Button>
           )}
 
-          <Link href="/assessments/create" className={`${assessments.length > 0 ? "col-span-2" : "col-span-1"} sm:col-span-1 w-full sm:w-auto`}>
-            <Button className="w-full sm:w-auto h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20 cursor-pointer justify-center">
+          <Link href="/assessments/create">
+            <Button className="h-9 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-indigo-500/20 cursor-pointer justify-center">
               <Plus className="h-3.5 w-3.5" />
               Build Assessment
             </Button>
           </Link>
-        </div>
-      </div>
-
-      {/* ── 2. SEARCH & FILTER TOOLBAR ── */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs">
-        <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-          <Input
-            placeholder="Search by assessment title..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="h-9 pl-9 pr-3 text-xs rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white transition-colors placeholder:text-slate-400"
-          />
-        </div>
-
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-          <Select
-            value={statusFilter}
-            onValueChange={(val) => {
-              setStatusFilter(val);
-              setCurrentPage(1);
-            }}
-          >
-            <SelectTrigger className="h-9 w-full sm:w-40 text-xs rounded-xl border-slate-200 bg-slate-50/50 text-slate-700 font-medium">
-              <SelectValue placeholder="All Statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">All Statuses</SelectItem>
-              <SelectItem value="PUBLISHED">Published</SelectItem>
-              <SelectItem value="DRAFT">Draft</SelectItem>
-              <SelectItem value="ARCHIVED">Archived</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </div>
 

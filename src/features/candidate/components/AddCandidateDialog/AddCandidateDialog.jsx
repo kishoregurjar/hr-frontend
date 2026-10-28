@@ -55,7 +55,7 @@ const AddCandidateDialog = ({ trigger }) => {
         {trigger || (
           <Button
             type="button"
-            className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs h-9 px-4 rounded-xl shadow-xs shadow-blue-500/20 cursor-pointer"
+            className="gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs h-9 px-4 rounded-xl shadow-xs shadow-indigo-500/20 cursor-pointer"
           >
             <Plus className="h-3.5 w-3.5" />
             Add Candidate

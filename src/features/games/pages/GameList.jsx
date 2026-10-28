@@ -256,38 +256,12 @@ const GameList = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
-      {/* ── 1. TOP ACTION TOOLBAR ── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10.5px] font-extrabold gap-1">
-            <Zap className="h-3 w-3 text-amber-500 fill-amber-500" />
-            Company Game Modules
-          </Badge>
-          <span className="text-slate-300">•</span>
-          <span className="text-xs text-slate-500 font-medium">
-            {gamesList.length} cognitive {gamesList.length === 1 ? "game" : "games"} configured
-          </span>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2.5">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            disabled={isFetching}
-            className="h-9 px-3 gap-1.5 text-xs font-semibold rounded-xl text-slate-600 hover:text-slate-900 cursor-pointer"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
-        </div>
-      </div>
-
-      {/* ── 2. KPI Stat Cards ── */}
+      {/* ── 1. KPI Stat Cards (Directly at top) ── */}
       <GameStats games={gamesList} />
 
-      {/* ── 3. Filter & Search Toolbar ── */}
-      <div className="rounded-2xl border bg-card p-3 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+      {/* ── 2. Filter & Search Toolbar with Refresh Action ── */}
+      <div className="rounded-2xl border bg-card p-3 shadow-xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+        {/* Search */}
         <div className="relative flex-1 min-w-[240px]">
           <Search className="h-4 w-4 absolute left-3.5 top-3 text-slate-400" />
           <input
@@ -295,16 +269,17 @@ const GameList = () => {
             placeholder="Search by game name, cognitive trait, or skill..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-10 pl-9 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition shadow-2xs"
+            className="w-full h-10 pl-9 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition shadow-2xs"
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full md:w-auto">
+        {/* Filters & Refresh */}
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* Difficulty Filter */}
           <select
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value)}
-            className="w-full sm:w-auto h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer"
+            className="h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer shadow-2xs"
           >
             <option value="all">All Difficulties</option>
             <option value="easy">Easy</option>
@@ -316,7 +291,7 @@ const GameList = () => {
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="w-full sm:w-auto h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer"
+            className="h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer shadow-2xs"
           >
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
@@ -327,12 +302,28 @@ const GameList = () => {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="w-full sm:w-auto h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer"
+            className="h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer shadow-2xs"
           >
             <option value="popular">Most Used First</option>
             <option value="duration">Shortest Duration</option>
             <option value="name">Alphabetical</option>
           </select>
+
+          {/* Divider */}
+          <div className="h-6 w-[1px] bg-slate-200 mx-0.5 hidden sm:block" />
+
+          {/* Refresh Action */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="h-10 px-3 gap-1.5 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 cursor-pointer shadow-2xs"
+            title="Refresh Games"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin text-indigo-600" : ""}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </Button>
         </div>
       </div>
 

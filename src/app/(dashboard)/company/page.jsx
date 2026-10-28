@@ -644,7 +644,7 @@ export default function CompanySettingsPage() {
                     <Button
                       type="submit"
                       disabled={savingProfile}
-                      className="bg-blue-600 hover:bg-blue-700 font-bold px-6 shadow-md"
+                      className="bg-indigo-600 hover:bg-indigo-700 font-bold px-6 shadow-md"
                     >
                       {savingProfile ? (
                         <>
@@ -667,7 +667,7 @@ export default function CompanySettingsPage() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b">
                 <div>
                   <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
-                    <Users className="h-5 w-5 text-blue-600" />
+                    <Users className="h-5 w-5 text-indigo-600" />
                     Company Team Members
                   </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
@@ -676,7 +676,7 @@ export default function CompanySettingsPage() {
                 </div>
                 <Button
                   onClick={() => setActiveTab("invitations")}
-                  className="bg-blue-600 hover:bg-blue-700 font-bold text-xs"
+                  className="bg-indigo-600 hover:bg-indigo-700 font-bold text-xs"
                 >
                   <UserPlus className="h-4 w-4 mr-2" />
                   Invite New Member
@@ -853,7 +853,7 @@ export default function CompanySettingsPage() {
                   <Button
                     type="submit"
                     disabled={sendingInvite}
-                    className="w-full sm:w-auto h-10 bg-blue-600 hover:bg-blue-700 font-bold px-6 shadow-md"
+                    className="w-full sm:w-auto h-10 bg-indigo-600 hover:bg-indigo-700 font-bold px-6 shadow-md"
                   >
                     {sendingInvite ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Invite"}
                   </Button>
