@@ -23,9 +23,10 @@ import { Label } from "@/components/ui/label";
 import { buildRuntimeSections } from "../../utils";
 import { useUpdateAttemptProgress, useSaveQuizResponse } from "../../hooks";
 import GameRuntime from "../GameRuntime";
+import CameraPreview from "../CameraPreview/CameraPreview";
 import { formatRemainingTime, getRemainingTime } from "@/features/attempt/utils";
 
-const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
+const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent }) => {
   const sections = useMemo(() => buildRuntimeSections(assessment), [assessment]);
   const updateProgress = useUpdateAttemptProgress();
   const saveResponse = useSaveQuizResponse();
@@ -536,6 +537,8 @@ const AssessmentRuntime = ({ assessment, attempt, onReview }) => {
 
         {/* ── RIGHT PANEL: Question & Module Palettes + Submit Button (30%) ── */}
         <aside className="lg:col-span-4 xl:col-span-3 space-y-4">
+          {/* ── Proctoring Live Camera Feed (Docked at Top of Sidebar) ── */}
+          <CameraPreview docked={true} onEvent={onProctoringEvent} />
           {/* ── Categorized Section Palettes (Games & MCQ Quizzes) ── */}
           <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-5">
             {sections.map((sec, sIdx) => {

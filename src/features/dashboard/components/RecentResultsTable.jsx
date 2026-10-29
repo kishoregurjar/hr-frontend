@@ -90,7 +90,7 @@ const RecentResultsTable = () => {
         <table className="w-full text-left text-xs">
           <thead className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground border-b pb-2">
             <tr>
-              <th className="py-2.5 px-3">Rank</th>
+              <th className="py-2.5 px-3">No.</th>
               <th className="py-2.5 px-3">Candidate</th>
               <th className="py-2.5 px-3">Assessment</th>
               <th className="py-2.5 px-3">Score</th>
@@ -125,7 +125,7 @@ const RecentResultsTable = () => {
                 return (
                   <tr key={row.id || idx} className="hover:bg-slate-50/60 transition">
                     <td className="py-3.5 px-3 font-extrabold text-slate-900">
-                      #{globalRank}
+                      {globalRank}
                     </td>
                     <td className="py-3.5 px-3">
                       <p className="font-bold text-slate-900">{row.candidateName || "Candidate"}</p>

@@ -20,12 +20,18 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useEffect } from "react";
+import { stopActiveMediaStream } from "../../utils";
 
 export default function AssessmentCompleted({
   assessment,
   attempt,
   submissionResult,
 }) {
+  // Ensure all proctoring webcam/audio hardware tracks are fully released
+  useEffect(() => {
+    stopActiveMediaStream();
+  }, []);
 
   const submittedAt = attempt?.submittedAt
     ? new Date(attempt.submittedAt).toLocaleString(undefined, {

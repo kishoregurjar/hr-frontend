@@ -39,3 +39,4 @@ export { default as AssessmentDetailsDrawer } from "./AssessmentDetailsDrawer";
 export { default as AssessmentTableView } from "./AssessmentTableView";
 export { default as BulkDeleteAssessmentDialog } from "./BulkDeleteAssessmentDialog";
 export { default as AssessmentAlreadyCompleted } from "./AssessmentAlreadyCompleted/AssessmentAlreadyCompleted";
+export { default as CameraPreview } from "./CameraPreview/CameraPreview";

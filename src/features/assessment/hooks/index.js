@@ -15,3 +15,5 @@ export { default as useUpdateAttemptProgress } from "./useUpdateAttemptProgress"
 export { default as useSaveQuizResponse } from "./useSaveQuizResponse";
 export { default as useSaveGameResult } from "./useSaveGameResult";
 export { default as useSubmitAttempt } from "./useSubmitAttempt";
+export { default as useProctoring } from "./useProctoring";
+export { default as useFaceTracker } from "./useFaceTracker";
