@@ -342,8 +342,6 @@ const AssessmentPreStart = ({
       onStart?.({
       name: candidateName.trim(),
       email: email.trim(),
-      phone: mobileNumber.trim(),
-      experience,
       candidateAccessToken,
     });
   } catch (err) {
@@ -561,15 +559,7 @@ const AssessmentPreStart = ({
                 </div>
               </div>
 
-              {/* ABOUT THIS ASSESSMENT Box */}
-              <div className="rounded-xl border border-slate-200 bg-[#f8fafc] p-4 sm:p-5 space-y-1.5">
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 block">
-                  ABOUT THIS ASSESSMENT
-                </span>
-                <p className="text-sm font-medium text-slate-800 leading-relaxed whitespace-pre-wrap">
-                  {aboutDescription}
-                </p>
-              </div>
+
 
               {/* Action Button */}
               <div className="flex justify-end pt-2">
@@ -648,42 +638,7 @@ const AssessmentPreStart = ({
                   {emailError && <p className="text-xs font-semibold text-rose-600">{emailError}</p>}
                 </div>
 
-                {/* Mobile Number */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">
-                    Mobile / Contact Number
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-                    <input
-                      type="tel"
-                      placeholder="e.g. +1 555-0123"
-                      value={mobileNumber}
-                      onChange={(e) => setMobileNumber(e.target.value)}
-                      className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 bg-white text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#303331]/20 focus:border-[#303331]"
-                    />
-                  </div>
-                </div>
 
-                {/* Experience Level */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">
-                    Experience Level
-                  </label>
-                  <div className="relative">
-                    <GraduationCap className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-                    <select
-                      value={experience}
-                      onChange={(e) => setExperience(e.target.value)}
-                      className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 bg-white text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#303331]/20 focus:border-[#303331] cursor-pointer"
-                    >
-                      <option value="0-1 Years (Fresher / Student)">0-1 Years (Fresher / Student)</option>
-                      <option value="1-3 Years (Junior)">1-3 Years (Junior Professional)</option>
-                      <option value="3-5 Years (Mid-Level)">3-5 Years (Mid-Level Developer)</option>
-                      <option value="5+ Years (Senior)">5+ Years (Senior Engineer)</option>
-                    </select>
-                  </div>
-                </div>
               </div>
 
 
