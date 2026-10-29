@@ -138,8 +138,20 @@ const GameRuntime = ({
   const [completedResult, setCompletedResult] = useState(existingResult ?? null);
 
   useEffect(() => {
-    setCompletedResult(existingResult ?? null);
-  }, [activeGameIndex, existingResult]);
+    setCompletedResult((prev) => {
+      if (!existingResult && !prev) return prev;
+      if (
+        prev &&
+        existingResult &&
+        prev.score === existingResult.score &&
+        prev.status === existingResult.status &&
+        prev.timeTaken === existingResult.timeTaken
+      ) {
+        return prev;
+      }
+      return existingResult ?? null;
+    });
+  }, [activeGameIndex, existingResult?.score, existingResult?.timeTaken, existingResult?.status]);
 
   const gameState = existingResult
     ? GAME_STATE.COMPLETED
@@ -170,15 +182,61 @@ const GameRuntime = ({
     }
   }, [moduleTimeRemaining]);
 
-  // Per-game duration and timer tracking
-  const gameDurationSec = (currentGame.durationMinutes || currentGame.duration || 10) * 60;
+  // Per-game calibrated duration and dynamic challenge timer tracking
+  const gameDurationSec = Math.round(
+    Number(currentGame.durationSeconds || (currentGame.durationMinutes || currentGame.duration || 3.5) * 60)
+  );
   const [gameTimeRemaining, setGameTimeRemaining] = useState(gameDurationSec);
-  const timerIntervalRef = useRef(null);
+  const challengeTimerRef = useRef(null);
 
   useEffect(() => {
-    const dur = (currentGame.durationMinutes || currentGame.duration || 10) * 60;
+    const dur = Math.round(
+      Number(currentGame.durationSeconds || (currentGame.durationMinutes || currentGame.duration || 3.5) * 60)
+    );
     setGameTimeRemaining(dur);
   }, [activeGameIndex, currentGame]);
+
+  const handleGameTimeExpired = (targetGame = currentGame, targetIdx = activeGameIndex) => {
+    toast.warning(`Time expired for ${targetGame?.title || "this game challenge"}! Transitioning...`);
+    const durSec = Math.round(
+      Number(targetGame.durationSeconds || (targetGame.durationMinutes || targetGame.duration || 3.5) * 60)
+    );
+    const timeoutResult = {
+      score: 30, // Partial baseline score for attempted moves
+      rawScore: 30,
+      accuracy: 30,
+      moves: 0,
+      timeTaken: durSec,
+      timeSpent: durSec,
+      timedOut: true,
+      status: "TIMED_OUT",
+      completedAt: new Date().toISOString(),
+    };
+    handleGameComplete(timeoutResult, targetGame, targetIdx);
+  };
+
+  // Active Challenge Countdown Timer while playing
+  useEffect(() => {
+    if (gameState !== GAME_STATE.PLAYING) {
+      if (challengeTimerRef.current) clearInterval(challengeTimerRef.current);
+      return;
+    }
+
+    challengeTimerRef.current = setInterval(() => {
+      setGameTimeRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(challengeTimerRef.current);
+          handleGameTimeExpired(currentGame, activeGameIndex);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (challengeTimerRef.current) clearInterval(challengeTimerRef.current);
+    };
+  }, [gameState, activeGameIndex, currentGame]);
 
   const saveGameResult = useSaveGameResult();
 
@@ -273,7 +331,7 @@ const GameRuntime = ({
       return;
     }
 
-    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    if (challengeTimerRef.current) clearInterval(challengeTimerRef.current);
 
     const rawSlug = String(targetGame.slug || targetGame.code || targetGame.id || "").toLowerCase();
     const canonicalKey = rawSlug.includes("zip") || rawSlug.includes("path")
@@ -459,25 +517,41 @@ const GameRuntime = ({
 
       {/* ── Active Gameplay Stage (Top bar + dispatchers for all started games) ── */}
       <div className={gameState === GAME_STATE.PLAYING ? "space-y-3" : "hidden"}>
-        {/* Active Game Top Bar with Shared Module Countdown Clock */}
-        <div className="flex items-center justify-between px-2 py-1.5 rounded-xl bg-slate-100/70 border border-slate-200/80">
+        {/* Active Game Top Bar with Challenge Countdown Clock & Module Clock */}
+        <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl bg-slate-100/80 border border-slate-200">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-slate-700">
               Game {activeGameIndex + 1} of {games.length}: <strong className="text-slate-900">{currentGame.title}</strong>
             </span>
+            {currentGame.difficulty && (
+              <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${
+                String(currentGame.difficulty).toLowerCase() === "easy"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                  : String(currentGame.difficulty).toLowerCase() === "hard"
+                  ? "bg-rose-50 text-rose-700 border-rose-300"
+                  : "bg-amber-50 text-amber-700 border-amber-300"
+              }`}>
+                {currentGame.difficulty}
+              </span>
+            )}
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Module Countdown Badge */}
+          <div className="flex items-center gap-2.5">
+            {/* Active Challenge Countdown Badge */}
             <div
               className={`flex items-center gap-1.5 px-3 py-1 rounded-lg border font-mono text-xs font-black tracking-wider transition-all ${
-                isLowTime
+                gameTimeRemaining <= 30
                   ? "bg-rose-50 border-rose-300 text-rose-600 animate-pulse shadow-xs"
-                  : "bg-white border-slate-200 text-blue-700 shadow-2xs"
+                  : "bg-blue-50/90 border-blue-200 text-blue-700 shadow-2xs"
               }`}
             >
               <Clock className="h-3.5 w-3.5" />
-              <span>{formatTime(effectiveSeconds)} Module Time</span>
+              <span>{formatTime(gameTimeRemaining)} Challenge Time</span>
+            </div>
+
+            {/* Pooled Module Timer */}
+            <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] font-semibold text-slate-500 font-mono">
+              <span>Pool: {formatTime(effectiveSeconds)}</span>
             </div>
 
             <Button

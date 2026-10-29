@@ -9,6 +9,7 @@
 
 import { games as gamesCatalog } from "@/features/games/data";
 import { getEffectiveGameRuntimeConfig } from "@/features/games/utils/gameConfigStore";
+import { getGameDurationForDifficulty } from "@/features/games/utils/gameTimers";
 
 // Automatically clear stale attempt cache from localStorage if found with placeholder options
 if (typeof window !== "undefined") {
@@ -307,7 +308,11 @@ export const buildRuntimeSections = (assessment) => {
     const displayDifficulty =
       targetDifficulty.charAt(0).toUpperCase() + targetDifficulty.slice(1);
 
-    const gameDurationMinutes = Number(itemConfig.duration || 10) || 10;
+    const dynamicGameDuration = getGameDurationForDifficulty(
+      resolvedSlug,
+      targetDifficulty
+    );
+    const individualGameDuration = Number(itemConfig.duration || dynamicGameDuration);
 
     return {
       id: `game-${index + 1}`,
@@ -318,13 +323,14 @@ export const buildRuntimeSections = (assessment) => {
       difficulty: displayDifficulty,
       description: catalogInfo.description || "",
       category: catalogInfo.category || "Cognitive Assessment",
-      duration: gameDurationMinutes,
-      durationMinutes: gameDurationMinutes,
-      durationSeconds: gameDurationMinutes * 60,
+      duration: individualGameDuration,
+      durationMinutes: individualGameDuration,
+      durationSeconds: Math.round(individualGameDuration * 60),
       skill: catalogInfo.skill || "Problem Solving",
       config: {
         ...effectiveConfig,
         difficulty: targetDifficulty,
+        duration: individualGameDuration,
       },
     };
   });
@@ -346,7 +352,11 @@ export const buildRuntimeSections = (assessment) => {
   const runtimeModules = [];
   const totalAssessmentDuration = Number(assessment?.durationMinutes ?? assessment?.duration ?? 60);
 
-  // Calculate pooled durations (Default: 40 Mins Games, 20 Mins Quiz out of 60 Mins)
+  const totalEstimatedGamesDuration = Math.ceil(
+    parsedGames.reduce((acc, g) => acc + (Number(g.durationMinutes) || 3.5), 0)
+  );
+
+  // Calculate pooled durations
   let gameDurationMinutes = 40;
   let quizDurationMinutes = 20;
 
@@ -355,11 +365,12 @@ export const buildRuntimeSections = (assessment) => {
       gameDurationMinutes = Number(assessment.gameDurationMinutes);
       quizDurationMinutes = Math.max(5, totalAssessmentDuration - gameDurationMinutes);
     } else {
-      gameDurationMinutes = Math.min(totalAssessmentDuration - 10, Math.round(totalAssessmentDuration * (40 / 60)));
+      const targetGamesTime = Math.max(totalEstimatedGamesDuration, Math.round(totalAssessmentDuration * (40 / 60)));
+      gameDurationMinutes = Math.min(totalAssessmentDuration - 10, targetGamesTime);
       quizDurationMinutes = Math.max(10, totalAssessmentDuration - gameDurationMinutes);
     }
   } else if (parsedGames.length > 0) {
-    gameDurationMinutes = totalAssessmentDuration;
+    gameDurationMinutes = Math.max(totalAssessmentDuration, totalEstimatedGamesDuration);
     quizDurationMinutes = 0;
   } else if (parsedQuestions.length > 0) {
     gameDurationMinutes = 0;

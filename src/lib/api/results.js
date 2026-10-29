@@ -556,14 +556,28 @@ export const getAllResults = async () => {
               gr.status === "SKIPPED" ||
               (Number(gr.score ?? 0) === 0 && (Number(metrics.timeTaken ?? 0) === 0 || Number(metrics.moves ?? 0) === 0))
             );
+            const isTimedOut = Boolean(
+              metrics.timedOut ||
+              metrics.status === "TIMED_OUT" ||
+              gr.status === "TIMED_OUT"
+            );
             const rawAcc = typeof gr.accuracy === "number" ? gr.accuracy : (typeof metrics.accuracy === "number" ? metrics.accuracy : gr.score || 0);
             const timeRaw = metrics.timeTaken || metrics.timeSpent || metrics.timeSeconds || 0;
             const timeFormatted = isSkipped ? "0s" : formatGameTime(timeRaw);
 
+            let status = "Completed";
+            if (isSkipped) {
+              status = "Skipped";
+            } else if (isTimedOut) {
+              status = "Timed Out";
+            } else if (Number(gr.score ?? 0) < 100 && metrics.status !== "COMPLETED") {
+              status = "Incomplete";
+            }
+
             return {
               id: gId || `game-${gIdx}`,
               title: gameTitle,
-              status: isSkipped ? "Skipped" : "Completed",
+              status,
               score: isSkipped ? 0 : Math.round(Number(gr.score ?? 0)),
               accuracy: isSkipped ? 0 : Math.min(100, Math.max(0, Math.round(rawAcc))),
               timeFormatted,
@@ -590,14 +604,28 @@ export const getAllResults = async () => {
             gr.status === "SKIPPED" ||
             (Number(gr.score ?? 0) === 0 && (Number(metrics.timeTaken ?? 0) === 0 || Number(metrics.moves ?? 0) === 0))
           );
+          const isTimedOut = Boolean(
+            metrics.timedOut ||
+            metrics.status === "TIMED_OUT" ||
+            gr.status === "TIMED_OUT"
+          );
           const rawAcc = typeof gr.accuracy === "number" ? gr.accuracy : (typeof metrics.accuracy === "number" ? metrics.accuracy : gr.score || 0);
           const timeRaw = metrics.timeTaken || metrics.timeSpent || metrics.timeSeconds || 0;
           const timeFormatted = isSkipped ? "0s" : formatGameTime(timeRaw);
 
+          let status = "Completed";
+          if (isSkipped) {
+            status = "Skipped";
+          } else if (isTimedOut) {
+            status = "Timed Out";
+          } else if (Number(gr.score ?? 0) < 100 && metrics.status !== "COMPLETED") {
+            status = "Incomplete";
+          }
+
           return {
             id: gr.gameId || `game-${gIdx}`,
             title: gameTitle,
-            status: isSkipped ? "Skipped" : "Completed",
+            status,
             score: isSkipped ? 0 : Math.round(Number(gr.score ?? 0)),
             accuracy: isSkipped ? 0 : Math.min(100, Math.max(0, Math.round(rawAcc))),
             timeFormatted,

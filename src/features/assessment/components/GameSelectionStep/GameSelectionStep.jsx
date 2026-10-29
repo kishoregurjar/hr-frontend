@@ -1,12 +1,16 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { Search, ArrowLeft, ArrowRight, CheckCircle2, X } from "lucide-react";
+import { Search, ArrowLeft, ArrowRight, CheckCircle2, X, Clock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 import GameSelectionCard from "../GameSelectionCard";
+import {
+  getGameDurationForDifficulty,
+  formatDurationDisplay,
+} from "@/features/games/utils/gameTimers";
 
 const GameSelectionStep = ({
   games = [],
@@ -66,12 +70,24 @@ const GameSelectionStep = ({
     filteredGameIds.length > 0 &&
     filteredGameIds.every((id) => selectedIds.includes(id));
 
+  const totalSelectedTime = useMemo(() => {
+    return selectedIds.reduce((sum, id) => {
+      const diff = gameConfigs[id]?.difficulty || games.find((g) => g.id === id)?.difficulty?.toUpperCase() || "EASY";
+      return sum + getGameDurationForDifficulty(id, diff);
+    }, 0);
+  }, [selectedIds, gameConfigs, games]);
+
   const emitChange = (ids, configs) => {
     const payload = ids.map((id) => {
       const defaultDiff = games.find((g) => g.id === id)?.difficulty?.toUpperCase() || "EASY";
+      const userConfig = configs[id] || { difficulty: defaultDiff };
+      const duration = getGameDurationForDifficulty(id, userConfig.difficulty);
       return {
         id,
-        config: configs[id] || { difficulty: defaultDiff },
+        config: {
+          ...userConfig,
+          duration,
+        },
       };
     });
     onSelectionChange?.(payload);
@@ -207,11 +223,18 @@ const GameSelectionStep = ({
       )}
 
       <div className="flex items-center justify-between border-t border-slate-100 pt-6">
-        <p className="text-xs font-semibold text-slate-500">
-          <span className="font-black text-slate-900">{selectedIds.length}</span>{" "}
-          {selectedIds.length === 1 ? "game" : "games"}{" "}
-          selected
-        </p>
+        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+          <span>
+            <strong className="font-black text-slate-900">{selectedIds.length}</strong>{" "}
+            {selectedIds.length === 1 ? "game" : "games"} selected
+          </span>
+          {selectedIds.length > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 border border-blue-200/70 px-2 py-0.5 text-[11px] font-bold text-blue-700">
+              <Clock className="h-3 w-3 text-blue-600" />
+              ~{formatDurationDisplay(totalSelectedTime)} total challenge time
+            </span>
+          )}
+        </div>
 
         <div className="flex items-center gap-3">
           <Button

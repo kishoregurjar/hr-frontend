@@ -379,6 +379,7 @@ export default function MahjongGame({ config = {}, onComplete }) {
       timeSpent: time || 0,
       finalScore: score,
       finalState: { cleared: true, score },
+      status: "COMPLETED",
     };
     if (typeof onComplete === "function") {
       onComplete(finalResult);
@@ -614,19 +615,22 @@ export default function MahjongGame({ config = {}, onComplete }) {
       }
     }
 
-    if (remainingTiles.length > 0 && !hasAnyValidMovesOrMatches(nextBoard)) {
-      if (shuffles > 0) {
-        setTimeout(() => {
-          setIsShuffleHighlighted(true);
-          setMessage("No direct matches visible — Click 'Shuffle' button to reshuffle tiles!");
-        }, 350);
-      } else {
-        setTimeout(() => {
-          setMessage("No more valid moves available! Finishing challenge with your earned score.");
-          solvedRef.current = true;
-          stopTimer();
-          setWin(true);
-        }, 800);
+    if (remainingTiles.length > 0) {
+      const hasDirectPair = Boolean(getAvailablePair(nextBoard));
+
+      if (!hasDirectPair) {
+        if (shufflesLeft > 0) {
+          setTimeout(() => {
+            setIsShuffleHighlighted(true);
+            setMessage("No direct matches visible — Click 'Shuffle' or slide tiles!");
+          }, 350);
+        } else {
+          // Deadlock guard: Automatically auto-shuffle board so player never gets stranded
+          setTimeout(() => {
+            setMessage("No direct match remaining — Auto-shuffling remaining tiles!");
+            shuffleBoard(nextBoard, true);
+          }, 600);
+        }
       }
     }
   };
@@ -954,16 +958,51 @@ export default function MahjongGame({ config = {}, onComplete }) {
           fallbackBoard = testBoard;
         }
 
-        if (hasAnyValidMovesOrMatches(testBoard)) {
+        // Guarantee a direct clickable match exists after shuffle
+        if (getAvailablePair(testBoard)) {
           finalBoard = testBoard;
           break;
         }
         attempts += 1;
       }
 
-      // If no instant match detected in 150 attempts, still use randomized fallback board
-      if (finalBoard === currentBoard && fallbackBoard) {
-        finalBoard = fallbackBoard;
+      // If random occupied slot placement doesn't yield a direct pair,
+      // spatially place matching pairs adjacent to each other
+      if (!getAvailablePair(finalBoard) && tilesToShuffle.length >= 2) {
+        const groups = {};
+        tilesToShuffle.forEach((t) => {
+          groups[t.design.id] = groups[t.design.id] || [];
+          groups[t.design.id].push(t);
+        });
+
+        const guaranteedBoard = Array.from({ length: dimConfig.rows }, () =>
+          Array.from({ length: dimConfig.cols }, () => null)
+        );
+
+        // Sort occupied slots sequentially
+        const sortedCoords = [...occupiedCoords].sort((a, b) =>
+          a.r === b.r ? a.c - b.c : a.r - b.r
+        );
+
+        let coordIdx = 0;
+        Object.values(groups).forEach((pairList) => {
+          pairList.forEach((tile) => {
+            if (coordIdx < sortedCoords.length) {
+              const coord = sortedCoords[coordIdx++];
+              guaranteedBoard[coord.r][coord.c] = {
+                ...tile,
+                row: coord.r,
+                col: coord.c,
+              };
+            }
+          });
+        });
+
+        if (getAvailablePair(guaranteedBoard)) {
+          finalBoard = guaranteedBoard;
+        } else if (fallbackBoard) {
+          finalBoard = fallbackBoard;
+        }
       }
     }
 
@@ -1023,14 +1062,18 @@ export default function MahjongGame({ config = {}, onComplete }) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => shuffleBoard()}
-            disabled={shufflesLeft <= 0 || win}
-            className={`h-8 px-2.5 text-xs font-bold border-emerald-300 bg-emerald-50/60 text-emerald-900 hover:bg-emerald-100 rounded-lg gap-1 transition-all ${
-              isShuffleHighlighted ? "animate-pulse ring-2 ring-emerald-500 font-black" : ""
+            onClick={() => shuffleBoard(null, shufflesLeft <= 0)}
+            disabled={win}
+            className={`h-8 px-2.5 text-xs font-bold rounded-lg gap-1 transition-all ${
+              isShuffleHighlighted
+                ? "animate-pulse ring-2 ring-emerald-500 font-black bg-emerald-100 text-emerald-900 border-emerald-400"
+                : shufflesLeft <= 0
+                ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100"
+                : "border-emerald-300 bg-emerald-50/60 text-emerald-900 hover:bg-emerald-100"
             }`}
           >
-            <Shuffle size={14} className="text-emerald-700" />
-            <span>Shuffle ({shufflesLeft})</span>
+            <Shuffle size={14} className={shufflesLeft <= 0 ? "text-amber-600" : "text-emerald-700"} />
+            <span>{shufflesLeft <= 0 ? "Emergency Shuffle" : `Shuffle (${shufflesLeft})`}</span>
           </Button>
         </div>
 
