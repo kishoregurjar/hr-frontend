@@ -27,11 +27,15 @@ import {
   Video,
   AlertTriangle,
   RefreshCw,
+  Camera,
+  UserCheck,
+  ScanFace,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { sendCandidateOtp, verifyCandidateOtp } from "@/lib/api/attempts";
+import { extractFaceFeatures, captureVideoSnapshot } from "../../utils/faceMatching";
 
 const AssessmentPreStart = ({
   token = "",
@@ -72,6 +76,14 @@ const AssessmentPreStart = ({
   const [devHint, setDevHint] = useState("");
   const [cameraError, setCameraError] = useState("");
   const [isRequestingCamera, setIsRequestingCamera] = useState(false);
+  const [capturedPhoto, setCapturedPhoto] = useState(null);
+  const [isCapturingPhoto, setIsCapturingPhoto] = useState(false);
+  const [photoVerified, setPhotoVerified] = useState(false);
+  const [prestartCameraActive, setPrestartCameraActive] = useState(false);
+  const [isCameraStarting, setIsCameraStarting] = useState(false);
+  const prestartVideoRef = useRef(null);
+  const prestartStreamRef = useRef(null);
+  const prestartLandmarkerRef = useRef(null);
 
   const otpInputRefs = useRef([]);
 
@@ -301,6 +313,177 @@ const AssessmentPreStart = ({
       return;
     }
     setStep(4);
+  };
+
+
+  // ── Pre-Start Camera Clean-up ──
+  useEffect(() => {
+    return () => {
+      if (prestartStreamRef.current) {
+        prestartStreamRef.current.getTracks().forEach((t) => t.stop());
+        prestartStreamRef.current = null;
+      }
+      if (prestartLandmarkerRef.current) {
+        try { prestartLandmarkerRef.current.close(); } catch {}
+        prestartLandmarkerRef.current = null;
+      }
+    };
+  }, []);
+
+  // Ensure stream is continuously attached to prestart video element
+  useEffect(() => {
+    if (prestartCameraActive && prestartStreamRef.current && prestartVideoRef.current) {
+      prestartVideoRef.current.srcObject = prestartStreamRef.current;
+      prestartVideoRef.current.play().catch(() => {});
+    }
+  }, [prestartCameraActive]);
+
+  const handleStartPrestartCamera = async () => {
+    setIsCameraStarting(true);
+    setCameraError("");
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+        audio: false,
+      });
+
+      prestartStreamRef.current = stream;
+      setPrestartCameraActive(true);
+
+      if (prestartVideoRef.current) {
+        prestartVideoRef.current.srcObject = stream;
+        prestartVideoRef.current.play().catch(() => {});
+      }
+
+      // Initialize FaceLandmarker
+      if (!prestartLandmarkerRef.current) {
+        try {
+          const { FaceLandmarker, FilesetResolver } = await import("@mediapipe/tasks-vision");
+          let filesetResolver;
+          try {
+            filesetResolver = await FilesetResolver.forVisionTasks("/wasm");
+          } catch {
+            filesetResolver = await FilesetResolver.forVisionTasks(
+              "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+            );
+          }
+          let landmarker;
+          try {
+            landmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+              baseOptions: {
+                modelAssetPath: "/models/face_landmarker.task",
+                delegate: "GPU",
+              },
+              runningMode: "VIDEO",
+              numFaces: 2,
+            });
+          } catch (_gpu) {
+            landmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+              baseOptions: {
+                modelAssetPath: "/models/face_landmarker.task",
+                delegate: "CPU",
+              },
+              runningMode: "VIDEO",
+              numFaces: 2,
+            });
+          }
+          prestartLandmarkerRef.current = landmarker;
+        } catch (mErr) {
+          console.warn("[AssessmentPreStart] FaceLandmarker notice:", mErr?.message || mErr);
+        }
+      }
+    } catch (cErr) {
+      console.warn("[AssessmentPreStart] Camera start error:", cErr);
+      setCameraError("Camera access denied or unavailable. Please allow camera permissions.");
+      toast.error("Camera access denied. Please allow permissions in your browser.");
+    } finally {
+      setIsCameraStarting(false);
+    }
+  };
+
+  const handleCaptureVerificationPhoto = () => {
+    const video = prestartVideoRef.current;
+    if (!video || !video.videoWidth || !video.videoHeight) {
+      toast.error("Camera is initializing. Please wait a moment.");
+      return;
+    }
+
+    setIsCapturingPhoto(true);
+
+    try {
+      const landmarker = prestartLandmarkerRef.current;
+
+      if (!landmarker) {
+        toast.error("AI Face detector is initializing. Please wait a moment and try again.");
+        setIsCapturingPhoto(false);
+        return;
+      }
+
+      const results = landmarker.detectForVideo(video, performance.now());
+      const faces = results?.faceLandmarks || [];
+
+      if (faces.length === 0) {
+        toast.error("No face detected! Please position your face clearly in the camera center.");
+        setIsCapturingPhoto(false);
+        return;
+      }
+
+      if (faces.length > 1) {
+        toast.error("Multiple faces detected! Please ensure only the candidate is in the camera frame.");
+        setIsCapturingPhoto(false);
+        return;
+      }
+
+      const features = extractFaceFeatures(faces[0]);
+      if (!features || features.length === 0) {
+        toast.error("Could not capture facial geometry clearly. Please ensure good lighting and face the camera.");
+        setIsCapturingPhoto(false);
+        return;
+      }
+
+      const photoDataUrl = captureVideoSnapshot(video, 480);
+      if (!photoDataUrl) {
+        toast.error("Failed to capture image snapshot. Please try again.");
+        setIsCapturingPhoto(false);
+        return;
+      }
+
+      // Lock baseline features & photo in both sessionStorage and localStorage
+      const featuresJson = JSON.stringify(features);
+      sessionStorage.setItem("candidate_face_baseline", featuresJson);
+      sessionStorage.setItem("candidate_photo_url", photoDataUrl);
+      localStorage.setItem("candidate_face_baseline", featuresJson);
+      localStorage.setItem("candidate_photo_url", photoDataUrl);
+
+      // Stop webcam stream now that snapshot is taken
+      if (prestartStreamRef.current) {
+        prestartStreamRef.current.getTracks().forEach((t) => t.stop());
+        prestartStreamRef.current = null;
+      }
+      setPrestartCameraActive(false);
+
+      setCapturedPhoto(photoDataUrl);
+      setPhotoVerified(true);
+      toast.success("✓ Candidate identity registered & photo saved!");
+    } catch (err) {
+      console.warn("Capture error:", err);
+      toast.error("Photo capture error. Please try again.");
+    } finally {
+      setIsCapturingPhoto(false);
+    }
+  };
+
+  const handleRetakePhoto = () => {
+    setCapturedPhoto(null);
+    setPhotoVerified(false);
+    try {
+      sessionStorage.removeItem("candidate_face_baseline");
+      sessionStorage.removeItem("candidate_photo_url");
+      localStorage.removeItem("candidate_face_baseline");
+      localStorage.removeItem("candidate_photo_url");
+    } catch {}
+    handleStartPrestartCamera();
   };
 
   const handleStartClick = async () => {
@@ -884,6 +1067,154 @@ const AssessmentPreStart = ({
                 </div>
               </div>
 
+                            {/* Candidate Identity Photo Capture Card */}
+              <div className="rounded-2xl border-2 border-indigo-100 bg-gradient-to-br from-indigo-50/50 via-white to-slate-50/50 p-5 space-y-4 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-xs">
+                      <ScanFace className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-black text-slate-900 tracking-tight flex items-center gap-2">
+                        <span>Candidate Identity Verification</span>
+                        {photoVerified && (
+                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-extrabold px-2 py-0.5">
+                            ✓ Photo Registered
+                          </Badge>
+                        )}
+                      </h4>
+                      <p className="text-[11px] text-slate-500 font-medium">
+                        Capture a live photo before starting. Real-time proctoring verifies your identity continuously.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                  {/* Video / Snapshot Preview Box */}
+                  <div className="relative w-48 h-36 sm:w-52 sm:h-40 bg-slate-900 rounded-xl overflow-hidden border border-slate-200 shadow-inner shrink-0 flex flex-col items-center justify-center">
+                    {/* Always keep video element in DOM so ref & stream stay bound */}
+                    <video
+                      ref={prestartVideoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className={`w-full h-full object-cover scale-x-[-1] ${
+                        !capturedPhoto && prestartCameraActive ? "block" : "hidden"
+                      }`}
+                    />
+
+                    {capturedPhoto && (
+                      <img
+                        src={capturedPhoto}
+                        alt="Verified Candidate Snapshot"
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+
+                    {!capturedPhoto && !prestartCameraActive && (
+                      <div className="flex flex-col items-center justify-center p-3 text-center">
+                        <div className="w-11 h-11 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center mb-1.5">
+                          <Camera className="h-5 w-5 text-slate-400" />
+                        </div>
+                        <span className="text-[11px] font-semibold text-slate-300">Camera Off</span>
+                        <span className="text-[9.5px] text-slate-500 mt-0.5">Click button to open</span>
+                      </div>
+                    )}
+
+                    {/* Overlay indicator */}
+                    <div className="absolute top-2 left-2 z-10">
+                      {capturedPhoto ? (
+                        <span className="flex items-center gap-1 bg-emerald-600 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-md shadow-xs">
+                          <CheckCircle2 className="h-3 w-3" />
+                          <span>SAVED</span>
+                        </span>
+                      ) : prestartCameraActive ? (
+                        <span className="flex items-center gap-1 bg-black/60 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-xs">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          <span>LIVE</span>
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {/* Action Controls */}
+                  <div className="space-y-2.5 flex-1 w-full text-center sm:text-left">
+                    {photoVerified ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-800">
+                          <UserCheck className="h-4 w-4 text-emerald-600" />
+                          <span>Identity photo saved & verified</span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                          Your verification photo is saved. You can now accept the testing guidelines below to start your assessment.
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleRetakePhoto}
+                          className="h-8 px-3 text-xs font-semibold text-slate-700 border-slate-300 hover:bg-slate-100 rounded-lg gap-1.5 cursor-pointer"
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                          <span>Retake Verification Photo</span>
+                        </Button>
+                      </div>
+                    ) : prestartCameraActive ? (
+                      <div className="space-y-2.5">
+                        <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                          Position your face clearly in the camera center and click the button below to capture and save your photo.
+                        </p>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleCaptureVerificationPhoto}
+                          disabled={isCapturingPhoto}
+                          className="h-10 px-5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs gap-2 cursor-pointer disabled:opacity-50"
+                        >
+                          {isCapturingPhoto ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              <span>Scanning Face Geometry...</span>
+                            </>
+                          ) : (
+                            <>
+                              <ScanFace className="h-3.5 w-3.5" />
+                              <span>Capture & Save Photo</span>
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                          Click the button below to turn on the camera and capture your verification photo.
+                        </p>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleStartPrestartCamera}
+                          disabled={isCameraStarting}
+                          className="h-10 px-5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs gap-2 cursor-pointer disabled:opacity-50"
+                        >
+                          {isCameraStarting ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              <span>Opening Camera...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Camera className="h-3.5 w-3.5" />
+                              <span>Take Verification Photo</span>
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Honor Code Acceptance */}
               <div
                 onClick={() => setAccepted(!accepted)}
@@ -947,7 +1278,7 @@ const AssessmentPreStart = ({
                 <Button
                   type="button"
                   onClick={handleStartClick}
-                  disabled={!accepted || isStarting || isRequestingCamera}
+                  disabled={!accepted || !photoVerified || isStarting || isRequestingCamera}
                   className="h-12 px-8 font-black text-xs sm:text-sm bg-[#303331] hover:bg-[#424644] text-white rounded-xl shadow-md transition-all gap-2.5 disabled:opacity-40"
                 >
                   {isRequestingCamera ? (
