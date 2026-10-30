@@ -45,6 +45,7 @@ import {
 } from "@/lib/api/company";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/context";
+import BrandingSettingsTab from "./BrandingSettingsTab";
 
 export default function CompanySettingsPage() {
   const { user } = useAuth();
@@ -68,7 +69,7 @@ export default function CompanySettingsPage() {
 
   useEffect(() => {
     const tabParam = searchParams.get("tab");
-    if (tabParam && ["profile", "members", "invitations"].includes(tabParam)) {
+    if (tabParam && ["profile", "members", "invitations", "branding"].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
@@ -466,6 +467,18 @@ export default function CompanySettingsPage() {
         >
           <Mail className="h-4 w-4" />
           Recruiter Invitations ({invitations.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab("branding")}
+          className={`pb-3 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition-all flex items-center gap-2 shrink-0 whitespace-nowrap cursor-pointer ${
+            activeTab === "branding"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Sparkles className="h-4 w-4 text-blue-600" />
+          White-Label Branding
         </button>
       </div>
 
@@ -1007,6 +1020,11 @@ export default function CompanySettingsPage() {
               </div>
             </div>
           )}
+
+      {/* ── TAB 4: White-Label Branding ── */}
+      {activeTab === "branding" && (
+        <BrandingSettingsTab company={company} />
+      )}
     </div>
   );
 }

@@ -390,6 +390,7 @@ export default function ResultsAndRankingPage() {
       return;
     }
 
+    const orgPrefix = companyName ? `# Organization: ${companyName}\n# Exported Date: ${new Date().toLocaleString()}\n` : "";
     const headers = "Rank,Candidate Name,Email,Assessment,Score,Percentage,Status,Time Spent,Integrity\n";
     const rows = filteredResults
       .map(
@@ -398,11 +399,12 @@ export default function ResultsAndRankingPage() {
       )
       .join("\n");
 
-    const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([orgPrefix + headers + rows], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `candidate_rankings_${new Date().toISOString().slice(0, 10)}.csv`;
+    const fileSlug = (user?.company?.slug || companyName || "candidate").toLowerCase().replace(/[^a-z0-9]/g, "_");
+    a.download = `${fileSlug}_rankings_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     toast.success("Rankings report downloaded successfully!");
   };
@@ -973,19 +975,31 @@ export default function ResultsAndRankingPage() {
       {selectedCandidate && (
         <Dialog open={Boolean(selectedCandidate)} onOpenChange={() => setSelectedCandidate(null)}>
           <DialogContent className="max-w-2xl w-[94vw] sm:w-full p-4 sm:p-7 md:p-8 rounded-2xl sm:rounded-[28px] border-slate-100 shadow-2xl font-sans bg-white space-y-5 sm:space-y-6 max-h-[90vh] overflow-y-auto">
-            {/* Header: Candidate Info */}
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-xl sm:text-2xl shadow-xs shrink-0">
-                {selectedCandidate.candidateName.charAt(0).toLowerCase()}
+            {/* Header: Candidate Info & Hiring Company Badge */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-xl sm:text-2xl shadow-xs shrink-0">
+                  {selectedCandidate.candidateName.charAt(0).toLowerCase()}
+                </div>
+                <div className="space-y-0.5 min-w-0 flex-1">
+                  <DialogTitle className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight truncate">
+                    {selectedCandidate.candidateName}
+                  </DialogTitle>
+                  <DialogDescription className="text-xs sm:text-sm text-slate-500 font-medium truncate">
+                    {selectedCandidate.email} • {selectedCandidate.assessmentTitle}
+                  </DialogDescription>
+                </div>
               </div>
-              <div className="space-y-0.5 min-w-0 flex-1">
-                <DialogTitle className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight truncate">
-                  {selectedCandidate.candidateName}
-                </DialogTitle>
-                <DialogDescription className="text-xs sm:text-sm text-slate-500 font-medium truncate">
-                  {selectedCandidate.email} • {selectedCandidate.assessmentTitle}
-                </DialogDescription>
-              </div>
+
+              {companyName && (
+                <div className="hidden sm:flex flex-col items-end shrink-0">
+                  <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider text-slate-600 bg-slate-50 border-slate-200">
+                    <Building2 className="h-3 w-3 mr-1 text-slate-400" />
+                    {companyName}
+                  </Badge>
+                  <span className="text-[9px] text-slate-400 mt-1 font-semibold">Verified Evaluation</span>
+                </div>
+              )}
             </div>
 
             {/* Score Highlight Box: 2 cols on mobile, 4 cols on tablet/desktop */}
@@ -1241,8 +1255,11 @@ export default function ResultsAndRankingPage() {
               </div>
             )}
 
-            {/* Bottom: Close Button */}
-            <div className="flex justify-end pt-2">
+            {/* Bottom: Organization Tag & Close Button */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100">
+              <div className="text-[11px] text-slate-400 font-medium text-center sm:text-left">
+                {companyName ? `${companyName} Talent Evaluation Scorecard` : "Candidate Performance Scorecard"}
+              </div>
               <button
                 type="button"
                 onClick={() => setSelectedCandidate(null)}

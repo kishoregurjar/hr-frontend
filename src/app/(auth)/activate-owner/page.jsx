@@ -29,6 +29,7 @@ function ActivateOwnerContent() {
   const token = searchParams.get("token") || "";
 
   const [isVerifying, setIsVerifying] = useState(true);
+  const [companyInfo, setCompanyInfo] = useState(null);
   const [tokenValid, setTokenValid] = useState(true);
   const [isAlreadyActive, setIsAlreadyActive] = useState(false);
   const [password, setPassword] = useState("");
@@ -52,8 +53,12 @@ function ActivateOwnerContent() {
       }
 
       try {
-        await verifyOwnerActivationApi(token);
+        const verifyRes = await verifyOwnerActivationApi(token);
         if (isMounted) {
+          const vData = verifyRes?.data || verifyRes;
+          if (vData?.company) {
+            setCompanyInfo(vData.company);
+          }
           setTokenValid(true);
           setIsVerifying(false);
         }
@@ -355,6 +360,30 @@ function ActivateOwnerContent() {
   // State 2: Valid Link - Set Password Form
   return (
     <div className="space-y-5">
+      {companyInfo?.name && (
+        <div className="flex items-center gap-3 p-3 bg-slate-50/90 border border-slate-200 rounded-2xl mb-1 shadow-2xs">
+          {companyInfo.logoUrl ? (
+            <img
+              src={companyInfo.logoUrl}
+              alt={companyInfo.name}
+              className="h-10 w-10 rounded-xl object-contain bg-white border border-slate-200/80 p-1 shrink-0"
+            />
+          ) : (
+            <div
+              className="h-10 w-10 rounded-xl flex items-center justify-center font-black text-sm text-white shrink-0 shadow-2xs"
+              style={{ backgroundColor: companyInfo.brandColor || "#2563eb" }}
+            >
+              {companyInfo.name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-black text-slate-900 truncate tracking-tight">{companyInfo.name}</p>
+            <p className="text-[11px] text-slate-500 font-medium truncate">
+              {companyInfo.brandTagline || "Enterprise Dedicated Workspace"}
+            </p>
+          </div>
+        </div>
+      )}
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
         {/* New Password */}
         <div className="space-y-1.5">

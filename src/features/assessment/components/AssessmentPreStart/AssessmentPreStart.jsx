@@ -143,6 +143,80 @@ const AssessmentPreStart = ({
     "Official candidate skill & cognitive aptitude evaluation.";
 
   // Monogram initials for fallback logo (e.g. CG)
+  const brandColor =
+    assessment?.brandColor ||
+    assessment?.company?.brandColor ||
+    assessment?.createdBy?.company?.brandColor ||
+    null;
+
+  const accentColor =
+    assessment?.accentColor ||
+    assessment?.company?.accentColor ||
+    assessment?.createdBy?.company?.accentColor ||
+    null;
+
+  const faviconUrl =
+    assessment?.faviconUrl ||
+    assessment?.company?.faviconUrl ||
+    assessment?.createdBy?.company?.faviconUrl ||
+    null;
+
+  const brandTagline =
+    assessment?.brandTagline ||
+    assessment?.company?.brandTagline ||
+    assessment?.createdBy?.company?.brandTagline ||
+    null;
+
+  const showPoweredByHireQuest =
+    (assessment?.showPoweredByHireQuest ??
+      assessment?.company?.showPoweredByHireQuest ??
+      assessment?.createdBy?.company?.showPoweredByHireQuest) !== false;
+
+  useEffect(() => {
+    if (faviconUrl && typeof document !== "undefined") {
+      let link = document.querySelector("link[rel*='icon']");
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "shortcut icon";
+        document.head.appendChild(link);
+      }
+      const prevIcon = link.href;
+      link.href = faviconUrl;
+      return () => {
+        if (prevIcon) link.href = prevIcon;
+      };
+    }
+  }, [faviconUrl]);
+
+  useEffect(() => {
+    if (companyName && typeof document !== "undefined") {
+      const prevTitle = document.title;
+      document.title = `${companyName} | ${jobPosition}`;
+      return () => {
+        document.title = prevTitle;
+      };
+    }
+  }, [companyName, jobPosition]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && (companyName || companyLogo || brandColor)) {
+      try {
+        sessionStorage.setItem(
+          "candidate_company_branding",
+          JSON.stringify({
+            companyName,
+            companyLogo,
+            brandColor,
+            accentColor,
+            faviconUrl,
+            brandTagline,
+            showPoweredByHireQuest,
+          })
+        );
+      } catch {}
+    }
+  }, [companyName, companyLogo, brandColor, accentColor, faviconUrl, brandTagline, showPoweredByHireQuest]);
+
   const monogram = companyName
     .split(" ")
     .map((w) => w[0])
@@ -368,7 +442,7 @@ const AssessmentPreStart = ({
       {/* ── Outer Full-Width Container ── */}
       <div className="w-full max-w-5xl space-y-6">
         {/* ── 1. Top Header: Minimal Plain Header (Style 1) ── */}
-        <header className="pb-5 border-b-2 border-[#303331]/90">
+        <header className="pb-5 border-b-2" style={{ borderBottomColor: brandColor || "#303331" }}>
           <div className="flex items-center gap-4">
             {companyLogo ? (
               <img
@@ -394,6 +468,11 @@ const AssessmentPreStart = ({
               <h1 className="text-2xl sm:text-3xl font-extrabold text-[#303331] tracking-tight mt-0.5">
                 {jobPosition}
               </h1>
+              {brandTagline && (
+                <p className="text-xs font-semibold text-slate-500 italic mt-0.5">
+                  {brandTagline}
+                </p>
+              )}
             </div>
           </div>
         </header>
@@ -566,7 +645,7 @@ const AssessmentPreStart = ({
                 <Button
                   type="button"
                   onClick={handleStep1ToStep2}
-                  className="h-11 px-7 font-bold text-xs bg-[#303331] hover:bg-[#424644] text-white rounded-xl shadow-xs transition-all gap-2"
+                  className="h-11 px-7 font-bold text-xs bg-[#303331] hover:bg-[#424644] text-white rounded-xl shadow-xs transition-all gap-2" style={brandColor ? { backgroundColor: brandColor } : {}}
                 >
                   <span>Continue to Candidate Profile</span>
                   <ArrowRight className="h-4 w-4" />
@@ -948,7 +1027,7 @@ const AssessmentPreStart = ({
                   type="button"
                   onClick={handleStartClick}
                   disabled={!accepted || isStarting || isRequestingCamera}
-                  className="h-12 px-8 font-black text-xs sm:text-sm bg-[#303331] hover:bg-[#424644] text-white rounded-xl shadow-md transition-all gap-2.5 disabled:opacity-40"
+                  className="h-12 px-8 font-black text-xs sm:text-sm bg-[#303331] hover:bg-[#424644] text-white rounded-xl shadow-md transition-all gap-2.5 disabled:opacity-40" style={brandColor ? { backgroundColor: brandColor } : {}}
                 >
                   {isRequestingCamera ? (
                     <>
@@ -971,6 +1050,17 @@ const AssessmentPreStart = ({
             </div>
           )}
         </main>
+
+        {/* ── White-Label Footer ── */}
+        {showPoweredByHireQuest ? (
+          <footer className="text-center py-6 text-xs text-slate-400 font-medium border-t border-slate-100 mt-8">
+            Powered by <span className="font-bold text-slate-600">HireQuest</span> Screening Engine
+          </footer>
+        ) : (
+          <footer className="text-center py-6 text-xs text-slate-400 font-medium border-t border-slate-100 mt-8">
+            {companyName} Confidential & Proprietary Evaluation System
+          </footer>
+        )}
       </div>
     </div>
   );

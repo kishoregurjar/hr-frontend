@@ -233,6 +233,7 @@ export const createAdminCompany = async (payload) => {
     name: companyName,
     website: formattedWebsite,
     domain: rawDomain || undefined,
+    customDomain: rawDomain || undefined,
     industry: payload.industry || "Information Technology",
     email: ownerEmail,
     ownerEmail: ownerEmail,

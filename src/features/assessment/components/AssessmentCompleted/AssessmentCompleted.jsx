@@ -28,10 +28,36 @@ export default function AssessmentCompleted({
   attempt,
   submissionResult,
 }) {
-  // Ensure all proctoring webcam/audio hardware tracks are fully released
+  const [branding, setBranding] = useState(null);
+
+  // Ensure all proctoring webcam/audio hardware tracks are fully released and resolve tenant branding
   useEffect(() => {
     stopActiveMediaStream();
+    try {
+      const stored = sessionStorage.getItem("candidate_company_branding");
+      if (stored) {
+        setBranding(JSON.parse(stored));
+      }
+    } catch {}
   }, []);
+
+  const companyName =
+    branding?.name ||
+    assessment?.companyName ||
+    assessment?.company?.name ||
+    attempt?.assessment?.companyName ||
+    "Company";
+
+  const companyLogo =
+    branding?.logoUrl ||
+    assessment?.companyLogo ||
+    assessment?.company?.logoUrl ||
+    null;
+
+  const showPoweredByHireQuest =
+    (branding?.showPoweredByHireQuest ??
+      assessment?.showPoweredByHireQuest ??
+      assessment?.company?.showPoweredByHireQuest) !== false;
 
   const submittedAt = attempt?.submittedAt
     ? new Date(attempt.submittedAt).toLocaleString(undefined, {
@@ -251,6 +277,23 @@ export default function AssessmentCompleted({
           {/* Subtle Ambient Light Glow */}
           <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-80 h-32 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
+          {/* Company Branding Logo or Monogram */}
+          {companyLogo ? (
+            <div className="mx-auto mb-4 flex justify-center">
+              <img
+                src={companyLogo}
+                alt={companyName}
+                className="h-9 max-w-[180px] object-contain"
+              />
+            </div>
+          ) : companyName && companyName !== "Company" ? (
+            <div className="mx-auto mb-3">
+              <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                {companyName}
+              </span>
+            </div>
+          ) : null}
+
           {/* Trophy / Check Badge */}
           <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/15 via-blue-500/10 to-indigo-500/15 border border-emerald-200/90 text-emerald-600 shadow-sm relative">
             <Trophy className="h-10 w-10 text-emerald-600" />
@@ -277,9 +320,15 @@ export default function AssessmentCompleted({
         </div>
 
         <div className="text-center">
-          <p className="text-[11px] text-slate-400">
-            HireQuest Talent Assessment Platform
-          </p>
+          {showPoweredByHireQuest ? (
+            <p className="text-[11px] text-slate-400">
+              Evaluated by {companyName} &bull; Powered by HireQuest
+            </p>
+          ) : (
+            <p className="text-[11px] text-slate-400">
+              {companyName} Confidential & Proprietary Evaluation System
+            </p>
+          )}
         </div>
       </div>
     </div>
