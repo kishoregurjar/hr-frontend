@@ -13,3 +13,4 @@ export * from "./getSectionCompletion";
 export * from "./getAssessmentReview";
 export * from "./validateAssessmentStart";
 export * from "./proctoringMedia";
+export * from "./faceMatching";
