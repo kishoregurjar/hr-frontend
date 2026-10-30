@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, forwardRef } from "react";
 import Link from "next/link";
-import { ArrowRight, Inbox, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, Mailbox, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
@@ -65,22 +65,22 @@ const RecentResultsTable = () => {
   }, [totalPages, validPage]);
 
   return (
-    <div className="rounded-2xl border bg-card p-5 sm:p-6 shadow-xs space-y-4 font-sans">
+    <div className="rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-6 sm:p-7 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 space-y-5 font-sans transition-shadow duration-200 hover:shadow-lg">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
         <div>
-          <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
             Recent Assessment Results
           </h3>
-          <p className="text-xs text-muted-foreground font-medium">
+          <p className="text-xs text-slate-500 font-medium mt-0.5">
             Highest scoring candidates evaluated across modules
           </p>
         </div>
         <Link
           href="/results"
-          className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 shrink-0"
+          className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition shadow-2xs self-start sm:self-auto cursor-pointer"
         >
-          View Full Leaderboard
+          <span>View full leaderboard</span>
           <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
@@ -88,24 +88,26 @@ const RecentResultsTable = () => {
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
-          <thead className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground border-b pb-2">
+          <thead className="text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2.5">
             <tr>
-              <th className="py-2.5 px-3">No.</th>
-              <th className="py-2.5 px-3">Candidate</th>
-              <th className="py-2.5 px-3">Assessment</th>
-              <th className="py-2.5 px-3">Score</th>
-              <th className="py-2.5 px-3">Time</th>
-              <th className="py-2.5 px-3 text-right">Status</th>
+              <th className="py-2.5 px-3">NO.</th>
+              <th className="py-2.5 px-3">CANDIDATE</th>
+              <th className="py-2.5 px-3">ASSESSMENT</th>
+              <th className="py-2.5 px-3">SCORE</th>
+              <th className="py-2.5 px-3">TIME</th>
+              <th className="py-2.5 px-3 text-right">STATUS</th>
             </tr>
           </thead>
-          <tbody className="divide-y text-slate-800 font-medium">
+          <tbody className="divide-y divide-slate-100 text-slate-800 font-medium">
             {submittedAttempts.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-10 text-center text-slate-500">
-                  <div className="flex flex-col items-center justify-center space-y-1.5">
-                    <Inbox className="h-7 w-7 text-slate-300" />
-                    <p className="text-xs font-bold text-slate-700">No test results submitted yet</p>
-                    <p className="text-[11px] text-slate-400">
+                <td colSpan={6} className="py-12 text-center text-slate-500">
+                  <div className="flex flex-col items-center justify-center space-y-2">
+                    <div className="w-14 h-14 rounded-full bg-indigo-50/80 border border-indigo-100/60 flex items-center justify-center mb-1 shadow-inner">
+                      <Mailbox className="h-7 w-7 text-indigo-500" />
+                    </div>
+                    <p className="text-sm font-bold text-slate-800">No test results submitted yet</p>
+                    <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
                       When invited candidates take tests, their evaluated scores will appear here.
                     </p>
                   </div>
@@ -160,7 +162,7 @@ const RecentResultsTable = () => {
 
       {/* Pagination Footer */}
       {submittedAttempts.length > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t text-xs text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs text-muted-foreground">
           <div className="flex items-center gap-2 text-xs">
             <span>
               Showing <span className="font-bold text-slate-800">{startIndex + 1}</span> to{" "}

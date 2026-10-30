@@ -1,4 +1,4 @@
-import { Gamepad2, Play, Clock, Award, Sparkles, LayoutGrid, CheckCircle2, SkipForward } from "lucide-react";
+import { Gamepad2, Play, Clock, Award, Sparkles, LayoutGrid, SkipForward, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDurationDisplay } from "@/features/games/utils/gameTimers";
 
@@ -42,7 +42,7 @@ const GAME_BRIEFS = {
     scoring: "Path Completion & Traversal Speed",
     instructions: [
       "Locate Checkpoint 1 on the grid to start the path.",
-      "Draw or tap connected cells sequentially through Checkpoints 1 -> N.",
+      "Draw or tap connected cells sequentially through Checkpoints 1 → N.",
       "Avoid obstacle walls and complete the path cleanly.",
     ],
   },
@@ -121,43 +121,46 @@ const GameReady = ({ section, gameIndex = 0, totalGames = 1, onStart, onSkip }) 
   return (
     <div className="space-y-6 font-sans">
       {/* ── Main Game Briefing Card ── */}
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-2xs space-y-6">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-6">
         {/* Header with Title and Category */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
           <div className="flex items-center gap-3.5">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600/10 text-blue-600 border border-blue-200/60 shrink-0">
-              <Gamepad2 className="h-6 w-6" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/15 text-indigo-600 border border-indigo-200/60 shadow-xs shrink-0">
+              <Gamepad2 className="h-7 w-7 text-indigo-600" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
                   {brief.category}
                 </span>
-                <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200/80">
                   {totalGames > 1 ? `Game ${gameIndex + 1} of ${totalGames}` : "Cognitive Module"}
                 </span>
               </div>
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-0.5">
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1">
                 {section?.title || brief.title}
               </h2>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             <span
-              className={`inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-black uppercase tracking-wider border ${
+              className={`inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-black uppercase tracking-wider border shadow-2xs ${
                 diffLower === "easy"
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                   : diffLower === "hard"
-                  ? "bg-rose-50 text-rose-700 border-rose-300"
-                  : "bg-amber-50 text-amber-700 border-amber-300"
+                  ? "bg-rose-50 text-rose-700 border-rose-200"
+                  : "bg-amber-50 text-amber-700 border-amber-200"
               }`}
             >
+              <span className={`h-1.5 w-1.5 rounded-full ${
+                diffLower === "easy" ? "bg-emerald-500" : diffLower === "hard" ? "bg-rose-500" : "bg-amber-500"
+              }`} />
               {diffDisplay}
             </span>
 
-            <div className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50/80 border border-blue-200 px-3.5 py-1.5 text-xs font-bold text-blue-700 shadow-2xs">
-              <Clock className="h-4 w-4 text-blue-600" />
+            <div className="inline-flex items-center gap-1.5 rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-2xs">
+              <Clock className="h-4 w-4 text-indigo-600" />
               <span>Time Limit: {formattedDuration}</span>
             </div>
           </div>
@@ -169,52 +172,60 @@ const GameReady = ({ section, gameIndex = 0, totalGames = 1, onStart, onSkip }) 
 
         {/* Skill & Scoring Metrics Grid */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4 space-y-1">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
-              <Award className="h-4 w-4 text-indigo-600" />
+          <div className="rounded-xl border border-indigo-100/90 bg-gradient-to-br from-indigo-50/50 to-white p-4 space-y-1.5 shadow-2xs">
+            <div className="flex items-center gap-2 text-xs font-bold text-indigo-900/70 uppercase tracking-wider">
+              <div className="h-6 w-6 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
+                <Award className="h-3.5 w-3.5" />
+              </div>
               <span>Skill Evaluated</span>
             </div>
-            <p className="text-sm font-extrabold text-slate-900">{brief.skill}</p>
+            <p className="text-sm font-extrabold text-slate-900 pl-0.5">{brief.skill}</p>
           </div>
 
-          <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4 space-y-1">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
-              <LayoutGrid className="h-4 w-4 text-emerald-600" />
+          <div className="rounded-xl border border-emerald-100/90 bg-gradient-to-br from-emerald-50/50 to-white p-4 space-y-1.5 shadow-2xs">
+            <div className="flex items-center gap-2 text-xs font-bold text-emerald-900/70 uppercase tracking-wider">
+              <div className="h-6 w-6 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600">
+                <LayoutGrid className="h-3.5 w-3.5" />
+              </div>
               <span>Scoring Metric</span>
             </div>
-            <p className="text-sm font-extrabold text-slate-900">{brief.scoring}</p>
+            <p className="text-sm font-extrabold text-slate-900 pl-0.5">{brief.scoring}</p>
           </div>
         </div>
 
         {/* Rules & Instructions List */}
-        <div className="rounded-xl border border-slate-200/80 bg-slate-50/40 p-5 space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+        <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-5 space-y-3.5">
+          <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-amber-500" />
             Rules & Gameplay Instructions
           </h3>
-          <ol className="space-y-2 text-xs font-medium text-slate-600 list-decimal pl-5">
+          <div className="space-y-2.5">
             {brief.instructions.map((inst, idx) => (
-              <li key={idx} className="pl-1 leading-relaxed">
-                {inst}
-              </li>
+              <div key={idx} className="flex items-start gap-2.5 text-xs font-medium text-slate-600">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white border border-slate-200 text-[10px] font-bold text-slate-700 shadow-2xs mt-0.5">
+                  {idx + 1}
+                </span>
+                <span className="leading-relaxed pt-0.5">{inst}</span>
+              </div>
             ))}
-          </ol>
+          </div>
         </div>
 
         {/* Action Footer */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
-          <div className="text-xs text-slate-500 font-medium">
-            Module timer is shared across all cognitive games. You can solve as many games as you want within the 40-min module pool.
+          <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+            <ShieldCheck className="h-4 w-4 text-indigo-500 shrink-0" />
+            <span>Module timer is shared across all cognitive games. You can solve as many games as you want within the 40-min module pool.</span>
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
             {onSkip && (
               <Button
                 type="button"
                 variant="outline"
                 size="lg"
                 onClick={onSkip}
-                className="w-full sm:w-auto h-11 px-5 rounded-xl border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs gap-1.5 cursor-pointer"
+                className="w-full sm:w-auto h-11 px-5 rounded-xl border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs gap-1.5 cursor-pointer shadow-2xs"
               >
                 <SkipForward className="h-4 w-4 text-slate-500" />
                 Skip Challenge
@@ -225,7 +236,7 @@ const GameReady = ({ section, gameIndex = 0, totalGames = 1, onStart, onSkip }) 
               type="button"
               size="lg"
               onClick={handleLaunch}
-              className="w-full sm:w-auto h-11 px-8 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs gap-2 shadow-md shadow-blue-500/20 cursor-pointer"
+              className="w-full sm:w-auto h-11 px-8 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs gap-2 shadow-md shadow-indigo-500/25 cursor-pointer transition-all hover:scale-[1.01]"
             >
               <Play className="h-4 w-4 fill-white" />
               Start Game Challenge

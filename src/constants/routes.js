@@ -20,4 +20,6 @@ export const ROUTES = {
   QUESTION_SET: "/question-set",
 
   SUPPORT: "/support",
+  SUPPORT_TICKETS: "/support-tickets",
+  COMPANY_SUPPORT: "/company/support",
 };

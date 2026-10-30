@@ -3,12 +3,11 @@
 import { useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Plus, Check, X, Tag as TagIcon, Sparkles, ChevronDown, Search } from "lucide-react";
+import { Loader2, Plus, Check, X, Tag as TagIcon, ChevronDown, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -27,7 +26,6 @@ import {
 import { questionSchema } from "../../validations/questionSchema";
 import {
   DEFAULT_QUESTION,
-  QUESTION_STATUS_OPTIONS,
   QUESTION_TYPE_OPTIONS,
 } from "../../constants";
 import QuestionOptionFields from "./QuestionOptionFields";
@@ -201,14 +199,14 @@ const QuestionForm = ({
           render={({ field }) => (
             <FormItem className="space-y-1.5">
               <FormLabel className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Question Prompt
+                Question Prompt <span className="text-rose-500">*</span>
               </FormLabel>
               <FormControl>
                 <Textarea
                   rows={3}
                   placeholder="Type the question prompt or problem statement..."
                   {...field}
-                  className="rounded-xl border-slate-200 bg-slate-50/50 text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition shadow-2xs resize-none"
+                  className="rounded-xl border-slate-200 bg-slate-50/60 text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs resize-none"
                 />
               </FormControl>
               <FormMessage className="text-xs" />
@@ -226,12 +224,12 @@ const QuestionForm = ({
               <FormItem className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <FormLabel className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Category
+                    Category <span className="text-rose-500">*</span>
                   </FormLabel>
                   <button
                     type="button"
                     onClick={() => setIsCreatingCategory(!isCreatingCategory)}
-                    className="text-[11px] font-bold text-blue-600 hover:text-blue-700 transition flex items-center gap-1 cursor-pointer"
+                    className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 transition flex items-center gap-1 cursor-pointer"
                   >
                     <Plus className="h-3 w-3" />
                     {isCreatingCategory ? "Cancel" : "New"}
@@ -239,12 +237,12 @@ const QuestionForm = ({
                 </div>
 
                 {isCreatingCategory && (
-                  <div className="flex items-center gap-2 p-2 rounded-xl bg-blue-50/60 border border-blue-200">
+                  <div className="flex items-center gap-2 p-2 rounded-xl bg-indigo-50/60 border border-indigo-200">
                     <Input
                       placeholder="e.g. DevOps"
                       value={newCategoryName}
                       onChange={(e) => setNewCategoryName(e.target.value)}
-                      className="h-8 text-xs bg-white rounded-lg border-blue-300"
+                      className="h-8 text-xs bg-white rounded-lg border-indigo-300"
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
@@ -257,7 +255,7 @@ const QuestionForm = ({
                       size="sm"
                       disabled={!newCategoryName.trim() || isCreatingCategoryLoading}
                       onClick={handleCreateInlineCategory}
-                      className="h-8 px-3 rounded-lg text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                      className="h-8 px-3 rounded-lg text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold cursor-pointer"
                     >
                       {isCreatingCategoryLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
                     </Button>
@@ -273,10 +271,10 @@ const QuestionForm = ({
                   }}
                 >
                   <FormControl>
-                    <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-800">
+                    <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/60 text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
                       {isLoadingCategories ? (
                         <div className="flex items-center gap-2 text-slate-400">
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-600" />
                           <span>Loading...</span>
                         </div>
                       ) : (
@@ -310,7 +308,7 @@ const QuestionForm = ({
                 </FormLabel>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
-                    <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-800">
+                    <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/60 text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
                       <SelectValue placeholder="Select Difficulty" />
                     </SelectTrigger>
                   </FormControl>
@@ -334,7 +332,7 @@ const QuestionForm = ({
                 Skill Tags
               </label>
               {selectedTagIds.length > 0 && (
-                <span className="text-[10.5px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200/80 px-2 py-0.5 rounded-full shadow-2xs">
+                <span className="text-[10.5px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200/80 px-2 py-0.5 rounded-full shadow-2xs">
                   {selectedTagIds.length} Selected
                 </span>
               )}
@@ -342,7 +340,7 @@ const QuestionForm = ({
             <button
               type="button"
               onClick={() => setIsCreatingTag(!isCreatingTag)}
-              className="text-[11px] font-bold text-blue-600 hover:text-blue-700 transition flex items-center gap-1 cursor-pointer"
+              className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 transition flex items-center gap-1 cursor-pointer"
             >
               <Plus className="h-3 w-3" />
               {isCreatingTag ? "Cancel" : "Add New Tag"}
@@ -351,12 +349,12 @@ const QuestionForm = ({
 
           {/* Quick Inline Tag Creator */}
           {isCreatingTag && (
-            <div className="flex items-center gap-2 p-2 rounded-xl bg-blue-50/60 border border-blue-200 animate-in fade-in-50">
+            <div className="flex items-center gap-2 p-2 rounded-xl bg-indigo-50/60 border border-indigo-200 animate-in fade-in-50">
               <Input
                 placeholder="Type new tag name (e.g. Docker, Redis)..."
                 value={newTagName}
                 onChange={(e) => setNewTagName(e.target.value)}
-                className="h-8 text-xs bg-white rounded-lg border-blue-300 focus-visible:ring-blue-500"
+                className="h-8 text-xs bg-white rounded-lg border-indigo-300 focus-visible:ring-indigo-500"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
@@ -369,7 +367,7 @@ const QuestionForm = ({
                 size="sm"
                 disabled={!newTagName.trim() || isCreatingTagLoading}
                 onClick={handleCreateInlineTag}
-                className="h-8 px-3 rounded-lg text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer shrink-0"
+                className="h-8 px-3 rounded-lg text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold cursor-pointer shrink-0"
               >
                 {isCreatingTagLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save Tag"}
               </Button>
@@ -383,12 +381,12 @@ const QuestionForm = ({
               onClick={() => setIsTagDropdownOpen((prev) => !prev)}
               className={`w-full h-10 px-3.5 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
                 isTagDropdownOpen
-                  ? "border-blue-500 ring-2 ring-blue-500/20 bg-white text-slate-900"
-                  : "border-slate-200 bg-slate-50/50 text-slate-700 hover:bg-slate-50"
+                  ? "border-indigo-500 ring-2 ring-indigo-500/20 bg-white text-slate-900"
+                  : "border-slate-200 bg-slate-50/60 text-slate-700 hover:bg-slate-50"
               }`}
             >
               <div className="flex items-center gap-2 truncate">
-                <TagIcon className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                <TagIcon className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
                 <span className="truncate">
                   {selectedTagIds.length === 0
                     ? "Select skill tags..."
@@ -397,7 +395,7 @@ const QuestionForm = ({
               </div>
               <ChevronDown
                 className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${
-                  isTagDropdownOpen ? "rotate-180 text-blue-600" : ""
+                  isTagDropdownOpen ? "rotate-180 text-indigo-600" : ""
                 }`}
               />
             </button>
@@ -426,8 +424,8 @@ const QuestionForm = ({
                   )}
                 </div>
 
-                {/* Scrollable Tag List (Fixed Max Height Prevents UI Breaking) */}
-                <div className="max-h-48 overflow-y-auto space-y-0.5 pr-1">
+                {/* Scrollable Tag List */}
+                <div className="max-h-48 overflow-y-auto space-y-0.5 pr-1 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                   {tags
                     .filter((t) =>
                       (t.name || "").toLowerCase().includes(tagSearchQuery.toLowerCase())
@@ -443,7 +441,7 @@ const QuestionForm = ({
                           onClick={() => toggleTagSelection(tag.id)}
                           className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer text-left ${
                             isSelected
-                              ? "bg-blue-50 text-blue-700 font-bold"
+                              ? "bg-indigo-50 text-indigo-700 font-bold"
                               : "text-slate-700 hover:bg-slate-100/80"
                           }`}
                         >
@@ -451,7 +449,7 @@ const QuestionForm = ({
                             <span
                               className={`h-4 w-4 rounded-md flex items-center justify-center border text-[10px] shrink-0 transition-colors ${
                                 isSelected
-                                  ? "bg-blue-600 border-blue-600 text-white"
+                                  ? "bg-indigo-600 border-indigo-600 text-white"
                                   : "border-slate-300 bg-white"
                               }`}
                             >
@@ -460,7 +458,7 @@ const QuestionForm = ({
                             <span className="truncate">{tag.name}</span>
                           </div>
                           {isSelected && (
-                            <span className="text-[10px] font-extrabold text-blue-600">
+                            <span className="text-[10px] font-extrabold text-indigo-600">
                               Selected
                             </span>
                           )}
@@ -485,7 +483,7 @@ const QuestionForm = ({
                             setIsCreatingTag(true);
                             setIsTagDropdownOpen(false);
                           }}
-                          className="h-7 text-xs font-bold text-blue-600 border-blue-200 hover:bg-blue-50"
+                          className="h-7 text-xs font-bold text-indigo-600 border-indigo-200 hover:bg-indigo-50"
                         >
                           + Create &ldquo;{tagSearchQuery}&rdquo;
                         </Button>
@@ -499,7 +497,7 @@ const QuestionForm = ({
 
           {/* Selected Tags Chips Display Container */}
           {selectedTagIds.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 p-2 rounded-xl border border-slate-200/80 bg-slate-50/50 max-h-24 overflow-y-auto">
+            <div className="flex flex-wrap gap-1.5 p-2 rounded-xl border border-slate-200/80 bg-slate-50/50 max-h-24 overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               {tags
                 .filter(
                   (t) => selectedTagIds.includes(t.id) || selectedTagIds.includes(t.name)
@@ -507,13 +505,13 @@ const QuestionForm = ({
                 .map((tag) => (
                   <span
                     key={tag.id}
-                    className="inline-flex items-center gap-1.5 bg-white border border-blue-200/90 text-blue-700 text-[11px] font-bold py-0.5 pl-2.5 pr-1.5 rounded-lg shadow-2xs"
+                    className="inline-flex items-center gap-1.5 bg-white border border-indigo-200/90 text-indigo-700 text-[11px] font-bold py-0.5 pl-2.5 pr-1.5 rounded-lg shadow-2xs"
                   >
                     <span className="truncate max-w-[120px]">{tag.name}</span>
                     <button
                       type="button"
                       onClick={() => toggleTagSelection(tag.id)}
-                      className="h-4 w-4 rounded flex items-center justify-center hover:bg-blue-100 text-blue-500 hover:text-blue-800 transition cursor-pointer"
+                      className="h-4 w-4 rounded flex items-center justify-center hover:bg-indigo-100 text-indigo-500 hover:text-indigo-800 transition cursor-pointer"
                       title="Remove tag"
                     >
                       <X className="h-3 w-3" />
@@ -537,7 +535,7 @@ const QuestionForm = ({
                 </FormLabel>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
-                    <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-800">
+                    <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/60 text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
                       <SelectValue placeholder="Select Type" />
                     </SelectTrigger>
                   </FormControl>
@@ -562,7 +560,7 @@ const QuestionForm = ({
               <FormItem className="space-y-1.5">
                 <FormLabel className="text-xs font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1">
                   <Check className="h-3.5 w-3.5 text-emerald-600" />
-                  Correct Option
+                  Correct Option <span className="text-rose-500">*</span>
                 </FormLabel>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
@@ -586,20 +584,20 @@ const QuestionForm = ({
         {/* Options Grid */}
         <div className="space-y-1.5 pt-1">
           <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-            Answer Choices (A, B, C, D)
+            Answer Choices (A, B, C, D) <span className="text-rose-500">*</span>
           </label>
           <QuestionOptionFields form={form} />
         </div>
 
         {/* Dialog Actions */}
-        <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+        <div className="flex items-center justify-end gap-2.5 pt-5 border-t border-slate-100">
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={onCancel}
             disabled={isSubmitting}
-            className="h-10 px-4 rounded-xl border-slate-200 text-xs font-bold"
+            className="h-10 px-5 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold cursor-pointer"
           >
             Cancel
           </Button>
@@ -607,7 +605,7 @@ const QuestionForm = ({
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="h-10 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 cursor-pointer"
+            className="h-10 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 cursor-pointer transition-all"
           >
             {isSubmitting ? (
               <span className="flex items-center gap-1.5">

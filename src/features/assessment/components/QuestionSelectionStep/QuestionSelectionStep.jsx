@@ -11,7 +11,7 @@ import {
   Check,
   Minus,
   X,
-  Sparkles,
+  HelpCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -156,27 +156,29 @@ const QuestionSelectionStep = ({
   };
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-xl font-semibold">
-          Select Questions
+    <div className="rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-6 sm:p-8 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 font-sans space-y-6">
+      <div className="border-b border-slate-100 pb-4">
+        <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+          <HelpCircle className="h-5 w-5 text-indigo-600" />
+          Select Technical & MCQ Questions
         </h2>
 
-        <p className="mt-1 text-sm text-muted-foreground">
-          Choose questions from your question bank for this assessment.
+        <p className="mt-0.5 text-xs text-slate-500 font-medium">
+          Choose questions from your question bank for technical evaluation in this assessment.
         </p>
       </div>
 
       {selectedGameIds.length > 0 && (
-        <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-primary font-medium">
-          💡 Questions are optional since you have already selected Cognitive Games in Step 2.
+        <div className="rounded-2xl border border-indigo-200/80 bg-indigo-50/60 p-3.5 text-xs text-indigo-900 font-semibold flex items-center gap-2">
+          <span className="text-base">💡</span>
+          <span>Technical questions are optional since you have already selected Cognitive Games in Step 2.</span>
         </div>
       )}
 
       {/* Search + Filters + Selected Toggle */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_180px_180px_auto]">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
 
           <Input
             value={search}
@@ -184,8 +186,8 @@ const QuestionSelectionStep = ({
               setSearch(event.target.value);
               setCurrentPage(1);
             }}
-            placeholder="Search questions..."
-            className="pl-9 rounded-xl border-slate-200 text-xs h-10"
+            placeholder="Search questions by title or keywords..."
+            className="pl-9 rounded-xl border-slate-200 bg-slate-50/60 focus:bg-white text-xs h-10 font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-2xs"
           />
         </div>
 
@@ -196,11 +198,11 @@ const QuestionSelectionStep = ({
             setCurrentPage(1);
           }}
         >
-          <SelectTrigger className="rounded-xl border-slate-200 text-xs h-10">
+          <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/60 focus:bg-white text-xs h-10 font-semibold">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
 
-          <SelectContent>
+          <SelectContent className="font-sans">
             <SelectItem value="all">
               All Categories
             </SelectItem>
@@ -220,11 +222,11 @@ const QuestionSelectionStep = ({
             setCurrentPage(1);
           }}
         >
-          <SelectTrigger className="rounded-xl border-slate-200 text-xs h-10">
+          <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/60 focus:bg-white text-xs h-10 font-semibold">
             <SelectValue placeholder="Difficulty" />
           </SelectTrigger>
 
-          <SelectContent>
+          <SelectContent className="font-sans">
             <SelectItem value="all">
               All Difficulties
             </SelectItem>
@@ -243,9 +245,9 @@ const QuestionSelectionStep = ({
             setShowOnlySelected((prev) => !prev);
             setCurrentPage(1);
           }}
-          className={`h-10 px-3.5 rounded-xl text-xs font-semibold gap-1.5 transition-all cursor-pointer ${
+          className={`h-10 px-3.5 rounded-xl text-xs font-bold gap-1.5 transition-all cursor-pointer ${
             showOnlySelected
-              ? "bg-blue-600 text-white shadow-xs shadow-blue-500/20"
+              ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs shadow-indigo-500/20"
               : "border-slate-200 text-slate-700 bg-white hover:bg-slate-50"
           }`}
         >
@@ -264,14 +266,14 @@ const QuestionSelectionStep = ({
               onClick={handleToggleSelectPage}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                 isAllOnPageSelected || isSomeOnPageSelected
-                  ? "bg-blue-50 border-blue-300 text-blue-700 shadow-2xs"
+                  ? "bg-indigo-50 border-indigo-300 text-indigo-700 shadow-2xs"
                   : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-100/60"
               }`}
             >
               <div
                 className={`flex h-4 w-4 items-center justify-center rounded border transition-colors ${
                   isAllOnPageSelected || isSomeOnPageSelected
-                    ? "bg-blue-600 border-blue-600 text-white"
+                    ? "bg-indigo-600 border-indigo-600 text-white"
                     : "border-slate-300 bg-white"
                 }`}
               >
@@ -292,7 +294,7 @@ const QuestionSelectionStep = ({
                 variant="outline"
                 size="sm"
                 onClick={handleSelectAllFiltered}
-                className="h-8 px-3 rounded-xl border-blue-200 bg-white text-blue-600 hover:text-blue-700 hover:bg-blue-50/70 text-xs font-bold cursor-pointer shadow-2xs"
+                className="h-8 px-3 rounded-xl border-indigo-200 bg-white text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50/70 text-xs font-bold cursor-pointer shadow-2xs"
               >
                 <span>Select All {filteredQuestions.length} Questions</span>
               </Button>
@@ -316,7 +318,7 @@ const QuestionSelectionStep = ({
           {/* Right: Selected Count & Page Size Dropdown */}
           <div className="flex items-center gap-3 self-end sm:self-center">
             <span className="text-xs font-semibold text-slate-600">
-              <span className="font-extrabold text-blue-600">{selectedIds.length}</span> of {questions.length} selected
+              <span className="font-extrabold text-indigo-600">{selectedIds.length}</span> of {questions.length} selected
             </span>
 
             <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
@@ -345,16 +347,16 @@ const QuestionSelectionStep = ({
 
       {/* ── Smart Gmail/HackerRank Banner ── */}
       {isAllOnPageSelected && filteredQuestions.length > pageIds.length && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-gradient-to-r from-blue-50 via-indigo-50/50 to-blue-50 border border-blue-200 text-xs text-blue-900 animate-in fade-in-50 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-2xl bg-gradient-to-r from-indigo-50 via-purple-50/50 to-indigo-50 border border-indigo-200 text-xs text-indigo-950 animate-in fade-in-50 shadow-2xs">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-blue-600 shrink-0" />
+            <CheckCircle2 className="h-4 w-4 text-indigo-600 shrink-0" />
             <span>
-              All <strong className="font-extrabold text-blue-950">{pageIds.length}</strong> questions on this page are selected.
+              All <strong className="font-extrabold text-indigo-950">{pageIds.length}</strong> questions on this page are selected.
               {!isAllFilteredSelected ? (
                 <button
                   type="button"
                   onClick={handleSelectAllFiltered}
-                  className="ml-1 font-extrabold text-blue-600 underline underline-offset-2 hover:text-blue-900 cursor-pointer"
+                  className="ml-1 font-extrabold text-indigo-600 underline underline-offset-2 hover:text-indigo-900 cursor-pointer"
                 >
                   Select all {filteredQuestions.length} questions in this view?
                 </button>
@@ -424,7 +426,7 @@ const QuestionSelectionStep = ({
                         onClick={() => setCurrentPage(pageNum)}
                         className={`h-8 min-w-[32px] px-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                           isCurrent
-                            ? "bg-blue-600 text-white shadow-xs shadow-blue-500/20"
+                            ? "bg-indigo-600 text-white shadow-xs shadow-indigo-500/20"
                             : "text-slate-600 hover:bg-slate-100 bg-white border border-slate-200"
                         }`}
                       >
@@ -501,9 +503,9 @@ const QuestionSelectionStep = ({
           <Button
             type="button"
             onClick={handleContinue}
-            className="h-10 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20 transition-all cursor-pointer"
+            className="h-10 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs gap-1.5 shadow-sm shadow-indigo-500/20 transition-all cursor-pointer"
           >
-            <span>Continue</span>
+            <span>Continue to Settings</span>
             <ArrowRight className="h-3.5 w-3.5 ml-1" />
           </Button>
         </div>

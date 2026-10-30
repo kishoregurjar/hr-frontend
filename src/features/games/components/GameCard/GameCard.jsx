@@ -5,7 +5,6 @@ import {
   BarChart3,
   Play,
   Settings2,
-  Sparkles,
   Zap,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +25,7 @@ const GameCard = ({ game, onPreview, onConfigure }) => {
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xs hover:shadow-lg hover:border-indigo-300/80 transition-all flex flex-col justify-between space-y-5 font-sans group">
+    <div className="group rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-6 sm:p-7 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 hover:-translate-y-1 hover:shadow-xl transition-all duration-300 flex flex-col justify-between space-y-5 font-sans">
       {/* ── Top Header ── */}
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-3">
@@ -42,15 +41,15 @@ const GameCard = ({ game, onPreview, onConfigure }) => {
           <div className="flex items-center gap-1.5 shrink-0">
             <Badge
               variant="outline"
-              className={`text-[10.5px] font-bold ${getDifficultyColor(game.difficulty)}`}
+              className={`text-[10.5px] font-bold rounded-lg px-2 py-0.5 ${getDifficultyColor(game.difficulty)}`}
             >
               {game.difficulty}
             </Badge>
             <Badge
-              className={`text-[10px] font-extrabold uppercase px-2 py-0.5 ${
+              className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-lg ${
                 game.status === "Active"
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                  : "bg-slate-100 text-slate-700 border-slate-300"
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                  : "bg-slate-100 text-slate-700 border border-slate-200"
               }`}
             >
               {game.status}
@@ -71,19 +70,19 @@ const GameCard = ({ game, onPreview, onConfigure }) => {
             <Zap className="h-3.5 w-3.5 text-amber-500" />
             Primary Skill:
           </span>
-          <span className="font-bold text-slate-900 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200/80 text-[11px]">
+          <span className="font-bold text-slate-900 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/80 text-[11px]">
             {game.skill || game.category}
           </span>
         </div>
 
         {/* Duration & Usage Grid */}
         <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 border border-slate-100 font-semibold text-slate-700">
+          <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50/70 border border-slate-100 font-semibold text-slate-700">
             <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
             <span>Est. ~{game.duration} Mins</span>
           </div>
 
-          <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 border border-slate-100 font-semibold text-slate-700">
+          <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50/70 border border-slate-100 font-semibold text-slate-700">
             <BarChart3 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
             <span>{game.usedIn || 0} {Number(game.usedIn) === 1 ? "Assessment" : "Assessments"}</span>
           </div>

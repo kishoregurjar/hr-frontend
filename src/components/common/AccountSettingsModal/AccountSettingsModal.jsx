@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
@@ -26,6 +25,8 @@ import {
   User,
   Building2,
   Sparkles,
+  X,
+  Loader2,
 } from "lucide-react";
 
 export default function AccountSettingsModal({ isOpen, onClose }) {
@@ -204,32 +205,48 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-xl p-0 overflow-hidden rounded-3xl border-slate-200/90 shadow-2xl font-sans bg-white">
-        {/* ── Light Header Matching HireQuest UI ── */}
-        <div className="p-6 pb-4 border-b border-slate-100 bg-gradient-to-b from-slate-50/80 to-white">
-          <div className="flex items-center gap-3.5">
-            <div className="h-11 w-11 rounded-2xl bg-blue-50 border border-blue-100/80 text-blue-600 flex items-center justify-center font-bold shadow-xs">
-              <Shield className="h-5 w-5" />
+      <DialogContent className="max-w-xl p-0 overflow-hidden rounded-3xl border border-white/90 shadow-2xl font-sans bg-white max-h-[92vh] flex flex-col">
+        {/* ── 1. Top Hero Header with 3D Parallax Gradient ── */}
+        <div className="shrink-0 bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-6 text-white rounded-t-3xl relative overflow-hidden select-none shadow-md">
+          {/* Subtle Ambient 3D Glow Accents */}
+          <div className="absolute -top-14 -right-14 h-40 w-40 rounded-full bg-white/15 blur-2xl pointer-events-none" />
+          <div className="absolute top-1/2 left-1/3 h-20 w-20 rounded-full bg-pink-300/10 blur-xl pointer-events-none" />
+
+          {/* Close Button on Top Right */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-4 right-4 h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white flex items-center justify-center transition-colors cursor-pointer z-20"
+            title="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+
+          <div className="flex items-center gap-3.5 relative z-10 pr-8">
+            <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center font-bold shadow-inner shrink-0">
+              <Shield className="h-6 w-6 text-white" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-extrabold text-slate-900 tracking-tight">
-                HR Profile & Account Settings
-              </DialogTitle>
-              <DialogDescription className="text-xs text-slate-500 mt-0.5">
+              <div className="flex items-center gap-2">
+                <DialogTitle className="text-xl font-extrabold text-white tracking-tight drop-shadow-xs">
+                  HR Profile & Account Settings
+                </DialogTitle>
+              </div>
+              <DialogDescription className="text-xs text-white/85 mt-0.5 font-medium">
                 Manage recruiter profile credentials, account security, and active sessions.
               </DialogDescription>
             </div>
           </div>
 
           {/* Modern Segmented Pill Tabs */}
-          <div className="flex items-center gap-1.5 mt-5 p-1 bg-slate-100/90 rounded-2xl border border-slate-200/60">
+          <div className="flex items-center gap-1.5 mt-5 p-1 bg-black/15 backdrop-blur-md rounded-2xl border border-white/20 relative z-10">
             <button
               type="button"
               onClick={() => { setActiveTab("profile"); setPasswordError(null); }}
               className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "profile"
-                  ? "bg-white text-blue-600 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-white text-indigo-700 shadow-md"
+                  : "text-white/80 hover:text-white hover:bg-white/10"
               }`}
             >
               <User className="h-3.5 w-3.5" />
@@ -241,8 +258,8 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
               onClick={() => { setActiveTab("security"); setPasswordError(null); }}
               className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "security"
-                  ? "bg-white text-blue-600 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-white text-indigo-700 shadow-md"
+                  : "text-white/80 hover:text-white hover:bg-white/10"
               }`}
             >
               <KeyRound className="h-3.5 w-3.5" />
@@ -254,8 +271,8 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
               onClick={() => { setActiveTab("sessions"); setPasswordError(null); }}
               className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "sessions"
-                  ? "bg-white text-blue-600 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-white text-indigo-700 shadow-md"
+                  : "text-white/80 hover:text-white hover:bg-white/10"
               }`}
             >
               <Laptop className="h-3.5 w-3.5" />
@@ -264,29 +281,29 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
           </div>
         </div>
 
-        {/* ── Tab Contents ── */}
-        <div className="p-6 pt-5">
+        {/* ── 2. Tab Contents ── */}
+        <div className="p-6 pt-5 overflow-y-auto flex-1 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {/* TAB 1: PROFILE INFO */}
           {activeTab === "profile" && (
             <div className="space-y-4">
-              <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-blue-50/50 via-indigo-50/30 to-slate-50 border border-blue-100/80">
-                <div className="h-13 w-13 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-base shadow-md shadow-blue-500/20 shrink-0">
+              <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-indigo-50/60 via-purple-50/40 to-slate-50 border border-indigo-100/80 shadow-2xs">
+                <div className="h-13 w-13 rounded-2xl bg-gradient-to-br from-[#4E35E8] to-[#CF2E9F] text-white flex items-center justify-center font-black text-base shadow-md shadow-indigo-500/20 shrink-0">
                   {String(userName || "HR").slice(0, 2).toUpperCase()}
                 </div>
                 <div className="space-y-1 min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-extrabold text-base text-slate-900 truncate">{userName}</h3>
-                    <Badge className={`text-[10px] font-extrabold px-2 py-0.5 shadow-xs ${
+                    <Badge className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-2xs ${
                       user?.isOwner || userRole === "Company Owner" || userRole === "OWNER"
                         ? "bg-amber-100 text-amber-900 border border-amber-300"
                         : userRole === "HR Admin" || userRole === "ADMIN"
                         ? "bg-purple-100 text-purple-900 border border-purple-300"
-                        : "bg-blue-100 text-blue-900 border border-blue-300"
+                        : "bg-indigo-100 text-indigo-900 border border-indigo-300"
                     }`}>
                       {userRole}
                     </Badge>
-                    <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-extrabold flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3" />
+                    <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                      <CheckCircle2 className="h-3 w-3 text-emerald-600" />
                       Verified
                     </Badge>
                   </div>
@@ -295,11 +312,11 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
               </div>
 
               {/* Full Name Edit Section */}
-              <form onSubmit={handleUpdateName} className="p-4 rounded-2xl border border-slate-200/90 bg-slate-50/50 space-y-3">
+              <form onSubmit={handleUpdateName} className="p-4 rounded-2xl border border-slate-200/90 bg-slate-50/60 space-y-3">
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <User className="h-3.5 w-3.5 text-blue-600" />
+                      <User className="h-3.5 w-3.5 text-indigo-600" />
                       Full Name
                     </label>
                     <span className="text-[11px] font-medium text-slate-400">
@@ -316,15 +333,22 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
                           if (nameError) setNameError(null);
                         }}
                         placeholder="Enter your full name"
-                        className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition shadow-2xs"
+                        className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs"
                       />
                     </div>
                     <Button
                       type="submit"
                       disabled={isSavingName || !nameInput.trim() || nameInput.trim() === userName}
-                      className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition disabled:opacity-40 cursor-pointer shrink-0"
+                      className="h-10 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 transition-all disabled:opacity-40 cursor-pointer shrink-0"
                     >
-                      {isSavingName ? "Saving..." : "Save Name"}
+                      {isSavingName ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                          Saving...
+                        </>
+                      ) : (
+                        "Save Name"
+                      )}
                     </Button>
                   </div>
                   {nameError && (
@@ -337,15 +361,15 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
               </form>
 
               <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="p-3.5 rounded-2xl border border-slate-200/90 bg-white space-y-1 hover:border-blue-200 transition-colors">
+                <div className="p-3.5 rounded-2xl border border-slate-200/90 bg-white space-y-1 hover:border-indigo-200 transition-colors shadow-2xs">
                   <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                    <Building2 className="h-3.5 w-3.5 text-blue-600" />
+                    <Building2 className="h-3.5 w-3.5 text-indigo-600" />
                     Organization
                   </span>
                   <p className="font-bold text-slate-800 text-sm truncate">{companyName}</p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl border border-slate-200/90 bg-white space-y-1 hover:border-blue-200 transition-colors">
+                <div className="p-3.5 rounded-2xl border border-slate-200/90 bg-white space-y-1 hover:border-indigo-200 transition-colors shadow-2xs">
                   <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                     <Sparkles className="h-3.5 w-3.5 text-amber-500" />
                     Account Role
@@ -356,15 +380,15 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setActiveTab("security")}
-                  className="rounded-xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 gap-1.5 cursor-pointer"
+                  className="h-10 px-4 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 gap-1.5 cursor-pointer shadow-2xs"
                 >
-                  <KeyRound className="h-3.5 w-3.5" />
+                  <KeyRound className="h-3.5 w-3.5 text-indigo-600" />
                   Change Password
                 </Button>
 
@@ -372,7 +396,7 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
                   type="button"
                   size="sm"
                   onClick={onClose}
-                  className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-6 shadow-sm shadow-blue-500/20 cursor-pointer"
+                  className="h-10 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 cursor-pointer transition-all"
                 >
                   Close
                 </Button>
@@ -406,7 +430,7 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
                     }}
                     placeholder="Enter your current password"
                     required
-                    className="w-full h-10 pl-10 pr-10 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition shadow-2xs"
+                    className="w-full h-10 pl-10 pr-10 rounded-xl border border-slate-200 bg-slate-50/60 text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs"
                   />
                   <button
                     type="button"
@@ -434,7 +458,7 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
                     }}
                     placeholder="Min 8 characters (e.g. Developer123#)"
                     required
-                    className="w-full h-10 pl-10 pr-10 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition shadow-2xs"
+                    className="w-full h-10 pl-10 pr-10 rounded-xl border border-slate-200 bg-slate-50/60 text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs"
                   />
                 </div>
                 <p className="text-[11px] text-slate-500 leading-tight">
@@ -458,27 +482,34 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
                     }}
                     placeholder="Re-enter your new password"
                     required
-                    className="w-full h-10 pl-10 pr-10 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition shadow-2xs"
+                    className="w-full h-10 pl-10 pr-10 rounded-xl border border-slate-200 bg-slate-50/60 text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs"
                   />
                 </div>
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2.5">
+              <div className="pt-3 flex items-center justify-end gap-2.5 border-t border-slate-100">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={onClose}
-                  className="rounded-xl border-slate-200 text-xs font-bold"
+                  className="h-10 px-5 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold cursor-pointer shadow-2xs"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={isChangingPassword}
-                  className="h-10 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 cursor-pointer"
+                  className="h-10 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 cursor-pointer transition-all"
                 >
-                  {isChangingPassword ? "Updating..." : "Update Password"}
+                  {isChangingPassword ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                      Updating...
+                    </>
+                  ) : (
+                    "Update Password"
+                  )}
                 </Button>
               </div>
             </form>
@@ -487,13 +518,13 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
           {/* TAB 3: SESSIONS & LOGOUT ALL */}
           {activeTab === "sessions" && (
             <div className="space-y-5">
-              <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2">
+              <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/60 space-y-2 shadow-2xs">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-xs text-slate-900 flex items-center gap-2">
-                    <Laptop className="h-4 w-4 text-blue-600" />
+                    <Laptop className="h-4 w-4 text-indigo-600" />
                     Current Active Session
                   </span>
-                  <Badge className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px] font-extrabold">
+                  <Badge className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-2xs">
                     This Browser
                   </Badge>
                 </div>
@@ -502,7 +533,7 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl border border-rose-200 bg-rose-50/60 space-y-3">
+              <div className="p-4 rounded-2xl border border-rose-200 bg-rose-50/60 space-y-3 shadow-2xs">
                 <div>
                   <h4 className="font-bold text-sm text-rose-900 flex items-center gap-2">
                     <LogOut className="h-4 w-4 text-rose-600" />
@@ -518,10 +549,22 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
                   variant="destructive"
                   disabled={isLoggingOutAll}
                   onClick={handleLogoutAll}
-                  className="h-9 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs gap-1.5 shadow-sm shadow-rose-500/20 cursor-pointer"
+                  className="h-10 px-5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs gap-1.5 shadow-sm shadow-rose-500/20 cursor-pointer transition-all"
                 >
                   <LogOut className="h-3.5 w-3.5" />
                   {isLoggingOutAll ? "Signing out..." : "Sign Out of All Devices"}
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-end pt-3 border-t border-slate-100">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onClose}
+                  className="h-10 px-6 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 cursor-pointer shadow-2xs"
+                >
+                  Close
                 </Button>
               </div>
             </div>
