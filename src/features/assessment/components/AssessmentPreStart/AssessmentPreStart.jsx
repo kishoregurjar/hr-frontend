@@ -34,7 +34,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { sendCandidateOtp, verifyCandidateOtp } from "@/lib/api/attempts";
-import { extractFaceFeatures, captureVideoSnapshot } from "../../utils/faceMatching";
+import {
+  extractFaceFeatures,
+  captureVideoSnapshot,
+  extractFaceDescriptor,
+  loadFaceApiModels,
+} from "../../utils/faceMatching";
 
 const AssessmentPreStart = ({
   token = "",
@@ -362,6 +367,9 @@ const AssessmentPreStart = ({
         prestartVideoRef.current.play().catch(() => {});
       }
 
+      // Pre-load Neural Face Recognition models in background
+      loadFaceApiModels().catch(() => {});
+
       // Initialize FaceLandmarker
       if (!prestartLandmarkerRef.current) {
         try {
@@ -408,7 +416,7 @@ const AssessmentPreStart = ({
     }
   };
 
-  const handleCaptureVerificationPhoto = () => {
+  const handleCaptureVerificationPhoto = async () => {
     const video = prestartVideoRef.current;
     if (!video || !video.videoWidth || !video.videoHeight) {
       toast.error("Camera is initializing. Please wait a moment.");
@@ -418,36 +426,6 @@ const AssessmentPreStart = ({
     setIsCapturingPhoto(true);
 
     try {
-      const landmarker = prestartLandmarkerRef.current;
-
-      if (!landmarker) {
-        toast.error("AI Face detector is initializing. Please wait a moment and try again.");
-        setIsCapturingPhoto(false);
-        return;
-      }
-
-      const results = landmarker.detectForVideo(video, performance.now());
-      const faces = results?.faceLandmarks || [];
-
-      if (faces.length === 0) {
-        toast.error("No face detected! Please position your face clearly in the camera center.");
-        setIsCapturingPhoto(false);
-        return;
-      }
-
-      if (faces.length > 1) {
-        toast.error("Multiple faces detected! Please ensure only the candidate is in the camera frame.");
-        setIsCapturingPhoto(false);
-        return;
-      }
-
-      const features = extractFaceFeatures(faces[0]);
-      if (!features || features.length === 0) {
-        toast.error("Could not capture facial geometry clearly. Please ensure good lighting and face the camera.");
-        setIsCapturingPhoto(false);
-        return;
-      }
-
       const photoDataUrl = captureVideoSnapshot(video, 480);
       if (!photoDataUrl) {
         toast.error("Failed to capture image snapshot. Please try again.");
@@ -455,11 +433,46 @@ const AssessmentPreStart = ({
         return;
       }
 
-      // Lock baseline features & photo in both sessionStorage and localStorage
-      const featuresJson = JSON.stringify(features);
-      sessionStorage.setItem("candidate_face_baseline", featuresJson);
+      // 1. Extract 128-D Neural Face Descriptor (@vladmandic/face-api)
+      let descriptor = null;
+      try {
+        descriptor = await extractFaceDescriptor(video);
+      } catch (dErr) {
+        console.warn("[AssessmentPreStart] Face descriptor extraction notice:", dErr);
+      }
+
+      // 2. Extract geometric fallback landmarks (MediaPipe)
+      let features = null;
+      try {
+        if (prestartLandmarkerRef.current) {
+          const results = prestartLandmarkerRef.current.detectForVideo(video, performance.now());
+          const faces = results?.faceLandmarks || [];
+          if (faces.length > 0) {
+            features = extractFaceFeatures(faces[0]);
+          }
+        }
+      } catch (fErr) {
+        console.warn("[AssessmentPreStart] Landmark fallback notice:", fErr);
+      }
+
+      if (!descriptor && !features) {
+        toast.error("No face detected clearly! Please look directly at the camera and try again.");
+        setIsCapturingPhoto(false);
+        return;
+      }
+
+      // Lock neural descriptor and baseline features in both storages
+      if (descriptor && descriptor.length === 128) {
+        const descJson = JSON.stringify(descriptor);
+        sessionStorage.setItem("candidate_face_descriptor", descJson);
+        localStorage.setItem("candidate_face_descriptor", descJson);
+      }
+      if (features) {
+        const featuresJson = JSON.stringify(features);
+        sessionStorage.setItem("candidate_face_baseline", featuresJson);
+        localStorage.setItem("candidate_face_baseline", featuresJson);
+      }
       sessionStorage.setItem("candidate_photo_url", photoDataUrl);
-      localStorage.setItem("candidate_face_baseline", featuresJson);
       localStorage.setItem("candidate_photo_url", photoDataUrl);
 
       // Stop webcam stream now that snapshot is taken
@@ -484,8 +497,10 @@ const AssessmentPreStart = ({
     setCapturedPhoto(null);
     setPhotoVerified(false);
     try {
+      sessionStorage.removeItem("candidate_face_descriptor");
       sessionStorage.removeItem("candidate_face_baseline");
       sessionStorage.removeItem("candidate_photo_url");
+      localStorage.removeItem("candidate_face_descriptor");
       localStorage.removeItem("candidate_face_baseline");
       localStorage.removeItem("candidate_photo_url");
     } catch {}

@@ -2,7 +2,13 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { toast } from "sonner";
-import { extractFaceFeatures, compareFaceFeatures } from "../utils/faceMatching";
+import {
+  extractFaceFeatures,
+  compareFaceFeatures,
+  extractFaceDescriptor,
+  compareFaceDescriptors,
+  loadFaceApiModels,
+} from "../utils/faceMatching";
 
 // Suppress internal C++/WASM "INFO: Created TensorFlow Lite..." messages from popping Next.js dev overlay
 if (typeof window !== "undefined") {
@@ -39,7 +45,10 @@ export default function useFaceTracker({
   const [warningCount, setWarningCount] = useState(0);
   const [isDifferentPerson, setIsDifferentPerson] = useState(false);
   const [matchSimilarity, setMatchSimilarity] = useState(100);
+  const baselineDescriptorRef = useRef(null);
   const baselineFeaturesRef = useRef(null);
+  const isComparingDescriptorRef = useRef(false);
+  const lastDescriptorCheckTsRef = useRef(0);
 
   const landmarkerRef = useRef(null);
   const isProcessingRef = useRef(false);
@@ -62,16 +71,26 @@ export default function useFaceTracker({
   });
   const lastLogTimestampRef = useRef(0);
 
-  // Load registered candidate baseline features
+  // Load registered candidate baseline features & neural descriptor
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
+        const storedDesc =
+          sessionStorage.getItem("candidate_face_descriptor") ||
+          localStorage.getItem("candidate_face_descriptor");
+        if (storedDesc) {
+          baselineDescriptorRef.current = JSON.parse(storedDesc);
+        }
+
         const stored =
           sessionStorage.getItem("candidate_face_baseline") ||
           localStorage.getItem("candidate_face_baseline");
         if (stored) {
           baselineFeaturesRef.current = JSON.parse(stored);
         }
+
+        // Preload neural face-api models
+        loadFaceApiModels().catch(() => {});
       } catch {}
     }
   }, []);
@@ -274,63 +293,139 @@ export default function useFaceTracker({
         // Broadened Pose Gating: Allows normal desk/screen reading posture without pausing check
         const isEvaluatingPose = Math.abs(yawRatio) <= 0.38 && pitchRatio >= 0.12 && pitchRatio <= 0.70;
 
-        // ── Face Identity Comparison against registered baseline ──
-        if (!baselineFeaturesRef.current && typeof window !== "undefined") {
+        // ── Face Identity Comparison: 128-D Neural Model with Landmark Fallback ──
+        if (!baselineDescriptorRef.current && typeof window !== "undefined") {
           try {
-            const stored =
-              sessionStorage.getItem("candidate_face_baseline") ||
-              localStorage.getItem("candidate_face_baseline");
-            if (stored) {
-              baselineFeaturesRef.current = JSON.parse(stored);
+            const storedDesc =
+              sessionStorage.getItem("candidate_face_descriptor") ||
+              localStorage.getItem("candidate_face_descriptor");
+            if (storedDesc) {
+              baselineDescriptorRef.current = JSON.parse(storedDesc);
             }
           } catch {}
         }
 
-        if (baselineFeaturesRef.current && landmarks.length > 400 && isEvaluatingPose) {
-          const currentFeatures = extractFaceFeatures(landmarks);
-          if (currentFeatures) {
-            const matchResult = compareFaceFeatures(baselineFeaturesRef.current, currentFeatures);
-            setMatchSimilarity(matchResult.similarity);
+        // Mode A: High-Precision 128-D Neural Face Descriptor (@vladmandic/face-api)
+        if (
+          baselineDescriptorRef.current &&
+          !isComparingDescriptorRef.current &&
+          nowTs - lastDescriptorCheckTsRef.current >= 250
+        ) {
+          lastDescriptorCheckTsRef.current = nowTs;
+          isComparingDescriptorRef.current = true;
 
-            // Real-time diagnostic logging every 1.5s
-            if (nowTs - lastLogTimestampRef.current > 1500) {
-              lastLogTimestampRef.current = nowTs;
-              console.log(
-                `[FaceTracker] Identity check: match=${matchResult.isMatch}, similarity=${matchResult.similarity}%, meanDiff=${matchResult.distance}`
-              );
-            }
+          extractFaceDescriptor(video)
+            .then((liveDescriptor) => {
+              if (liveDescriptor && baselineDescriptorRef.current) {
+                const matchResult = compareFaceDescriptors(
+                  baselineDescriptorRef.current,
+                  liveDescriptor
+                );
+                setMatchSimilarity(matchResult.similarity);
 
-            if (!matchResult.isMatch) {
-              violationDurationRef.current.impersonationMs += checkIntervalMs;
+                if (nowTs - lastLogTimestampRef.current > 1500) {
+                  lastLogTimestampRef.current = nowTs;
+                  console.log(
+                    `[FaceTracker:Neural] match=${matchResult.isMatch}, similarity=${matchResult.similarity}%, distance=${matchResult.distance}`
+                  );
+                }
 
-              // Fast 750ms confirmation window (~0.75s continuous mismatch triggers alert)
-              if (violationDurationRef.current.impersonationMs >= 750) {
-                setIsDifferentPerson(true);
+                if (!matchResult.isMatch) {
+                  violationDurationRef.current.impersonationMs += 250;
 
-                if (nowTs - lastAlertTimestampRef.current.impersonation > 4000) {
-                  lastAlertTimestampRef.current.impersonation = nowTs;
-                  setWarningCount((c) => c + 1);
-                  toast.error("Proctoring Alert: Different Person Detected!", {
-                    description: `Face does not match registered candidate (Match: ${matchResult.similarity}%).`,
-                    duration: 4000,
-                  });
-                  onViolation?.("FACE_NOT_DETECTED", {
-                    subType: "DIFFERENT_PERSON_DETECTED",
-                    reason: "identity_mismatch",
-                    similarity: matchResult.similarity,
-                    distance: matchResult.distance,
-                    timestamp: new Date().toISOString(),
-                  });
+                  // 500ms confirmation window (Instant 0.5s reaction on different face)
+                  if (violationDurationRef.current.impersonationMs >= 500) {
+                    setIsDifferentPerson(true);
+
+                    if (Date.now() - lastAlertTimestampRef.current.impersonation > 4000) {
+                      lastAlertTimestampRef.current.impersonation = Date.now();
+                      setWarningCount((c) => c + 1);
+                      toast.error("Proctoring Alert: Different Person Detected!", {
+                        description: `Face does not match registered candidate (Match: ${matchResult.similarity}%).`,
+                        duration: 4000,
+                      });
+                      onViolation?.("FACE_NOT_DETECTED", {
+                        subType: "DIFFERENT_PERSON_DETECTED",
+                        reason: "identity_mismatch",
+                        similarity: matchResult.similarity,
+                        distance: matchResult.distance,
+                        timestamp: new Date().toISOString(),
+                      });
+                    }
+                  }
+                } else {
+                  // Verified registered candidate: smoothly decay and dismiss
+                  violationDurationRef.current.impersonationMs = Math.max(
+                    0,
+                    violationDurationRef.current.impersonationMs - 300
+                  );
+                  if (violationDurationRef.current.impersonationMs === 0) {
+                    setIsDifferentPerson(false);
+                  }
                 }
               }
-            } else {
-              // Verified matching candidate: smoothly decay and dismiss
-              violationDurationRef.current.impersonationMs = Math.max(
-                0,
-                violationDurationRef.current.impersonationMs - checkIntervalMs * 2
-              );
-              if (violationDurationRef.current.impersonationMs === 0) {
-                setIsDifferentPerson(false);
+            })
+            .catch(() => {})
+            .finally(() => {
+              isComparingDescriptorRef.current = false;
+            });
+        }
+        // Mode B: Geometric Landmark Fallback (if neural descriptor is absent)
+        else if (!baselineDescriptorRef.current) {
+          if (!baselineFeaturesRef.current && typeof window !== "undefined") {
+            try {
+              const stored =
+                sessionStorage.getItem("candidate_face_baseline") ||
+                localStorage.getItem("candidate_face_baseline");
+              if (stored) {
+                baselineFeaturesRef.current = JSON.parse(stored);
+              }
+            } catch {}
+          }
+
+          if (baselineFeaturesRef.current && landmarks.length > 400 && isEvaluatingPose) {
+            const currentFeatures = extractFaceFeatures(landmarks);
+            if (currentFeatures) {
+              const matchResult = compareFaceFeatures(baselineFeaturesRef.current, currentFeatures);
+              setMatchSimilarity(matchResult.similarity);
+
+              if (nowTs - lastLogTimestampRef.current > 1500) {
+                lastLogTimestampRef.current = nowTs;
+                console.log(
+                  `[FaceTracker:Geometric] match=${matchResult.isMatch}, similarity=${matchResult.similarity}%, meanDiff=${matchResult.distance}`
+                );
+              }
+
+              if (!matchResult.isMatch) {
+                violationDurationRef.current.impersonationMs += checkIntervalMs;
+
+                if (violationDurationRef.current.impersonationMs >= 750) {
+                  setIsDifferentPerson(true);
+
+                  if (nowTs - lastAlertTimestampRef.current.impersonation > 4000) {
+                    lastAlertTimestampRef.current.impersonation = nowTs;
+                    setWarningCount((c) => c + 1);
+                    toast.error("Proctoring Alert: Different Person Detected!", {
+                      description: `Face does not match registered candidate (Match: ${matchResult.similarity}%).`,
+                      duration: 4000,
+                    });
+                    onViolation?.("FACE_NOT_DETECTED", {
+                      subType: "DIFFERENT_PERSON_DETECTED",
+                      reason: "identity_mismatch",
+                      similarity: matchResult.similarity,
+                      distance: matchResult.distance,
+                      timestamp: new Date().toISOString(),
+                    });
+                  }
+                }
+              } else {
+                violationDurationRef.current.impersonationMs = Math.max(
+                  0,
+                  violationDurationRef.current.impersonationMs - checkIntervalMs * 2
+                );
+                if (violationDurationRef.current.impersonationMs === 0) {
+                  setIsDifferentPerson(false);
+                }
               }
             }
           }
