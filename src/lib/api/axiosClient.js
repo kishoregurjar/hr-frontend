@@ -96,9 +96,7 @@ axiosClient.interceptors.request.use(
         !isSuperAdmin &&
         !isCandidateEndpoint &&
         !config.url?.includes("/companies/invitations/accept") &&
-        !config.url?.includes("/super-admin/") &&
-        !config.url?.includes("/invitations/") &&
-        !config.url?.includes("/attempts/verify")
+        !config.url?.includes("/super-admin/")
       ) {
         config.headers["X-Company-Id"] = companyId;
         config.headers["x-company-id"] = companyId;
