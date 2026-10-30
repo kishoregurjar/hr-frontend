@@ -29,7 +29,7 @@ const QuestionOptionFields = ({ form }) => {
                   <div className={`flex items-center rounded-xl border transition-all overflow-hidden ${
                     isCorrect
                       ? "border-emerald-500 bg-emerald-50/40 ring-2 ring-emerald-500/20"
-                      : "border-slate-200 bg-slate-50/50 focus-within:bg-white focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/20"
+                      : "border-slate-200 bg-slate-50/50 focus-within:bg-white focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-500/20"
                   }`}>
                     <span className={`h-10 w-10 shrink-0 flex items-center justify-center font-black text-xs border-r select-none ${
                       isCorrect

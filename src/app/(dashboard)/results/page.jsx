@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Trophy,
@@ -34,6 +34,7 @@ import {
   Gamepad2,
   AlertCircle,
   BookOpen,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/features/auth/context";
@@ -51,6 +52,12 @@ import {
 
 export default function ResultsAndRankingPage() {
   const { user } = useAuth();
+
+  // Scroll & Parallax Refs
+  const scrollContainerRef = useRef(null);
+  const farBgRef = useRef(null);
+  const midHeroRef = useRef(null);
+
   const rawName =
     (typeof user?.name === "string" ? user.name : "") ||
     (typeof user?.fullName === "string" ? user.fullName : "") ||
@@ -61,7 +68,8 @@ export default function ResultsAndRankingPage() {
     user?.companyName ||
     user?.company?.name ||
     (typeof user?.company === "string" ? user.company : null) ||
-    "";
+    (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
+    "Facebook Company";
 
   const { data: apiAssessments = [] } = useAssessmentsQuery();
 
@@ -184,6 +192,29 @@ export default function ResultsAndRankingPage() {
     customMessage: "We were impressed with your assessment performance and would love to invite you to our next technical interview round.",
   });
 
+  // ── Parallax Scroll Handler ──
+  const handleScroll = () => {
+    const scrollY = scrollContainerRef.current?.scrollTop || 0;
+
+    // 1. Far background: decorative rings & ambient orbs inside hero banner (0.58x counter-lag)
+    if (farBgRef.current) {
+      const orbTranslate = scrollY * 0.58;
+      const orbRotate = scrollY * 0.05;
+      const orbScale = 1 + scrollY * 0.0003;
+      farBgRef.current.style.transform = `translate3d(0, ${orbTranslate}px, 0) scale(${orbScale}) rotate(${orbRotate}deg)`;
+    }
+
+    // 2. Midground Hero Content: Title, subtitle, badge (0.42x counter-lag)
+    if (midHeroRef.current) {
+      const heroProgress = Math.min(scrollY / 450, 1);
+      const heroTranslate = scrollY * 0.42;
+      const heroOpacity = Math.max(1 - heroProgress * 0.75, 0.2);
+      const heroScale = 1 - heroProgress * 0.06;
+      midHeroRef.current.style.transform = `translate3d(0, ${heroTranslate}px, 0) scale(${heroScale})`;
+      midHeroRef.current.style.opacity = heroOpacity;
+    }
+  };
+
   const handleSelectAll = (e) => {
     if (e.target.checked) {
       const pageIds = paginatedResults.map((r) => r.id);
@@ -283,8 +314,6 @@ export default function ResultsAndRankingPage() {
       })
       .sort((a, b) => {
         if (sortBy === "rank") {
-          // If a specific assessment is selected, strictly sort by assessmentRank (1, 2, 3...)
-          // Unranked/Failed candidates (null rank) go to the bottom
           const rankA = a.assessmentRank !== null && a.assessmentRank !== undefined ? a.assessmentRank : 999999;
           const rankB = b.assessmentRank !== null && b.assessmentRank !== undefined ? b.assessmentRank : 999999;
           if (rankA !== rankB) return rankA - rankB;
@@ -462,791 +491,999 @@ export default function ResultsAndRankingPage() {
     );
   };
 
+  const cardBaseStyle =
+    "rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-5 sm:p-6 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 transition-all duration-200 hover:shadow-lg flex flex-col justify-between space-y-4 select-none";
+
+  const totalCandidatesCount = results.length;
+  const qualifiedCount = results.filter((r) => r.status === "QUALIFIED").length;
+  const averageScore =
+    results.length > 0
+      ? Math.round(results.reduce((acc, r) => acc + (r.percentage || 0), 0) / results.length)
+      : 0;
+  const topTierCount = results.filter((r) => (r.percentage || 0) >= 85).length;
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto font-sans">
-      {/* ── 1. EXACT DESIGN SYSTEM KPI STAT CARDS ── */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {/* Card 1: Total Completed Tests */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs flex items-center justify-between transition hover:shadow-md">
-          <div>
-            <p className="text-xs font-medium text-muted-foreground">
-              Total Candidates
-            </p>
-            <h2 className="mt-1.5 text-3xl font-bold text-slate-700 tracking-tight">
-              {results.length}
-            </h2>
-          </div>
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600">
-            <Award className="h-5 w-5" />
-          </div>
+    <div 
+      ref={scrollContainerRef}
+      onScroll={handleScroll}
+      className="-m-4 md:-m-6 h-[calc(100dvh-64px)] max-h-[calc(100dvh-64px)] overflow-y-auto overflow-x-hidden relative bg-[#f8fafc] no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden font-sans"
+    >
+      {/* ── Layer 1 & 2: 3D Parallax Hero Header ── */}
+      <div className="relative bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] text-white pt-10 pb-36 md:pb-40 px-6 md:px-12 overflow-hidden shadow-lg select-none">
+        
+        {/* Far Background: Rotating Ambient Orbs & Concentric Rings */}
+        <div
+          ref={farBgRef}
+          className="absolute inset-0 pointer-events-none will-change-transform"
+          style={{ transform: "translate3d(0, 0, 0)" }}
+        >
+          {/* Glowing Ambient Radial Glow */}
+          <div className="absolute -top-28 -right-28 w-[450px] h-[450px] rounded-full bg-white/12 blur-3xl" />
+
+          {/* Concentric 3D Rings */}
+          <div className="absolute -top-16 -right-16 w-[380px] h-[380px] rounded-full border border-white/20" />
+          <div className="absolute top-10 right-16 w-[260px] h-[260px] rounded-full border border-white/15" />
+          <div className="absolute top-28 right-36 w-[140px] h-[140px] rounded-full border border-white/10" />
+
+          {/* Floating Subtle Shimmer Sparks */}
+          <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-white/40 blur-[1px] animate-pulse" />
+          <div className="absolute top-1/3 left-2/3 w-2.5 h-2.5 rounded-full bg-pink-200/50 blur-[1px] animate-pulse" />
         </div>
 
-        {/* Card 2: Mean Batch Score */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs flex items-center justify-between transition hover:shadow-md">
-          <div>
-            <p className="text-xs font-medium text-muted-foreground">
-              Average Score
+        {/* Midground: Hero Content (0.42x Parallax Speed) */}
+        <div
+          ref={midHeroRef}
+          className="max-w-7xl mx-auto space-y-4 relative z-10 will-change-transform"
+          style={{ transform: "translate3d(0, 0, 0)" }}
+        >
+          <div className="space-y-1">
+            {/* Company Tag */}
+            <p className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-white/75 drop-shadow-xs">
+              {companyName}
             </p>
-            <h2 className="mt-1.5 text-3xl font-bold text-slate-700 tracking-tight">
-              {results.length > 0
-                ? Math.round(
-                    results.reduce((acc, r) => acc + (r.percentage || 0), 0) / results.length
-                  )
-                : 0}%
-            </h2>
-          </div>
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600">
-            <TrendingUp className="h-5 w-5" />
-          </div>
-        </div>
 
-        {/* Card 3: Top Tier Shortlist */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs flex items-center justify-between transition hover:shadow-md">
-          <div>
-            <p className="text-xs font-medium text-muted-foreground">
-              Top Candidates
+            {/* Title */}
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white tracking-tight drop-shadow-sm">
+              Results & Ranking
+            </h1>
+
+            {/* Subtitle */}
+            <p className="text-white/85 text-xs sm:text-sm font-medium leading-relaxed max-w-2xl">
+              Leaderboards, multi-module cognitive scoring, candidate rank percentiles, and interview scheduling
             </p>
-            <h2 className="mt-1.5 text-3xl font-bold text-slate-700 tracking-tight">
-              {results.filter((r) => (r.percentage || 0) >= 85).length}
-            </h2>
           </div>
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 border border-amber-100 text-amber-600">
-            <Sparkles className="h-5 w-5" />
-          </div>
-        </div>
-      </div>
 
-      {/* ── 2. PODIUM HIGHLIGHT FOR TOP CANDIDATES (Dynamic Per-Assessment) ── */}
-      {podiumCandidates.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {podiumCandidates.map((candidate) => (
-            <div
-              key={candidate.id}
-              onClick={() => setSelectedCandidate(candidate)}
-              className="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white via-white to-slate-50 p-5 shadow-2xs hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer space-y-3 relative overflow-hidden group"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">
-                    {candidate.assessmentRank === 1
-                      ? "🥇"
-                      : candidate.assessmentRank === 2
-                      ? "🥈"
-                      : candidate.assessmentRank === 3
-                      ? "🥉"
-                      : `#${candidate.assessmentRank}`}
-                  </span>
-                  <div>
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-700">
-                      Rank #{candidate.assessmentRank || 1}
-                    </span>
-                    {candidate.assessmentTotalCandidates > 1 && (
-                      <span className="text-[9.5px] text-slate-400 font-medium block">
-                        of {candidate.assessmentTotalCandidates} candidates
-                      </span>
-                    )}
-                  </div>
+          {/* Leaderboard Engine Banner & Top Actions Row */}
+          <div className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md p-2.5 px-4 flex flex-wrap lg:flex-nowrap items-center justify-between gap-3 text-white shadow-xs">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="h-8 w-8 rounded-xl bg-white/20 border border-white/30 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                <Trophy className="h-4 w-4" />
+              </div>
+              <div className="text-xs min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-bold text-white shrink-0 text-xs">Leaderboard Engine:</span>
+                  <Badge className="bg-emerald-500/20 text-emerald-200 border-emerald-400/40 text-[11px] py-0.5 px-2.5 flex items-center gap-1.5 font-semibold rounded-full">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                    Live Scoring & Dynamic Calibration Active
+                  </Badge>
                 </div>
-                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px] font-black">
-                  {candidate.percentage}% Score
-                </Badge>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-base text-slate-900 group-hover:text-indigo-600 transition-colors">
-                  {candidate.candidateName}
-                </h4>
-                <p className="text-xs text-slate-500 mt-0.5 truncate">{candidate.email}</p>
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-600">
-                <span className="truncate max-w-[200px]">{candidate.assessmentTitle}</span>
-                <span className="text-indigo-600 font-bold text-[11px] group-hover:underline flex items-center gap-1 shrink-0">
-                  View Scorecard ➔
-                </span>
               </div>
             </div>
-          ))}
-        </div>
-      )}
 
-      {/* ── 3. FILTER & SEARCH TOOLBAR ── */}
-      <div className="rounded-2xl border bg-card p-3 shadow-xs flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3">
-        {/* Search */}
-        <div className="relative flex-1 min-w-[240px]">
-          <Search className="h-4 w-4 absolute left-3.5 top-3 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search candidate by name, email, or assessment..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-10 pl-9 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition shadow-2xs"
-          />
-        </div>
-
-        {/* Filters & Actions */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Assessment Filter */}
-          <select
-            value={selectedAssessment}
-            onChange={(e) => {
-              setSelectedAssessment(e.target.value);
-              setSelectedCandidateIds([]);
-            }}
-            className="h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer max-w-[180px] truncate shadow-2xs"
-          >
-            <option value="ALL">All Assessments</option>
-            {availableAssessments.map((title) => (
-              <option key={title} value={title}>
-                {title}
-              </option>
-            ))}
-          </select>
-
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer shadow-2xs"
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="QUALIFIED">Qualified</option>
-            <option value="IN_REVIEW">In Review</option>
-            <option value="FAILED">Failed</option>
-          </select>
-
-          {/* Sort Filter */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer shadow-2xs"
-          >
-            <option value="rank">Highest Score First</option>
-            <option value="speed">Fastest Completion</option>
-            <option value="name">Candidate Name (A-Z)</option>
-          </select>
-
-          {/* Interview Action Button - Only enabled when a specific assessment is selected */}
-          {selectedAssessment !== "ALL" && (
-            selectedCandidateIds.length > 0 ? (
+            {/* Quick Export CTA */}
+            <div className="flex items-center gap-2 shrink-0">
               <Button
+                type="button"
                 size="sm"
-                onClick={openInterviewModalForSelected}
-                className="h-10 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-indigo-500/20 cursor-pointer transition animate-in fade-in"
+                onClick={handleExportCSV}
+                className="text-xs h-8 px-3.5 gap-1.5 bg-white text-indigo-700 hover:bg-slate-50 font-bold rounded-xl shadow-xs cursor-pointer transition-all"
               >
-                <Calendar className="h-3.5 w-3.5" />
-                Invite Selected ({selectedCandidateIds.length})
+                <Download className="h-3.5 w-3.5" />
+                Export CSV Report
               </Button>
-            ) : (
-              filteredResults.some((r) => r.status === "QUALIFIED") && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const qualified = filteredResults.filter((r) => r.status === "QUALIFIED");
-                    setInterviewTargets(qualified);
-                    setInterviewForm((prev) => ({
-                      ...prev,
-                      roundName: `${selectedAssessment} - Round 2 Interview`,
-                    }));
-                    setIsInterviewModalOpen(true);
-                  }}
-                  className="h-10 px-3.5 rounded-xl border-emerald-300 bg-emerald-50/50 hover:bg-emerald-100/70 text-emerald-800 text-xs font-bold gap-1.5 shadow-2xs cursor-pointer transition"
-                >
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                  Invite All Qualified ({filteredResults.filter((r) => r.status === "QUALIFIED").length})
-                </Button>
-              )
-            )
-          )}
-
-          {/* Divider */}
-          <div className="h-6 w-[1px] bg-slate-200 mx-0.5 hidden sm:block" />
-
-          {/* Refresh Action */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing || isLoading}
-            className="h-10 px-3 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold gap-1.5 shadow-2xs cursor-pointer"
-            title="Refresh Leaderboard"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing || isLoading ? "animate-spin text-indigo-600" : ""}`} />
-            <span className="hidden sm:inline">Refresh</span>
-          </Button>
-
-          {/* Download CTA */}
-          <Button
-            size="sm"
-            onClick={handleExportCSV}
-            className="h-10 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-indigo-500/20 cursor-pointer"
-          >
-            <Download className="h-3.5 w-3.5" />
-            Download Report
-          </Button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ── 5. FULL RANKINGS DATA TABLE ── */}
-      <div className="rounded-2xl border bg-white shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs min-w-[760px]">
-            <thead className="bg-slate-50/80 border-b text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              <tr>
-                {selectedAssessment !== "ALL" && (
-                  <th className="py-3.5 px-4 w-10 text-center animate-in fade-in">
-                    <input
-                      type="checkbox"
-                      checked={
-                        paginatedResults.length > 0 &&
-                        paginatedResults.every((item) => selectedCandidateIds.includes(item.id))
-                      }
-                      onChange={handleSelectAll}
-                      aria-label="Select all candidates on this page"
-                      className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
-                    />
-                  </th>
-                )}
-                <th className="py-3.5 px-4 w-14 text-center">Rank</th>
-                <th className="py-3.5 px-5">Candidate</th>
-                <th className="py-3.5 px-5">Assessment Module</th>
-                <th className="py-3.5 px-5 text-center">Score & Pass %</th>
-                <th className="py-3.5 px-5">Status</th>
-                <th className="py-3.5 px-5 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
-              {filteredResults.length === 0 ? (
-                <tr>
-                  <td colSpan={selectedAssessment !== "ALL" ? 7 : 6} className="py-16 text-center">
-                    <div className="flex flex-col items-center justify-center max-w-sm mx-auto space-y-3">
-                      <div className="h-14 w-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-2xs">
-                        <Trophy className="h-7 w-7 text-indigo-600" />
-                      </div>
-                      <h3 className="font-extrabold text-base text-slate-900">
-                        No Assessment Results Yet
-                      </h3>
-                      <p className="text-xs text-slate-500 leading-relaxed">
-                        Candidate scores, rankings, and cognitive breakdowns will automatically appear here once tests are submitted.
-                      </p>
+      {/* ── Layer 3: Foreground (Overlapping 4 Stat Cards & Results Content) ── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 md:-mt-24 relative z-20 space-y-6 pb-20">
+        
+        {/* ── 1. 4 KPI Stat Cards ── */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-5">
+          {/* Card 1: Total Candidates */}
+          <div className={cardBaseStyle}>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                TOTAL CANDIDATES
+              </span>
+              <div className="h-9 w-9 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-xs">
+                <Award className="h-4 w-4" />
+              </div>
+            </div>
+            <div>
+              <p className="text-3xl font-extrabold text-slate-800 tracking-tight">
+                {totalCandidatesCount}
+              </p>
+              <p className="text-xs text-slate-400 font-medium mt-1">
+                Evaluated submissions
+              </p>
+            </div>
+          </div>
+
+          {/* Card 2: Qualified */}
+          <div className={cardBaseStyle}>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                QUALIFIED CANDIDATES
+              </span>
+              <div className="h-9 w-9 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-xs">
+                <CheckCircle2 className="h-4 w-4" />
+              </div>
+            </div>
+            <div>
+              <p className="text-3xl font-extrabold text-slate-800 tracking-tight">
+                {qualifiedCount}
+              </p>
+              <p className="text-xs text-slate-400 font-medium mt-1">
+                Passed passing criteria
+              </p>
+            </div>
+          </div>
+
+          {/* Card 3: Average Score */}
+          <div className={cardBaseStyle}>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                AVERAGE SCORE
+              </span>
+              <div className="h-9 w-9 rounded-xl bg-sky-500 text-white flex items-center justify-center shadow-xs">
+                <TrendingUp className="h-4 w-4" />
+              </div>
+            </div>
+            <div>
+              <p className="text-3xl font-extrabold text-slate-800 tracking-tight">
+                {averageScore}%
+              </p>
+              <p className="text-xs text-slate-400 font-medium mt-1">
+                Cohort mean performance
+              </p>
+            </div>
+          </div>
+
+          {/* Card 4: Top Tier (85%+) */}
+          <div className={cardBaseStyle}>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                TOP TIER (85%+)
+              </span>
+              <div className="h-9 w-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs">
+                <Sparkles className="h-4 w-4" />
+              </div>
+            </div>
+            <div>
+              <p className="text-3xl font-extrabold text-slate-800 tracking-tight">
+                {topTierCount}
+              </p>
+              <p className="text-xs text-slate-400 font-medium mt-1">
+                High potential talent
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── 2. Top 3 Podium Highlights (Dynamic Per-Assessment) ── */}
+        {podiumCandidates.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {podiumCandidates.map((candidate) => (
+              <div
+                key={candidate.id}
+                onClick={() => setSelectedCandidate(candidate)}
+                className="rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-5 shadow-[0_12px_30px_rgba(79,70,229,0.06),0_2px_8px_rgba(0,0,0,0.02)] ring-1 ring-slate-900/5 hover:shadow-lg transition-all duration-200 cursor-pointer space-y-3 select-none group"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">
+                      {candidate.assessmentRank === 1
+                        ? "🥇"
+                        : candidate.assessmentRank === 2
+                        ? "🥈"
+                        : candidate.assessmentRank === 3
+                        ? "🥉"
+                        : `#${candidate.assessmentRank}`}
+                    </span>
+                    <div>
+                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-700">
+                        Rank #{candidate.assessmentRank || 1}
+                      </span>
+                      {candidate.assessmentTotalCandidates > 1 && (
+                        <span className="text-[9.5px] text-slate-400 font-medium block">
+                          of {candidate.assessmentTotalCandidates} candidates
+                        </span>
+                      )}
                     </div>
-                  </td>
-                </tr>
+                  </div>
+                  <Badge className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px] font-black rounded-full px-2.5">
+                    {candidate.percentage}% Score
+                  </Badge>
+                </div>
+
+                <div>
+                  <h4 className="font-extrabold text-base text-slate-900 group-hover:text-indigo-600 transition-colors">
+                    {candidate.candidateName}
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5 truncate">{candidate.email}</p>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-600">
+                  <span className="truncate max-w-[200px]">{candidate.assessmentTitle}</span>
+                  <span className="text-indigo-600 font-bold text-[11px] group-hover:underline flex items-center gap-1 shrink-0">
+                    View Scorecard ➔
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── 3. Filters & Search Toolbar (Glassmorphic Card) ── */}
+        <div className="rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-4 sm:p-5 shadow-[0_12px_30px_rgba(79,70,229,0.06),0_2px_8px_rgba(0,0,0,0.02)] ring-1 ring-slate-900/5 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3">
+          {/* Search Input */}
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="h-4 w-4 absolute left-4 top-3 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search candidate by name, email, or assessment..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-10 w-full pl-10 pr-4 rounded-full border border-slate-200/90 bg-slate-50/50 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition"
+            />
+          </div>
+
+          {/* Filters & Actions */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Assessment Filter */}
+            <select
+              value={selectedAssessment}
+              onChange={(e) => {
+                setSelectedAssessment(e.target.value);
+                setSelectedCandidateIds([]);
+              }}
+              className="h-10 px-3.5 rounded-full border border-slate-200/90 bg-slate-50/50 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer max-w-[180px] truncate transition"
+            >
+              <option value="ALL">All Assessments</option>
+              {availableAssessments.map((title) => (
+                <option key={title} value={title}>
+                  {title}
+                </option>
+              ))}
+            </select>
+
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="h-10 px-3.5 rounded-full border border-slate-200/90 bg-slate-50/50 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer transition"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="QUALIFIED">Qualified</option>
+              <option value="IN_REVIEW">In Review</option>
+              <option value="FAILED">Failed</option>
+            </select>
+
+            {/* Sort Filter */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="h-10 px-3.5 rounded-full border border-slate-200/90 bg-slate-50/50 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer transition"
+            >
+              <option value="rank">Highest Score First</option>
+              <option value="speed">Fastest Completion</option>
+              <option value="name">Candidate Name (A-Z)</option>
+            </select>
+
+            {/* Interview Action Buttons */}
+            {selectedAssessment !== "ALL" && (
+              selectedCandidateIds.length > 0 ? (
+                <Button
+                  size="sm"
+                  onClick={openInterviewModalForSelected}
+                  className="h-10 px-4 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-indigo-500/20 cursor-pointer transition animate-in fade-in"
+                >
+                  <Calendar className="h-3.5 w-3.5" />
+                  Invite Selected ({selectedCandidateIds.length})
+                </Button>
               ) : (
-                paginatedResults.map((item, index) => (
-                  <tr
-                    key={item.id}
-                    className={`hover:bg-slate-50/70 transition group ${
-                      selectedCandidateIds.includes(item.id) ? "bg-indigo-50/40" : ""
-                    }`}
+                filteredResults.some((r) => r.status === "QUALIFIED") && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const qualified = filteredResults.filter((r) => r.status === "QUALIFIED");
+                      setInterviewTargets(qualified);
+                      setInterviewForm((prev) => ({
+                        ...prev,
+                        roundName: `${selectedAssessment} - Round 2 Interview`,
+                      }));
+                      setIsInterviewModalOpen(true);
+                    }}
+                    className="h-10 px-3.5 rounded-full border-emerald-300 bg-emerald-50/50 hover:bg-emerald-100/70 text-emerald-800 text-xs font-bold gap-1.5 shadow-2xs cursor-pointer transition"
                   >
-                    {/* Select Checkbox - only shown when specific assessment is selected */}
-                    {selectedAssessment !== "ALL" && (
-                      <td className="py-4 px-4 text-center animate-in fade-in">
-                        <input
-                          type="checkbox"
-                          checked={selectedCandidateIds.includes(item.id)}
-                          onChange={() => handleToggleSelect(item.id)}
-                          aria-label={`Select ${item.candidateName}`}
-                          className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
-                        />
-                      </td>
-                    )}
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                    Invite All Qualified ({filteredResults.filter((r) => r.status === "QUALIFIED").length})
+                  </Button>
+                )
+              )
+            )}
 
-                    {/* Rank */}
-                    <td className="py-4 px-4 text-center font-extrabold">
-                      {getRankMedal(item.assessmentRank, item.assessmentTotalCandidates, item.status)}
-                    </td>
+            {/* Divider */}
+            <div className="h-6 w-[1px] bg-slate-200 mx-0.5 hidden sm:block" />
 
-                    {/* Candidate */}
-                    <td className="py-4 px-5">
-                      <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-slate-900 to-indigo-950 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
-                          {String(item.candidateName || "C")
-                            .split(" ")
-                            .filter(Boolean)
-                            .map((n) => n[0])
-                            .slice(0, 2)
-                            .join("")
-                            .toUpperCase()}
+            {/* Refresh Action */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing || isLoading}
+              className="h-10 px-3.5 rounded-full border border-slate-200 bg-slate-50/60 hover:bg-slate-100 text-slate-700 text-xs font-semibold gap-1.5 transition cursor-pointer shadow-xs"
+              title="Refresh Leaderboard"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing || isLoading ? "animate-spin text-indigo-600" : "text-slate-500"}`} />
+              <span className="hidden sm:inline">Refresh</span>
+            </Button>
+
+            {/* Download Report Button */}
+            <Button
+              size="sm"
+              onClick={handleExportCSV}
+              className="h-10 px-5 rounded-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold text-xs gap-1.5 shadow-md shadow-indigo-500/25 cursor-pointer transition"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Download Report
+            </Button>
+          </div>
+        </div>
+
+        {/* ── 4. Full Rankings Data Table Card ── */}
+        <div className="rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-6 sm:p-7 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 space-y-4 font-sans transition-all duration-200">
+          <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-2xs">
+            <table className="w-full text-left text-xs min-w-[760px]">
+              <thead className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+                <tr>
+                  {selectedAssessment !== "ALL" && (
+                    <th className="py-3.5 px-4 w-10 text-center animate-in fade-in">
+                      <input
+                        type="checkbox"
+                        checked={
+                          paginatedResults.length > 0 &&
+                          paginatedResults.every((item) => selectedCandidateIds.includes(item.id))
+                        }
+                        onChange={handleSelectAll}
+                        aria-label="Select all candidates on this page"
+                        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
+                      />
+                    </th>
+                  )}
+                  <th className="py-3.5 px-4 w-14 text-center">Rank</th>
+                  <th className="py-3.5 px-5">Candidate</th>
+                  <th className="py-3.5 px-5">Assessment Module</th>
+                  <th className="py-3.5 px-5 text-center">Score & Pass %</th>
+                  <th className="py-3.5 px-5">Status</th>
+                  <th className="py-3.5 px-5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
+                {filteredResults.length === 0 ? (
+                  <tr>
+                    <td colSpan={selectedAssessment !== "ALL" ? 7 : 6} className="py-16 text-center">
+                      <div className="flex flex-col items-center justify-center max-w-sm mx-auto space-y-3">
+                        <div className="h-14 w-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-2xs">
+                          <Trophy className="h-7 w-7 text-indigo-600" />
                         </div>
-                        <div>
-                          <p className="font-extrabold text-slate-900 text-sm leading-tight">
-                            {item.candidateName}
-                          </p>
-                          <p className="text-xs text-slate-500 mt-0.5">{item.email}</p>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Assessment */}
-                    <td className="py-4 px-5">
-                      <div className="space-y-0.5">
-                        <p className="font-bold text-slate-800">{item.assessmentTitle}</p>
-                        <p className="text-[11px] text-slate-500 flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {item.timeSpent} • {item.completedAt}
+                        <h3 className="font-extrabold text-base text-slate-900">
+                          No Assessment Results Yet
+                        </h3>
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                          Candidate scores, rankings, and cognitive breakdowns will automatically appear here once tests are submitted.
                         </p>
                       </div>
                     </td>
+                  </tr>
+                ) : (
+                  paginatedResults.map((item) => (
+                    <tr
+                      key={item.id}
+                      className={`hover:bg-slate-50/70 transition group ${
+                        selectedCandidateIds.includes(item.id) ? "bg-indigo-50/40" : ""
+                      }`}
+                    >
+                      {/* Select Checkbox */}
+                      {selectedAssessment !== "ALL" && (
+                        <td className="py-4 px-4 text-center animate-in fade-in">
+                          <input
+                            type="checkbox"
+                            checked={selectedCandidateIds.includes(item.id)}
+                            onChange={() => handleToggleSelect(item.id)}
+                            aria-label={`Select ${item.candidateName}`}
+                            className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
+                          />
+                        </td>
+                      )}
 
-                    {/* Score */}
-                    <td className="py-4 px-5 text-center">
-                      <span className="font-black text-sm text-slate-900">
-                        {item.score}/{item.maxScore || 100}
-                      </span>
-                      <span className="block text-[11px] font-bold text-emerald-600">
-                        ({item.percentage}%)
-                      </span>
-                    </td>
+                      {/* Rank */}
+                      <td className="py-4 px-4 text-center font-extrabold">
+                        {getRankMedal(item.assessmentRank, item.assessmentTotalCandidates, item.status)}
+                      </td>
 
-                    {/* Status */}
-                    <td className="py-4 px-5">
-                      <div className="flex flex-col gap-1 items-start">
-                        <Badge
-                          className={`text-[10px] font-black uppercase px-2.5 py-0.5 ${
-                            item.status === "QUALIFIED"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                              : item.status === "IN_REVIEW"
-                              ? "bg-amber-50 text-amber-700 border-amber-300"
-                              : "bg-rose-50 text-rose-700 border-rose-300"
-                          }`}
-                        >
-                          {item.status === "QUALIFIED" ? "Qualified" : item.status === "IN_REVIEW" ? "In Review" : "Failed"}
-                        </Badge>
+                      {/* Candidate */}
+                      <td className="py-4 px-5">
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-slate-900 to-indigo-950 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                            {String(item.candidateName || "C")
+                              .split(" ")
+                              .filter(Boolean)
+                              .map((n) => n[0])
+                              .slice(0, 2)
+                              .join("")
+                              .toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-extrabold text-slate-900 text-sm leading-tight">
+                              {item.candidateName}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-0.5">{item.email}</p>
+                          </div>
+                        </div>
+                      </td>
 
-                        {item.status === "QUALIFIED" &&
-                          item.interview &&
-                          (!item.interview.assessmentTitle ||
-                            item.assessmentTitle?.toLowerCase().includes(item.interview.assessmentTitle?.toLowerCase()) ||
-                            item.interview.assessmentTitle?.toLowerCase().includes(item.assessmentTitle?.toLowerCase()) ||
-                            item.interview.roundName?.toLowerCase().includes(item.assessmentTitle?.toLowerCase())) && (
-                            <span
-                              className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/90 px-2 py-0.5 rounded-md shadow-2xs"
-                              title={`Interview Scheduled: ${item.interview.formattedDate || item.interview.roundName}`}
-                            >
-                              <Calendar className="h-2.5 w-2.5 text-indigo-600" />
-                              Interview Invited
-                            </span>
-                        )}
-                      </div>
-                    </td>
+                      {/* Assessment */}
+                      <td className="py-4 px-5">
+                        <div className="space-y-0.5">
+                          <p className="font-bold text-slate-800">{item.assessmentTitle}</p>
+                          <p className="text-[11px] text-slate-500 flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {item.timeSpent} • {item.completedAt}
+                          </p>
+                        </div>
+                      </td>
 
-                    {/* Actions */}
-                    <td className="py-4 px-5 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {item.status === "QUALIFIED" && (() => {
-                          const isCurrentAssessmentInvited =
-                            Boolean(item.interview) &&
+                      {/* Score */}
+                      <td className="py-4 px-5 text-center">
+                        <span className="font-black text-sm text-slate-900">
+                          {item.score}/{item.maxScore || 100}
+                        </span>
+                        <span className="block text-[11px] font-bold text-emerald-600">
+                          ({item.percentage}%)
+                        </span>
+                      </td>
+
+                      {/* Status */}
+                      <td className="py-4 px-5">
+                        <div className="flex flex-col gap-1 items-start">
+                          <Badge
+                            className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
+                              item.status === "QUALIFIED"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                : item.status === "IN_REVIEW"
+                                ? "bg-amber-50 text-amber-700 border-amber-300"
+                                : "bg-rose-50 text-rose-700 border-rose-300"
+                            }`}
+                          >
+                            {item.status === "QUALIFIED" ? "Qualified" : item.status === "IN_REVIEW" ? "In Review" : "Failed"}
+                          </Badge>
+
+                          {item.status === "QUALIFIED" &&
+                            item.interview &&
                             (!item.interview.assessmentTitle ||
                               item.assessmentTitle?.toLowerCase().includes(item.interview.assessmentTitle?.toLowerCase()) ||
                               item.interview.assessmentTitle?.toLowerCase().includes(item.assessmentTitle?.toLowerCase()) ||
-                              item.interview.roundName?.toLowerCase().includes(item.assessmentTitle?.toLowerCase()));
+                              item.interview.roundName?.toLowerCase().includes(item.assessmentTitle?.toLowerCase())) && (
+                              <span
+                                className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/90 px-2 py-0.5 rounded-full shadow-2xs"
+                                title={`Interview Scheduled: ${item.interview.formattedDate || item.interview.roundName}`}
+                              >
+                                <Calendar className="h-2.5 w-2.5 text-indigo-600" />
+                                Interview Invited
+                              </span>
+                          )}
+                        </div>
+                      </td>
 
-                          return (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openInterviewModalForSingle(item)}
-                              className={`h-8 px-2.5 rounded-xl text-xs font-bold gap-1 shadow-2xs cursor-pointer transition ${
-                                isCurrentAssessmentInvited
-                                  ? "border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 hover:text-indigo-800 text-indigo-700"
-                                  : "border-emerald-200 bg-emerald-50/50 hover:bg-emerald-100 hover:text-emerald-800 text-emerald-700"
-                              }`}
-                              title={
-                                isCurrentAssessmentInvited
-                                  ? `Interview already scheduled for ${item.interview.formattedDate}`
-                                  : "Schedule Next Round Interview"
-                              }
-                            >
-                              <Calendar className="h-3.5 w-3.5" />
-                              {isCurrentAssessmentInvited ? "Re-invite" : "Invite"}
-                            </Button>
-                          );
-                        })()}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedCandidate(item)}
-                          className="h-8 px-3 rounded-xl border-slate-200 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 text-xs font-bold gap-1 shadow-2xs cursor-pointer transition"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          Scorecard
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                      {/* Actions */}
+                      <td className="py-4 px-5 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {item.status === "QUALIFIED" && (() => {
+                            const isCurrentAssessmentInvited =
+                              Boolean(item.interview) &&
+                              (!item.interview.assessmentTitle ||
+                                item.assessmentTitle?.toLowerCase().includes(item.interview.assessmentTitle?.toLowerCase()) ||
+                                item.interview.assessmentTitle?.toLowerCase().includes(item.assessmentTitle?.toLowerCase()) ||
+                                item.interview.roundName?.toLowerCase().includes(item.assessmentTitle?.toLowerCase()));
 
-        {/* ── Pagination Footer ── */}
-        {filteredResults.length > 0 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t text-xs text-muted-foreground bg-slate-50/40">
-            <div className="flex items-center gap-2 text-xs">
-              <span>
-                Showing <span className="font-bold text-slate-800">{startIndex + 1}</span> to{" "}
-                <span className="font-bold text-slate-800">{endIndex}</span> of{" "}
-                <span className="font-bold text-slate-800">{filteredResults.length}</span> candidates
-              </span>
-              <div className="hidden sm:flex items-center gap-1.5 ml-2 border-l border-slate-200 pl-3">
-                <span className="text-[11px] text-slate-400">Rows per page:</span>
-                <select
-                  value={pageSize}
-                  onChange={(e) => {
-                    setPageSize(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="h-7 rounded-md border border-slate-200 bg-white px-1.5 text-[11px] font-semibold text-slate-700 shadow-2xs focus:border-blue-500 focus:outline-hidden"
-                >
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                </select>
-              </div>
-            </div>
-
-            {totalPages > 1 && (
-              <div className="flex items-center gap-1.5">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={validPage === 1}
-                  className="h-8 px-2.5 text-xs font-semibold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5 mr-0.5" />
-                  Prev
-                </Button>
-
-                <div className="flex items-center gap-1">
-                  {paginationPages.map((pageItem, idx) => {
-                    if (typeof pageItem === "string" && pageItem.startsWith("ellipsis")) {
-                      return (
-                        <span key={pageItem || idx} className="px-1 text-slate-400 font-bold select-none">
-                          ...
-                        </span>
-                      );
-                    }
-
-                    const pageNum = Number(pageItem);
-                    const isActive = validPage === pageNum;
-
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant={isActive ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={`h-8 w-8 p-0 text-xs font-bold transition-all cursor-pointer ${
-                          isActive
-                            ? "bg-blue-600 text-white hover:bg-blue-700 shadow-xs"
-                            : "text-slate-700 hover:bg-slate-100"
-                        }`}
-                      >
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
-                </div>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={validPage === totalPages}
-                  className="h-8 px-2.5 text-xs font-semibold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Next
-                  <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
-                </Button>
-              </div>
-            )}
+                            return (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openInterviewModalForSingle(item)}
+                                className={`h-8 px-2.5 rounded-xl text-xs font-bold gap-1 shadow-2xs cursor-pointer transition ${
+                                  isCurrentAssessmentInvited
+                                    ? "border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 hover:text-indigo-800 text-indigo-700"
+                                    : "border-emerald-200 bg-emerald-50/50 hover:bg-emerald-100 hover:text-emerald-800 text-emerald-700"
+                                }`}
+                                title={
+                                  isCurrentAssessmentInvited
+                                    ? `Interview already scheduled for ${item.interview.formattedDate}`
+                                    : "Schedule Next Round Interview"
+                                }
+                              >
+                                <Calendar className="h-3.5 w-3.5" />
+                                {isCurrentAssessmentInvited ? "Re-invite" : "Invite"}
+                              </Button>
+                            );
+                          })()}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedCandidate(item)}
+                            className="h-8 px-3 rounded-xl border-slate-200 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 text-xs font-bold gap-1 shadow-2xs cursor-pointer transition"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            Scorecard
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        )}
+
+          {/* ── 5. Pagination Footer ── */}
+          {filteredResults.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs text-muted-foreground font-medium">
+              <div className="flex items-center gap-2 text-xs">
+                <span>
+                  Showing <span className="font-bold text-slate-800">{startIndex + 1}</span> to{" "}
+                  <span className="font-bold text-slate-800">{endIndex}</span> of{" "}
+                  <span className="font-bold text-slate-800">{filteredResults.length}</span> candidates
+                </span>
+                <div className="hidden sm:flex items-center gap-1.5 ml-2 border-l border-slate-200 pl-3">
+                  <span className="text-[11px] text-slate-400 font-medium">Rows per page:</span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="h-7 rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-700 shadow-2xs focus:border-indigo-500 focus:outline-hidden cursor-pointer"
+                  >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
+                </div>
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={validPage === 1}
+                    className="h-8 px-2.5 rounded-lg border-slate-200 text-slate-600 text-xs font-semibold gap-1 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                    <span>Prev</span>
+                  </Button>
+
+                  <div className="flex items-center gap-1">
+                    {paginationPages.map((pageItem, idx) => {
+                      if (typeof pageItem === "string" && pageItem.startsWith("ellipsis")) {
+                        return (
+                          <span key={pageItem || idx} className="px-1 text-slate-400 font-bold select-none">
+                            ...
+                          </span>
+                        );
+                      }
+
+                      const pageNum = Number(pageItem);
+                      const isActive = validPage === pageNum;
+
+                      return (
+                        <button
+                          key={pageNum}
+                          type="button"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`h-8 min-w-[32px] px-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            isActive
+                              ? "bg-indigo-600 text-white shadow-xs shadow-indigo-500/20"
+                              : "text-slate-600 hover:bg-slate-100 bg-white border border-slate-200"
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={validPage === totalPages}
+                    className="h-8 px-2.5 rounded-lg border-slate-200 text-slate-600 text-xs font-semibold gap-1 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                  >
+                    <span>Next</span>
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── 6. DETAILED CANDIDATE SCORECARD MODAL ── */}
       {selectedCandidate && (
         <Dialog open={Boolean(selectedCandidate)} onOpenChange={() => setSelectedCandidate(null)}>
-          <DialogContent className="max-w-2xl w-[94vw] sm:w-full p-4 sm:p-7 md:p-8 rounded-2xl sm:rounded-[28px] border-slate-100 shadow-2xl font-sans bg-white space-y-5 sm:space-y-6 max-h-[90vh] overflow-y-auto">
-            {/* Header: Candidate Info */}
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-xl sm:text-2xl shadow-xs shrink-0">
-                {selectedCandidate.candidateName.charAt(0).toLowerCase()}
-              </div>
-              <div className="space-y-0.5 min-w-0 flex-1">
-                <DialogTitle className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight truncate">
-                  {selectedCandidate.candidateName}
-                </DialogTitle>
-                <DialogDescription className="text-xs sm:text-sm text-slate-500 font-medium truncate">
-                  {selectedCandidate.email} • {selectedCandidate.assessmentTitle}
-                </DialogDescription>
-              </div>
-            </div>
+          <DialogContent className="max-w-2xl w-[94vw] sm:w-full p-0 overflow-hidden rounded-3xl border border-white/90 shadow-2xl font-sans bg-white max-h-[92vh] flex flex-col">
+            {/* Header: Signature Gradient Banner */}
+            <div className="relative bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] text-white p-6 sm:p-7 overflow-hidden shrink-0 select-none">
+              {/* Subtle Ambient Rings & Glow */}
+              <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-white/10 blur-xl pointer-events-none" />
+              <div className="absolute top-2 right-12 w-28 h-28 rounded-full border border-white/15 pointer-events-none" />
 
-            {/* Score Highlight Box: 2 cols on mobile, 4 cols on tablet/desktop */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-2 p-3 sm:p-5 rounded-xl sm:rounded-2xl bg-slate-50/70 border border-slate-200/70 text-center">
-              <div className="p-1">
-                <span className="text-[10px] sm:text-[11px] font-bold uppercase text-slate-400 tracking-wider">Rank</span>
-                <p className="text-xl sm:text-2xl font-black mt-0.5 sm:mt-1">
-                  {selectedCandidate.status === "QUALIFIED" && selectedCandidate.assessmentRank ? (
-                    <span className="text-amber-600">
-                      #{selectedCandidate.assessmentRank}
-                      {selectedCandidate.assessmentTotalCandidates > 1 && (
-                        <span className="text-[11px] sm:text-xs text-slate-400 font-normal"> / {selectedCandidate.assessmentTotalCandidates}</span>
+              <div className="flex items-start justify-between gap-4 relative z-10">
+                <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
+                  <div className="h-13 w-13 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center font-black text-xl sm:text-2xl shadow-inner shrink-0 uppercase">
+                    {selectedCandidate.candidateName.charAt(0)}
+                  </div>
+                  <div className="space-y-1 min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <DialogTitle className="text-xl sm:text-2xl font-black text-white tracking-tight truncate drop-shadow-xs">
+                        {selectedCandidate.candidateName}
+                      </DialogTitle>
+                      {selectedCandidate.status === "QUALIFIED" ? (
+                        <Badge className="bg-emerald-400/25 text-emerald-100 border-emerald-300/40 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full">
+                          <CheckCircle2 className="h-3 w-3 mr-1" /> Qualified
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-rose-400/25 text-rose-100 border-rose-300/40 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full">
+                          <XCircle className="h-3 w-3 mr-1" /> Not Qualified
+                        </Badge>
                       )}
-                    </span>
-                  ) : (
-                    <span className="text-slate-400">Unranked</span>
-                  )}
-                </p>
-              </div>
-              <div className="p-1">
-                <span className="text-[10px] sm:text-[11px] font-bold uppercase text-slate-400 tracking-wider">Total Score</span>
-                <p className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5 sm:mt-1">{selectedCandidate.score}/100</p>
-              </div>
-              <div className="p-1">
-                <span className="text-[10px] sm:text-[11px] font-bold uppercase text-slate-400 tracking-wider">Time Taken</span>
-                <p className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5 sm:mt-1">{selectedCandidate.timeSpent}</p>
-              </div>
-              <div className="p-1">
-                <span className="text-[10px] sm:text-[11px] font-bold uppercase text-slate-400 tracking-wider">Integrity</span>
-                <p className="text-xl sm:text-2xl font-black text-emerald-600 mt-0.5 sm:mt-1">{selectedCandidate.integrityScore}%</p>
+                    </div>
+                    <DialogDescription className="text-xs sm:text-sm text-white/80 font-medium truncate">
+                      {selectedCandidate.email} • {selectedCandidate.assessmentTitle}
+                    </DialogDescription>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedCandidate(null)}
+                  className="h-8 w-8 rounded-xl bg-white/15 hover:bg-white/25 text-white/90 hover:text-white flex items-center justify-center shrink-0 transition-all cursor-pointer border border-white/20"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
             </div>
 
-            {/* Calibrated Cognitive Trait Performance */}
-            <div className="space-y-3 sm:space-y-4">
-              <h4 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-wider text-slate-500">
-                Calibrated Cognitive Trait Performance
-              </h4>
-
-              <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-1 text-center">
-                {/* 1. Problem Solving */}
-                {(() => {
-                  const val = Math.min(100, Math.max(0, selectedCandidate.cognitiveTraits?.problemSolving ?? 0));
-                  const r = 46;
-                  const c = 2 * Math.PI * r;
-                  const offset = c - (val / 100) * c;
-                  return (
-                    <div className="flex flex-col items-center">
-                      <div className="relative w-20 h-20 sm:w-28 sm:h-28 flex items-center justify-center">
-                        <svg className="w-20 h-20 sm:w-28 sm:h-28 -rotate-90" viewBox="0 0 110 110">
-                          <circle cx="55" cy="55" r={r} stroke="#e2e8f0" strokeWidth="10" fill="none" />
-                          <circle
-                            cx="55"
-                            cy="55"
-                            r={r}
-                            stroke="#2563eb"
-                            strokeWidth="10"
-                            strokeDasharray={c}
-                            strokeDashoffset={offset}
-                            strokeLinecap="round"
-                            fill="none"
-                            className="transition-all duration-700 ease-out"
-                          />
-                        </svg>
-                        <span className="absolute text-lg sm:text-2xl font-black text-slate-900 tracking-tight">
-                          {val}%
-                        </span>
-                      </div>
-                      <p className="text-[10.5px] sm:text-xs font-bold text-slate-800 mt-2 sm:mt-3 max-w-[125px] leading-snug">
-                        Problem Solving & Logic
-                      </p>
-                    </div>
-                  );
-                })()}
-
-                {/* 2. Working Memory Recall */}
-                {(() => {
-                  const val = Math.min(100, Math.max(0, selectedCandidate.cognitiveTraits?.memoryRecall ?? 0));
-                  const r = 46;
-                  const c = 2 * Math.PI * r;
-                  const offset = c - (val / 100) * c;
-                  return (
-                    <div className="flex flex-col items-center">
-                      <div className="relative w-20 h-20 sm:w-28 sm:h-28 flex items-center justify-center">
-                        <svg className="w-20 h-20 sm:w-28 sm:h-28 -rotate-90" viewBox="0 0 110 110">
-                          <circle cx="55" cy="55" r={r} stroke="#e2e8f0" strokeWidth="10" fill="none" />
-                          <circle
-                            cx="55"
-                            cy="55"
-                            r={r}
-                            stroke="#9333ea"
-                            strokeWidth="10"
-                            strokeDasharray={c}
-                            strokeDashoffset={offset}
-                            strokeLinecap="round"
-                            fill="none"
-                            className="transition-all duration-700 ease-out"
-                          />
-                        </svg>
-                        <span className="absolute text-lg sm:text-2xl font-black text-slate-900 tracking-tight">
-                          {val}%
-                        </span>
-                      </div>
-                      <p className="text-[10.5px] sm:text-xs font-bold text-slate-800 mt-2 sm:mt-3 max-w-[125px] leading-snug">
-                        Working Memory Recall
-                      </p>
-                    </div>
-                  );
-                })()}
-
-                {/* 3. Mental Processing Agility */}
-                {(() => {
-                  const val = Math.min(100, Math.max(0, selectedCandidate.cognitiveTraits?.processingSpeed ?? 0));
-                  const r = 46;
-                  const c = 2 * Math.PI * r;
-                  const offset = c - (val / 100) * c;
-                  return (
-                    <div className="flex flex-col items-center">
-                      <div className="relative w-20 h-20 sm:w-28 sm:h-28 flex items-center justify-center">
-                        <svg className="w-20 h-20 sm:w-28 sm:h-28 -rotate-90" viewBox="0 0 110 110">
-                          <circle cx="55" cy="55" r={r} stroke="#e2e8f0" strokeWidth="10" fill="none" />
-                          <circle
-                            cx="55"
-                            cy="55"
-                            r={r}
-                            stroke="#059669"
-                            strokeWidth="10"
-                            strokeDasharray={c}
-                            strokeDashoffset={offset}
-                            strokeLinecap="round"
-                            fill="none"
-                            className="transition-all duration-700 ease-out"
-                          />
-                        </svg>
-                        <span className="absolute text-lg sm:text-2xl font-black text-slate-900 tracking-tight">
-                          {val}%
-                        </span>
-                      </div>
-                      <p className="text-[10.5px] sm:text-xs font-bold text-slate-800 mt-2 sm:mt-3 max-w-[125px] leading-snug">
-                        Processing Agility
-                      </p>
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-
-            {/* Technical Quiz Performance Breakdown */}
-            {selectedCandidate.quizBreakdown && (
-              <div className="space-y-3 pt-3 border-t border-slate-100">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                    <BookOpen className="h-3.5 w-3.5 text-blue-600" />
-                    Technical Quiz Breakdown
-                  </h4>
-                  <span className="text-[11px] font-bold text-slate-500">
-                    {selectedCandidate.quizBreakdown.total} Questions • {selectedCandidate.quizBreakdown.percentage}% Accuracy
+            {/* Scrollable Content Body with smooth custom scrollbar */}
+            <div className="p-6 sm:p-7 space-y-6 overflow-y-auto flex-1 no-scrollbar [scrollbar-width:none]">
+              {/* Score Highlight KPI Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 text-center">
+                <div className="p-3.5 rounded-2xl bg-slate-50/90 border border-slate-100 shadow-2xs">
+                  <span className="text-[10px] sm:text-[11px] font-bold uppercase text-slate-400 tracking-wider">
+                    Rank
                   </span>
+                  <div className="flex items-center justify-center gap-1.5 mt-1">
+                    {selectedCandidate.status === "QUALIFIED" && selectedCandidate.assessmentRank ? (
+                      <>
+                        <Trophy className="h-4 w-4 text-amber-500" />
+                        <span className="text-xl sm:text-2xl font-black text-amber-600">
+                          #{selectedCandidate.assessmentRank}
+                        </span>
+                        {selectedCandidate.assessmentTotalCandidates > 1 && (
+                          <span className="text-[11px] text-slate-400 font-semibold">
+                            /{selectedCandidate.assessmentTotalCandidates}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-xl sm:text-2xl font-black text-slate-400">Unranked</span>
+                    )}
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2.5 sm:gap-3 text-center">
-                  {/* Correct */}
-                  <div className="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-100 flex flex-col items-center justify-center">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 flex items-center gap-1">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> Correct
+                <div className="p-3.5 rounded-2xl bg-slate-50/90 border border-slate-100 shadow-2xs">
+                  <span className="text-[10px] sm:text-[11px] font-bold uppercase text-slate-400 tracking-wider">
+                    Total Score
+                  </span>
+                  <div className="flex items-center justify-center gap-1 mt-1">
+                    <span className="text-xl sm:text-2xl font-black text-indigo-600">
+                      {selectedCandidate.score}
                     </span>
-                    <span className="text-xl sm:text-2xl font-black text-emerald-700 mt-0.5 font-mono">
-                      {selectedCandidate.quizBreakdown.correct}
-                    </span>
-                    <span className="text-[10px] text-emerald-600/80 font-medium">Full Marks</span>
+                    <span className="text-xs text-slate-400 font-semibold">/100</span>
                   </div>
+                </div>
 
-                  {/* Incorrect */}
-                  <div className="p-3 rounded-2xl bg-rose-50/70 border border-rose-100 flex flex-col items-center justify-center">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-700 flex items-center gap-1">
-                      <XCircle className="h-3.5 w-3.5 text-rose-600" /> Incorrect
+                <div className="p-3.5 rounded-2xl bg-slate-50/90 border border-slate-100 shadow-2xs">
+                  <span className="text-[10px] sm:text-[11px] font-bold uppercase text-slate-400 tracking-wider">
+                    Time Taken
+                  </span>
+                  <div className="flex items-center justify-center gap-1.5 mt-1">
+                    <Clock className="h-4 w-4 text-slate-400" />
+                    <span className="text-xl sm:text-2xl font-black text-slate-900">
+                      {selectedCandidate.timeSpent}
                     </span>
-                    <span className="text-xl sm:text-2xl font-black text-rose-700 mt-0.5 font-mono">
-                      {selectedCandidate.quizBreakdown.incorrect}
-                    </span>
-                    <span className="text-[10px] text-rose-600/80 font-medium">Wrong Answers</span>
                   </div>
+                </div>
 
-                  {/* Skipped */}
-                  <div className="p-3 rounded-2xl bg-amber-50/70 border border-amber-100 flex flex-col items-center justify-center">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 flex items-center gap-1">
-                      <AlertCircle className="h-3.5 w-3.5 text-amber-600" /> Skipped
+                <div className="p-3.5 rounded-2xl bg-slate-50/90 border border-slate-100 shadow-2xs">
+                  <span className="text-[10px] sm:text-[11px] font-bold uppercase text-slate-400 tracking-wider">
+                    Integrity
+                  </span>
+                  <div className="flex items-center justify-center gap-1.5 mt-1">
+                    <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                    <span className="text-xl sm:text-2xl font-black text-emerald-600">
+                      {selectedCandidate.integrityScore}%
                     </span>
-                    <span className="text-xl sm:text-2xl font-black text-amber-700 mt-0.5 font-mono">
-                      {selectedCandidate.quizBreakdown.skipped}
-                    </span>
-                    <span className="text-[10px] text-amber-600/80 font-medium">Unanswered</span>
                   </div>
                 </div>
               </div>
-            )}
 
-            {/* Cognitive Games Performance & Accuracy Breakdown */}
-            {Array.isArray(selectedCandidate.gamesBreakdown) && selectedCandidate.gamesBreakdown.length > 0 && (
-              <div className="space-y-3 pt-3 border-t border-slate-100">
+              {/* Calibrated Cognitive Trait Performance */}
+              <div className="space-y-3.5">
                 <div className="flex items-center justify-between">
                   <h4 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                    <Gamepad2 className="h-3.5 w-3.5 text-indigo-600" />
-                    Cognitive Games Performance & Accuracy
+                    <Brain className="h-3.5 w-3.5 text-purple-600" />
+                    Calibrated Cognitive Trait Performance
                   </h4>
-                  <span className="text-[11px] font-bold text-slate-500">
-                    {selectedCandidate.gamesBreakdown.length} Games Assessed
-                  </span>
+                  <span className="text-[11px] font-bold text-slate-400">Standardized Scale</span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {selectedCandidate.gamesBreakdown.map((g) => (
-                    <div
-                      key={g.id}
-                      className="p-3 rounded-2xl bg-slate-50/80 border border-slate-200/80 flex items-center justify-between gap-2.5"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-xs font-black text-slate-900 truncate">
-                            {g.title}
-                          </p>
-                          <Badge
-                            className={`text-[8.5px] font-black uppercase px-1.5 py-0 ${
-                              g.status === "Completed"
-                                ? "bg-emerald-100 text-emerald-800 border-emerald-200"
-                                : g.status === "Timed Out" || g.status === "Incomplete"
-                                ? "bg-amber-100 text-amber-800 border-amber-200"
-                                : "bg-slate-100 text-slate-700 border-slate-200"
-                            }`}
-                          >
-                            {g.status}
-                          </Badge>
+                <div className="grid grid-cols-3 gap-2.5 sm:gap-4 p-4 rounded-3xl bg-slate-50/60 border border-slate-100 text-center">
+                  {/* 1. Problem Solving */}
+                  {(() => {
+                    const val = Math.min(100, Math.max(0, selectedCandidate.cognitiveTraits?.problemSolving ?? 0));
+                    const r = 46;
+                    const c = 2 * Math.PI * r;
+                    const offset = c - (val / 100) * c;
+                    return (
+                      <div className="flex flex-col items-center">
+                        <div className="relative w-20 h-20 sm:w-26 sm:h-26 flex items-center justify-center">
+                          <svg className="w-20 h-20 sm:w-26 sm:h-26 -rotate-90" viewBox="0 0 110 110">
+                            <circle cx="55" cy="55" r={r} stroke="#e2e8f0" strokeWidth="9" fill="none" />
+                            <circle
+                              cx="55"
+                              cy="55"
+                              r={r}
+                              stroke="#4F46E5"
+                              strokeWidth="9"
+                              strokeDasharray={c}
+                              strokeDashoffset={offset}
+                              strokeLinecap="round"
+                              fill="none"
+                              className="transition-all duration-700 ease-out"
+                            />
+                          </svg>
+                          <span className="absolute text-base sm:text-xl font-black text-slate-900 tracking-tight">
+                            {val}%
+                          </span>
                         </div>
-                        <p className="text-[11px] text-slate-500 font-medium mt-0.5 flex items-center gap-1.5">
-                          <Clock className="h-3 w-3 text-slate-400" />
-                          <span>{g.timeFormatted}</span>
-                          <span>•</span>
-                          <span>Score: {g.score}/100</span>
+                        <p className="text-[10.5px] sm:text-xs font-bold text-slate-800 mt-2 sm:mt-2.5 max-w-[125px] leading-snug">
+                          Problem Solving & Logic
                         </p>
                       </div>
+                    );
+                  })()}
 
-                      <div className="text-right shrink-0">
-                        <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
-                          Accuracy
-                        </span>
-                        <span className="text-sm font-black font-mono text-indigo-600">
-                          {g.accuracy}%
-                        </span>
+                  {/* 2. Working Memory Recall */}
+                  {(() => {
+                    const val = Math.min(100, Math.max(0, selectedCandidate.cognitiveTraits?.memoryRecall ?? 0));
+                    const r = 46;
+                    const c = 2 * Math.PI * r;
+                    const offset = c - (val / 100) * c;
+                    return (
+                      <div className="flex flex-col items-center">
+                        <div className="relative w-20 h-20 sm:w-26 sm:h-26 flex items-center justify-center">
+                          <svg className="w-20 h-20 sm:w-26 sm:h-26 -rotate-90" viewBox="0 0 110 110">
+                            <circle cx="55" cy="55" r={r} stroke="#e2e8f0" strokeWidth="9" fill="none" />
+                            <circle
+                              cx="55"
+                              cy="55"
+                              r={r}
+                              stroke="#9333EA"
+                              strokeWidth="9"
+                              strokeDasharray={c}
+                              strokeDashoffset={offset}
+                              strokeLinecap="round"
+                              fill="none"
+                              className="transition-all duration-700 ease-out"
+                            />
+                          </svg>
+                          <span className="absolute text-base sm:text-xl font-black text-slate-900 tracking-tight">
+                            {val}%
+                          </span>
+                        </div>
+                        <p className="text-[10.5px] sm:text-xs font-bold text-slate-800 mt-2 sm:mt-2.5 max-w-[125px] leading-snug">
+                          Working Memory Recall
+                        </p>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })()}
+
+                  {/* 3. Mental Processing Agility */}
+                  {(() => {
+                    const val = Math.min(100, Math.max(0, selectedCandidate.cognitiveTraits?.processingSpeed ?? 0));
+                    const r = 46;
+                    const c = 2 * Math.PI * r;
+                    const offset = c - (val / 100) * c;
+                    return (
+                      <div className="flex flex-col items-center">
+                        <div className="relative w-20 h-20 sm:w-26 sm:h-26 flex items-center justify-center">
+                          <svg className="w-20 h-20 sm:w-26 sm:h-26 -rotate-90" viewBox="0 0 110 110">
+                            <circle cx="55" cy="55" r={r} stroke="#e2e8f0" strokeWidth="9" fill="none" />
+                            <circle
+                              cx="55"
+                              cy="55"
+                              r={r}
+                              stroke="#10B981"
+                              strokeWidth="9"
+                              strokeDasharray={c}
+                              strokeDashoffset={offset}
+                              strokeLinecap="round"
+                              fill="none"
+                              className="transition-all duration-700 ease-out"
+                            />
+                          </svg>
+                          <span className="absolute text-base sm:text-xl font-black text-slate-900 tracking-tight">
+                            {val}%
+                          </span>
+                        </div>
+                        <p className="text-[10.5px] sm:text-xs font-bold text-slate-800 mt-2 sm:mt-2.5 max-w-[125px] leading-snug">
+                          Processing Agility
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
-            )}
 
-            {/* Bottom: Close Button */}
-            <div className="flex justify-end pt-2">
+              {/* Technical Quiz Performance Breakdown */}
+              {selectedCandidate.quizBreakdown && (
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                      <BookOpen className="h-3.5 w-3.5 text-indigo-600" />
+                      Technical Quiz Breakdown
+                    </h4>
+                    <span className="text-[11px] font-bold text-slate-500">
+                      {selectedCandidate.quizBreakdown.total} Questions • {selectedCandidate.quizBreakdown.percentage}% Accuracy
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2.5 sm:gap-3 text-center">
+                    <div className="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-100 flex flex-col items-center justify-center">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 flex items-center gap-1">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> Correct
+                      </span>
+                      <span className="text-xl sm:text-2xl font-black text-emerald-700 mt-0.5 font-mono">
+                        {selectedCandidate.quizBreakdown.correct}
+                      </span>
+                      <span className="text-[10px] text-emerald-700 font-semibold">Full Marks</span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-rose-50/80 border border-rose-100 flex flex-col items-center justify-center">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-800 flex items-center gap-1">
+                        <XCircle className="h-3.5 w-3.5 text-rose-600" /> Incorrect
+                      </span>
+                      <span className="text-xl sm:text-2xl font-black text-rose-700 mt-0.5 font-mono">
+                        {selectedCandidate.quizBreakdown.incorrect}
+                      </span>
+                      <span className="text-[10px] text-rose-700 font-semibold">Wrong Answers</span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-100 flex flex-col items-center justify-center">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 flex items-center gap-1">
+                        <AlertCircle className="h-3.5 w-3.5 text-amber-600" /> Skipped
+                      </span>
+                      <span className="text-xl sm:text-2xl font-black text-amber-700 mt-0.5 font-mono">
+                        {selectedCandidate.quizBreakdown.skipped}
+                      </span>
+                      <span className="text-[10px] text-amber-700 font-semibold">Unanswered</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Cognitive Games Performance & Accuracy Breakdown */}
+              {Array.isArray(selectedCandidate.gamesBreakdown) && selectedCandidate.gamesBreakdown.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                      <Gamepad2 className="h-3.5 w-3.5 text-indigo-600" />
+                      Cognitive Games Performance & Accuracy
+                    </h4>
+                    <span className="text-[11px] font-bold text-slate-500">
+                      {selectedCandidate.gamesBreakdown.length} Games Assessed
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {selectedCandidate.gamesBreakdown.map((g) => (
+                      <div
+                        key={g.id}
+                        className="p-3.5 rounded-2xl bg-slate-50/90 border border-slate-200/80 flex items-center justify-between gap-2.5"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-xs font-black text-slate-900 truncate">
+                              {g.title}
+                            </p>
+                            <Badge
+                              className={`text-[8.5px] font-black uppercase px-1.5 py-0 ${
+                                g.status === "Completed"
+                                  ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                                  : g.status === "Timed Out" || g.status === "Incomplete"
+                                  ? "bg-amber-100 text-amber-800 border-amber-200"
+                                  : "bg-slate-100 text-slate-700 border-slate-200"
+                              }`}
+                            >
+                              {g.status}
+                            </Badge>
+                          </div>
+                          <p className="text-[11px] text-slate-500 font-medium mt-0.5 flex items-center gap-1.5">
+                            <Clock className="h-3 w-3 text-slate-400" />
+                            <span>{g.timeFormatted}</span>
+                            <span>•</span>
+                            <span>Score: {g.score}/100</span>
+                          </p>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                            Accuracy
+                          </span>
+                          <span className="text-sm font-black font-mono text-indigo-600">
+                            {g.accuracy}%
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Modal Footer */}
+            <div className="p-4 sm:px-7 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-2">
+                {selectedCandidate.status === "QUALIFIED" && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      const cand = selectedCandidate;
+                      setSelectedCandidate(null);
+                      openInterviewModalForSingle(cand);
+                    }}
+                    className="h-10 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs gap-1.5 shadow-sm shadow-indigo-500/20 cursor-pointer"
+                  >
+                    <Calendar className="h-3.5 w-3.5" />
+                    Schedule Next Round
+                  </Button>
+                )}
+              </div>
+
               <button
                 type="button"
                 onClick={() => setSelectedCandidate(null)}
-                className="w-full sm:w-auto h-10 sm:h-11 px-7 rounded-xl sm:rounded-full bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
+                className="h-10 px-6 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
               >
                 Close Scorecard
               </button>
@@ -1257,18 +1494,19 @@ export default function ResultsAndRankingPage() {
 
       {/* ── 7. NEXT ROUND INTERVIEW SCHEDULING MODAL ── */}
       <Dialog open={isInterviewModalOpen} onOpenChange={setIsInterviewModalOpen}>
-        <DialogContent className="max-w-xl p-0 overflow-hidden rounded-3xl border-slate-200 shadow-2xl font-sans bg-white">
+        <DialogContent className="max-w-xl p-0 overflow-hidden rounded-3xl border border-white/90 shadow-2xl font-sans bg-white">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 p-6 text-white relative">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-2xl bg-white/10 border border-white/20 text-white flex items-center justify-center font-black text-lg shadow-inner">
-                <Calendar className="h-6 w-6 text-blue-300" />
+          <div className="bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-6 text-white relative overflow-hidden">
+            <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/10 blur-xl pointer-events-none" />
+            <div className="flex items-center gap-3 relative z-10">
+              <div className="h-12 w-12 rounded-2xl bg-white/20 border border-white/30 text-white flex items-center justify-center font-black text-lg shadow-inner">
+                <Calendar className="h-6 w-6 text-white" />
               </div>
               <div>
                 <DialogTitle className="text-xl font-extrabold text-white tracking-tight">
                   Schedule Next Round Interview
                 </DialogTitle>
-                <DialogDescription className="text-xs text-blue-200/90 mt-0.5">
+                <DialogDescription className="text-xs text-white/80 mt-0.5">
                   Send personalized email invitations with meeting link to {interviewTargets.length} selected candidate{interviewTargets.length > 1 ? "s" : ""}.
                 </DialogDescription>
               </div>
@@ -1276,7 +1514,7 @@ export default function ResultsAndRankingPage() {
           </div>
 
           {/* Form Body */}
-          <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+          <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto no-scrollbar [scrollbar-width:none]">
             {/* Target Candidates Badges */}
             <div>
               <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 block">
@@ -1306,7 +1544,7 @@ export default function ResultsAndRankingPage() {
                 value={interviewForm.roundName}
                 onChange={(e) => setInterviewForm((prev) => ({ ...prev, roundName: e.target.value }))}
                 placeholder="e.g. Technical Round 2 / System Design / HR Discussion"
-                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 shadow-2xs"
+                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-2xs transition"
               />
             </div>
 
@@ -1325,10 +1563,10 @@ export default function ResultsAndRankingPage() {
                   min={new Date().toISOString().slice(0, 16)}
                   value={interviewForm.scheduledAt}
                   onChange={(e) => setInterviewForm((prev) => ({ ...prev, scheduledAt: e.target.value }))}
-                  className={`w-full h-10 px-3.5 rounded-xl border text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 shadow-2xs ${
+                  className={`w-full h-10 px-3.5 rounded-xl border text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 shadow-2xs transition ${
                     !interviewForm.scheduledAt
-                      ? "border-amber-300 bg-amber-50/20 focus:ring-amber-500/30"
-                      : "border-slate-200 focus:ring-blue-500/30"
+                      ? "border-amber-300 bg-amber-50/20 focus:ring-amber-500/20 focus:border-amber-500"
+                      : "border-slate-200 focus:ring-indigo-500/20 focus:border-indigo-500"
                   }`}
                 />
               </div>
@@ -1345,7 +1583,7 @@ export default function ResultsAndRankingPage() {
                     value={interviewForm.meetingLink}
                     onChange={(e) => setInterviewForm((prev) => ({ ...prev, meetingLink: e.target.value }))}
                     placeholder="https://meet.google.com/xyz or Zoom URL"
-                    className="w-full h-10 pl-9 pr-3 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 shadow-2xs"
+                    className="w-full h-10 pl-9 pr-3 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-2xs transition"
                   />
                 </div>
               </div>
@@ -1361,7 +1599,7 @@ export default function ResultsAndRankingPage() {
                 value={interviewForm.customMessage}
                 onChange={(e) => setInterviewForm((prev) => ({ ...prev, customMessage: e.target.value }))}
                 placeholder="Add instructions, pre-requisites, or congratulatory notes for the candidate..."
-                className="w-full p-3 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 resize-none shadow-2xs"
+                className="w-full p-3 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none shadow-2xs transition"
               />
             </div>
 
@@ -1371,7 +1609,7 @@ export default function ResultsAndRankingPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setIsInterviewModalOpen(false)}
-                className="rounded-xl px-4 text-xs font-bold text-slate-600 cursor-pointer"
+                className="rounded-xl px-4 text-xs font-bold text-slate-600 cursor-pointer border-slate-200"
               >
                 Cancel
               </Button>

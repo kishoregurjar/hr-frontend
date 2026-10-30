@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Building2,
   Users,
@@ -23,6 +23,7 @@ import {
   XCircle,
   RefreshCw,
   ShieldAlert,
+  ShieldCheck,
   Lock,
 } from "lucide-react";
 import Link from "next/link";
@@ -49,6 +50,13 @@ import { useAuth } from "@/features/auth/context";
 export default function CompanySettingsPage() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Scroll & Parallax Refs
+  const scrollContainerRef = useRef(null);
+  const farBgRef = useRef(null);
+  const midHeroRef = useRef(null);
+
   const initialTab = searchParams.get("tab") || "profile";
   const [activeTab, setActiveTab] = useState(initialTab); // 'profile' | 'members' | 'invitations'
   const [loading, setLoading] = useState(true);
@@ -60,7 +68,7 @@ export default function CompanySettingsPage() {
     user?.companyName ||
     user?.company?.name ||
     user?.company ||
-    "";
+    "Facebook Company";
   const defaultCompanyLogo =
     (typeof window !== "undefined" ? localStorage.getItem("companyLogo") : null) ||
     user?.companyLogo ||
@@ -158,7 +166,7 @@ export default function CompanySettingsPage() {
       }
     } catch {
       const fallbackName =
-        (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) || "";
+        (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) || defaultCompanyName;
       if (fallbackName) {
         setCompany({
           name: fallbackName,
@@ -389,7 +397,7 @@ export default function CompanySettingsPage() {
     user?.companyRole ||
     (user?.isOwner ? "OWNER" : "") ||
     user?.role ||
-    "";
+    "Owner";
 
   const isOwnerOrAdmin = Boolean(
     user?.isOwner ||
@@ -404,10 +412,39 @@ export default function CompanySettingsPage() {
     user?.role === "HR Admin"
   );
 
+  // ── Parallax Scroll Handler ──
+  const handleScroll = () => {
+    const scrollY = scrollContainerRef.current?.scrollTop || 0;
+
+    // 1. Far background: decorative rings & ambient orbs inside hero banner (0.58x counter-lag)
+    if (farBgRef.current) {
+      const orbTranslate = scrollY * 0.58;
+      const orbRotate = scrollY * 0.05;
+      const orbScale = 1 + scrollY * 0.0003;
+      farBgRef.current.style.transform = `translate3d(0, ${orbTranslate}px, 0) scale(${orbScale}) rotate(${orbRotate}deg)`;
+    }
+
+    // 2. Midground Hero Content: Title, subtitle, badge (0.42x counter-lag)
+    if (midHeroRef.current) {
+      const heroProgress = Math.min(scrollY / 450, 1);
+      const heroTranslate = scrollY * 0.42;
+      const heroOpacity = Math.max(1 - heroProgress * 0.75, 0.2);
+      const heroScale = 1 - heroProgress * 0.06;
+      midHeroRef.current.style.transform = `translate3d(0, ${heroTranslate}px, 0) scale(${heroScale})`;
+      midHeroRef.current.style.opacity = heroOpacity;
+    }
+  };
+
+  const pendingInvitesCount = useMemo(() => {
+    return (invitations || []).filter(
+      (inv) => String(inv.status || "PENDING").toUpperCase() === "PENDING"
+    ).length;
+  }, [invitations]);
+
   // Access Guard: If logged in as Recruiter / Team Member, restrict settings access
   if (user && !isOwnerOrAdmin) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center space-y-5 max-w-md mx-auto my-12 bg-white rounded-3xl border border-slate-200/90 shadow-xl shadow-slate-200/60 font-sans">
+      <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center space-y-5 max-w-md mx-auto my-12 bg-white rounded-3xl border border-white/90 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 font-sans">
         <div className="h-16 w-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-200 shadow-xs">
           <ShieldAlert className="h-8 w-8 text-amber-600" />
         </div>
@@ -419,7 +456,7 @@ export default function CompanySettingsPage() {
         </div>
         <div className="w-full pt-2">
           <Link href="/dashboard" className="block w-full">
-            <Button className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/20 cursor-pointer">
+            <Button className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-indigo-500/20 cursor-pointer">
               Return to Screening Dashboard
             </Button>
           </Link>
@@ -428,371 +465,724 @@ export default function CompanySettingsPage() {
     );
   }
 
+  const kpiCards = [
+    {
+      title: "Team Members",
+      value: members.length,
+      description: "Active recruiters & team",
+      icon: Users,
+      iconBg: "bg-indigo-500/10",
+      iconColor: "text-indigo-600",
+    },
+    {
+      title: "Pending Invitations",
+      value: pendingInvitesCount,
+      description: "Awaiting member sign-up",
+      icon: Mail,
+      iconBg: "bg-amber-500/10",
+      iconColor: "text-amber-600",
+    },
+    {
+      title: "Workspace Role",
+      value: String(activeCompanyRole).replace(/_/g, " ").toUpperCase() || "OWNER",
+      description: "Your permission tier",
+      icon: Crown,
+      iconBg: "bg-purple-500/10",
+      iconColor: "text-purple-600",
+    },
+    {
+      title: "Organization Status",
+      value: "Verified",
+      description: "Active recruitment workspace",
+      icon: ShieldCheck,
+      iconBg: "bg-emerald-500/10",
+      iconColor: "text-emerald-600",
+    },
+  ];
+
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12 font-sans">
-      {/* ── Navigation Tabs ── */}
-      <div className="flex items-center gap-1 sm:gap-2 border-b overflow-x-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex-nowrap -mx-4 px-4 sm:mx-0 sm:px-0">
-        <button
-          onClick={() => setActiveTab("profile")}
-          className={`pb-3 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition-all flex items-center gap-2 shrink-0 whitespace-nowrap cursor-pointer ${
-            activeTab === "profile"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
+    <div
+      ref={scrollContainerRef}
+      onScroll={handleScroll}
+      className="-m-4 md:-m-6 h-[calc(100dvh-64px)] max-h-[calc(100dvh-64px)] overflow-y-auto overflow-x-hidden relative bg-[#f8fafc] no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden font-sans"
+    >
+      {/* ── Layer 1 & 2: 3D Parallax Hero Header ── */}
+      <div className="relative bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] text-white pt-10 pb-36 md:pb-40 px-6 md:px-12 overflow-hidden shadow-lg select-none">
+        {/* Far Background: Rotating Ambient Orbs & Concentric Rings */}
+        <div
+          ref={farBgRef}
+          className="absolute inset-0 pointer-events-none will-change-transform"
+          style={{ transform: "translate3d(0, 0, 0)" }}
         >
-          <Building2 className="h-4 w-4" />
-          Company Profile & Logo
-        </button>
+          <div className="absolute -top-28 -right-28 w-[450px] h-[450px] rounded-full bg-white/12 blur-3xl" />
+          <div className="absolute -top-16 -right-16 w-[380px] h-[380px] rounded-full border border-white/20" />
+          <div className="absolute top-10 right-16 w-[260px] h-[260px] rounded-full border border-white/15" />
+          <div className="absolute top-28 right-36 w-[140px] h-[140px] rounded-full border border-white/10" />
 
-        <button
-          onClick={() => setActiveTab("members")}
-          className={`pb-3 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition-all flex items-center gap-2 shrink-0 whitespace-nowrap cursor-pointer ${
-            activeTab === "members"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
+          {/* Floating Subtle Shimmer Sparks */}
+          <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-white/40 blur-[1px] animate-pulse" />
+          <div className="absolute top-1/3 left-2/3 w-2.5 h-2.5 rounded-full bg-pink-200/50 blur-[1px] animate-pulse" />
+        </div>
+
+        {/* Midground: Hero Content (0.42x Parallax Speed) */}
+        <div
+          ref={midHeroRef}
+          className="max-w-7xl mx-auto space-y-4 relative z-10 will-change-transform"
+          style={{ transform: "translate3d(0, 0, 0)" }}
         >
-          <Users className="h-4 w-4" />
-          Team Members ({members.length})
-        </button>
+          <div className="space-y-1">
+            <p className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-white/75 drop-shadow-xs">
+              {company?.name || defaultCompanyName}
+            </p>
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white tracking-tight drop-shadow-sm">
+              Company & Team
+            </h1>
+            <p className="text-white/85 text-xs sm:text-sm font-medium leading-relaxed max-w-2xl">
+              Manage organization workspace details, branding identity, recruiter team access, and member invitations
+            </p>
+          </div>
 
-        <button
-          onClick={() => setActiveTab("invitations")}
-          className={`pb-3 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition-all flex items-center gap-2 shrink-0 whitespace-nowrap cursor-pointer ${
-            activeTab === "invitations"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Mail className="h-4 w-4" />
-          Recruiter Invitations ({invitations.length})
-        </button>
-      </div>
-
-      {/* ── TAB 1: Company Profile & Logo ── */}
-      {activeTab === "profile" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column: Logo & Branding Card */}
-          <div className="lg:col-span-1 rounded-2xl border bg-card p-6 shadow-sm space-y-5 h-fit">
-            <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-blue-600" />
-              Company Logo
-            </h3>
-                <p className="text-xs text-muted-foreground">
-                  This logo will appear on candidate assessment tests, email invites, and scorecards.
-                </p>
-
-                <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl bg-slate-50/60 space-y-3 text-center">
-                  {company?.logoUrl ? (
-                    <img
-                      src={company.logoUrl}
-                      alt={company?.name || "Company"}
-                      className="h-24 w-24 object-contain rounded-xl border bg-white shadow-sm"
-                    />
-                  ) : (
-                    <div className="h-24 w-24 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-black text-3xl shadow-inner">
-                      {company?.name ? company.name[0]?.toUpperCase() : "C"}
-                    </div>
-                  )}
-
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/png, image/jpeg, image/webp"
-                      onChange={handleLogoUpload}
-                      disabled={uploadingLogo}
-                      className="hidden"
-                    />
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-xs font-bold text-slate-800 shadow-sm transition-all">
-                      {uploadingLogo ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                      ) : (
-                        <Upload className="h-4 w-4 text-blue-600" />
-                      )}
-                      {uploadingLogo ? "Uploading..." : "Upload New Logo"}
-                    </div>
-                  </label>
-                  <p className="text-[10px] text-muted-foreground">JPG, PNG, WEBP (Max 5MB)</p>
-                </div>
-
-                <div className="space-y-2 border-t pt-4 text-xs text-muted-foreground">
-                  <div className="flex items-center justify-between">
-                    <span>Company Slug:</span>
-                    <span className="font-mono font-bold text-slate-700">{company?.slug || "n/a"}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Company ID:</span>
-                    <span className="font-mono text-[10px] text-slate-500 truncate max-w-[140px]">
-                      {company?.id || "n/a"}
-                    </span>
-                  </div>
-                </div>
+          {/* Workspace Status Banner */}
+          <div className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md p-2.5 px-4 flex flex-wrap lg:flex-nowrap items-center justify-between gap-3 text-white shadow-xs">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="h-8 w-8 rounded-xl bg-white/20 border border-white/30 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                <Building2 className="h-4 w-4" />
               </div>
-
-              {/* Right Column: Profile Form */}
-              <div className="lg:col-span-2 rounded-2xl border bg-card p-6 shadow-sm space-y-6">
-                <h3 className="font-bold text-base text-slate-900">Company Information</h3>
-
-                <form onSubmit={handleProfileSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">Company Name *</label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full h-10 px-3 rounded-xl border bg-background text-sm focus:ring-2 focus:ring-blue-600 outline-none"
-                        placeholder="e.g. Acme Corporation"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">Website URL</label>
-                      <input
-                        type="url"
-                        value={formData.website}
-                        onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                        className="w-full h-10 px-3 rounded-xl border bg-background text-sm focus:ring-2 focus:ring-blue-600 outline-none"
-                        placeholder="https://company.com"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">Industry</label>
-                      <input
-                        type="text"
-                        value={formData.industry}
-                        onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                        className="w-full h-10 px-3 rounded-xl border bg-background text-sm focus:ring-2 focus:ring-blue-600 outline-none"
-                        placeholder="e.g. Technology / SaaS"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">Official Email</label>
-                      <input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full h-10 px-3 rounded-xl border bg-background text-sm focus:ring-2 focus:ring-blue-600 outline-none"
-                        placeholder="hr@company.com"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">Phone</label>
-                      <input
-                        type="text"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full h-10 px-3 rounded-xl border bg-background text-sm focus:ring-2 focus:ring-blue-600 outline-none"
-                        placeholder="+1 555-0199"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">City</label>
-                      <input
-                        type="text"
-                        value={formData.city}
-                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                        className="w-full h-10 px-3 rounded-xl border bg-background text-sm focus:ring-2 focus:ring-blue-600 outline-none"
-                        placeholder="e.g. San Francisco"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">Country</label>
-                      <input
-                        type="text"
-                        value={formData.country}
-                        onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                        className="w-full h-10 px-3 rounded-xl border bg-background text-sm focus:ring-2 focus:ring-blue-600 outline-none"
-                        placeholder="e.g. USA"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Office Address</label>
-                    <input
-                      type="text"
-                      value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      className="w-full h-10 px-3 rounded-xl border bg-background text-sm focus:ring-2 focus:ring-blue-600 outline-none"
-                      placeholder="Street address, Suite / Floor"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">About Company</label>
-                    <textarea
-                      rows={3}
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      className="w-full p-3 rounded-xl border bg-background text-sm focus:ring-2 focus:ring-blue-600 outline-none resize-none"
-                      placeholder="Brief description of your company..."
-                    />
-                  </div>
-
-                  <div className="flex justify-end pt-3">
-                    <Button
-                      type="submit"
-                      disabled={savingProfile}
-                      className="bg-indigo-600 hover:bg-indigo-700 font-bold px-6 shadow-md"
-                    >
-                      {savingProfile ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        "Save Profile Changes"
-                      )}
-                    </Button>
-                  </div>
-                </form>
+              <div className="text-xs min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-bold text-white shrink-0 text-xs">Workspace Settings:</span>
+                  <Badge className="bg-emerald-500/20 text-emerald-200 border-emerald-400/40 text-[11px] py-0.5 px-2.5 flex items-center gap-1.5 font-semibold rounded-full">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                    Organization Workspace Active
+                  </Badge>
+                </div>
               </div>
             </div>
-          )}
 
-          {/* ── TAB 2: Team Members ── */}
-          {activeTab === "members" && (
-            <div className="rounded-2xl border bg-card p-6 shadow-sm space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b">
-                <div>
-                  <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
-                    <Users className="h-5 w-5 text-indigo-600" />
-                    Company Team Members
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Team members can review candidate assessments and coordinate recruitment pipelines.
-                  </p>
-                </div>
-                <Button
-                  onClick={() => setActiveTab("invitations")}
-                  className="bg-indigo-600 hover:bg-indigo-700 font-bold text-xs"
+            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  fetchCompanyData();
+                  fetchMembers();
+                  fetchInvites();
+                }}
+                className="text-xs h-8 px-3 gap-1.5 bg-white/15 hover:bg-white/25 text-white border border-white/30 font-semibold rounded-xl shadow-xs cursor-pointer transition-all"
+                title="Refresh Workspace Data"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-white" : ""}`} />
+                <span>Refresh Data</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Layer 3: Main Foreground Content (-mt-20 to overlap hero) ── */}
+      <div className="relative z-20 max-w-7xl mx-auto px-6 md:px-12 -mt-20 md:-mt-24 pb-16 space-y-6">
+        {/* KPI Stat Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 font-sans">
+          {kpiCards.map((card, i) => (
+            <div
+              key={i}
+              className="group rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-6 sm:p-7 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 hover:-translate-y-1 hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  {card.title}
+                </span>
+                <div
+                  className={`h-10 w-10 rounded-2xl flex items-center justify-center shrink-0 ${card.iconBg} ${card.iconColor}`}
                 >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Invite New Member
-                </Button>
+                  <card.icon className="h-5 w-5" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight truncate">
+                  {card.value}
+                </div>
+                <p className="text-xs text-slate-500 font-medium mt-1">
+                  {card.description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Navigation Tabs Capsule ── */}
+        <div className="rounded-2xl border border-white/90 bg-white/95 backdrop-blur-md p-1.5 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 flex items-center gap-1.5 overflow-x-auto no-scrollbar [scrollbar-width:none]">
+          <button
+            type="button"
+            onClick={() => setActiveTab("profile")}
+            className={`py-2 px-4 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+              activeTab === "profile"
+                ? "bg-indigo-600 text-white shadow-xs"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
+            }`}
+          >
+            <Building2 className="h-4 w-4" />
+            Company Profile & Logo
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("members")}
+            className={`py-2 px-4 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+              activeTab === "members"
+                ? "bg-indigo-600 text-white shadow-xs"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
+            }`}
+          >
+            <Users className="h-4 w-4" />
+            Team Members ({members.length})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("invitations")}
+            className={`py-2 px-4 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+              activeTab === "invitations"
+                ? "bg-indigo-600 text-white shadow-xs"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
+            }`}
+          >
+            <Mail className="h-4 w-4" />
+            Recruiter Invitations ({invitations.length})
+          </button>
+        </div>
+
+        {/* ── TAB 1: Company Profile & Logo ── */}
+        {activeTab === "profile" && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 font-sans">
+            {/* Left Column: Logo & Branding Card */}
+            <div className="lg:col-span-1 rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-6 sm:p-7 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 space-y-5 h-fit">
+              <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-indigo-600" />
+                Company Logo & Identity
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                This logo will appear across candidate screening tests, email notifications, invites, and scorecards.
+              </p>
+
+              <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-indigo-200/80 rounded-2xl bg-indigo-50/30 space-y-3.5 text-center">
+                {company?.logoUrl ? (
+                  <img
+                    src={company.logoUrl}
+                    alt={company?.name || "Company"}
+                    className="h-28 w-28 object-contain rounded-2xl border border-slate-200 bg-white shadow-xs p-1"
+                  />
+                ) : (
+                  <div className="h-28 w-28 rounded-2xl bg-indigo-100/80 text-indigo-700 flex items-center justify-center font-black text-4xl shadow-inner border border-indigo-200">
+                    {company?.name ? company.name[0]?.toUpperCase() : "C"}
+                  </div>
+                )}
+
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/png, image/jpeg, image/webp"
+                    onChange={handleLogoUpload}
+                    disabled={uploadingLogo}
+                    className="hidden"
+                  />
+                  <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-800 shadow-2xs transition-all">
+                    {uploadingLogo ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                    ) : (
+                      <Upload className="h-4 w-4 text-indigo-600" />
+                    )}
+                    {uploadingLogo ? "Uploading..." : "Upload New Logo"}
+                  </div>
+                </label>
+                <p className="text-[10.5px] text-slate-500 font-medium">JPG, PNG, WEBP (Max 5MB)</p>
               </div>
 
-              {loadingMembers ? (
-                <div className="py-12 text-center text-muted-foreground animate-pulse text-sm">
-                  Loading team members...
+              <div className="space-y-2 border-t border-slate-100 pt-4 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 font-medium">Company Slug:</span>
+                  <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                    {company?.slug || "n/a"}
+                  </span>
                 </div>
-              ) : members.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 font-medium">Company ID:</span>
+                  <span className="font-mono text-[11px] text-slate-600 truncate max-w-[140px] font-semibold">
+                    {company?.id || "n/a"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Profile Form */}
+            <div className="lg:col-span-2 rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-6 sm:p-7 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 space-y-6">
+              <div className="border-b border-slate-100 pb-3">
+                <h3 className="font-extrabold text-base text-slate-900">Organization Information</h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Update primary contact, industry classification, and official recruitment profile details
+                </p>
+              </div>
+
+              <form onSubmit={handleProfileSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700">Company Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/60 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs"
+                      placeholder="e.g. Acme Corporation"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700">Website URL</label>
+                    <input
+                      type="url"
+                      value={formData.website}
+                      onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                      className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/60 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs"
+                      placeholder="https://company.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700">Industry</label>
+                    <input
+                      type="text"
+                      value={formData.industry}
+                      onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+                      className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/60 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs"
+                      placeholder="e.g. Technology / SaaS"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700">Official Email</label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/60 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs"
+                      placeholder="hr@company.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700">Phone</label>
+                    <input
+                      type="text"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/60 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs"
+                      placeholder="+1 555-0199"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700">City</label>
+                    <input
+                      type="text"
+                      value={formData.city}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/60 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs"
+                      placeholder="e.g. San Francisco"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700">Country</label>
+                    <input
+                      type="text"
+                      value={formData.country}
+                      onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                      className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/60 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs"
+                      placeholder="e.g. USA"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">Office Address</label>
+                  <input
+                    type="text"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/60 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs"
+                    placeholder="Street address, Suite / Floor"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">About Company</label>
+                  <textarea
+                    rows={3}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50/60 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs resize-none"
+                    placeholder="Brief description of your company mission and workspace..."
+                  />
+                </div>
+
+                <div className="flex justify-end pt-3">
+                  <Button
+                    type="submit"
+                    disabled={savingProfile}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs h-10 px-6 rounded-xl shadow-xs cursor-pointer"
+                  >
+                    {savingProfile ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Saving Changes...
+                      </>
+                    ) : (
+                      "Save Profile Changes"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ── TAB 2: Team Members ── */}
+        {activeTab === "members" && (
+          <div className="rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-6 sm:p-7 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 space-y-6 font-sans">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-100">
+              <div>
+                <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+                  <Users className="h-5 w-5 text-indigo-600" />
+                  Organization Team Members ({members.length})
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                  Team members can review candidate assessments and coordinate recruitment pipelines
+                </p>
+              </div>
+              <Button
+                onClick={() => setActiveTab("invitations")}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs h-9 px-4 rounded-xl shadow-xs cursor-pointer"
+              >
+                <UserPlus className="h-4 w-4 mr-1.5" />
+                Invite New Member
+              </Button>
+            </div>
+
+            {loadingMembers ? (
+              <div className="py-12 text-center text-slate-400 animate-pulse text-xs font-semibold">
+                Loading organization members...
+              </div>
+            ) : members.length > 0 ? (
+              <div className="overflow-x-auto rounded-2xl border border-slate-100">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-100 bg-slate-50/70 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
+                      <th className="py-3 px-4">Member</th>
+                      <th className="py-3 px-4">Role</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4">Joined Date</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {members.map((member) => {
+                      const isOwner = member.role === "OWNER";
+                      const isAdmin = member.role === "ADMIN";
+
+                      return (
+                        <tr key={member.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-3">
+                              <div className="h-9 w-9 rounded-xl bg-indigo-100/80 text-indigo-700 font-extrabold flex items-center justify-center text-xs border border-indigo-200/80 shadow-2xs">
+                                {member.user?.name ? member.user.name[0]?.toUpperCase() : "U"}
+                              </div>
+                              <div>
+                                <p className="font-extrabold text-slate-900 text-xs">
+                                  {member.user?.name || member.name || "Team Member"}
+                                </p>
+                                <p className="text-[11px] text-slate-500 font-medium">
+                                  {member.user?.email || member.email || "No email available"}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            {isOwner ? (
+                              <Badge className="bg-amber-100 text-amber-800 border-amber-200 font-bold gap-1 text-[10.5px]">
+                                <Crown className="h-3 w-3 text-amber-600" />
+                                OWNER
+                              </Badge>
+                            ) : isAdmin ? (
+                              <Badge className="bg-purple-100 text-purple-800 border-purple-200 font-bold gap-1 text-[10.5px]">
+                                <Shield className="h-3 w-3 text-purple-600" />
+                                ADMIN
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 font-bold gap-1 text-[10.5px]">
+                                <UserCheck className="h-3 w-3 text-indigo-600" />
+                                RECRUITER
+                              </Badge>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 text-xs font-bold">
+                            {member.user?.status === "DEACTIVATED" ? (
+                              <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50 text-[10.5px] font-bold">
+                                DEACTIVATED
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50 text-[10.5px] font-bold">
+                                ACTIVE
+                              </Badge>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 text-xs text-slate-500 font-medium">
+                            {member.createdAt
+                              ? new Date(member.createdAt).toLocaleDateString()
+                              : "—"}
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            {!isOwner ? (
+                              <div className="flex items-center justify-end gap-2">
+                                <select
+                                  value={member.role}
+                                  onChange={(e) => handleUpdateRole(member.id, e.target.value)}
+                                  className="h-8 px-2.5 rounded-lg border border-slate-200 text-xs bg-slate-50/70 font-semibold outline-none cursor-pointer"
+                                >
+                                  <option value="RECRUITER">RECRUITER</option>
+                                  <option value="ADMIN">ADMIN</option>
+                                </select>
+
+                                {member.user?.status === "DEACTIVATED" ? (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleReactivateMember(member.id)}
+                                    className="text-emerald-600 hover:bg-emerald-50 h-8 px-2.5 font-bold text-xs cursor-pointer"
+                                  >
+                                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                                    Reactivate
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleDeactivateMember(member.id)}
+                                    className="text-amber-600 hover:bg-amber-50 h-8 px-2.5 font-bold text-xs cursor-pointer"
+                                  >
+                                    <AlertCircle className="h-3.5 w-3.5 mr-1" />
+                                    Deactivate
+                                  </Button>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-500 font-bold">
+                                Primary Owner
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="py-12 text-center text-slate-500 text-xs font-semibold">
+                No additional team members found. Invite recruiters to join!
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── TAB 3: Team Invitations ── */}
+        {activeTab === "invitations" && (
+          <div className="space-y-6 font-sans">
+            {/* Send Invitation Form */}
+            <div className="rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-6 sm:p-7 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 space-y-4">
+              <div>
+                <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+                  <UserPlus className="h-5 w-5 text-indigo-600" />
+                  Invite Colleague / Recruiter
+                </h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Send an email invitation link to join your company assessment workspace
+                </p>
+              </div>
+
+              <form
+                onSubmit={handleSendInvite}
+                className="flex flex-col sm:flex-row sm:items-end gap-3 max-w-2xl pt-2"
+              >
+                <div className="flex-1 space-y-1.5 w-full">
+                  <label className="text-xs font-bold text-slate-700">Email Address *</label>
+                  <input
+                    type="email"
+                    required
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/60 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs"
+                    placeholder="recruiter@company.com"
+                  />
+                </div>
+
+                <div className="w-full sm:w-44 space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">Role</label>
+                  <select
+                    value={inviteRole}
+                    onChange={(e) => setInviteRole(e.target.value)}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/60 text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs cursor-pointer"
+                  >
+                    <option value="RECRUITER">RECRUITER</option>
+                    <option value="ADMIN">ADMIN</option>
+                  </select>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={sendingInvite}
+                  className="w-full sm:w-auto h-10 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-6 rounded-xl shadow-xs cursor-pointer"
+                >
+                  {sendingInvite ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Invite"}
+                </Button>
+              </form>
+            </div>
+
+            {/* Recruiter Invitations Table with Status Filter */}
+            <div className="rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-6 sm:p-7 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-indigo-600" />
+                    Sent Invitations ({invitations.length})
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    Track and manage invitation status across your recruitment workspace
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-1.5 bg-slate-100/90 p-1 rounded-xl border border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => handleFilterChange("PENDING")}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      invitationStatusFilter === "PENDING"
+                        ? "bg-white text-indigo-600 shadow-2xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    Pending
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleFilterChange("ACCEPTED")}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      invitationStatusFilter === "ACCEPTED"
+                        ? "bg-white text-indigo-600 shadow-2xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    Accepted
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleFilterChange("ALL")}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      invitationStatusFilter === "ALL"
+                        ? "bg-white text-indigo-600 shadow-2xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    All
+                  </button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => fetchInvites(invitationStatusFilter)}
+                    className="h-7 px-2 text-slate-500 hover:text-slate-900 ml-1 cursor-pointer"
+                    title="Refresh invitations list"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${loadingInvites ? "animate-spin" : ""}`} />
+                  </Button>
+                </div>
+              </div>
+
+              {loadingInvites ? (
+                <div className="py-8 text-center text-slate-400 animate-pulse text-xs font-semibold">
+                  Loading {invitationStatusFilter.toLowerCase()} invitations...
+                </div>
+              ) : invitations.length > 0 ? (
+                <div className="overflow-x-auto rounded-2xl border border-slate-100">
+                  <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b bg-slate-50/70 text-slate-600 text-xs font-bold uppercase tracking-wider">
-                        <th className="py-3 px-4">Member</th>
+                      <tr className="border-b border-slate-100 bg-slate-50/70 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
+                        <th className="py-3 px-4">Invited Email</th>
                         <th className="py-3 px-4">Role</th>
                         <th className="py-3 px-4">Status</th>
-                        <th className="py-3 px-4">Joined Date</th>
-                        <th className="py-3 px-4 text-right">Actions</th>
+                        <th className="py-3 px-4">Date Sent</th>
+                        <th className="py-3 px-4 text-right">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y">
-                      {members.map((member) => {
-                        const isOwner = member.role === "OWNER";
-                        const isAdmin = member.role === "ADMIN";
+                    <tbody className="divide-y divide-slate-100 bg-white">
+                      {invitations.map((inv) => {
+                        const statusUpper = String(inv.status || "PENDING").toUpperCase();
+                        const isPending = statusUpper === "PENDING";
+                        const isAccepted = statusUpper === "ACCEPTED";
+                        const isExpired = statusUpper === "EXPIRED";
+                        const isRevoked = statusUpper === "REVOKED";
 
                         return (
-                          <tr key={member.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="py-4 px-4">
-                              <div className="flex items-center gap-3">
-                                <div className="h-9 w-9 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs">
-                                  {member.user?.name ? member.user.name[0] : "U"}
-                                </div>
-                                <div>
-                                  <p className="font-bold text-slate-900">
-                                    {member.user?.name || member.name || "Team Member"}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {member.user?.email || member.email || "No email available"}
-                                  </p>
-                                </div>
-                              </div>
+                          <tr key={inv.id} className="hover:bg-slate-50/60 transition-colors">
+                            <td className="py-3.5 px-4 font-bold text-slate-900">{inv.email}</td>
+                            <td className="py-3.5 px-4">
+                              <Badge variant="outline" className="font-bold text-[10.5px]">
+                                {inv.role}
+                              </Badge>
                             </td>
-                            <td className="py-4 px-4">
-                              {isOwner ? (
-                                <Badge className="bg-amber-100 text-amber-800 border-amber-200 font-bold gap-1">
-                                  <Crown className="h-3 w-3 text-amber-600" />
-                                  OWNER
+                            <td className="py-3.5 px-4">
+                              {isAccepted ? (
+                                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10.5px] font-semibold gap-1">
+                                  <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                                  ACCEPTED
                                 </Badge>
-                              ) : isAdmin ? (
-                                <Badge className="bg-purple-100 text-purple-800 border-purple-200 font-bold gap-1">
-                                  <Shield className="h-3 w-3 text-purple-600" />
-                                  ADMIN
+                              ) : isExpired ? (
+                                <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-[10.5px] font-semibold">
+                                  EXPIRED
+                                </Badge>
+                              ) : isRevoked ? (
+                                <Badge className="bg-rose-100 text-rose-700 border-rose-200 text-[10.5px] font-semibold">
+                                  REVOKED
                                 </Badge>
                               ) : (
-                                <Badge className="bg-blue-100 text-blue-800 border-blue-200 font-bold gap-1">
-                                  <UserCheck className="h-3 w-3 text-blue-600" />
-                                  RECRUITER
+                                <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10.5px] font-semibold gap-1">
+                                  <Clock className="h-3 w-3 text-amber-600" />
+                                  PENDING
                                 </Badge>
                               )}
                             </td>
-                            <td className="py-4 px-4 text-xs font-bold">
-                              {member.user?.status === "DEACTIVATED" ? (
-                                <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50">
-                                  DEACTIVATED
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">
-                                  ACTIVE
-                                </Badge>
-                              )}
+                            <td className="py-3.5 px-4 text-xs text-slate-500 font-medium">
+                              {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString() : "—"}
                             </td>
-                            <td className="py-4 px-4 text-xs text-muted-foreground">
-                              {member.createdAt
-                                ? new Date(member.createdAt).toLocaleDateString()
-                                : "—"}
-                            </td>
-                            <td className="py-4 px-4 text-right">
-                              {!isOwner ? (
-                                <div className="flex items-center justify-end gap-2">
-                                  <select
-                                    value={member.role}
-                                    onChange={(e) => handleUpdateRole(member.id, e.target.value)}
-                                    className="h-8 px-2 rounded-lg border text-xs bg-background font-medium outline-none"
-                                  >
-                                    <option value="RECRUITER">RECRUITER</option>
-                                    <option value="ADMIN">ADMIN</option>
-                                  </select>
-
-                                  {member.user?.status === "DEACTIVATED" ? (
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => handleReactivateMember(member.id)}
-                                      className="text-emerald-600 hover:bg-emerald-50 h-8 px-3 font-semibold"
-                                    >
-                                      <CheckCircle2 className="h-4 w-4 mr-1.5" />
-                                      Reactivate
-                                    </Button>
-                                  ) : (
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => handleDeactivateMember(member.id)}
-                                      className="text-amber-600 hover:bg-amber-50 h-8 px-3 font-semibold"
-                                    >
-                                      <AlertCircle className="h-4 w-4 mr-1.5" />
-                                      Deactivate
-                                    </Button>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-xs text-muted-foreground font-medium">
-                                  Primary Owner
+                            <td className="py-3.5 px-4 text-right">
+                              {isPending ? (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleRevokeInvite(inv.id)}
+                                  className="text-red-600 hover:bg-red-50 text-xs font-bold h-8 px-2.5 cursor-pointer"
+                                >
+                                  Revoke
+                                </Button>
+                              ) : isAccepted ? (
+                                <span className="text-xs text-emerald-700 font-bold inline-flex items-center gap-1">
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> Joined
                                 </span>
+                              ) : (
+                                <span className="text-xs text-slate-400 font-medium">—</span>
                               )}
                             </td>
                           </tr>
@@ -802,211 +1192,14 @@ export default function CompanySettingsPage() {
                   </table>
                 </div>
               ) : (
-                <div className="py-12 text-center text-muted-foreground text-sm">
-                  No additional team members found. Invite recruiters above!
+                <div className="py-8 text-center text-slate-500 text-xs font-semibold">
+                  No {invitationStatusFilter === "ALL" ? "" : invitationStatusFilter.toLowerCase()} invitations found.
                 </div>
               )}
             </div>
-          )}
-
-          {/* ── TAB 3: Team Invitations ── */}
-          {activeTab === "invitations" && (
-            <div className="space-y-6">
-              {/* Send Invitation Form */}
-              <div className="rounded-2xl border bg-card p-6 shadow-sm space-y-4">
-                <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
-                  <UserPlus className="h-5 w-5 text-blue-600" />
-                  Invite Colleague / Recruiter
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Send an email invitation link to join your company assessment workspace.
-                </p>
-
-                <form
-                  onSubmit={handleSendInvite}
-                  className="flex flex-col sm:flex-row sm:items-end gap-3 max-w-2xl"
-                >
-                  <div className="flex-1 space-y-1.5 w-full">
-                    <label className="text-xs font-bold text-slate-700">Email Address *</label>
-                    <input
-                      type="email"
-                      required
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      className="w-full h-10 px-3 rounded-xl border bg-background text-sm focus:ring-2 focus:ring-blue-600 outline-none"
-                      placeholder="recruiter@company.com"
-                    />
-                  </div>
-
-                  <div className="w-full sm:w-44 space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Role</label>
-                    <select
-                      value={inviteRole}
-                      onChange={(e) => setInviteRole(e.target.value)}
-                      className="w-full h-10 px-3 rounded-xl border bg-background text-sm focus:ring-2 focus:ring-blue-600 outline-none font-semibold"
-                    >
-                      <option value="RECRUITER">RECRUITER</option>
-                      <option value="ADMIN">ADMIN</option>
-                    </select>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={sendingInvite}
-                    className="w-full sm:w-auto h-10 bg-indigo-600 hover:bg-indigo-700 font-bold px-6 shadow-md"
-                  >
-                    {sendingInvite ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Invite"}
-                  </Button>
-                </form>
-              </div>
-
-              {/* Recruiter Invitations Table with Status Filter */}
-              <div className="rounded-2xl border bg-card p-6 shadow-sm space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b pb-4">
-                  <div>
-                    <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-blue-600" />
-                      Recruiter Invitations ({invitations.length})
-                    </h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Track and manage recruiter invitations across your company workspace.
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 bg-slate-100/90 p-1 rounded-xl border border-slate-200">
-                    <button
-                      type="button"
-                      onClick={() => handleFilterChange("PENDING")}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                        invitationStatusFilter === "PENDING"
-                          ? "bg-white text-blue-600 shadow-xs"
-                          : "text-slate-600 hover:text-slate-900"
-                      }`}
-                    >
-                      Pending
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleFilterChange("ACCEPTED")}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                        invitationStatusFilter === "ACCEPTED"
-                          ? "bg-white text-blue-600 shadow-xs"
-                          : "text-slate-600 hover:text-slate-900"
-                      }`}
-                    >
-                      Accepted
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleFilterChange("ALL")}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                        invitationStatusFilter === "ALL"
-                          ? "bg-white text-blue-600 shadow-xs"
-                          : "text-slate-600 hover:text-slate-900"
-                      }`}
-                    >
-                      All
-                    </button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => fetchInvites(invitationStatusFilter)}
-                      className="h-7 px-2 text-slate-500 hover:text-slate-900 ml-1"
-                      title="Refresh invitations list"
-                    >
-                      <RefreshCw className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-
-                {loadingInvites ? (
-                  <div className="py-8 text-center text-muted-foreground animate-pulse text-sm">
-                    Loading {invitationStatusFilter.toLowerCase()} invitations...
-                  </div>
-                ) : invitations.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b bg-slate-50/70 text-slate-600 text-xs font-bold uppercase tracking-wider">
-                          <th className="py-3 px-4">Invited Email</th>
-                          <th className="py-3 px-4">Role</th>
-                          <th className="py-3 px-4">Status</th>
-                          <th className="py-3 px-4">Date Sent</th>
-                          <th className="py-3 px-4 text-right">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y">
-                        {invitations.map((inv) => {
-                          const statusUpper = String(inv.status || "PENDING").toUpperCase();
-                          const isPending = statusUpper === "PENDING";
-                          const isAccepted = statusUpper === "ACCEPTED";
-                          const isExpired = statusUpper === "EXPIRED";
-                          const isRevoked = statusUpper === "REVOKED";
-
-                          return (
-                            <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
-                              <td className="py-3.5 px-4 font-bold text-slate-900">{inv.email}</td>
-                              <td className="py-3.5 px-4">
-                                <Badge variant="outline" className="font-bold text-xs">
-                                  {inv.role}
-                                </Badge>
-                              </td>
-                              <td className="py-3.5 px-4">
-                                {isAccepted ? (
-                                  <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-xs font-semibold gap-1">
-                                    <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                                    ACCEPTED
-                                  </Badge>
-                                ) : isExpired ? (
-                                  <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-xs font-semibold">
-                                    EXPIRED
-                                  </Badge>
-                                ) : isRevoked ? (
-                                  <Badge className="bg-rose-100 text-rose-700 border-rose-200 text-xs font-semibold">
-                                    REVOKED
-                                  </Badge>
-                                ) : (
-                                  <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs font-semibold gap-1">
-                                    <Clock className="h-3 w-3 text-amber-600" />
-                                    PENDING
-                                  </Badge>
-                                )}
-                              </td>
-                              <td className="py-3.5 px-4 text-xs text-muted-foreground">
-                                {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString() : "—"}
-                              </td>
-                              <td className="py-3.5 px-4 text-right">
-                                {isPending ? (
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleRevokeInvite(inv.id)}
-                                    className="text-red-600 hover:bg-red-50 text-xs font-bold h-8 px-2.5"
-                                  >
-                                    Revoke
-                                  </Button>
-                                ) : isAccepted ? (
-                                  <span className="text-xs text-emerald-700 font-bold inline-flex items-center gap-1">
-                                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> Joined
-                                  </span>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground font-medium">—</span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="py-8 text-center text-muted-foreground text-sm">
-                    No {invitationStatusFilter === "ALL" ? "" : invitationStatusFilter.toLowerCase()} invitations found.
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

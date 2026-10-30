@@ -472,15 +472,15 @@ const AssessmentBuilder = ({
             }
           }}
         >
-          <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-2xl border border-slate-200/90 shadow-2xl font-sans bg-white">
-            <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 p-6 text-white text-center relative">
-              <div className="mx-auto w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center mb-3">
-                <CheckCircle2 className="h-6 w-6 text-emerald-400" />
+          <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-3xl border border-white/90 shadow-2xl font-sans bg-white">
+            <div className="bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-6 text-white text-center relative select-none">
+              <div className="mx-auto w-12 h-12 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center mb-3 shadow-xs">
+                <CheckCircle2 className="h-6 w-6 text-white" />
               </div>
               <DialogTitle className="text-xl font-black text-white">
                 Assessment Published!
               </DialogTitle>
-              <DialogDescription className="text-xs text-slate-300 mt-1">
+              <DialogDescription className="text-xs text-white/85 mt-1 font-medium">
                 <span className="font-bold text-white">{publishedSuccessData.title}</span> is now live and ready for candidate evaluations.
               </DialogDescription>
             </div>
@@ -549,7 +549,7 @@ const AssessmentBuilder = ({
                       router.push(targetUrl);
                     }
                   }}
-                  className="h-11 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer"
+                  className="h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-indigo-500/20 cursor-pointer"
                 >
                   <Send className="h-3.5 w-3.5" />
                   Invite Candidates

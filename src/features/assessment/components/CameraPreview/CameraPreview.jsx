@@ -230,7 +230,7 @@ export default function CameraPreview({
   if (docked) {
     return (
       <div className={`w-full select-none ${className}`} aria-label="Proctoring Live Camera Feed">
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-xs flex flex-col items-center">
+        <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-2xs flex flex-col items-center">
           {/* Top Row: Live Indicator & Proctoring Status */}
           <div className="w-full flex items-center justify-between pb-2 mb-2.5 border-b border-slate-100 text-xs">
             <div className="flex items-center gap-1.5">
@@ -269,8 +269,8 @@ export default function CameraPreview({
           </div>
 
           {/* Centered Passport-Size Video Frame (135px width × 165px height, 3:4 ratio) */}
-          <div className={`relative w-[135px] h-[165px] rounded-xl overflow-hidden border-2 transition-all duration-300 bg-slate-950 shadow-sm mx-auto ${
-            currentWarning ? "border-rose-500 ring-2 ring-rose-400/50" : "border-slate-700/80"
+          <div className={`relative w-[140px] h-[170px] rounded-2xl overflow-hidden border-2 transition-all duration-300 bg-slate-950 shadow-inner mx-auto ${
+            currentWarning ? "border-rose-500 ring-2 ring-rose-400/50" : "border-slate-800"
           }`}>
             <video
               ref={videoRef}
@@ -292,7 +292,7 @@ export default function CameraPreview({
             </div>
           ) : (
             <div className="mt-2 flex items-center justify-center gap-1.5 text-[10px] text-slate-500 font-medium text-center">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <span>Candidate Live Monitoring</span>
             </div>
           )}

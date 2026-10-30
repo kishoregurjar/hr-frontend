@@ -62,7 +62,7 @@ const CandidateForm = ({
           <Input
             id="candidate-name"
             placeholder="e.g. John Doe"
-            className="h-10 pl-9.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-medium focus:bg-white focus:ring-2 focus:ring-blue-500/30 transition shadow-2xs"
+            className="h-10 pl-9.5 rounded-xl border border-slate-200 bg-slate-50/60 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs"
             {...register("name")}
           />
         </div>
@@ -84,7 +84,7 @@ const CandidateForm = ({
             id="candidate-email"
             type="email"
             placeholder="candidate@example.com"
-            className="h-10 pl-9.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-medium focus:bg-white focus:ring-2 focus:ring-blue-500/30 transition shadow-2xs"
+            className="h-10 pl-9.5 rounded-xl border border-slate-200 bg-slate-50/60 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs"
             {...register("email")}
           />
         </div>
@@ -106,7 +106,7 @@ const CandidateForm = ({
             id="candidate-phone"
             type="tel"
             placeholder="e.g. +1 555-0123"
-            className="h-10 pl-9.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-medium focus:bg-white focus:ring-2 focus:ring-blue-500/30 transition shadow-2xs"
+            className="h-10 pl-9.5 rounded-xl border border-slate-200 bg-slate-50/60 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs"
             {...register("phone")}
           />
         </div>
@@ -133,7 +133,7 @@ const CandidateForm = ({
           variant="outline"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="h-9 px-4 rounded-xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+          className="h-10 px-4 rounded-xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
         >
           Cancel
         </Button>
@@ -141,7 +141,7 @@ const CandidateForm = ({
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="h-9 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-blue-500/25 cursor-pointer"
+          className="h-10 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs gap-1.5 shadow-sm shadow-indigo-500/20 cursor-pointer transition"
         >
           {isSubmitting ? (
             <>

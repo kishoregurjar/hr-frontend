@@ -166,14 +166,14 @@ const AssignAssessmentDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg p-0 overflow-hidden rounded-2xl border border-slate-200/90 shadow-2xl font-sans bg-white">
+      <DialogContent className="sm:max-w-lg p-0 overflow-hidden rounded-3xl border border-white/90 shadow-2xl font-sans bg-white">
         {/* ── 1. SIGNATURE EXECUTIVE HEADER ── */}
-        <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 p-6 text-white relative overflow-hidden">
+        <div className="bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-6 text-white relative overflow-hidden">
           <div className="absolute right-0 top-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative z-10 flex items-start gap-3.5">
-            <div className="h-10 w-10 rounded-xl bg-blue-600/30 border border-blue-400/30 flex items-center justify-center font-bold text-white shadow-sm shrink-0">
-              <ClipboardList className="h-5 w-5 text-blue-300" />
+            <div className="h-10 w-10 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center font-bold text-white shadow-inner shrink-0">
+              <ClipboardList className="h-5 w-5 text-white" />
             </div>
 
             <div className="space-y-0.5">
@@ -181,11 +181,11 @@ const AssignAssessmentDialog = ({
                 <DialogTitle className="text-lg font-black tracking-tight text-white">
                   Assign Assessment
                 </DialogTitle>
-                <span className="text-[10px] font-extrabold uppercase bg-blue-500/20 text-blue-300 border border-blue-400/30 px-2 py-0.5 rounded">
+                <span className="text-[10px] font-extrabold uppercase bg-white/20 text-white border border-white/30 px-2.5 py-0.5 rounded-full">
                   Dispatch
                 </span>
               </div>
-              <DialogDescription className="text-xs text-slate-300 font-medium leading-relaxed">
+              <DialogDescription className="text-xs text-white/85 font-medium leading-relaxed">
                 Select a screening test to generate unique assessment tokens for candidates.
               </DialogDescription>
             </div>

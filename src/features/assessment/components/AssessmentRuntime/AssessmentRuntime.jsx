@@ -10,21 +10,20 @@ import {
   ArrowRight,
   Send,
   Gamepad2,
-  FileQuestion,
-  HelpCircle,
   AlertTriangle,
   Layers,
   Lock,
+  ShieldCheck,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { RadioGroup } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { buildRuntimeSections } from "../../utils";
 import { useUpdateAttemptProgress, useSaveQuizResponse } from "../../hooks";
 import GameRuntime from "../GameRuntime";
 import CameraPreview from "../CameraPreview/CameraPreview";
-import { formatRemainingTime, getRemainingTime } from "@/features/attempt/utils";
 
 const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent }) => {
   const sections = useMemo(() => buildRuntimeSections(assessment), [assessment]);
@@ -113,6 +112,7 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
 
     return () => clearInterval(timerInterval);
   }, [attempt?.startedAt, totalAssessmentMinutes, gameModuleMinutes, isQuizSection, sections.length]);
+
   const questions = currentSection?.questions || [];
   const currentQuestion = questions[currentQuestionIndex] || {};
 
@@ -258,7 +258,7 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
   if (sections.length === 0) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-        <div className="mx-auto max-w-md text-center rounded-2xl bg-white p-8 border shadow-sm">
+        <div className="mx-auto max-w-md text-center rounded-2xl bg-white p-8 border border-slate-200 shadow-sm">
           <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
           <h1 className="text-xl font-bold text-slate-900">Assessment Unavailable</h1>
           <p className="mt-2 text-sm text-slate-500">
@@ -270,33 +270,42 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
   }
 
   return (
-    <div className="min-h-screen bg-[#f1f5f9] flex flex-col font-sans">
-      {/* ── 1. Top Header Bar (CBT Style) ── */}
-      <header className="bg-white border-b border-slate-200 px-4 sm:px-8 py-3.5 shadow-xs sticky top-0 z-30">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
+      {/* ── 1. Top Header Bar (Proctored CBT Style) ── */}
+      <header className="bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 py-3.5 shadow-2xs sticky top-0 z-30">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <h1 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
-              Online Test - {assessment.title || "Assessment"}
-            </h1>
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/80">
+                <ShieldCheck className="h-3 w-3" />
+                Live Proctored
+              </span>
+              <h1 className="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight">
+                Online Test - {assessment.title || "Assessment"}
+              </h1>
+            </div>
           </div>
 
           <div className="flex items-center gap-3 text-xs font-semibold text-slate-600">
-            <div className="hidden sm:flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
-              <span className="text-slate-400">Section:</span>
-              <span className="text-blue-600 font-bold">{currentSection.title || `Section ${currentSectionIndex + 1}`}</span>
+            <div className="hidden sm:flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/80">
+              <span className="text-slate-400 font-medium">Section:</span>
+              <span className="text-indigo-600 font-extrabold">{currentSection.title || `Section ${currentSectionIndex + 1}`}</span>
             </div>
 
-            {/* ── Compact Top-Bar Live Countdown Clock ── */}
+            {/* ── Top-Bar Live Countdown Clock ── */}
             <div
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-2xs ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-2xs ${
                 isTimeCritical
                   ? "bg-rose-50 border-rose-300 text-rose-600 animate-pulse shadow-xs"
-                  : "bg-slate-100 border-slate-200/90 text-slate-800"
+                  : "bg-slate-50 border-slate-200/90 text-slate-800"
               }`}
             >
-              <Clock className={`h-3.5 w-3.5 ${isTimeCritical ? "text-rose-600" : "text-blue-600"}`} />
-              <span className="hidden sm:inline text-[11px] text-slate-500 font-semibold uppercase tracking-wider">
+              <Clock className={`h-3.5 w-3.5 ${isTimeCritical ? "text-rose-600" : "text-indigo-600"}`} />
+              <span className="hidden sm:inline text-[11px] text-slate-500 font-bold uppercase tracking-wider">
                 {!isQuizSection ? "Module 1 (Games):" : "Time Left:"}
               </span>
               <span className="font-mono text-xs sm:text-sm font-black tracking-wider text-slate-900">
@@ -315,7 +324,7 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
       >
         {/* ── LEFT PANEL: Question & Options Workspace (70%) ── */}
         <section
-          className={`lg:col-span-8 xl:col-span-9 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between ${
+          className={`lg:col-span-8 xl:col-span-9 bg-white rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col justify-between ${
             isQuizSection
               ? "min-h-[620px] p-6 sm:p-8"
               : "p-3 sm:p-5 lg:h-full lg:overflow-hidden"
@@ -350,13 +359,13 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
           {isQuizSection && (
             <div className="space-y-6">
               {/* Question Header & Title */}
-              <div className="border-b border-slate-200 pb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">
+              <div className="border-b border-slate-100 pb-5">
+                <div className="flex items-center justify-between mb-2.5">
+                  <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
                     {currentSection.title || "Section"} - Question {currentQuestionIndex + 1}
                   </h2>
-                  <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
-                    Marks: +1.0 / -0.0
+                  <span className="text-xs font-bold text-slate-600 bg-slate-50 px-3 py-1 rounded-lg border border-slate-200">
+                    Marks: <span className="text-emerald-600 font-extrabold">+1.0</span> / <span className="text-slate-400 font-medium">-0.0</span>
                   </span>
                 </div>
 
@@ -378,7 +387,7 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
 
                 {/* Code Snippet if applicable */}
                 {currentQuestion.codeSnippet && (
-                  <div className="mt-3.5 rounded-xl bg-slate-950 p-4 border border-slate-800 text-slate-100 font-mono text-xs sm:text-sm overflow-x-auto shadow-inner">
+                  <div className="mt-4 rounded-xl bg-slate-950 p-4 border border-slate-800 text-slate-100 font-mono text-xs sm:text-sm overflow-x-auto shadow-inner">
                     <pre className="whitespace-pre">
                       <code>{currentQuestion.codeSnippet}</code>
                     </pre>
@@ -411,7 +420,7 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
                       onClick={() => handleAnswerChange(optionId)}
                       className={`flex items-start gap-4 rounded-xl border p-4 transition-all cursor-pointer select-none ${
                         isSelected
-                          ? "border-emerald-600 bg-emerald-50/50 ring-1 ring-emerald-600/40 text-slate-900 shadow-xs"
+                          ? "border-indigo-600 bg-indigo-50/50 ring-1 ring-indigo-600/40 text-slate-900 shadow-2xs"
                           : "border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-800"
                       }`}
                     >
@@ -419,7 +428,7 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
                         <div
                           className={`h-6 w-6 rounded-md border flex items-center justify-center transition-all ${
                             isSelected
-                              ? "bg-emerald-600 border-emerald-600 text-white shadow-xs"
+                              ? "bg-indigo-600 border-indigo-600 text-white shadow-xs"
                               : "border-slate-300 bg-white"
                           }`}
                         >
@@ -447,7 +456,7 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
 
           {/* ── Bottom Action & Navigation Footer (Only shown for Technical Quiz MCQs) ── */}
           {isQuizSection && (
-            <div className="border-t border-slate-200 mt-8 pt-5 space-y-4">
+            <div className="border-t border-slate-100 mt-8 pt-5 space-y-4">
               <div className="flex items-center justify-between gap-3">
                 {/* Left Controls: Previous Button (+ Review / Clear for quiz) */}
                 <div className="flex items-center gap-2">
@@ -455,7 +464,7 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
                     type="button"
                     onClick={handlePreviousQuestion}
                     disabled={currentSectionIndex === 0 && currentQuestionIndex === 0}
-                    className="h-9 sm:h-10 px-4 sm:px-5 font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 shadow-2xs disabled:opacity-40 cursor-pointer"
+                    className="h-9 sm:h-10 px-4 sm:px-5 font-bold text-xs bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-300 shadow-2xs disabled:opacity-40 cursor-pointer"
                   >
                     <ArrowLeft className="mr-1.5 h-4 w-4" />
                     Previous
@@ -466,8 +475,8 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
                     onClick={handleToggleReview}
                     className={`h-9 sm:h-10 px-3.5 text-xs font-bold transition-all cursor-pointer ${
                       isMarkedForReview
-                        ? "bg-purple-700 hover:bg-purple-800 text-white shadow-sm"
-                        : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 shadow-2xs"
+                        ? "bg-purple-600 hover:bg-purple-700 text-white shadow-xs"
+                        : "bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-300 shadow-2xs"
                     }`}
                   >
                     <Bookmark className="mr-1.5 h-3.5 w-3.5 fill-current" />
@@ -494,8 +503,8 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
                     onClick={handleNextQuestion}
                     className={`h-9 sm:h-10 px-6 sm:px-7 font-bold text-xs shadow-sm cursor-pointer ${
                       currentQuestionIndex === questions.length - 1 && currentSectionIndex === sections.length - 1
-                        ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20"
-                        : "bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-blue-600/20"
+                        ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-600/25"
+                        : "bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-indigo-600/25"
                     }`}
                   >
                     <span>
@@ -511,7 +520,7 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
               {/* ── Legend Footer (Only shown for Quiz MCQ Mode) ── */}
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-6 gap-y-2 pt-2 border-t border-slate-100 text-xs font-semibold text-slate-600">
                 <span className="flex items-center gap-2">
-                  <span className="h-3.5 w-3.5 rounded-full bg-[#2563eb]" />
+                  <span className="h-3.5 w-3.5 rounded-full bg-indigo-600 shadow-2xs" />
                   Current
                 </span>
                 <span className="flex items-center gap-2">
@@ -519,15 +528,15 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
                   Not Attempted
                 </span>
                 <span className="flex items-center gap-2">
-                  <span className="h-3.5 w-3.5 rounded-full bg-[#16a34a]" />
+                  <span className="h-3.5 w-3.5 rounded-full bg-emerald-600 shadow-2xs" />
                   Answered
                 </span>
                 <span className="flex items-center gap-2">
-                  <span className="h-3.5 w-3.5 rounded-full bg-[#ea580c]" />
+                  <span className="h-3.5 w-3.5 rounded-full bg-amber-600 shadow-2xs" />
                   Not Answered
                 </span>
                 <span className="flex items-center gap-2">
-                  <span className="h-3.5 w-3.5 rounded-full bg-[#8b0000]" />
+                  <span className="h-3.5 w-3.5 rounded-full bg-purple-600 shadow-2xs" />
                   Review
                 </span>
               </div>
@@ -539,8 +548,9 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
         <aside className="lg:col-span-4 xl:col-span-3 space-y-4">
           {/* ── Proctoring Live Camera Feed (Docked at Top of Sidebar) ── */}
           <CameraPreview docked={true} onEvent={onProctoringEvent} />
+
           {/* ── Categorized Section Palettes (Games & MCQ Quizzes) ── */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-5">
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-2xs space-y-5">
             {sections.map((sec, sIdx) => {
               const secQuestions = sec.questions || [];
               const isSectionActive = sIdx === currentSectionIndex;
@@ -549,12 +559,14 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
                 const gameList = Array.isArray(sec.games) && sec.games.length > 0 ? sec.games : [sec];
                 return (
                   <div key={sec.id || sIdx} className="space-y-2.5">
-                    <div className="flex items-center justify-between bg-slate-100 px-3.5 py-2 rounded-lg border border-slate-200 font-extrabold text-xs text-slate-800">
-                      <span className="flex items-center gap-1.5">
-                        <Gamepad2 className="h-3.5 w-3.5 text-indigo-600" />
+                    <div className="flex items-center justify-between bg-slate-50 px-3.5 py-2.5 rounded-xl border border-slate-200 font-extrabold text-xs text-slate-800">
+                      <span className="flex items-center gap-2">
+                        <div className="h-5 w-5 rounded-md bg-indigo-100 flex items-center justify-center text-indigo-600">
+                          <Gamepad2 className="h-3.5 w-3.5" />
+                        </div>
                         {sec.title || "Cognitive Challenges"}
                       </span>
-                      <span className="text-[11px] text-slate-500 font-semibold">
+                      <span className="text-[10px] font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-full">
                         {gameList.length} {gameList.length === 1 ? "Game" : "Games"}
                       </span>
                     </div>
@@ -602,13 +614,13 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
                             aria-disabled={isCompleted}
                             className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold transition-all select-none ${
                               isCompleted
-                                ? "cursor-not-allowed opacity-80 " +
+                                ? "cursor-not-allowed opacity-85 " +
                                   (isSkipped
-                                    ? "bg-amber-50/50 border-amber-300/80 text-amber-800"
-                                    : "bg-emerald-50/50 border-emerald-300/80 text-emerald-800")
+                                    ? "bg-amber-50/60 border-amber-300/80 text-amber-800"
+                                    : "bg-emerald-50/60 border-emerald-300/80 text-emerald-800")
                                 : isCurrentActiveGame
-                                ? "bg-blue-50/90 border-blue-400 text-blue-900 shadow-2xs ring-1 ring-blue-300/60 cursor-pointer"
-                                : "bg-slate-100/50 border-slate-200/60 text-slate-400 opacity-60 cursor-pointer"
+                                ? "bg-indigo-50/90 border-indigo-300 text-indigo-950 shadow-2xs ring-1 ring-indigo-200 cursor-pointer"
+                                : "bg-slate-50 border-slate-200/70 text-slate-400 opacity-60 cursor-pointer hover:bg-slate-100/70"
                             }`}
                           >
                             <div className="flex items-center gap-2 truncate">
@@ -619,7 +631,7 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
                                       ? "bg-amber-600 text-white"
                                       : "bg-emerald-600 text-white"
                                     : isCurrentActiveGame
-                                    ? "bg-blue-600 text-white shadow-xs"
+                                    ? "bg-indigo-600 text-white shadow-xs"
                                     : "bg-slate-200 text-slate-500"
                                 }`}
                               >
@@ -643,8 +655,8 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
                                 </span>
                               )
                             ) : isCurrentActiveGame ? (
-                              <span className="flex items-center gap-1 text-[8.5px] font-black text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded-full uppercase shrink-0">
-                                <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
+                              <span className="flex items-center gap-1.5 text-[8.5px] font-black text-indigo-700 bg-indigo-100/90 px-2 py-0.5 rounded-full uppercase shrink-0">
+                                <span className="h-1.5 w-1.5 rounded-full bg-indigo-600 animate-pulse" />
                                 Active
                               </span>
                             ) : (
@@ -661,12 +673,14 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
               return (
                 <div key={sec.id || sIdx} className="space-y-3">
                   {/* Section Title Pill (Quant, Verbal, etc.) */}
-                  <div className="flex items-center justify-between bg-slate-100 px-3.5 py-2 rounded-lg border border-slate-200 font-extrabold text-xs text-slate-800">
-                    <span className="flex items-center gap-1.5">
-                      <Layers className="h-3.5 w-3.5 text-blue-600" />
+                  <div className="flex items-center justify-between bg-slate-50 px-3.5 py-2.5 rounded-xl border border-slate-200 font-extrabold text-xs text-slate-800">
+                    <span className="flex items-center gap-2">
+                      <div className="h-5 w-5 rounded-md bg-indigo-100 flex items-center justify-center text-indigo-600">
+                        <Layers className="h-3.5 w-3.5" />
+                      </div>
                       {sec.title || `Section ${sIdx + 1}`}
                     </span>
-                    <span className="text-[11px] text-slate-500 font-semibold">
+                    <span className="text-[10px] font-extrabold text-slate-600 bg-slate-200/70 px-2 py-0.5 rounded-full">
                       {secQuestions.length} Items
                     </span>
                   </div>
@@ -679,16 +693,15 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
                       const isReview = reviewQuestions.has(q.id);
                       const isVisited = visitedQuestions.has(`${sIdx}-${qIdx}`);
 
-                      // Color computation matching screenshot CBT standards
-                      let badgeStyle = "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300"; // Not attempted
+                      let badgeStyle = "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/90"; // Not attempted
                       if (isCurrent) {
-                        badgeStyle = "bg-[#2563eb] text-white ring-2 ring-blue-500 ring-offset-1 font-black shadow-sm"; // Blue Current
+                        badgeStyle = "bg-indigo-600 text-white ring-2 ring-indigo-400 ring-offset-1 font-black shadow-sm"; // Indigo Current
                       } else if (isReview) {
-                        badgeStyle = "bg-[#8b0000] text-white hover:bg-[#700000] font-bold"; // Maroon Review
+                        badgeStyle = "bg-purple-600 text-white hover:bg-purple-700 font-bold shadow-2xs"; // Purple Review
                       } else if (hasAnswer) {
-                        badgeStyle = "bg-[#16a34a] text-white hover:bg-[#15803d] font-bold"; // Green Answered
+                        badgeStyle = "bg-emerald-600 text-white hover:bg-emerald-700 font-bold shadow-2xs"; // Green Answered
                       } else if (isVisited) {
-                        badgeStyle = "bg-[#ea580c] text-white hover:bg-[#c2410c] font-bold"; // Orange Not Answered
+                        badgeStyle = "bg-amber-600 text-white hover:bg-amber-700 font-bold shadow-2xs"; // Orange Not Answered
                       }
 
                       return (
@@ -696,7 +709,7 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
                           key={q.id || qIdx}
                           type="button"
                           onClick={() => jumpToQuestion(sIdx, qIdx)}
-                          className={`h-9 w-full rounded-lg text-xs flex items-center justify-center transition-all cursor-pointer ${badgeStyle}`}
+                          className={`h-9 w-full rounded-xl text-xs flex items-center justify-center transition-all cursor-pointer font-bold ${badgeStyle}`}
                           title={`Question ${qIdx + 1}`}
                         >
                           {qIdx + 1}
@@ -713,9 +726,9 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
               <Button
                 type="button"
                 onClick={onReview}
-                className="w-full h-10 px-4 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white gap-2 shadow-sm shadow-emerald-600/20 cursor-pointer transition-all"
+                className="w-full h-11 px-4 text-xs font-bold rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white gap-2 shadow-md shadow-emerald-600/25 cursor-pointer transition-all hover:scale-[1.01]"
               >
-                <Send className="h-3.5 w-3.5" />
+                <Send className="h-4 w-4" />
                 <span>Submit Assessment</span>
               </Button>
             </div>

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { Clock, HelpCircle, RotateCcw, Undo2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { HelpCircle, RotateCcw, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import HowToPlayModal from "../shared/HowToPlayModal";
 import GameWinModal from "../shared/GameWinModal";
@@ -95,8 +95,6 @@ const TANGO_PUZZLES = {
   },
 };
 
-const DEFAULT_TANGO_DATA = TANGO_PUZZLES.medium;
-
 function badgePos(a, b, cellSize) {
   const [r1, c1] = String(a).split("-").map(Number);
   const [r2, c2] = String(b).split("-").map(Number);
@@ -118,80 +116,81 @@ function badgePos(a, b, cellSize) {
 function validateTangoGrid(grid, size, constraints) {
   const bad = new Set();
   const messages = [];
-  const half = Math.floor(size / 2);
-  const seenMessages = new Set();
 
-  const addMessage = (text) => {
-    if (!seenMessages.has(text)) {
-      seenMessages.add(text);
-      messages.push({ text });
-    }
+  const addMessage = (msg) => {
+    if (!messages.includes(msg)) messages.push(msg);
   };
 
-  // Row validation
+  const half = Math.floor(size / 2);
+
+  // 1. Row/Col counts check
   for (let r = 0; r < size; r++) {
-    const keys = Array.from({ length: size }, (_, c) => `${r}-${c}`);
-    for (let i = 0; i <= size - 3; i++) {
-      const a = grid[keys[i]];
-      const b = grid[keys[i + 1]];
-      const c = grid[keys[i + 2]];
-      if (a && a === b && b === c) {
-        bad.add(keys[i]);
-        bad.add(keys[i + 1]);
-        bad.add(keys[i + 2]);
-        const sym = a === "X" ? "🌙" : "🟡";
-        addMessage(`3 ${sym} in row ${r + 1} not allowed`);
-      }
+    let sunCount = 0;
+    let moonCount = 0;
+    for (let c = 0; c < size; c++) {
+      const v = grid[`${r}-${c}`];
+      if (v === "O") sunCount++;
+      if (v === "X") moonCount++;
     }
-
-    let xCount = 0;
-    let oCount = 0;
-    for (const key of keys) {
-      if (grid[key] === "X") xCount += 1;
-      if (grid[key] === "O") oCount += 1;
+    if (sunCount > half) {
+      for (let c = 0; c < size; c++) if (grid[`${r}-${c}`] === "O") bad.add(`${r}-${c}`);
+      addMessage(`Row ${r + 1} has too many Suns (> ${half})`);
     }
-    if (xCount > half || oCount > half) {
-      for (const key of keys) {
-        if (grid[key]) bad.add(key);
-      }
-      if (xCount > half) addMessage(`Max ${half} 🌙 per row`);
-      if (oCount > half) addMessage(`Max ${half} 🟡 per row`);
+    if (moonCount > half) {
+      for (let c = 0; c < size; c++) if (grid[`${r}-${c}`] === "X") bad.add(`${r}-${c}`);
+      addMessage(`Row ${r + 1} has too many Moons (> ${half})`);
     }
   }
 
-  // Column validation
   for (let c = 0; c < size; c++) {
-    const keys = Array.from({ length: size }, (_, r) => `${r}-${c}`);
-    for (let i = 0; i <= size - 3; i++) {
-      const a = grid[keys[i]];
-      const b = grid[keys[i + 1]];
-      const d = grid[keys[i + 2]];
-      if (a && a === b && b === d) {
-        bad.add(keys[i]);
-        bad.add(keys[i + 1]);
-        bad.add(keys[i + 2]);
-        const sym = a === "X" ? "🌙" : "🟡";
-        addMessage(`3 ${sym} in column ${c + 1} not allowed`);
-      }
+    let sunCount = 0;
+    let moonCount = 0;
+    for (let r = 0; r < size; r++) {
+      const v = grid[`${r}-${c}`];
+      if (v === "O") sunCount++;
+      if (v === "X") moonCount++;
     }
-
-    let xCount = 0;
-    let oCount = 0;
-    for (const key of keys) {
-      if (grid[key] === "X") xCount += 1;
-      if (grid[key] === "O") oCount += 1;
+    if (sunCount > half) {
+      for (let r = 0; r < size; r++) if (grid[`${r}-${c}`] === "O") bad.add(`${r}-${c}`);
+      addMessage(`Column ${c + 1} has too many Suns (> ${half})`);
     }
-    if (xCount > half || oCount > half) {
-      for (const key of keys) {
-        if (grid[key]) bad.add(key);
-      }
-      if (xCount > half) addMessage(`Max ${half} 🌙 per column`);
-      if (oCount > half) addMessage(`Max ${half} 🟡 per column`);
+    if (moonCount > half) {
+      for (let r = 0; r < size; r++) if (grid[`${r}-${c}`] === "X") bad.add(`${r}-${c}`);
+      addMessage(`Column ${c + 1} has too many Moons (> ${half})`);
     }
   }
 
-  // Constraints validation
-  for (const rule of constraints) {
+  // 2. No three identical symbols adjacent rule
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size - 2; c++) {
+      const a = grid[`${r}-${c}`];
+      const b = grid[`${r}-${c + 1}`];
+      const d = grid[`${r}-${c + 2}`];
+      if (a && a === b && b === d) {
+        bad.add(`${r}-${c}`);
+        bad.add(`${r}-${c + 1}`);
+        bad.add(`${r}-${c + 2}`);
+        addMessage(`Three consecutive identical symbols in row ${r + 1}`);
+      }
+    }
+  }
+
+  for (let c = 0; c < size; c++) {
+    for (let r = 0; r < size - 2; r++) {
+      const a = grid[`${r}-${c}`];
+      const b = grid[`${r + 1}-${c}`];
+      const d = grid[`${r + 2}-${c}`];
+      if (a && a === b && b === d) {
+        bad.add(`${r}-${c}`);
+        bad.add(`${r + 1}-${c}`);
+        bad.add(`${r + 2}-${c}`);
+        addMessage(`Three consecutive identical symbols in col ${c + 1}`);
+      }
+    }
+  }
+
+  // 3. Relational constraints rule
+  for (const rule of constraints || []) {
     const A = grid[rule.a];
     const B = grid[rule.b];
     if (!A || !B) continue;
@@ -335,57 +334,62 @@ export default function TangoGame({ config = {}, onComplete }) {
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col items-center select-none py-2 px-3">
-      {/* Top Header Controls */}
+      {/* Top Header Controls Toolbar */}
       <div className="mb-4 flex w-full items-center justify-between">
         <div className="flex items-center gap-2">
           <Button
+            type="button"
             variant="outline"
             size="sm"
             onClick={() => setShowHelp(true)}
-            className="flex items-center gap-1.5 rounded-full font-medium"
+            className="flex items-center gap-1.5 rounded-full font-bold text-xs bg-white hover:bg-slate-50 border-slate-200 shadow-2xs text-slate-700 cursor-pointer"
           >
-            <HelpCircle size={15} />
+            <HelpCircle size={14} className="text-indigo-600" />
             How to play
           </Button>
           <Button
+            type="button"
             variant="outline"
             size="icon"
             onClick={handleUndo}
             disabled={history.length === 0 || win}
             title="Undo"
-            className="h-9 w-9 rounded-full"
+            className="h-8 w-8 rounded-full bg-white hover:bg-slate-50 border-slate-200 shadow-2xs cursor-pointer disabled:opacity-40"
           >
-            <Undo2 size={16} />
+            <Undo2 size={14} />
           </Button>
           <Button
+            type="button"
             variant="outline"
             size="icon"
             onClick={handleReset}
             disabled={win}
             title="Reset"
-            className="h-9 w-9 rounded-full"
+            className="h-8 w-8 rounded-full bg-white hover:bg-slate-50 border-slate-200 shadow-2xs cursor-pointer disabled:opacity-40"
           >
-            <RotateCcw size={16} />
+            <RotateCcw size={14} />
           </Button>
         </div>
       </div>
 
       {/* Legend and Balance Guide */}
-      <div className="mb-4 flex items-center justify-center gap-6 text-xs font-semibold text-muted-foreground">
+      <div className="mb-5 inline-flex items-center justify-center gap-3.5 bg-white/95 backdrop-blur border border-slate-200 px-4 py-1.5 rounded-full shadow-2xs text-xs font-bold text-slate-700">
         <div className="flex items-center gap-1.5">
-          <span className="text-base">🟡</span> Sun (O)
+          <span className="text-base drop-shadow-xs">🟡</span> Sun (O)
         </div>
+        <span className="text-slate-300">•</span>
         <div className="flex items-center gap-1.5">
-          <span className="text-base">🌙</span> Moon (X)
+          <span className="text-base drop-shadow-xs">🌙</span> Moon (X)
         </div>
-        <div className="rounded-md bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-slate-800 dark:text-slate-200 font-bold">
+        <span className="text-slate-300">•</span>
+        <div className="rounded-md bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 text-indigo-700 font-extrabold text-[11px]">
           Equal {half} & {half} per line
         </div>
       </div>
 
       {/* Board Container */}
       <div
-        className="relative mx-auto rounded-2xl border-2 border-slate-900 bg-card p-1 shadow-xl"
+        className="relative mx-auto rounded-3xl border-2 border-slate-800 bg-white p-1 shadow-xl ring-4 ring-slate-100/80"
         style={{ width: size * cellSize + 10, height: size * cellSize + 10 }}
       >
         <div
@@ -405,10 +409,10 @@ export default function TangoGame({ config = {}, onComplete }) {
                 type="button"
                 onClick={() => handleCellClick(key)}
                 style={{ width: cellSize, height: cellSize }}
-                className={`relative flex items-center justify-center border border-slate-200 dark:border-slate-800 text-2xl transition-all font-bold select-none ${
+                className={`relative flex items-center justify-center border border-slate-200 text-2xl transition-all font-bold select-none rounded-md ${
                   isInitial
-                    ? "bg-slate-100/80 text-foreground cursor-not-allowed"
-                    : "hover:bg-slate-50 active:scale-95 bg-white cursor-pointer"
+                    ? "bg-slate-100/90 text-foreground cursor-not-allowed"
+                    : "hover:bg-indigo-50/40 active:scale-95 bg-white cursor-pointer"
                 }`}
               >
                 {val === "O" && <span className="drop-shadow-xs">🟡</span>}

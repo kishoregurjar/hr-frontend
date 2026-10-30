@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Clock, Trophy, Repeat, ArrowLeft, ArrowRight } from "lucide-react";
+import { Clock, Trophy, Repeat, ArrowLeft, ArrowRight, Sliders } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -68,13 +68,14 @@ const AssessmentSettingsForm = ({
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-2xs font-sans space-y-6">
+    <div className="rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-6 sm:p-8 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 font-sans space-y-6">
       <div className="border-b border-slate-100 pb-4">
-        <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+        <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+          <Sliders className="h-5 w-5 text-indigo-600" />
           Assessment & Proctoring Settings
         </h2>
         <p className="text-xs text-slate-500 font-medium mt-0.5">
-          Configure timing constraints, pass benchmarks, and candidate feedback rules.
+          Configure timing constraints, pass benchmarks, and candidate evaluation rules.
         </p>
       </div>
 
@@ -89,7 +90,7 @@ const AssessmentSettingsForm = ({
               render={({ field }) => (
                 <FormItem className="space-y-1.5">
                   <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5 text-blue-600" />
+                    <Clock className="h-3.5 w-3.5 text-indigo-600" />
                     Total Duration
                   </FormLabel>
                   <FormControl>
@@ -99,15 +100,15 @@ const AssessmentSettingsForm = ({
                         min={5}
                         max={300}
                         {...field}
-                        className="h-10 rounded-xl border-slate-200 bg-slate-50/50 pr-16 text-xs font-bold text-slate-900 focus:bg-white"
+                        className="h-11 rounded-xl border-slate-200 bg-slate-50/60 pr-16 text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400">
+                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400">
                         mins
                       </span>
                     </div>
                   </FormControl>
                   <FormDescription className="text-[11px] text-slate-500">
-                    Max test time allowed.
+                    Maximum test time allowed for candidate.
                   </FormDescription>
                   <FormMessage className="text-xs" />
                 </FormItem>
@@ -131,15 +132,15 @@ const AssessmentSettingsForm = ({
                         min={0}
                         max={100}
                         {...field}
-                        className="h-10 rounded-xl border-slate-200 bg-slate-50/50 pr-10 text-xs font-bold text-slate-900 focus:bg-white"
+                        className="h-11 rounded-xl border-slate-200 bg-slate-50/60 pr-10 text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400">
+                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400">
                         %
                       </span>
                     </div>
                   </FormControl>
                   <FormDescription className="text-[11px] text-slate-500">
-                    Qualification threshold.
+                    Minimum score required to qualify.
                   </FormDescription>
                   <FormMessage className="text-xs" />
                 </FormItem>
@@ -153,7 +154,7 @@ const AssessmentSettingsForm = ({
               render={({ field }) => (
                 <FormItem className="space-y-1.5">
                   <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                    <Repeat className="h-3.5 w-3.5 text-indigo-600" />
+                    <Repeat className="h-3.5 w-3.5 text-purple-600" />
                     Max Retries
                   </FormLabel>
                   <FormControl>
@@ -162,18 +163,17 @@ const AssessmentSettingsForm = ({
                       min={1}
                       max={5}
                       {...field}
-                      className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-bold text-slate-900 focus:bg-white"
+                      className="h-11 rounded-xl border-slate-200 bg-slate-50/60 text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                     />
                   </FormControl>
                   <FormDescription className="text-[11px] text-slate-500">
-                    Candidate attempt limit.
+                    Number of test attempts permitted.
                   </FormDescription>
                   <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
           </div>
-
 
           {/* Navigation Buttons */}
           <div className="flex items-center justify-between border-t border-slate-100 pt-6">
@@ -189,9 +189,9 @@ const AssessmentSettingsForm = ({
 
             <Button
               type="submit"
-              className="h-10 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20 transition-all cursor-pointer"
+              className="h-10 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs gap-1.5 shadow-sm shadow-indigo-500/20 transition-all cursor-pointer"
             >
-              <span>Continue</span>
+              <span>Continue to Review</span>
               <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </Button>
           </div>

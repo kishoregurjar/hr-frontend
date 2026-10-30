@@ -28,28 +28,28 @@ const QuestionSelectionCard = ({ question, selected, onToggle }) => {
       }}
       className={`rounded-2xl border p-4 sm:p-5 transition-all cursor-pointer flex items-start gap-4 shadow-2xs hover:shadow-md group ${
         selected
-          ? "border-blue-600 bg-gradient-to-r from-blue-50/50 via-indigo-50/20 to-white ring-2 ring-blue-500/20 shadow-sm"
-          : "border-slate-200/90 bg-white hover:border-blue-300"
+          ? "border-indigo-600 bg-gradient-to-r from-indigo-50/50 via-purple-50/20 to-white ring-2 ring-indigo-500/20 shadow-sm"
+          : "border-slate-200/90 bg-white hover:border-indigo-300"
       }`}
     >
       {/* Checkbox Squircle */}
       <div
         className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border transition-all ${
           selected
-            ? "border-blue-600 bg-blue-600 text-white shadow-xs"
-            : "border-slate-300 bg-slate-50 text-transparent group-hover:border-blue-400"
+            ? "border-indigo-600 bg-indigo-600 text-white shadow-xs"
+            : "border-slate-300 bg-slate-50 text-transparent group-hover:border-indigo-400"
         }`}
       >
         <Check className="h-3.5 w-3.5 stroke-[3]" />
       </div>
 
       <div className="min-w-0 flex-1 space-y-2">
-        <p className="font-bold text-slate-900 text-sm leading-snug group-hover:text-blue-600 transition-colors">
+        <p className="font-bold text-slate-900 text-sm leading-snug group-hover:text-indigo-600 transition-colors">
           {qTitle}
         </p>
 
         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-          <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10.5px] font-bold px-2 py-0.5">
+          <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 text-[10.5px] font-bold px-2 py-0.5">
             {qCategory}
           </Badge>
 
