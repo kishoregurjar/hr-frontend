@@ -1,4 +1,4 @@
-import { CheckCircle2, Loader2, Trophy, Target, ArrowRight, Gamepad2, Sparkles, SkipForward } from "lucide-react";
+import { CheckCircle2, Trophy, Target, ArrowRight, Gamepad2, Sparkles, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const GameCompleted = ({
@@ -11,14 +11,13 @@ const GameCompleted = ({
   result,
   onContinue,
   onNextGame,
-  isSaving,
   error,
 }) => {
   const isSkipped = Boolean(result?.skipped || result?.status === "SKIPPED");
   const gameTitle = currentGame?.title || section?.title || "Cognitive Challenge";
 
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white p-8 sm:p-10 text-center shadow-2xs font-sans space-y-6">
+    <div className="rounded-2xl border border-slate-200/90 bg-white p-8 sm:p-10 text-center shadow-xs font-sans space-y-6">
       <div
         className={`mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border ${
           isSkipped
@@ -73,7 +72,7 @@ const GameCompleted = ({
 
       {result && (
         <div className="mx-auto grid max-w-sm grid-cols-2 gap-4">
-          <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4 space-y-1 text-center">
+          <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-4 space-y-1 text-center shadow-2xs">
             <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
               <Trophy className="h-3.5 w-3.5 text-amber-500" />
               <span>Score</span>
@@ -83,9 +82,9 @@ const GameCompleted = ({
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4 space-y-1 text-center">
+          <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-4 space-y-1 text-center shadow-2xs">
             <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              <Target className="h-3.5 w-3.5 text-blue-600" />
+              <Target className="h-3.5 w-3.5 text-indigo-600" />
               <span>Accuracy</span>
             </div>
             <p className="text-2xl font-black text-slate-900">
@@ -106,7 +105,7 @@ const GameCompleted = ({
           <Button
             type="button"
             size="lg"
-            className="h-11 px-8 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs gap-2 shadow-md shadow-blue-500/20 cursor-pointer"
+            className="h-11 px-8 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs gap-2 shadow-md shadow-indigo-500/25 cursor-pointer"
             onClick={onNextGame}
             disabled={Boolean(error)}
           >
@@ -118,7 +117,7 @@ const GameCompleted = ({
           <Button
             type="button"
             size="lg"
-            className="h-11 px-8 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs gap-2 shadow-md shadow-blue-500/20 cursor-pointer"
+            className="h-11 px-8 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs gap-2 shadow-md shadow-indigo-500/25 cursor-pointer"
             onClick={onContinue}
             disabled={Boolean(error)}
           >

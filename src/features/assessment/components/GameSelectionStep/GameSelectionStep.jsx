@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { Search, ArrowLeft, ArrowRight, CheckCircle2, X, Clock } from "lucide-react";
+import { Search, ArrowLeft, ArrowRight, CheckCircle2, X, Clock, Gamepad2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -136,26 +136,27 @@ const GameSelectionStep = ({
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold">
-          Select Games
+    <div className="rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-6 sm:p-8 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 font-sans space-y-6">
+      <div className="border-b border-slate-100 pb-4">
+        <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+          <Gamepad2 className="h-5 w-5 text-indigo-600" />
+          Select Cognitive Games
         </h2>
 
-        <p className="mt-1 text-sm text-muted-foreground">
-          Choose the games you want to include in this assessment.
+        <p className="mt-0.5 text-xs text-slate-500 font-medium">
+          Choose the interactive cognitive games you want to include in this assessment.
         </p>
       </div>
 
       {/* ── Search & Bulk Action Bar ── */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search games..."
-            className="pl-9 h-10 rounded-xl bg-white border-slate-200 text-xs shadow-2xs"
+            placeholder="Search cognitive games by title or domain..."
+            className="pl-9 h-10 rounded-xl bg-slate-50/60 border-slate-200 text-xs font-medium focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-2xs"
           />
         </div>
 
@@ -168,9 +169,9 @@ const GameSelectionStep = ({
                 variant="outline"
                 size="sm"
                 onClick={handleSelectAll}
-                className="h-9 px-3.5 rounded-xl border-blue-200 bg-blue-50/60 hover:bg-blue-100/80 text-blue-700 text-xs font-bold gap-1.5 cursor-pointer shadow-2xs transition-all"
+                className="h-9 px-3.5 rounded-xl border-indigo-200 bg-indigo-50/60 hover:bg-indigo-100/80 text-indigo-700 text-xs font-bold gap-1.5 cursor-pointer shadow-2xs transition-all"
               >
-                <CheckCircle2 className="h-3.5 w-3.5 text-blue-600" />
+                <CheckCircle2 className="h-3.5 w-3.5 text-indigo-600" />
                 <span>Select All</span>
               </Button>
             ) : (
@@ -207,11 +208,10 @@ const GameSelectionStep = ({
           ))}
         </div>
       ) : (
-        <div className="rounded-lg border border-dashed p-10 text-center">
-          <p className="font-medium">No games found</p>
-
-          <p className="mt-1 text-sm text-muted-foreground">
-            Try another search term.
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-10 text-center space-y-1">
+          <p className="font-bold text-sm text-slate-800">No games found</p>
+          <p className="text-xs text-slate-500">
+            Try another search keyword.
           </p>
         </div>
       )}
@@ -222,15 +222,15 @@ const GameSelectionStep = ({
         </p>
       )}
 
-      <div className="flex items-center justify-between border-t border-slate-100 pt-6">
+      <div className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-100 pt-6 gap-4">
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
           <span>
             <strong className="font-black text-slate-900">{selectedIds.length}</strong>{" "}
             {selectedIds.length === 1 ? "game" : "games"} selected
           </span>
           {selectedIds.length > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 border border-blue-200/70 px-2 py-0.5 text-[11px] font-bold text-blue-700">
-              <Clock className="h-3 w-3 text-blue-600" />
+            <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 border border-indigo-200/70 px-2.5 py-1 text-[11px] font-bold text-indigo-700">
+              <Clock className="h-3 w-3 text-indigo-600" />
               ~{formatDurationDisplay(totalSelectedTime)} total challenge time
             </span>
           )}
@@ -250,9 +250,9 @@ const GameSelectionStep = ({
           <Button
             type="button"
             onClick={handleContinue}
-            className="h-10 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-sm shadow-blue-500/20 transition-all cursor-pointer"
+            className="h-10 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs gap-1.5 shadow-sm shadow-indigo-500/20 transition-all cursor-pointer"
           >
-            <span>Continue</span>
+            <span>Continue to Questions</span>
             <ArrowRight className="h-3.5 w-3.5 ml-1" />
           </Button>
         </div>

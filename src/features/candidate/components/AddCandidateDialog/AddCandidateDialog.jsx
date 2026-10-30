@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, UserPlus, Sparkles } from "lucide-react";
+import { Plus, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
@@ -63,26 +62,28 @@ const AddCandidateDialog = ({ trigger }) => {
         )}
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden rounded-2xl border border-slate-200/90 shadow-2xl font-sans bg-white">
-        {/* ── 1. SIGNATURE EXECUTIVE HEADER ── */}
-        <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 p-6 text-white relative overflow-hidden">
-          <div className="absolute right-0 top-0 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden rounded-3xl border border-white/90 shadow-2xl font-sans bg-white">
+        {/* ── 1. SIGNATURE GRADIENT HEADER ── */}
+        <div className="bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-6 text-white relative overflow-hidden select-none">
+          {/* Subtle Ambient Rings & Glow */}
+          <div className="absolute -top-12 -right-12 w-36 h-36 rounded-full bg-white/10 blur-xl pointer-events-none" />
+          <div className="absolute top-2 right-10 w-24 h-24 rounded-full border border-white/15 pointer-events-none" />
 
           <div className="relative z-10 flex items-start gap-3.5">
-            <div className="h-10 w-10 rounded-xl bg-blue-600/30 border border-blue-400/30 flex items-center justify-center font-bold text-white shadow-sm shrink-0">
-              <UserPlus className="h-5 w-5 text-blue-300" />
+            <div className="h-11 w-11 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center font-bold text-white shadow-inner shrink-0">
+              <UserPlus className="h-5 w-5 text-white" />
             </div>
 
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
-                <DialogTitle className="text-lg font-black tracking-tight text-white">
+                <DialogTitle className="text-xl font-extrabold tracking-tight text-white drop-shadow-xs">
                   Add Candidate
                 </DialogTitle>
-                <span className="text-[10px] font-extrabold uppercase bg-blue-500/20 text-blue-300 border border-blue-400/30 px-2 py-0.5 rounded">
+                <span className="text-[10px] font-extrabold uppercase bg-white/20 text-white border border-white/30 px-2.5 py-0.5 rounded-full">
                   New Profile
                 </span>
               </div>
-              <DialogDescription className="text-xs text-slate-300 font-medium leading-relaxed">
+              <DialogDescription className="text-xs text-white/85 font-medium leading-relaxed">
                 Add applicant credentials to prepare invitations and screening tests.
               </DialogDescription>
             </div>

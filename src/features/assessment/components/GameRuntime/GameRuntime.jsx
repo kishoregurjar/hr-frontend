@@ -518,19 +518,34 @@ const GameRuntime = ({
       {/* ── Active Gameplay Stage (Top bar + dispatchers for all started games) ── */}
       <div className={gameState === GAME_STATE.PLAYING ? "space-y-3" : "hidden"}>
         {/* Active Game Top Bar with Challenge Countdown Clock & Module Clock */}
-        <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl bg-slate-100/80 border border-slate-200">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-700">
-              Game {activeGameIndex + 1} of {games.length}: <strong className="text-slate-900">{currentGame.title}</strong>
-            </span>
+        <div className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5 rounded-2xl bg-slate-50/90 backdrop-blur-md border border-slate-200/90 shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <div className="h-7 w-7 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+              <Gamepad2 className="h-4 w-4" />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-500">
+                Game {activeGameIndex + 1} of {games.length}:
+              </span>
+              <span className="text-xs font-black text-slate-900 tracking-tight">
+                {currentGame.title}
+              </span>
+            </div>
             {currentGame.difficulty && (
-              <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${
+              <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border shadow-2xs ${
                 String(currentGame.difficulty).toLowerCase() === "easy"
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                   : String(currentGame.difficulty).toLowerCase() === "hard"
-                  ? "bg-rose-50 text-rose-700 border-rose-300"
-                  : "bg-amber-50 text-amber-700 border-amber-300"
+                  ? "bg-rose-50 text-rose-700 border-rose-200"
+                  : "bg-amber-50 text-amber-700 border-amber-200"
               }`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${
+                  String(currentGame.difficulty).toLowerCase() === "easy"
+                    ? "bg-emerald-500"
+                    : String(currentGame.difficulty).toLowerCase() === "hard"
+                    ? "bg-rose-500"
+                    : "bg-amber-500"
+                }`} />
                 {currentGame.difficulty}
               </span>
             )}
@@ -539,19 +554,20 @@ const GameRuntime = ({
           <div className="flex items-center gap-2.5">
             {/* Active Challenge Countdown Badge */}
             <div
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg border font-mono text-xs font-black tracking-wider transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-mono text-xs font-black tracking-wider transition-all ${
                 gameTimeRemaining <= 30
                   ? "bg-rose-50 border-rose-300 text-rose-600 animate-pulse shadow-xs"
-                  : "bg-blue-50/90 border-blue-200 text-blue-700 shadow-2xs"
+                  : "bg-indigo-50/90 border-indigo-200 text-indigo-700 shadow-2xs"
               }`}
             >
-              <Clock className="h-3.5 w-3.5" />
+              <Clock className={`h-3.5 w-3.5 ${gameTimeRemaining <= 30 ? "text-rose-600" : "text-indigo-600"}`} />
               <span>{formatTime(gameTimeRemaining)} Challenge Time</span>
             </div>
 
             {/* Pooled Module Timer */}
-            <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] font-semibold text-slate-500 font-mono">
-              <span>Pool: {formatTime(effectiveSeconds)}</span>
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-[11px] font-bold text-slate-600 font-mono shadow-2xs">
+              <span className="text-slate-400 font-medium">Pool:</span>
+              <span>{formatTime(effectiveSeconds)}</span>
             </div>
 
             <Button
@@ -559,34 +575,41 @@ const GameRuntime = ({
               variant="outline"
               size="sm"
               onClick={handleSkipGame}
-              className="h-7 px-2.5 text-xs font-bold text-slate-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg gap-1 cursor-pointer border-slate-200"
+              className="h-8 px-3 text-xs font-bold text-slate-600 hover:text-amber-700 hover:bg-amber-50 rounded-xl gap-1.5 cursor-pointer border-slate-200 shadow-2xs transition-all"
             >
-              <SkipForward className="h-3 w-3 text-slate-400" />
+              <SkipForward className="h-3.5 w-3.5 text-slate-400" />
               Skip
             </Button>
           </div>
         </div>
 
-        {/* Dispatcher Container: Keeps all started games mounted, displays active one */}
-        {games.map((g, idx) => {
-          const isStarted = isGameStarted(g, idx);
-          const isCompleted = Boolean(getGameResult(g, idx));
-          if (!isStarted || isCompleted) return null;
+        {/* Dispatcher Container: Dedicated Cognitive Arena Stage */}
+        <div className="w-full flex-1 flex flex-col items-center justify-center min-h-[490px] rounded-2xl bg-gradient-to-b from-slate-50/70 via-white to-slate-50/30 border border-slate-200/80 p-4 sm:p-6 shadow-2xs relative overflow-hidden">
+          {/* Subtle ambient light aura */}
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-50/30 via-transparent to-transparent opacity-80" />
+          
+          <div className="relative z-10 w-full flex flex-col items-center justify-center">
+            {games.map((g, idx) => {
+              const isStarted = isGameStarted(g, idx);
+              const isCompleted = Boolean(getGameResult(g, idx));
+              if (!isStarted || isCompleted) return null;
 
-          const isCurrent = idx === activeGameIndex;
+              const isCurrent = idx === activeGameIndex;
 
-          return (
-            <div
-              key={g.id || g.slug || `game-${idx}`}
-              className={isCurrent ? "block" : "hidden"}
-            >
-              <GameDispatcher
-                section={g}
-                onComplete={(result) => handleGameComplete(result, g, idx)}
-              />
-            </div>
-          );
-        })}
+              return (
+                <div
+                  key={g.id || g.slug || `game-${idx}`}
+                  className={isCurrent ? "w-full flex flex-col items-center justify-center" : "hidden"}
+                >
+                  <GameDispatcher
+                    section={g}
+                    onComplete={(result) => handleGameComplete(result, g, idx)}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {gameState === GAME_STATE.COMPLETED && (

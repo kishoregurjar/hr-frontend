@@ -1,14 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Pencil, HelpCircle } from "lucide-react";
+import { Pencil, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
@@ -51,32 +50,47 @@ const EditQuestionDialog = ({ question }) => {
         <Button
           variant="outline"
           size="sm"
-          className="h-8 px-2.5 rounded-xl border-slate-200 hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-bold gap-1 shadow-2xs cursor-pointer transition"
+          className="h-8 px-2.5 rounded-xl border-slate-200 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 text-xs font-bold gap-1 shadow-2xs cursor-pointer transition"
         >
           <Pencil className="h-3.5 w-3.5" />
           Edit
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-2xl p-0 overflow-hidden rounded-3xl border-slate-200/90 shadow-2xl font-sans bg-white max-h-[90vh] flex flex-col">
-        {/* Light Header Matching HireQuest UI */}
-        <div className="p-6 pb-4 border-b border-slate-100 bg-gradient-to-b from-slate-50/80 to-white shrink-0">
-          <div className="flex items-center gap-3.5">
-            <div className="h-11 w-11 rounded-2xl bg-blue-50 border border-blue-100/80 text-blue-600 flex items-center justify-center font-bold shadow-xs shrink-0">
-              <Pencil className="h-5 w-5" />
+      <DialogContent className="max-w-2xl p-0 overflow-hidden rounded-3xl border border-white/90 shadow-2xl font-sans bg-white max-h-[90vh] flex flex-col">
+        {/* ── 1. Top Hero Header with 3D Parallax Gradient ── */}
+        <div className="shrink-0 bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-6 text-white rounded-t-3xl relative overflow-hidden select-none shadow-md">
+          {/* Subtle Ambient 3D Glow Accents */}
+          <div className="absolute -top-16 -right-16 h-44 w-44 rounded-full bg-white/15 blur-2xl pointer-events-none" />
+          <div className="absolute top-1/2 left-1/3 h-24 w-24 rounded-full bg-pink-300/10 blur-xl pointer-events-none" />
+
+          {/* Close Button on Top Right */}
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="absolute top-4 right-4 h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white flex items-center justify-center transition-colors cursor-pointer z-20"
+            title="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+
+          <div className="flex items-center gap-3.5 relative z-10 pr-8">
+            <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center font-bold shadow-inner shrink-0">
+              <Pencil className="h-5 w-5 text-white" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-extrabold text-slate-900 tracking-tight">
+              <DialogTitle className="text-xl font-extrabold text-white tracking-tight drop-shadow-xs">
                 Edit Assessment Question
               </DialogTitle>
-              <DialogDescription className="text-xs text-slate-500 mt-0.5">
-                Update prompt wording, category taxonomy, and evaluated answers.
+              <DialogDescription className="text-xs text-white/85 mt-0.5 font-medium">
+                Update prompt wording, category taxonomy, and evaluated answer choices.
               </DialogDescription>
             </div>
           </div>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1">
+        {/* ── 2. Scrollable Form with No-Scrollbar ── */}
+        <div className="p-6 overflow-y-auto flex-1 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <QuestionForm
             defaultValues={defaultValues}
             onSubmit={handleSubmit}

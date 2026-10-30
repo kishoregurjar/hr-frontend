@@ -10,7 +10,7 @@ export const submitSupportRequest = async ({ subject, message }) => {
 };
 
 /**
- * HR: List own support requests.
+ * HR: List own support requests (submitter view).
  * GET /api/v1/support/my-requests
  */
 export const getMyRequests = async (params = {}) => {
@@ -26,12 +26,46 @@ export const getMyRequests = async (params = {}) => {
 };
 
 /**
- * HR: Get a single support request.
+ * Company Owner/Admin: List support requests for the active company.
+ * GET /api/v1/support/company-requests
+ */
+export const getCompanySupportRequests = async (params = {}) => {
+  const res = await axiosClient.get("/support/company-requests", { params });
+  const data = res?.data || res;
+  return {
+    items: data?.items || [],
+    total: data?.total || 0,
+    page: data?.page || 1,
+    limit: data?.limit || 20,
+    totalPages: data?.totalPages || 1,
+  };
+};
+
+/**
+ * HR / Company Admin: Get a single support request.
  * GET /api/v1/support/:requestId
  */
 export const getSupportRequest = async (requestId) => {
   const res = await axiosClient.get(`/support/${requestId}`);
   return res?.data?.request || res?.data || res;
+};
+
+/**
+ * Company Owner/Admin: Update a company support request's status.
+ * PATCH /api/v1/support/:requestId/status
+ */
+export const updateCompanySupportStatus = async (requestId, status) => {
+  const res = await axiosClient.patch(`/support/${requestId}/status`, { status });
+  return res?.data || res;
+};
+
+/**
+ * Company Owner/Admin: Reply to a company support request.
+ * POST /api/v1/support/:requestId/reply
+ */
+export const replyCompanySupportRequest = async (requestId, reply) => {
+  const res = await axiosClient.post(`/support/${requestId}/reply`, { reply });
+  return res?.data || res;
 };
 
 /**

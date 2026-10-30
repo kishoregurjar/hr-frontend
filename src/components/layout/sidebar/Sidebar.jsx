@@ -19,6 +19,7 @@ import {
   Settings,
   Crown,
   ChevronUp,
+  Ticket,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/context";
 import { toast } from "sonner";
@@ -74,6 +75,13 @@ const NAV_ITEMS = [
     title: "Support",
     href: "/support",
     icon: LifeBuoy,
+    exact: true,
+  },
+  {
+    title: "Support Tickets",
+    href: "/support-tickets",
+    icon: Ticket,
+    ownerOnly: true,
   },
   {
     title: "Company & Team",
@@ -210,6 +218,9 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
   const isActive = (item) => {
     if (item.exact) {
       return pathname === item.href;
+    }
+    if (item.href === "/support-tickets") {
+      return pathname === "/support-tickets" || pathname.startsWith("/company/support");
     }
     return pathname.startsWith(item.href);
   };

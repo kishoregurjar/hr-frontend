@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Plus, Gamepad2, Brain, Sparkles, ChevronDown, Clock } from "lucide-react";
+import { Check, Plus, Gamepad2, ChevronDown, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,22 +32,24 @@ const GameSelectionCard = ({ game, selected, onToggle, difficulty, onDifficultyC
       onClick={() => onToggle(game.id)}
       className={`rounded-2xl border p-5 transition-all cursor-pointer flex flex-col justify-between shadow-2xs hover:shadow-md group ${
         selected
-          ? "border-blue-600 bg-gradient-to-br from-blue-50/60 via-indigo-50/30 to-white ring-2 ring-blue-500/20 shadow-sm"
-          : "border-slate-200/90 bg-white hover:border-blue-300"
+          ? "border-indigo-600 bg-gradient-to-br from-indigo-50/50 via-purple-50/25 to-white ring-2 ring-indigo-500/20 shadow-sm"
+          : "border-slate-200/90 bg-white hover:border-indigo-300"
       }`}
     >
       <div className="space-y-3">
         {/* Header row with Game Title and Selected Indicator */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs shadow-xs transition-colors ${
-              selected
-                ? "bg-blue-600 text-white"
-                : "bg-slate-100 text-slate-600 group-hover:bg-blue-50 group-hover:text-blue-600"
-            }`}>
+            <div
+              className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs shadow-xs transition-colors ${
+                selected
+                  ? "bg-indigo-600 text-white"
+                  : "bg-slate-100 text-slate-600 group-hover:bg-indigo-50 group-hover:text-indigo-600"
+              }`}
+            >
               <Gamepad2 className="h-4 w-4" />
             </div>
-            <h3 className="font-extrabold text-slate-900 text-base leading-snug">
+            <h3 className="font-extrabold text-slate-900 text-base leading-snug group-hover:text-indigo-600 transition-colors">
               {game.title}
             </h3>
           </div>
@@ -55,8 +57,8 @@ const GameSelectionCard = ({ game, selected, onToggle, difficulty, onDifficultyC
           <div
             className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-all ${
               selected
-                ? "bg-blue-600 text-white shadow-xs"
-                : "border border-slate-300 bg-slate-50 text-transparent group-hover:border-blue-400"
+                ? "bg-indigo-600 text-white shadow-xs"
+                : "border border-slate-300 bg-slate-50 text-transparent group-hover:border-indigo-400"
             }`}
           >
             <Check className="h-3.5 w-3.5 stroke-[3]" />
@@ -71,7 +73,7 @@ const GameSelectionCard = ({ game, selected, onToggle, difficulty, onDifficultyC
         {/* Tags */}
         <div className="flex flex-wrap items-center gap-1.5 pt-1">
           {game.category && (
-            <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10.5px] font-bold px-2 py-0.5">
+            <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 text-[10.5px] font-bold px-2 py-0.5">
               {game.category}
             </Badge>
           )}
@@ -87,7 +89,7 @@ const GameSelectionCard = ({ game, selected, onToggle, difficulty, onDifficultyC
                   <ChevronDown className="h-3 w-3" />
                 </div>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40 rounded-xl p-1 shadow-lg border-slate-200">
+              <DropdownMenuContent align="end" className="w-40 rounded-xl p-1 shadow-lg border-slate-200 font-sans">
                 {["EASY", "MEDIUM", "HARD"].map((lvl) => {
                   const lvlDuration = getGameDurationForDifficulty(game.id || game.slug, lvl);
                   const isCurrent = lvl === currentDiff;
@@ -100,7 +102,7 @@ const GameSelectionCard = ({ game, selected, onToggle, difficulty, onDifficultyC
                         onDifficultyChange?.(lvl);
                       }}
                     >
-                      <span className={isCurrent ? "text-blue-600" : "text-slate-700"}>
+                      <span className={isCurrent ? "text-indigo-600" : "text-slate-700"}>
                         {lvl.charAt(0) + lvl.slice(1).toLowerCase()}
                       </span>
                       <span className="text-[10px] font-medium text-slate-400">
@@ -132,7 +134,7 @@ const GameSelectionCard = ({ game, selected, onToggle, difficulty, onDifficultyC
           size="sm"
           className={`w-full h-9 rounded-xl font-bold text-xs transition cursor-pointer ${
             selected
-              ? "bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-500/20"
+              ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-500/20"
               : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-0"
           }`}
           onClick={(e) => {

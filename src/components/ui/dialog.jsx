@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,16 @@ export function Dialog({ children, open: controlledOpen, onOpenChange, preventCl
     },
     [PinControlled, onOpenChange]
   );
+
+  React.useEffect(() => {
+    if (open && typeof document !== "undefined") {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [open]);
 
   return (
     <DialogContext.Provider value={{ open, setOpen, preventCloseOnClickOutside }}>
@@ -50,7 +61,17 @@ export function DialogTrigger({ children, asChild }) {
 }
 
 export function DialogPortal({ children }) {
-  return <>{children}</>;
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(children, document.body);
 }
 
 export function DialogOverlay({ className, ...props }) {
