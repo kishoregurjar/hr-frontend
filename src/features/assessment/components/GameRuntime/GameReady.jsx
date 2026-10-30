@@ -1,5 +1,6 @@
 import { Gamepad2, Play, Clock, Award, Sparkles, LayoutGrid, CheckCircle2, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatDurationDisplay } from "@/features/games/utils/gameTimers";
 
 const GAME_BRIEFS = {
   mahjong: {
@@ -106,6 +107,13 @@ const resolveGameBrief = (section) => {
 const GameReady = ({ section, gameIndex = 0, totalGames = 1, onStart, onSkip }) => {
   const brief = resolveGameBrief(section);
 
+  const rawDiff = section?.difficulty || section?.config?.difficulty || "Medium";
+  const diffDisplay = String(rawDiff).charAt(0).toUpperCase() + String(rawDiff).slice(1).toLowerCase();
+  const diffLower = String(rawDiff).toLowerCase();
+
+  const gameDurationMins = Number(section?.durationMinutes || section?.duration || 3.5);
+  const formattedDuration = formatDurationDisplay(gameDurationMins);
+
   const handleLaunch = () => {
     onStart(brief.slug);
   };
@@ -135,9 +143,23 @@ const GameReady = ({ section, gameIndex = 0, totalGames = 1, onStart, onSkip }) 
             </div>
           </div>
 
-          <div className="inline-flex items-center gap-1.5 rounded-xl bg-slate-50 border border-slate-200/80 px-3.5 py-2 text-xs font-bold text-slate-700">
-            <Clock className="h-4 w-4 text-blue-600" />
-            <span>Module Pool: Shared Time</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-black uppercase tracking-wider border ${
+                diffLower === "easy"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                  : diffLower === "hard"
+                  ? "bg-rose-50 text-rose-700 border-rose-300"
+                  : "bg-amber-50 text-amber-700 border-amber-300"
+              }`}
+            >
+              {diffDisplay}
+            </span>
+
+            <div className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50/80 border border-blue-200 px-3.5 py-1.5 text-xs font-bold text-blue-700 shadow-2xs">
+              <Clock className="h-4 w-4 text-blue-600" />
+              <span>Time Limit: {formattedDuration}</span>
+            </div>
           </div>
         </div>
 

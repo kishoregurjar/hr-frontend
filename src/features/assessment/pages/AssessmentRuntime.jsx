@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, AlertCircle } from "lucide-react";
 
 import {
@@ -8,13 +8,15 @@ import {
   AssessmentReview,
   AssessmentRuntime,
   SubmitAssessmentDialog,
+  CameraPreview,
 } from "../components";
 import {
   useAttemptQuery,
   useSubmitAttempt,
   useUpdateAttemptProgress,
+  useProctoring,
 } from "../hooks";
-import { getAssessmentReview } from "../utils";
+import { getAssessmentReview, stopActiveMediaStream } from "../utils";
 
 const AssessmentAttempt = ({ attemptId }) => {
   const [isReviewing, setIsReviewing] = useState(false);
@@ -37,6 +39,27 @@ const AssessmentAttempt = ({ attemptId }) => {
 
   const updateProgress = useUpdateAttemptProgress();
   const submitAttempt = useSubmitAttempt();
+  const effectiveAttemptId = attempt?.id || attemptId;
+  const rawAttemptStatus = String(attempt?.status || "").toUpperCase();
+  const isAssessmentActive =
+    !submissionResult &&
+    rawAttemptStatus !== "COMPLETED" &&
+    rawAttemptStatus !== "SUBMITTED";
+
+  const { sendProctoringEvent } = useProctoring({
+    attemptId: effectiveAttemptId,
+    isActive: isAssessmentActive,
+    enableFullscreen: false,
+  });
+
+  useEffect(() => {
+    if (isAssessmentActive && effectiveAttemptId && !attemptLoading) {
+      sendProctoringEvent("ASSESSMENT_STARTED", {
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }, [isAssessmentActive, effectiveAttemptId, attemptLoading, sendProctoringEvent]);
+
 
   const handleReviewSection = (sectionIndex) => {
     updateProgress.mutate(
@@ -53,6 +76,10 @@ const AssessmentAttempt = ({ attemptId }) => {
   };
 
   const handleSubmit = () => {
+    stopActiveMediaStream();
+    sendProctoringEvent("ASSESSMENT_SUBMITTED", {
+      timestamp: new Date().toISOString(),
+    });
     let localSavedResponses = {};
     let localSavedGameResults = {};
     if (typeof window !== "undefined") {
@@ -247,7 +274,6 @@ const AssessmentAttempt = ({ attemptId }) => {
   };
 
   // ── 4. Completed State ──────────────────────────────────────
-  const rawAttemptStatus = String(attempt?.status || "").toUpperCase();
   if (rawAttemptStatus === "COMPLETED" || rawAttemptStatus === "SUBMITTED" || submissionResult) {
     return (
       <AssessmentCompleted
@@ -264,6 +290,7 @@ const AssessmentAttempt = ({ attemptId }) => {
 
     return (
       <>
+        <CameraPreview onEvent={sendProctoringEvent} />
         <AssessmentReview
           assessment={effectiveAssessment}
           attempt={mergedAttempt}
@@ -290,6 +317,7 @@ const AssessmentAttempt = ({ attemptId }) => {
       assessment={effectiveAssessment}
       attempt={mergedAttempt}
       onReview={() => setIsReviewing(true)}
+      onProctoringEvent={sendProctoringEvent}
     />
   );
 };

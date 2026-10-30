@@ -66,7 +66,7 @@ export default function GameWinModal({
                   Time
                 </span>
                 <span className="text-lg font-black text-slate-800 font-mono tracking-tight">
-                  {time}
+                  {typeof time === "string" && !time.includes("s") && !time.includes("m") ? `${time}s` : time}
                 </span>
               </div>
             )}
@@ -82,7 +82,7 @@ export default function GameWinModal({
               onClick={onContinue}
               className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-blue-500/25 transition-all active:scale-[0.98] gap-2 cursor-pointer flex items-center justify-center"
             >
-              <span>{continueText || (isSandbox ? "Done" : "Continue Next Section")}</span>
+              <span>{continueText || (isSandbox ? "Done" : "Continue Next Game")}</span>
               {isSandbox ? <Check className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
             </Button>
           )}

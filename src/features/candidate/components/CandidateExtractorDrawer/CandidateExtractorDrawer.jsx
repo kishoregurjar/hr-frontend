@@ -78,6 +78,49 @@ const CandidateExtractorDrawer = ({
   const isEmailIngested =
     candidate.source === "Email Ingestion" || Boolean(candidate.emailSubject);
 
+  const rawApiBase =
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:5000";
+  const cleanApiBase = rawApiBase.replace(/\/api\/v1\/?$/, "").replace(/\/+$/, "");
+
+  const hasResume = Boolean(
+    candidate?.resumeUrl ||
+    candidate?.resumeFileName ||
+    candidate?.source === "EMAIL_EXTRACTION" ||
+    candidate?.source === "Email Ingestion" ||
+    candidate?.emailSubject ||
+    candidate?.emailBody
+  );
+
+  const displayResumeName =
+    candidate?.resumeFileName ||
+    `${String(candidate?.name || candidate?.firstName || "Candidate").trim().replace(/\s+/g, "_")}_Resume.pdf`;
+
+  const handleViewResume = () => {
+    const token =
+      (typeof window !== "undefined" && (
+        localStorage.getItem("token") ||
+        localStorage.getItem("accessToken") ||
+        localStorage.getItem("jwt") ||
+        localStorage.getItem("hirequest_token") ||
+        sessionStorage.getItem("token")
+      )) || "";
+
+    let targetUrl = candidate?.resumeUrl || `/api/v1/candidates/${candidate?.id}/resume`;
+    if (!targetUrl.startsWith("http")) {
+      targetUrl = `${cleanApiBase}${targetUrl.startsWith("/") ? "" : "/"}${targetUrl}`;
+    }
+
+    if (token) {
+      const sep = targetUrl.includes("?") ? "&" : "?";
+      targetUrl = `${targetUrl}${sep}token=${encodeURIComponent(token)}`;
+    }
+
+    window.open(targetUrl, "_blank");
+  };
+
+
   const handleCopyLink = async () => {
     const link = `${typeof window !== "undefined" ? window.location.origin : ""}/assessment/invite/${candidate.id}`;
     await navigator.clipboard.writeText(link);
@@ -221,20 +264,21 @@ const CandidateExtractorDrawer = ({
                 </div>
                 <div>
                   <p className="text-xs font-bold text-slate-900">
-                    {candidate.resumeUrl || candidate.resumeFileName ? (candidate.resumeFileName || `${String(candidate.name || "Candidate").replace(/\s+/g, "_")}_Resume.pdf`) : "Resume Document"}
+                    {hasResume ? displayResumeName : "Resume Document"}
                   </p>
                   <p className="text-[11px] text-slate-500 font-medium">
-                    {candidate.resumeUrl ? "Verified Application Document" : "No resume document attached"}
+                    {hasResume ? "Verified Application Document" : "No resume document attached"}
                   </p>
                 </div>
               </div>
 
-              {candidate.resumeUrl ? (
+              {hasResume ? (
                 <Button
+                  type="button"
                   variant="outline"
                   size="sm"
                   className="h-8 text-xs font-semibold text-blue-700 border-blue-200 hover:bg-blue-100 cursor-pointer"
-                  onClick={() => window.open(candidate.resumeUrl, "_blank")}
+                  onClick={handleViewResume}
                 >
                   <Download className="mr-1 h-3 w-3" />
                   View

@@ -455,6 +455,9 @@ const CandidateList = () => {
                           if (syncFromDate || syncToDate) {
                               payload.fromDate = syncFromDate;
                               payload.toDate = syncToDate;
+                              try {
+                                  payload.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                              } catch (_) {}
                           }
                           syncMailboxMutation.mutate(payload);
                       }}

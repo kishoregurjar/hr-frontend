@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Plus, Gamepad2, Brain, Sparkles, ChevronDown } from "lucide-react";
+import { Check, Plus, Gamepad2, Brain, Sparkles, ChevronDown, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,10 +9,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  getGameDurationForDifficulty,
+  formatDurationDisplay,
+} from "@/features/games/utils/gameTimers";
 
 const GameSelectionCard = ({ game, selected, onToggle, difficulty, onDifficultyChange }) => {
   const currentDiff = difficulty || game.difficulty?.toUpperCase() || "EASY";
   const diffLabel = currentDiff.charAt(0).toUpperCase() + currentDiff.slice(1).toLowerCase();
+  const currentDuration = getGameDurationForDifficulty(game.id || game.slug, currentDiff);
+  const durationLabel = formatDurationDisplay(currentDuration);
 
   const difficultyColor =
     currentDiff === "EASY"
@@ -81,22 +87,28 @@ const GameSelectionCard = ({ game, selected, onToggle, difficulty, onDifficultyC
                   <ChevronDown className="h-3 w-3" />
                 </div>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-32 rounded-xl p-1 shadow-lg border-slate-200">
-                {["EASY", "MEDIUM", "HARD"].map((lvl) => (
-                  <DropdownMenuItem
-                    key={lvl}
-                    className="text-xs font-bold rounded-lg cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDifficultyChange?.(lvl);
-                    }}
-                  >
-                    <span className={lvl === currentDiff ? "text-blue-600" : "text-slate-700"}>
-                      {lvl.charAt(0) + lvl.slice(1).toLowerCase()}
-                    </span>
-                    {lvl === currentDiff && <Check className="h-3.5 w-3.5 ml-auto text-blue-600" />}
-                  </DropdownMenuItem>
-                ))}
+              <DropdownMenuContent align="end" className="w-40 rounded-xl p-1 shadow-lg border-slate-200">
+                {["EASY", "MEDIUM", "HARD"].map((lvl) => {
+                  const lvlDuration = getGameDurationForDifficulty(game.id || game.slug, lvl);
+                  const isCurrent = lvl === currentDiff;
+                  return (
+                    <DropdownMenuItem
+                      key={lvl}
+                      className="text-xs font-bold rounded-lg cursor-pointer flex items-center justify-between"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDifficultyChange?.(lvl);
+                      }}
+                    >
+                      <span className={isCurrent ? "text-blue-600" : "text-slate-700"}>
+                        {lvl.charAt(0) + lvl.slice(1).toLowerCase()}
+                      </span>
+                      <span className="text-[10px] font-medium text-slate-400">
+                        {formatDurationDisplay(lvlDuration)}
+                      </span>
+                    </DropdownMenuItem>
+                  );
+                })}
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
@@ -104,6 +116,12 @@ const GameSelectionCard = ({ game, selected, onToggle, difficulty, onDifficultyC
               {diffLabel}
             </Badge>
           )}
+
+          {/* Calibrated Dynamic Challenge Time Badge */}
+          <span className="text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200/90 px-2 py-0.5 rounded-full flex items-center gap-1">
+            <Clock className="h-2.5 w-2.5 text-slate-400" />
+            {durationLabel}
+          </span>
         </div>
       </div>
 

@@ -24,6 +24,9 @@ import {
   Layers,
   AlertCircle,
   HelpCircle,
+  Video,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -67,6 +70,8 @@ const AssessmentPreStart = ({
   const [otpError, setOtpError] = useState("");
   const [candidateAccessToken, setCandidateAccessToken] = useState("");
   const [devHint, setDevHint] = useState("");
+  const [cameraError, setCameraError] = useState("");
+  const [isRequestingCamera, setIsRequestingCamera] = useState(false);
 
   const otpInputRefs = useRef([]);
 
@@ -298,7 +303,7 @@ const AssessmentPreStart = ({
     setStep(4);
   };
 
-  const handleStartClick = () => {
+  const handleStartClick = async () => {
     if (!candidateName.trim()) {
       setNameError("Please enter your full name.");
       setStep(2);
@@ -316,14 +321,47 @@ const AssessmentPreStart = ({
       return;
     }
 
-    onStart?.({
+    setCameraError("");
+    setIsRequestingCamera(true);
+
+    try {
+      if (typeof window !== "undefined" && !navigator?.mediaDevices?.getUserMedia) {
+        throw new Error(
+          "Your browser does not support webcam access. Please use modern Google Chrome, Microsoft Edge, or Firefox."
+        );
+      }
+
+      const testStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+        audio: false,
+      });
+
+      testStream.getTracks().forEach((track) => track.stop());
+      setIsRequestingCamera(false);
+
+      onStart?.({
       name: candidateName.trim(),
       email: email.trim(),
-      phone: mobileNumber.trim(),
-      experience,
       candidateAccessToken,
     });
-  };
+  } catch (err) {
+    setIsRequestingCamera(false);
+    console.warn("[AssessmentPreStart] Camera access verification notice:", err);
+    let errorMsg =
+      "Webcam access is required for proctored testing. Please enable camera access to start.";
+    if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+      errorMsg =
+        "Camera permission was blocked. Please click the camera/lock icon in your browser address bar, set Camera to 'Allow', and click 'Retry Camera Access'.";
+    } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+      errorMsg = "No webcam detected on your device. Please connect a working camera and retry.";
+    } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
+      errorMsg =
+        "Your camera is in use by another application (Zoom, Teams, Meet). Please close it and retry.";
+    }
+    setCameraError(errorMsg);
+    toast.error("Camera Access Required", { description: errorMsg });
+  }
+};
 
   return (
     <div className="min-h-screen bg-[#ffffff] font-sans text-slate-900 flex flex-col items-center py-8 px-4 sm:px-8">
@@ -521,15 +559,7 @@ const AssessmentPreStart = ({
                 </div>
               </div>
 
-              {/* ABOUT THIS ASSESSMENT Box */}
-              <div className="rounded-xl border border-slate-200 bg-[#f8fafc] p-4 sm:p-5 space-y-1.5">
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 block">
-                  ABOUT THIS ASSESSMENT
-                </span>
-                <p className="text-sm font-medium text-slate-800 leading-relaxed whitespace-pre-wrap">
-                  {aboutDescription}
-                </p>
-              </div>
+
 
               {/* Action Button */}
               <div className="flex justify-end pt-2">
@@ -608,43 +638,10 @@ const AssessmentPreStart = ({
                   {emailError && <p className="text-xs font-semibold text-rose-600">{emailError}</p>}
                 </div>
 
-                {/* Mobile Number */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">
-                    Mobile / Contact Number
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-                    <input
-                      type="tel"
-                      placeholder="e.g. +1 555-0123"
-                      value={mobileNumber}
-                      onChange={(e) => setMobileNumber(e.target.value)}
-                      className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 bg-white text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#303331]/20 focus:border-[#303331]"
-                    />
-                  </div>
-                </div>
 
-                {/* Experience Level */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">
-                    Experience Level
-                  </label>
-                  <div className="relative">
-                    <GraduationCap className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-                    <select
-                      value={experience}
-                      onChange={(e) => setExperience(e.target.value)}
-                      className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 bg-white text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#303331]/20 focus:border-[#303331] cursor-pointer"
-                    >
-                      <option value="0-1 Years (Fresher / Student)">0-1 Years (Fresher / Student)</option>
-                      <option value="1-3 Years (Junior)">1-3 Years (Junior Professional)</option>
-                      <option value="3-5 Years (Mid-Level)">3-5 Years (Mid-Level Developer)</option>
-                      <option value="5+ Years (Senior)">5+ Years (Senior Engineer)</option>
-                    </select>
-                  </div>
-                </div>
               </div>
+
+
 
               {/* Action Buttons */}
               <div className="flex items-center justify-between pt-4 border-t border-slate-100">
@@ -782,6 +779,8 @@ const AssessmentPreStart = ({
                 </div>
               </div>
 
+
+
               {/* Action Buttons */}
               <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                 <Button
@@ -832,6 +831,18 @@ const AssessmentPreStart = ({
 
               {/* Guidelines Checklist */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                <div className="rounded-xl border border-indigo-200 p-4 bg-indigo-50/60 space-y-1 sm:col-span-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-bold text-indigo-950">
+                      <Video className="h-4 w-4 text-indigo-600" />
+                      <span>Live Webcam Proctoring Active</span>
+                    </div>
+                    <Badge className="text-[9px] bg-indigo-100 text-indigo-800 border-indigo-200 uppercase font-black px-1.5 py-0">Required</Badge>
+                  </div>
+                  <p className="text-xs text-indigo-900/80 leading-relaxed pl-6">
+                    A non-intrusive live camera preview will be displayed during the test for candidate verification. No webcam video is recorded or stored on the server.
+                  </p>
+                </div>
                 <div className="rounded-xl border border-slate-200 p-4 bg-[#f8fafc] space-y-1">
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
                     <CheckCircle2 className="h-4 w-4 text-emerald-600" />
@@ -894,7 +905,34 @@ const AssessmentPreStart = ({
                 </label>
               </div>
 
-              {/* Action Buttons */}
+
+
+                            {/* Camera Error / Permission Denied Guide */}
+              {cameraError && (
+                <div className="rounded-xl border-2 border-rose-300 bg-rose-50/90 p-4 sm:p-5 text-xs text-rose-950 space-y-2.5 animate-in fade-in">
+                  <div className="flex items-center gap-2 font-extrabold text-sm text-rose-900">
+                    <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0" />
+                    <span>Camera Access Required to Begin</span>
+                  </div>
+                  <p className="text-xs text-rose-800 leading-relaxed pl-7 font-medium">
+                    {cameraError}
+                  </p>
+                  <div className="pl-7 pt-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleStartClick}
+                      disabled={isRequestingCamera || isStarting}
+                      className="h-9 px-4 text-xs font-bold bg-rose-700 hover:bg-rose-800 text-white rounded-xl shadow-xs gap-1.5 cursor-pointer"
+                    >
+                      <RefreshCw className={`h-3.5 w-3.5 ${isRequestingCamera ? "animate-spin" : ""}`} />
+                      <span>{isRequestingCamera ? "Requesting Camera..." : "Retry Camera Access"}</span>
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+{/* Action Buttons */}
               <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                 <Button
                   type="button"
@@ -909,10 +947,15 @@ const AssessmentPreStart = ({
                 <Button
                   type="button"
                   onClick={handleStartClick}
-                  disabled={!accepted || isStarting}
+                  disabled={!accepted || isStarting || isRequestingCamera}
                   className="h-12 px-8 font-black text-xs sm:text-sm bg-[#303331] hover:bg-[#424644] text-white rounded-xl shadow-md transition-all gap-2.5 disabled:opacity-40"
                 >
-                  {isStarting ? (
+                  {isRequestingCamera ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Verifying Camera Access...</span>
+                    </>
+                  ) : isStarting ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span>Initializing Test Environment...</span>
