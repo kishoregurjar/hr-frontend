@@ -10,8 +10,6 @@ import {
   Maximize2,
   ShieldAlert,
   AlertTriangle,
-  UserCheck,
-  UserX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { registerActiveMediaStream, stopActiveMediaStream } from "../../utils";
@@ -246,83 +244,15 @@ export default function CameraPreview({
     );
   };
 
-  // Different Person / Impersonation Alert Modal
-  const renderDifferentPersonModal = () => {
-    if (!isDifferentPerson) return null;
-
-    return (
-      <div className="fixed inset-0 z-[999999] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-200">
-        <div className="relative w-full max-w-md bg-slate-900 border-2 border-rose-500 rounded-3xl shadow-2xl p-6 sm:p-7 text-white text-center overflow-hidden">
-          {/* Top Alert Badge */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/20 border border-rose-500/50 text-rose-300 text-[11px] font-black tracking-wider uppercase mb-3.5 animate-pulse">
-            <ShieldAlert className="h-3.5 w-3.5 text-rose-400" />
-            <span>Anti-Cheating Violation</span>
-          </div>
-
-          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white mb-2">
-            Different Person Detected!
-          </h2>
-          <p className="text-xs text-slate-300 max-w-sm mx-auto mb-5 leading-relaxed">
-            The person currently facing the camera does <strong className="text-rose-400">not match</strong> the candidate registered for this assessment.
-          </p>
-
-          {/* Side by side candidate photo vs mismatch */}
-          <div className="grid grid-cols-2 gap-3 mb-5">
-            {/* Registered Candidate */}
-            <div className="flex flex-col items-center p-3 rounded-2xl bg-slate-800/80 border border-emerald-500/40">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1 mb-2">
-                <UserCheck className="h-3 w-3" />
-                Registered
-              </span>
-              <div className="w-24 h-28 rounded-xl overflow-hidden bg-slate-950 border border-emerald-500/30 flex items-center justify-center">
-                {registeredPhoto ? (
-                  <img
-                    src={registeredPhoto}
-                    alt="Registered Candidate"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <UserCheck className="h-10 w-10 text-emerald-400/50" />
-                )}
-              </div>
-            </div>
-
-            {/* Live Face Mismatch */}
-            <div className="flex flex-col items-center p-3 rounded-2xl bg-rose-950/40 border border-rose-500/50">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1 mb-2">
-                <UserX className="h-3 w-3" />
-                Live (Mismatch)
-              </span>
-              <div className="w-24 h-28 rounded-xl overflow-hidden bg-slate-950 border-2 border-rose-500/60 flex flex-col items-center justify-center text-center p-2">
-                <ShieldAlert className="h-8 w-8 text-rose-500 mb-1 animate-bounce" />
-                <span className="text-[10px] font-black text-rose-300">
-                  {matchSimilarity > 0 ? `${matchSimilarity}% Match` : "Mismatch"}
-                </span>
-                <span className="text-[8.5px] text-slate-400 mt-1">Unrecognized</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-200 text-[11px] leading-relaxed mb-4 text-left">
-            ⚠️ <strong>Proxy test warning:</strong> Candidate substitution or proxy testing is strictly barred. Please have the <strong>original registered candidate return to the camera immediately</strong> to resume.
-          </div>
-
-          <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 font-medium">
-            <RefreshCw className="h-3 w-3 animate-spin text-rose-400" />
-            <span>Continuously checking webcam face geometry...</span>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   // ── 1. DOCKED VARIANT (Passport Size Frame for Right Sidebar) ──
   if (docked) {
     return (
-      <>
-        {renderDifferentPersonModal()}
-        <div className={`w-full select-none ${className}`} aria-label="Proctoring Live Camera Feed">
-        <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-2xs flex flex-col items-center">
+      <div className={`w-full select-none ${className}`} aria-label="Proctoring Live Camera Feed">
+        <div className={`overflow-hidden rounded-2xl border transition-all duration-300 p-3.5 shadow-2xs flex flex-col items-center ${
+          isDifferentPerson
+            ? "border-rose-500 bg-rose-50/20 ring-2 ring-rose-500/30"
+            : "border-slate-200/90 bg-white"
+        }`}>
           {/* Top Row: Live Indicator & Proctoring Status */}
           <div className="w-full flex items-center justify-between pb-2 mb-2.5 border-b border-slate-100 text-xs">
             <div className="flex items-center gap-1.5">
@@ -348,7 +278,7 @@ export default function CameraPreview({
 
             <div className="flex items-center gap-2">
               {warningCount > 0 && (
-                <span className="flex items-center gap-1 text-[9px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-md">
+                <span className="flex items-center gap-1 text-[9px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-md animate-pulse">
                   <AlertTriangle size={10} className="text-rose-600" />
                   <span>{warningCount} Warnings</span>
                 </span>
@@ -362,7 +292,11 @@ export default function CameraPreview({
 
           {/* Centered Passport-Size Video Frame (135px width × 165px height, 3:4 ratio) */}
           <div className={`relative w-[140px] h-[170px] rounded-2xl overflow-hidden border-2 transition-all duration-300 bg-slate-950 shadow-inner mx-auto ${
-            currentWarning ? "border-rose-500 ring-2 ring-rose-400/50" : "border-slate-800"
+            isDifferentPerson
+              ? "border-rose-600 ring-4 ring-rose-500/40 animate-pulse shadow-rose-500/30 shadow-lg"
+              : currentWarning
+              ? "border-rose-500 ring-2 ring-rose-400/50"
+              : "border-slate-800"
           }`}>
             <video
               ref={videoRef}
@@ -374,10 +308,26 @@ export default function CameraPreview({
               }`}
               style={{ transform: "scaleX(-1)" }}
             />
+            {isDifferentPerson && (
+              <div className="absolute top-1.5 inset-x-2 z-10 py-0.5 px-1 bg-rose-600/90 text-white rounded text-[8.5px] font-black uppercase tracking-wider flex items-center justify-center gap-1 shadow">
+                <ShieldAlert size={10} />
+                <span>Face Mismatch</span>
+              </div>
+            )}
             {renderStatusOverlay()}
           </div>
 
-          {currentWarning ? (
+          {isDifferentPerson ? (
+            <div className="mt-2 w-full px-2 py-1.5 rounded-lg bg-rose-50 border border-rose-300 flex flex-col items-center justify-center gap-0.5 text-rose-700 animate-pulse text-center leading-tight">
+              <div className="flex items-center gap-1 text-[9.5px] font-extrabold">
+                <ShieldAlert className="h-3.5 w-3.5 text-rose-600 shrink-0" />
+                <span>Identity Mismatch</span>
+              </div>
+              <span className="text-[8.5px] text-rose-600 font-semibold">
+                Face does not match registered profile ({matchSimilarity}% match)
+              </span>
+            </div>
+          ) : currentWarning ? (
             <div className="mt-2 px-1 py-1 rounded-md bg-rose-50 border border-rose-200 flex items-center justify-center gap-1 text-[9.5px] text-rose-700 font-bold animate-pulse text-center leading-tight">
               <AlertTriangle className="h-3 w-3 shrink-0 text-rose-600" />
               <span>{currentWarning}</span>
@@ -398,88 +348,119 @@ export default function CameraPreview({
           </div>
         )}
       </div>
-    </>
     );
   }
 
   // ── 2. FLOATING VARIANT (Review Mode / Standalone) ──
   return (
-    <>
-      {renderDifferentPersonModal()}
-      <div
-        className={`fixed top-4 right-4 z-50 select-none transition-all duration-300 ${
-          isMinimized ? "w-28 sm:w-32" : "w-40 sm:w-48"
-        } ${className}`}
-        style={{ filter: "drop-shadow(0 10px 25px rgba(0,0,0,0.18))" }}
-        aria-label="Proctoring Live Camera Feed"
-      >
-        <div className="relative overflow-hidden rounded-2xl border-2 border-slate-800/80 bg-slate-950 text-white shadow-2xl backdrop-blur-md">
-          <div className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-2.5 py-1.5 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
-            <div className="flex items-center gap-1.5">
-              {cameraStatus === "ACTIVE" ? (
-                <>
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
-                  </span>
-                  <span className="text-[9.5px] font-black uppercase tracking-wider text-rose-300">
-                    LIVE
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
-                  <span className="text-[9.5px] font-bold uppercase tracking-wider text-amber-300">
-                    {cameraStatus}
-                  </span>
-                </>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setIsMinimized((prev) => !prev)}
-              className="text-slate-300 hover:text-white p-0.5 rounded transition-colors"
-              title={isMinimized ? "Expand Camera" : "Minimize Camera"}
-            >
-              {isMinimized ? <Maximize2 size={11} /> : <Minimize2 size={11} />}
-            </button>
+    <div
+      className={`fixed top-4 right-4 z-50 select-none transition-all duration-300 ${
+        isMinimized ? "w-28 sm:w-32" : "w-40 sm:w-48"
+      } ${className}`}
+      style={{ filter: "drop-shadow(0 10px 25px rgba(0,0,0,0.18))" }}
+      aria-label="Proctoring Live Camera Feed"
+    >
+      <div className={`relative overflow-hidden rounded-2xl border-2 bg-slate-950 text-white shadow-2xl backdrop-blur-md transition-all duration-300 ${
+        isDifferentPerson
+          ? "border-rose-500 ring-4 ring-rose-500/40 shadow-rose-900/50"
+          : currentWarning
+          ? "border-rose-500 ring-2 ring-rose-400/30"
+          : "border-slate-800/80"
+      }`}>
+        <div className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-2.5 py-1.5 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
+          <div className="flex items-center gap-1.5">
+            {cameraStatus === "ACTIVE" ? (
+              <>
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+                </span>
+                <span className="text-[9.5px] font-black uppercase tracking-wider text-rose-300">
+                  LIVE
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                <span className="text-[9.5px] font-bold uppercase tracking-wider text-amber-300">
+                  {cameraStatus}
+                </span>
+              </>
+            )}
           </div>
 
-          <div className={`relative bg-slate-900 transition-all ${isMinimized ? "h-20" : "h-28 sm:h-36"}`}>
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className={`w-full h-full object-cover transition-opacity duration-300 ${
-                cameraStatus === "ACTIVE" ? "opacity-100" : "opacity-0"
-              }`}
-              style={{ transform: "scaleX(-1)" }}
-            />
-            {renderStatusOverlay()}
-          </div>
-
-          {!isMinimized && (
-            <div className="bg-slate-900/90 px-2.5 py-1 flex items-center justify-between border-t border-slate-800 text-[8.5px] text-slate-400 font-medium">
-              <span className="flex items-center gap-1 text-slate-300">
-                <Video size={10} className="text-emerald-400" />
-                <span>Proctoring Feed</span>
-              </span>
-              <span className="text-[8px] text-slate-400">Secure</span>
-            </div>
-          )}
+          <button
+            type="button"
+            onClick={() => setIsMinimized((prev) => !prev)}
+            className="text-slate-300 hover:text-white p-0.5 rounded transition-colors"
+            title={isMinimized ? "Expand Camera" : "Minimize Camera"}
+          >
+            {isMinimized ? <Maximize2 size={11} /> : <Minimize2 size={11} />}
+          </button>
         </div>
 
-        {errorMessage && cameraStatus !== "ACTIVE" && (
-          <div className="mt-1.5 p-2 bg-amber-950/95 border border-amber-600/50 rounded-xl text-[10px] text-amber-200 shadow-xl backdrop-blur-md flex items-start gap-1.5 leading-snug animate-in fade-in slide-in-from-top-1">
-            <AlertCircle className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="font-semibold text-amber-100">{errorMessage}</p>
+        <div className={`relative bg-slate-900 transition-all ${isMinimized ? "h-20" : "h-28 sm:h-36"}`}>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className={`w-full h-full object-cover transition-opacity duration-300 ${
+              cameraStatus === "ACTIVE" ? "opacity-100" : "opacity-0"
+            }`}
+            style={{ transform: "scaleX(-1)" }}
+          />
+          {isDifferentPerson && (
+            <div className="absolute top-7 inset-x-2 z-10 py-0.5 px-1 bg-rose-600/90 text-white rounded text-[8px] font-black uppercase tracking-wider flex items-center justify-center gap-1 shadow">
+              <ShieldAlert size={9} />
+              <span>Face Mismatch</span>
             </div>
+          )}
+          {renderStatusOverlay()}
+        </div>
+
+        {!isMinimized && (
+          <div className={`px-2.5 py-1.5 flex flex-col gap-0.5 border-t text-[8.5px] font-medium ${
+            isDifferentPerson
+              ? "bg-rose-950/90 border-rose-800 text-rose-200"
+              : currentWarning
+              ? "bg-rose-950/60 border-rose-900 text-rose-300"
+              : "bg-slate-900/90 border-slate-800 text-slate-400"
+          }`}>
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                {isDifferentPerson ? (
+                  <ShieldAlert size={10} className="text-rose-400" />
+                ) : (
+                  <Video size={10} className="text-emerald-400" />
+                )}
+                <span>{isDifferentPerson ? "Identity Mismatch" : "Proctoring Feed"}</span>
+              </span>
+              {warningCount > 0 ? (
+                <span className="text-[8px] font-bold text-rose-400 bg-rose-900/50 px-1 rounded">
+                  {warningCount} Warnings
+                </span>
+              ) : (
+                <span className="text-[8px] text-slate-400">Secure</span>
+              )}
+            </div>
+            {isDifferentPerson && (
+              <span className="text-[8px] text-rose-300 leading-tight">
+                Candidate face not recognized ({matchSimilarity}% match)
+              </span>
+            )}
           </div>
         )}
       </div>
-    </>
+
+      {errorMessage && cameraStatus !== "ACTIVE" && (
+        <div className="mt-1.5 p-2 bg-amber-950/95 border border-amber-600/50 rounded-xl text-[10px] text-amber-200 shadow-xl backdrop-blur-md flex items-start gap-1.5 leading-snug animate-in fade-in slide-in-from-top-1">
+          <AlertCircle className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-semibold text-amber-100">{errorMessage}</p>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

@@ -336,12 +336,13 @@ export default function useFaceTracker({
                   // 500ms confirmation window (Instant 0.5s reaction on different face)
                   if (violationDurationRef.current.impersonationMs >= 500) {
                     setIsDifferentPerson(true);
+                    setCurrentWarning("Identity Mismatch: Face does not match registered candidate!");
 
                     if (Date.now() - lastAlertTimestampRef.current.impersonation > 4000) {
                       lastAlertTimestampRef.current.impersonation = Date.now();
                       setWarningCount((c) => c + 1);
                       toast.error("Proctoring Alert: Different Person Detected!", {
-                        description: `Face does not match registered candidate (Match: ${matchResult.similarity}%).`,
+                        description: `Face does not match registered candidate (${matchResult.similarity}% match). Warning logged.`,
                         duration: 4000,
                       });
                       onViolation?.("FACE_NOT_DETECTED", {
@@ -361,6 +362,9 @@ export default function useFaceTracker({
                   );
                   if (violationDurationRef.current.impersonationMs === 0) {
                     setIsDifferentPerson(false);
+                    setCurrentWarning((prev) =>
+                      prev && prev.startsWith("Identity Mismatch") ? null : prev
+                    );
                   }
                 }
               }
@@ -401,12 +405,13 @@ export default function useFaceTracker({
 
                 if (violationDurationRef.current.impersonationMs >= 750) {
                   setIsDifferentPerson(true);
+                  setCurrentWarning("Identity Mismatch: Face does not match registered candidate!");
 
                   if (nowTs - lastAlertTimestampRef.current.impersonation > 4000) {
                     lastAlertTimestampRef.current.impersonation = nowTs;
                     setWarningCount((c) => c + 1);
                     toast.error("Proctoring Alert: Different Person Detected!", {
-                      description: `Face does not match registered candidate (Match: ${matchResult.similarity}%).`,
+                      description: `Face does not match registered candidate (${matchResult.similarity}% match). Warning logged.`,
                       duration: 4000,
                     });
                     onViolation?.("FACE_NOT_DETECTED", {
@@ -425,6 +430,9 @@ export default function useFaceTracker({
                 );
                 if (violationDurationRef.current.impersonationMs === 0) {
                   setIsDifferentPerson(false);
+                  setCurrentWarning((prev) =>
+                    prev && prev.startsWith("Identity Mismatch") ? null : prev
+                  );
                 }
               }
             }
@@ -485,7 +493,9 @@ export default function useFaceTracker({
         } else {
           // Normal: looking straight at screen
           violationDurationRef.current.lookingAwayMs = 0;
-          setCurrentWarning(null);
+          if (violationDurationRef.current.impersonationMs < 500) {
+            setCurrentWarning(null);
+          }
         }
       }
     } catch (_detectErr) {
