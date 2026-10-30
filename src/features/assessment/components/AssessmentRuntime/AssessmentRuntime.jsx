@@ -341,8 +341,6 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
               </h1>
             </div>
           </div>
-            </div>
-          </div>
 
           <div className="flex items-center gap-3 text-xs font-semibold text-slate-600">
             <div className="hidden sm:flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/80">
