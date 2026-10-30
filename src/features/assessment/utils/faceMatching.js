@@ -70,7 +70,7 @@ export async function extractFaceDescriptor(input) {
     const detection = await faceapi
       .detectSingleFace(
         input,
-        new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.40 })
+        new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.50 })
       )
       .withFaceLandmarks(true)
       .withFaceDescriptor();

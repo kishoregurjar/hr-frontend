@@ -248,11 +248,7 @@ export default function CameraPreview({
   if (docked) {
     return (
       <div className={`w-full select-none ${className}`} aria-label="Proctoring Live Camera Feed">
-        <div className={`overflow-hidden rounded-2xl border transition-all duration-300 p-3.5 shadow-2xs flex flex-col items-center ${
-          isDifferentPerson
-            ? "border-rose-500 bg-rose-50/20 ring-2 ring-rose-500/30"
-            : "border-slate-200/90 bg-white"
-        }`}>
+        <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-2xs flex flex-col items-center">
           {/* Top Row: Live Indicator & Proctoring Status */}
           <div className="w-full flex items-center justify-between pb-2 mb-2.5 border-b border-slate-100 text-xs">
             <div className="flex items-center gap-1.5">
@@ -295,7 +291,7 @@ export default function CameraPreview({
             isDifferentPerson
               ? "border-rose-600 ring-4 ring-rose-500/40 animate-pulse shadow-rose-500/30 shadow-lg"
               : currentWarning
-              ? "border-rose-500 ring-2 ring-rose-400/50"
+              ? "border-amber-400 ring-2 ring-amber-300/50"
               : "border-slate-800"
           }`}>
             <video
@@ -318,22 +314,22 @@ export default function CameraPreview({
           </div>
 
           {isDifferentPerson ? (
-            <div className="mt-2 w-full px-2 py-1.5 rounded-lg bg-rose-50 border border-rose-300 flex flex-col items-center justify-center gap-0.5 text-rose-700 animate-pulse text-center leading-tight">
-              <div className="flex items-center gap-1 text-[9.5px] font-extrabold">
+            <div className="mt-2.5 w-full px-2 py-1.5 rounded-xl bg-rose-50 border border-rose-200 flex flex-col items-center justify-center gap-0.5 text-center leading-tight">
+              <div className="flex items-center gap-1 text-[10px] font-extrabold text-rose-700">
                 <ShieldAlert className="h-3.5 w-3.5 text-rose-600 shrink-0" />
                 <span>Identity Mismatch</span>
               </div>
-              <span className="text-[8.5px] text-rose-600 font-semibold">
+              <span className="text-[9px] text-rose-600 font-semibold">
                 Face does not match registered profile ({matchSimilarity}% match)
               </span>
             </div>
           ) : currentWarning ? (
-            <div className="mt-2 px-1 py-1 rounded-md bg-rose-50 border border-rose-200 flex items-center justify-center gap-1 text-[9.5px] text-rose-700 font-bold animate-pulse text-center leading-tight">
-              <AlertTriangle className="h-3 w-3 shrink-0 text-rose-600" />
-              <span>{currentWarning}</span>
+            <div className="mt-2.5 w-full px-2 py-1.5 rounded-xl bg-amber-50 border border-amber-300 flex items-center justify-center gap-1.5 text-center leading-tight">
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+              <span className="text-[9.5px] font-bold text-amber-800">{currentWarning}</span>
             </div>
           ) : (
-            <div className="mt-2 flex items-center justify-center gap-1.5 text-[10px] text-slate-500 font-medium text-center">
+            <div className="mt-2.5 flex items-center justify-center gap-1.5 text-[10px] text-slate-500 font-medium text-center">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <span>Candidate Live Monitoring</span>
             </div>
@@ -364,7 +360,7 @@ export default function CameraPreview({
         isDifferentPerson
           ? "border-rose-500 ring-4 ring-rose-500/40 shadow-rose-900/50"
           : currentWarning
-          ? "border-rose-500 ring-2 ring-rose-400/30"
+          ? "border-amber-400 ring-2 ring-amber-300/40"
           : "border-slate-800/80"
       }`}>
         <div className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-2.5 py-1.5 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
@@ -424,17 +420,19 @@ export default function CameraPreview({
             isDifferentPerson
               ? "bg-rose-950/90 border-rose-800 text-rose-200"
               : currentWarning
-              ? "bg-rose-950/60 border-rose-900 text-rose-300"
+              ? "bg-amber-950/80 border-amber-700 text-amber-200"
               : "bg-slate-900/90 border-slate-800 text-slate-400"
           }`}>
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1">
                 {isDifferentPerson ? (
                   <ShieldAlert size={10} className="text-rose-400" />
+                ) : currentWarning ? (
+                  <AlertTriangle size={10} className="text-amber-400" />
                 ) : (
                   <Video size={10} className="text-emerald-400" />
                 )}
-                <span>{isDifferentPerson ? "Identity Mismatch" : "Proctoring Feed"}</span>
+                <span>{isDifferentPerson ? "Identity Mismatch" : currentWarning ? "Proctoring Alert" : "Proctoring Feed"}</span>
               </span>
               {warningCount > 0 ? (
                 <span className="text-[8px] font-bold text-rose-400 bg-rose-900/50 px-1 rounded">
@@ -444,11 +442,15 @@ export default function CameraPreview({
                 <span className="text-[8px] text-slate-400">Secure</span>
               )}
             </div>
-            {isDifferentPerson && (
+            {isDifferentPerson ? (
               <span className="text-[8px] text-rose-300 leading-tight">
                 Candidate face not recognized ({matchSimilarity}% match)
               </span>
-            )}
+            ) : currentWarning ? (
+              <span className="text-[8px] text-amber-300 leading-tight">
+                {currentWarning}
+              </span>
+            ) : null}
           </div>
         )}
       </div>
