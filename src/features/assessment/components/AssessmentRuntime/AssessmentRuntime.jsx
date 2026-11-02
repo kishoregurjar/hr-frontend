@@ -504,13 +504,13 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
                     className={`h-9 sm:h-10 px-6 sm:px-7 font-bold text-xs shadow-sm cursor-pointer rounded-lg ${
                       currentQuestionIndex === questions.length - 1 && currentSectionIndex === sections.length - 1
                         ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                        : "bg-slate-900 hover:bg-slate-800 text-white"
+                        : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/20 transition-colors"
                     }`}
                   >
                     <span>
                       {currentQuestionIndex === questions.length - 1 && currentSectionIndex === sections.length - 1
                         ? "Review & Submit Test"
-                        : "Next"}
+                        : "Save & Next"}
                     </span>
                     <ArrowRight className="ml-1.5 h-4 w-4" />
                   </Button>
