@@ -44,3 +44,4 @@ export const deleteNotification = async (id) => {
   const res = await axiosClient.delete(`/notifications/${id}`);
   return res?.data?.data || res?.data || res;
 };
+

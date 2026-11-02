@@ -129,6 +129,9 @@ export function useNotifications(filter = "all") {
         description: newNotif.message,
         duration: 5000,
       });
+
+      // Invalidate notifications queries to ensure full sync across all active views
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     };
 
     socket.on("NEW_NOTIFICATION", handleNewNotification);
@@ -151,3 +154,4 @@ export function useNotifications(filter = "all") {
     isMarkingAll: markAllAsReadMutation.isPending,
   };
 }
+
