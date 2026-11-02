@@ -449,9 +449,9 @@ export default function ResultsAndRankingPage() {
     // FAILED or unranked candidates do NOT receive medals or ranks
     if (status === "FAILED" || rank === null || rank === undefined) {
       return (
-        <div className="flex flex-col items-center justify-center">
-          <span className="font-bold text-slate-400 text-sm leading-none">—</span>
-          <span className="text-[9.5px] text-slate-400 font-semibold mt-0.5">Unranked</span>
+        <div className="inline-flex flex-col items-center justify-center py-1 px-2.5 rounded-xl bg-slate-50/80 border border-slate-200/70 text-slate-400">
+          <span className="font-bold text-xs leading-none">—</span>
+          <span className="text-[9px] font-semibold mt-0.5 tracking-tight">Unranked</span>
         </div>
       );
     }
@@ -459,42 +459,48 @@ export default function ResultsAndRankingPage() {
     const numRank = Number(rank) || 1;
     if (numRank === 1) {
       return (
-        <div className="flex flex-col items-center justify-center">
-          <span className="text-lg leading-none">🥇</span>
-          <span className="text-[10px] font-black text-amber-600 mt-0.5">Rank #1</span>
-          {totalCandidates > 1 && (
-            <span className="text-[9px] text-slate-400 font-semibold">of {totalCandidates}</span>
-          )}
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-500/10 via-amber-400/15 to-yellow-500/10 border border-amber-300/80 shadow-2xs">
+          <span className="text-base leading-none drop-shadow-xs">🥇</span>
+          <div className="flex flex-col text-left">
+            <span className="text-[11px] font-black text-amber-700 leading-none">Rank #1</span>
+            {totalCandidates > 1 && (
+              <span className="text-[9px] text-amber-600/80 font-bold mt-0.5">of {totalCandidates}</span>
+            )}
+          </div>
         </div>
       );
     }
     if (numRank === 2) {
       return (
-        <div className="flex flex-col items-center justify-center">
-          <span className="text-lg leading-none">🥈</span>
-          <span className="text-[10px] font-black text-slate-600 mt-0.5">Rank #2</span>
-          {totalCandidates > 1 && (
-            <span className="text-[9px] text-slate-400 font-semibold">of {totalCandidates}</span>
-          )}
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-slate-100 via-slate-200/50 to-slate-100 border border-slate-300/80 shadow-2xs">
+          <span className="text-base leading-none drop-shadow-xs">🥈</span>
+          <div className="flex flex-col text-left">
+            <span className="text-[11px] font-black text-slate-700 leading-none">Rank #2</span>
+            {totalCandidates > 1 && (
+              <span className="text-[9px] text-slate-500 font-bold mt-0.5">of {totalCandidates}</span>
+            )}
+          </div>
         </div>
       );
     }
     if (numRank === 3) {
       return (
-        <div className="flex flex-col items-center justify-center">
-          <span className="text-lg leading-none">🥉</span>
-          <span className="text-[10px] font-black text-amber-800 mt-0.5">Rank #3</span>
-          {totalCandidates > 1 && (
-            <span className="text-[9px] text-slate-400 font-semibold">of {totalCandidates}</span>
-          )}
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-orange-500/10 via-amber-600/10 to-orange-500/5 border border-amber-600/30 shadow-2xs">
+          <span className="text-base leading-none drop-shadow-xs">🥉</span>
+          <div className="flex flex-col text-left">
+            <span className="text-[11px] font-black text-amber-900 leading-none">Rank #3</span>
+            {totalCandidates > 1 && (
+              <span className="text-[9px] text-amber-800/80 font-bold mt-0.5">of {totalCandidates}</span>
+            )}
+          </div>
         </div>
       );
     }
     return (
-      <div className="flex flex-col items-center justify-center">
-        <span className="font-extrabold text-xs text-slate-600">#{numRank}</span>
+      <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-200/80 shadow-2xs">
+        <span className="font-black text-xs text-slate-700 leading-none">#{numRank}</span>
         {totalCandidates > 1 && (
-          <span className="text-[9px] text-slate-400 font-semibold">of {totalCandidates}</span>
+          <span className="text-[9.5px] text-slate-400 font-bold leading-none">/ {totalCandidates}</span>
         )}
       </div>
     );
@@ -858,7 +864,7 @@ export default function ResultsAndRankingPage() {
         <div className="rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-6 sm:p-7 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 space-y-4 font-sans transition-all duration-200">
           <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-2xs">
             <table className="w-full text-left text-xs min-w-[760px]">
-              <thead className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+              <thead className="bg-slate-50/90 border-b border-slate-200/80 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
                 <tr>
                   {selectedAssessment !== "ALL" && (
                     <th className="py-3.5 px-4 w-10 text-center animate-in fade-in">
@@ -874,7 +880,7 @@ export default function ResultsAndRankingPage() {
                       />
                     </th>
                   )}
-                  <th className="py-3.5 px-4 w-14 text-center">Rank</th>
+                  <th className="py-3.5 px-4 w-28 text-center">Rank</th>
                   <th className="py-3.5 px-5">Candidate</th>
                   <th className="py-3.5 px-5">Assessment Module</th>
                   <th className="py-3.5 px-5 text-center">Score & Pass %</th>
@@ -900,150 +906,191 @@ export default function ResultsAndRankingPage() {
                     </td>
                   </tr>
                 ) : (
-                  paginatedResults.map((item) => (
-                    <tr
-                      key={item.id}
-                      className={`hover:bg-slate-50/70 transition group ${
-                        selectedCandidateIds.includes(item.id) ? "bg-indigo-50/40" : ""
-                      }`}
-                    >
-                      {/* Select Checkbox */}
-                      {selectedAssessment !== "ALL" && (
-                        <td className="py-4 px-4 text-center animate-in fade-in">
-                          <input
-                            type="checkbox"
-                            checked={selectedCandidateIds.includes(item.id)}
-                            onChange={() => handleToggleSelect(item.id)}
-                            aria-label={`Select ${item.candidateName}`}
-                            className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
-                          />
+                  paginatedResults.map((item) => {
+                    const isQualified = item.status === "QUALIFIED";
+                    const isInReview = item.status === "IN_REVIEW";
+                    const scoreColor = isQualified
+                      ? "text-emerald-600"
+                      : isInReview
+                      ? "text-amber-600"
+                      : "text-rose-600";
+                    const barColor = isQualified
+                      ? "bg-emerald-500"
+                      : isInReview
+                      ? "bg-amber-500"
+                      : "bg-rose-500";
+
+                    return (
+                      <tr
+                        key={item.id}
+                        className={`hover:bg-indigo-50/25 transition-colors duration-150 group ${
+                          selectedCandidateIds.includes(item.id) ? "bg-indigo-50/50" : ""
+                        }`}
+                      >
+                        {/* Select Checkbox */}
+                        {selectedAssessment !== "ALL" && (
+                          <td className="py-4 px-4 text-center animate-in fade-in">
+                            <input
+                              type="checkbox"
+                              checked={selectedCandidateIds.includes(item.id)}
+                              onChange={() => handleToggleSelect(item.id)}
+                              aria-label={`Select ${item.candidateName}`}
+                              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
+                            />
+                          </td>
+                        )}
+
+                        {/* Rank */}
+                        <td className="py-4 px-4 text-center font-extrabold">
+                          {getRankMedal(item.assessmentRank, item.assessmentTotalCandidates, item.status)}
                         </td>
-                      )}
 
-                      {/* Rank */}
-                      <td className="py-4 px-4 text-center font-extrabold">
-                        {getRankMedal(item.assessmentRank, item.assessmentTotalCandidates, item.status)}
-                      </td>
-
-                      {/* Candidate */}
-                      <td className="py-4 px-5">
-                        <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-slate-900 to-indigo-950 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
-                            {String(item.candidateName || "C")
-                              .split(" ")
-                              .filter(Boolean)
-                              .map((n) => n[0])
-                              .slice(0, 2)
-                              .join("")
-                              .toUpperCase()}
+                        {/* Candidate */}
+                        <td className="py-4 px-5">
+                          <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500/15 via-purple-500/10 to-indigo-600/10 border border-indigo-200/60 text-indigo-700 font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                              {String(item.candidateName || "C")
+                                .split(" ")
+                                .filter(Boolean)
+                                .map((n) => n[0])
+                                .slice(0, 2)
+                                .join("")
+                                .toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-extrabold text-slate-900 text-sm leading-tight truncate group-hover:text-indigo-600 transition-colors">
+                                {item.candidateName}
+                              </p>
+                              <p className="text-xs text-slate-500 mt-0.5 truncate">{item.email}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-extrabold text-slate-900 text-sm leading-tight">
-                              {item.candidateName}
-                            </p>
-                            <p className="text-xs text-slate-500 mt-0.5">{item.email}</p>
+                        </td>
+
+                        {/* Assessment */}
+                        <td className="py-4 px-5">
+                          <div className="space-y-1">
+                            <p className="font-bold text-slate-800 text-xs sm:text-[13px]">{item.assessmentTitle}</p>
+                            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                              <Clock className="h-3 w-3 text-slate-400" />
+                              <span>{item.timeSpent}</span>
+                              <span className="text-slate-300">•</span>
+                              <span>{item.completedAt}</span>
+                            </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Assessment */}
-                      <td className="py-4 px-5">
-                        <div className="space-y-0.5">
-                          <p className="font-bold text-slate-800">{item.assessmentTitle}</p>
-                          <p className="text-[11px] text-slate-500 flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {item.timeSpent} • {item.completedAt}
-                          </p>
-                        </div>
-                      </td>
-
-                      {/* Score */}
-                      <td className="py-4 px-5 text-center">
-                        <span className="font-black text-sm text-slate-900">
-                          {item.score}/{item.maxScore || 100}
-                        </span>
-                        <span className="block text-[11px] font-bold text-emerald-600">
-                          ({item.percentage}%)
-                        </span>
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-4 px-5">
-                        <div className="flex flex-col gap-1 items-start">
-                          <Badge
-                            className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
-                              item.status === "QUALIFIED"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                                : item.status === "IN_REVIEW"
-                                ? "bg-amber-50 text-amber-700 border-amber-300"
-                                : "bg-rose-50 text-rose-700 border-rose-300"
-                            }`}
-                          >
-                            {item.status === "QUALIFIED" ? "Qualified" : item.status === "IN_REVIEW" ? "In Review" : "Failed"}
-                          </Badge>
-
-                          {item.status === "QUALIFIED" &&
-                            item.interview &&
-                            (!item.interview.assessmentTitle ||
-                              item.assessmentTitle?.toLowerCase().includes(item.interview.assessmentTitle?.toLowerCase()) ||
-                              item.interview.assessmentTitle?.toLowerCase().includes(item.assessmentTitle?.toLowerCase()) ||
-                              item.interview.roundName?.toLowerCase().includes(item.assessmentTitle?.toLowerCase())) && (
-                              <span
-                                className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/90 px-2 py-0.5 rounded-full shadow-2xs"
-                                title={`Interview Scheduled: ${item.interview.formattedDate || item.interview.roundName}`}
-                              >
-                                <Calendar className="h-2.5 w-2.5 text-indigo-600" />
-                                Interview Invited
+                        {/* Score */}
+                        <td className="py-4 px-5 text-center">
+                          <div className="inline-flex flex-col items-center">
+                            <div className="flex items-baseline gap-1">
+                              <span className="font-black text-sm text-slate-900">
+                                {item.score}
                               </span>
-                          )}
-                        </div>
-                      </td>
+                              <span className="text-[11px] font-semibold text-slate-400">
+                                /{item.maxScore || 100}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-1">
+                              <div className="w-12 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-300 ${barColor}`}
+                                  style={{ width: `${Math.min(100, Math.max(0, item.percentage || 0))}%` }}
+                                />
+                              </div>
+                              <span className={`text-[11px] font-extrabold ${scoreColor}`}>
+                                ({item.percentage}%)
+                              </span>
+                            </div>
+                          </div>
+                        </td>
 
-                      {/* Actions */}
-                      <td className="py-4 px-5 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {item.status === "QUALIFIED" && (() => {
-                            const isCurrentAssessmentInvited =
-                              Boolean(item.interview) &&
+                        {/* Status */}
+                        <td className="py-4 px-5">
+                          <div className="flex flex-col gap-1.5 items-start">
+                            <div
+                              className={`inline-flex items-center gap-1.5 text-[10.5px] font-black uppercase px-2.5 py-0.5 rounded-full border shadow-2xs ${
+                                isQualified
+                                  ? "bg-emerald-50/90 text-emerald-700 border-emerald-300/80"
+                                  : isInReview
+                                  ? "bg-amber-50/90 text-amber-700 border-amber-300/80"
+                                  : "bg-rose-50/90 text-rose-700 border-rose-300/80"
+                              }`}
+                            >
+                              <span
+                                className={`h-1.5 w-1.5 rounded-full ${
+                                  isQualified
+                                    ? "bg-emerald-500 animate-pulse"
+                                    : isInReview
+                                    ? "bg-amber-500"
+                                    : "bg-rose-500"
+                                }`}
+                              />
+                              {isQualified ? "Qualified" : isInReview ? "In Review" : "Failed"}
+                            </div>
+
+                            {isQualified &&
+                              item.interview &&
                               (!item.interview.assessmentTitle ||
                                 item.assessmentTitle?.toLowerCase().includes(item.interview.assessmentTitle?.toLowerCase()) ||
                                 item.interview.assessmentTitle?.toLowerCase().includes(item.assessmentTitle?.toLowerCase()) ||
-                                item.interview.roundName?.toLowerCase().includes(item.assessmentTitle?.toLowerCase()));
+                                item.interview.roundName?.toLowerCase().includes(item.assessmentTitle?.toLowerCase())) && (
+                                <span
+                                  className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 bg-indigo-50/90 border border-indigo-200 px-2 py-0.5 rounded-full shadow-2xs"
+                                  title={`Interview Scheduled: ${item.interview.formattedDate || item.interview.roundName}`}
+                                >
+                                  <Calendar className="h-2.5 w-2.5 text-indigo-600" />
+                                  Interview Invited
+                                </span>
+                            )}
+                          </div>
+                        </td>
 
-                            return (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openInterviewModalForSingle(item)}
-                                className={`h-8 px-2.5 rounded-xl text-xs font-bold gap-1 shadow-2xs cursor-pointer transition ${
-                                  isCurrentAssessmentInvited
-                                    ? "border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 hover:text-indigo-800 text-indigo-700"
-                                    : "border-emerald-200 bg-emerald-50/50 hover:bg-emerald-100 hover:text-emerald-800 text-emerald-700"
-                                }`}
-                                title={
-                                  isCurrentAssessmentInvited
-                                    ? `Interview already scheduled for ${item.interview.formattedDate}`
-                                    : "Schedule Next Round Interview"
-                                }
-                              >
-                                <Calendar className="h-3.5 w-3.5" />
-                                {isCurrentAssessmentInvited ? "Re-invite" : "Invite"}
-                              </Button>
-                            );
-                          })()}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedCandidate(item)}
-                            className="h-8 px-3 rounded-xl border-slate-200 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 text-xs font-bold gap-1 shadow-2xs cursor-pointer transition"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                            Scorecard
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                        {/* Actions */}
+                        <td className="py-4 px-5 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {isQualified && (() => {
+                              const isCurrentAssessmentInvited =
+                                Boolean(item.interview) &&
+                                (!item.interview.assessmentTitle ||
+                                  item.assessmentTitle?.toLowerCase().includes(item.interview.assessmentTitle?.toLowerCase()) ||
+                                  item.interview.assessmentTitle?.toLowerCase().includes(item.assessmentTitle?.toLowerCase()) ||
+                                  item.interview.roundName?.toLowerCase().includes(item.assessmentTitle?.toLowerCase()));
+
+                              return (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openInterviewModalForSingle(item)}
+                                  className={`h-8 px-2.5 rounded-xl text-xs font-bold gap-1.5 shadow-2xs cursor-pointer transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] ${
+                                    isCurrentAssessmentInvited
+                                      ? "border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 hover:text-indigo-800 text-indigo-700"
+                                      : "border-emerald-200 bg-emerald-50/60 hover:bg-emerald-100 hover:text-emerald-800 text-emerald-700"
+                                  }`}
+                                  title={
+                                    isCurrentAssessmentInvited
+                                      ? `Interview already scheduled for ${item.interview.formattedDate}`
+                                      : "Schedule Next Round Interview"
+                                  }
+                                >
+                                  <Calendar className="h-3.5 w-3.5" />
+                                  {isCurrentAssessmentInvited ? "Re-invite" : "Invite"}
+                                </Button>
+                              );
+                            })()}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedCandidate(item)}
+                              className="h-8 px-3 rounded-xl border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 hover:text-indigo-700 text-slate-700 text-xs font-bold gap-1.5 shadow-2xs cursor-pointer transition-all duration-150 hover:scale-[1.02] active:scale-[0.98]"
+                            >
+                              <Eye className="h-3.5 w-3.5 text-slate-500" />
+                              Scorecard
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

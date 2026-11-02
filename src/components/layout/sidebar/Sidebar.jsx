@@ -304,9 +304,22 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
           {/* Popup Menu when clicking User Profile */}
           {isUserMenuOpen && (
             <div className="absolute bottom-full left-3 right-3 mb-2 rounded-2xl bg-white border border-slate-200/90 shadow-xl shadow-slate-200/60 p-2 z-50 animate-in fade-in slide-in-from-bottom-2 duration-150 font-sans space-y-1">
-              <div className="px-3 py-2 border-b border-slate-100">
-                <p className="text-xs font-bold text-slate-900 truncate">{displayName}</p>
-                <p className="text-[10px] text-slate-500 truncate">{userEmail}</p>
+              <div className="px-3 py-2 border-b border-slate-100 flex items-center gap-2.5">
+                {user?.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={displayName}
+                    className="h-8 w-8 rounded-xl object-cover border border-indigo-200/60 shadow-xs shrink-0"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-xl bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                    {getInitials(displayName)}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-slate-900 truncate">{displayName}</p>
+                  <p className="text-[10px] text-slate-500 truncate">{userEmail}</p>
+                </div>
               </div>
 
               <button
@@ -342,10 +355,18 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
             className="w-full flex items-center justify-between gap-2.5 p-1 rounded-xl hover:bg-slate-200/60 transition cursor-pointer text-left"
           >
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              {/* User Avatar with Initials (No company logo) */}
-              <div className="h-9 w-9 rounded-xl bg-indigo-600 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-xs">
-                {getInitials(displayName)}
-              </div>
+              {/* User Avatar with Photo / Initials */}
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={displayName}
+                  className="h-9 w-9 rounded-xl object-cover border border-indigo-200/60 shadow-xs shrink-0"
+                />
+              ) : (
+                <div className="h-9 w-9 rounded-xl bg-indigo-600 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-xs">
+                  {getInitials(displayName)}
+                </div>
+              )}
 
               {/* Owner Name & Role */}
               <div className="min-w-0 flex-1">
