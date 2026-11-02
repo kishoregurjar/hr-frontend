@@ -898,9 +898,17 @@ export default function CompanySettingsPage() {
                         <tr key={member.id} className="hover:bg-slate-50/60 transition-colors">
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-3">
-                              <div className="h-9 w-9 rounded-xl bg-indigo-100/80 text-indigo-700 font-extrabold flex items-center justify-center text-xs border border-indigo-200/80 shadow-2xs">
-                                {member.user?.name ? member.user.name[0]?.toUpperCase() : "U"}
-                              </div>
+{member.avatarUrl || member.user?.avatarUrl ? (
+                                <img
+                                  src={member.avatarUrl || member.user?.avatarUrl}
+                                  alt={member.user?.name || member.name || "Team Member"}
+                                  className="h-9 w-9 rounded-xl object-cover border border-slate-200/80 shadow-2xs shrink-0"
+                                />
+                              ) : (
+                                <div className="h-9 w-9 rounded-xl bg-indigo-100/80 text-indigo-700 font-extrabold flex items-center justify-center text-xs border border-indigo-200/80 shadow-2xs shrink-0">
+                                  {member.user?.name ? member.user.name[0]?.toUpperCase() : "U"}
+                                </div>
+                              )}
                               <div>
                                 <p className="font-extrabold text-slate-900 text-xs">
                                   {member.user?.name || member.name || "Team Member"}

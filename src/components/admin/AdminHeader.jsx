@@ -102,9 +102,17 @@ const AdminHeader = ({
             aria-label="User profile menu"
             aria-expanded={isDropdownOpen}
           >
-            <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
-              {initials}
-            </div>
+            {user?.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={adminName}
+                className="h-7 w-7 sm:h-8 sm:w-8 rounded-full object-cover border border-slate-200 shadow-xs shrink-0"
+              />
+            ) : (
+              <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
+                {initials}
+              </div>
+            )}
             <div className="hidden sm:block text-left">
               <p className="text-xs font-bold text-slate-900 leading-tight">
                 {adminName}

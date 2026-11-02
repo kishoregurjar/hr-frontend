@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/features/auth/context";
-import { changePasswordApi, logoutAllApi, updateUserProfileApi } from "@/lib/api/auth";
+import { changePasswordApi, logoutAllApi, updateUserProfileApi, uploadUserAvatarApi, removeUserAvatarApi } from "@/lib/api/auth";
 import { toast } from "sonner";
 import {
   Shield,
@@ -27,6 +27,9 @@ import {
   Sparkles,
   X,
   Loader2,
+  Camera,
+  Trash2,
+  Upload,
 } from "lucide-react";
 
 export default function AccountSettingsModal({ isOpen, onClose }) {
@@ -46,6 +49,94 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
     (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
     "";
   const userRole = user?.role || "HR";
+
+  // Avatar Upload / Remove State
+  const fileInputRef = useRef(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isRemovingAvatar, setIsRemovingAvatar] = useState(false);
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Please select a JPEG, PNG, or WebP image.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Profile photo must not exceed 5 MB.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    setSelectedFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+  };
+
+  const handleCancelPreview = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleUploadSelectedAvatar = async () => {
+    if (!selectedFile) return;
+
+    setIsUploadingAvatar(true);
+    try {
+      await uploadUserAvatarApi(selectedFile);
+      toast.success("Profile photo updated successfully!");
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || "Failed to upload profile photo.";
+      toast.error(msg);
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!confirm("Are you sure you want to remove your profile photo?")) {
+      return;
+    }
+
+    setIsRemovingAvatar(true);
+    try {
+      await removeUserAvatarApi();
+      toast.success("Profile photo removed.");
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || "Failed to remove profile photo.";
+      toast.error(msg);
+    } finally {
+      setIsRemovingAvatar(false);
+    }
+  };
 
   // Profile Edit State
   const [nameInput, setNameInput] = useState(userName);
@@ -205,7 +296,7 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-xl p-0 overflow-hidden rounded-3xl border border-white/90 shadow-2xl font-sans bg-white max-h-[92vh] flex flex-col">
+      <DialogContent showCloseButton={false} className="max-w-xl p-0 overflow-hidden rounded-3xl border border-white/90 shadow-2xl font-sans bg-white max-h-[92vh] flex flex-col">
         {/* ── 1. Top Hero Header with 3D Parallax Gradient ── */}
         <div className="shrink-0 bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-6 text-white rounded-t-3xl relative overflow-hidden select-none shadow-md">
           {/* Subtle Ambient 3D Glow Accents */}
@@ -287,9 +378,17 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
           {activeTab === "profile" && (
             <div className="space-y-4">
               <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-indigo-50/60 via-purple-50/40 to-slate-50 border border-indigo-100/80 shadow-2xs">
-                <div className="h-13 w-13 rounded-2xl bg-gradient-to-br from-[#4E35E8] to-[#CF2E9F] text-white flex items-center justify-center font-black text-base shadow-md shadow-indigo-500/20 shrink-0">
-                  {String(userName || "HR").slice(0, 2).toUpperCase()}
-                </div>
+                {previewUrl || user?.avatarUrl ? (
+                  <img
+                    src={previewUrl || user.avatarUrl}
+                    alt={userName}
+                    className="h-13 w-13 rounded-2xl object-cover border-2 border-indigo-200/80 shadow-md shadow-indigo-500/20 shrink-0"
+                  />
+                ) : (
+                  <div className="h-13 w-13 rounded-2xl bg-gradient-to-br from-[#4E35E8] to-[#CF2E9F] text-white flex items-center justify-center font-black text-base shadow-md shadow-indigo-500/20 shrink-0">
+                    {String(userName || "HR").slice(0, 2).toUpperCase()}
+                  </div>
+                )}
                 <div className="space-y-1 min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-extrabold text-base text-slate-900 truncate">{userName}</h3>
@@ -309,6 +408,111 @@ export default function AccountSettingsModal({ isOpen, onClose }) {
                   </div>
                   <p className="text-xs text-slate-500 font-medium truncate">{userEmail}</p>
                 </div>
+              </div>
+
+              {/* Profile Photo Management Section */}
+              <div className="p-4 rounded-2xl border border-slate-200/90 bg-slate-50/60 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Camera className="h-3.5 w-3.5 text-indigo-600" />
+                      Profile Photo
+                    </label>
+                    <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                      JPEG, PNG, or WebP up to 5 MB.
+                    </p>
+                  </div>
+                  {user?.avatarUrl && !selectedFile && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRemoveAvatar}
+                      disabled={isRemovingAvatar || isUploadingAvatar}
+                      className="h-8 px-2.5 text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl gap-1 cursor-pointer"
+                    >
+                      {isRemovingAvatar ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
+                      Remove Photo
+                    </Button>
+                  )}
+                </div>
+
+                {/* Hidden File Input */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                />
+
+                {/* Active Photo Preview Bar */}
+                {selectedFile ? (
+                  <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-indigo-50/80 border border-indigo-200/90 animate-in fade-in">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <img
+                        src={previewUrl}
+                        alt="Avatar preview"
+                        className="h-10 w-10 rounded-xl object-cover border border-indigo-300 shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-indigo-950 truncate">{selectedFile.name}</p>
+                        <p className="text-[10.5px] text-indigo-700 font-semibold">
+                          {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB • Ready to upload
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleCancelPreview}
+                        disabled={isUploadingAvatar}
+                        className="h-8 px-2.5 text-xs font-semibold text-slate-600 hover:bg-white/80 rounded-xl cursor-pointer"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleUploadSelectedAvatar}
+                        disabled={isUploadingAvatar}
+                        className="h-8 px-3 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs gap-1.5 cursor-pointer"
+                      >
+                        {isUploadingAvatar ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            <span>Uploading...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-3 w-3" />
+                            <span>Save Photo</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingAvatar || isRemovingAvatar}
+                      className="h-9 px-3.5 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 gap-1.5 shadow-2xs cursor-pointer"
+                    >
+                      <Upload className="h-3.5 w-3.5 text-indigo-600" />
+                      {user?.avatarUrl ? "Change Profile Photo" : "Upload Profile Photo"}
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* Full Name Edit Section */}
