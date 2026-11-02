@@ -54,6 +54,7 @@ export default function useFaceTracker({
   const isProcessingRef = useRef(false);
   const intervalIdRef = useRef(null);
   const lastVideoTimestampRef = useRef(0);
+  const lastViolationRefreshTsRef = useRef(0);
 
   // Instant response counters
   const violationDurationRef = useRef({
@@ -207,6 +208,15 @@ export default function useFaceTracker({
       const faceCount = results.faceLandmarks ? results.faceLandmarks.length : 0;
       const nowTs = Date.now();
 
+      // Failsafe auto-dismiss: if 3.5 seconds elapse without an active violation renewing it, clear warning
+      if (
+        lastViolationRefreshTsRef.current > 0 &&
+        nowTs - lastViolationRefreshTsRef.current > 3500
+      ) {
+        setCurrentWarning(null);
+        lastViolationRefreshTsRef.current = 0;
+      }
+
       // ── CASE 1: NO FACE DETECTED ─────────────────────────────
       if (faceCount === 0) {
         violationDurationRef.current.noFaceMs += checkIntervalMs;
@@ -215,6 +225,7 @@ export default function useFaceTracker({
 
         // Instant response (>= 300ms)
         if (violationDurationRef.current.noFaceMs >= 1200) {
+          lastViolationRefreshTsRef.current = nowTs;
           setCurrentWarning("Face not detected. Please stay in front of camera.");
 
           if (
@@ -245,6 +256,7 @@ export default function useFaceTracker({
 
         // Instant response (>= 300ms)
         if (violationDurationRef.current.multipleFacesMs >= 1000) {
+          lastViolationRefreshTsRef.current = nowTs;
           setCurrentWarning("Multiple faces detected! Only candidate is allowed.");
 
           if (
@@ -270,6 +282,15 @@ export default function useFaceTracker({
       // ── CASE 3: SINGLE CANDIDATE FACE - HEAD POSE & GAZE ───
       violationDurationRef.current.noFaceMs = 0;
       violationDurationRef.current.multipleFacesMs = 0;
+
+      // Immediately clear no-face or multiple-faces warning since candidate is clearly present alone
+      setCurrentWarning((prev) => {
+        if (!prev) return null;
+        if (prev.startsWith("Face not detected") || prev.startsWith("Multiple faces")) {
+          return null;
+        }
+        return prev;
+      });
 
       const landmarks = results.faceLandmarks[0];
 
@@ -303,9 +324,8 @@ export default function useFaceTracker({
         if (isLookingAway) {
           // STRICT RULE: Candidate looking away CANNOT be flagged as "Different Person"!
           violationDurationRef.current.impersonationMs = 0;
-          if (isDifferentPerson) {
-            setIsDifferentPerson(false);
-          }
+          setIsDifferentPerson(false);
+          setCurrentWarning((prev) => (prev && prev.startsWith("Identity Mismatch") ? null : prev));
 
           violationDurationRef.current.lookingAwayMs += checkIntervalMs;
 
@@ -319,6 +339,7 @@ export default function useFaceTracker({
 
           // Immediate visual warning under camera after ~300ms
           if (violationDurationRef.current.lookingAwayMs >= 300) {
+            lastViolationRefreshTsRef.current = nowTs;
             setCurrentWarning(
               isLookingDown
                 ? "Looking down detected. Please keep eyes on screen."
@@ -354,9 +375,18 @@ export default function useFaceTracker({
 
         // ── CASE B: CANDIDATE LOOKING STRAIGHT AT SCREEN (Frontal) ──
         violationDurationRef.current.lookingAwayMs = 0;
-        if (currentWarning?.startsWith("Looking")) {
-          setCurrentWarning(null);
-        }
+        // Candidate is looking straight at the screen: immediately clear gaze/presence warnings!
+        setCurrentWarning((prev) => {
+          if (!prev) return null;
+          if (
+            prev.startsWith("Looking") ||
+            prev.startsWith("Face not detected") ||
+            prev.startsWith("Multiple faces")
+          ) {
+            return null;
+          }
+          return prev;
+        });
 
         // Load baseline descriptor if not loaded
         if (!baselineDescriptorRef.current && typeof window !== "undefined") {
@@ -412,6 +442,7 @@ export default function useFaceTracker({
 
                   // Must persist continuously for at least 2500ms (2.5 seconds)
                   if (violationDurationRef.current.impersonationMs >= 2500) {
+                    lastViolationRefreshTsRef.current = Date.now();
                     setIsDifferentPerson(true);
                     setCurrentWarning("Identity Mismatch: Face does not match registered candidate!");
 
@@ -439,9 +470,7 @@ export default function useFaceTracker({
                   );
                   if (violationDurationRef.current.impersonationMs === 0) {
                     setIsDifferentPerson(false);
-                    if (currentWarning?.startsWith("Identity Mismatch")) {
-                      setCurrentWarning(null);
-                    }
+                    setCurrentWarning((prev) => (prev && prev.startsWith("Identity Mismatch") ? null : prev));
                   }
                 }
               }
@@ -475,6 +504,7 @@ export default function useFaceTracker({
 
                 // 2500ms confirmation window
                 if (violationDurationRef.current.impersonationMs >= 2500) {
+                  lastViolationRefreshTsRef.current = nowTs;
                   setIsDifferentPerson(true);
                   setCurrentWarning("Identity Mismatch: Face does not match registered candidate!");
 
@@ -501,9 +531,7 @@ export default function useFaceTracker({
                 );
                 if (violationDurationRef.current.impersonationMs === 0) {
                   setIsDifferentPerson(false);
-                  if (currentWarning?.startsWith("Identity Mismatch")) {
-                    setCurrentWarning(null);
-                  }
+                  setCurrentWarning((prev) => (prev && prev.startsWith("Identity Mismatch") ? null : prev));
                 }
               }
             }
