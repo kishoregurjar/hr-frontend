@@ -8,30 +8,25 @@ import {
   User,
   Mail,
   Phone,
-  GraduationCap,
-  Sparkles,
+  Briefcase,
   Gamepad2,
   CheckCircle2,
-  KeyRound,
   RotateCw,
   Loader2,
   ShieldCheck,
-  Lock,
   ArrowRight,
   ArrowLeft,
-  Rocket,
   Check,
-  Layers,
   AlertCircle,
   Video,
-  AlertTriangle,
-  RefreshCw,
   Camera,
-  UserCheck,
-  ScanFace,
+  X,
+  Wifi,
+  Monitor,
+  Mic,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { sendCandidateOtp, verifyCandidateOtp } from "@/lib/api/attempts";
 import {
@@ -41,16 +36,20 @@ import {
   loadFaceApiModels,
 } from "../../utils/faceMatching";
 
-const AssessmentPreStart = ({
+export default function AssessmentPreStart({
   token = "",
   assessment = {},
   candidate = {},
   isStarting = false,
   onStart,
-}) => {
-  // ── 4 Dedicated Steps: 1: Company Info, 2: Candidate Profile, 3: OTP Security, 4: Rules & Start ──
+}) {
+  // ── Unified 3-Step Assessment-First Flow ─────────────────────────
+  // Step 1: Assessment Details
+  // Step 2: Candidate Verification (Triggers OTP Modal)
+  // Step 3: Before You Start (Rules + System Check + Identity Photo)
   const [step, setStep] = useState(1);
 
+  // Candidate Data State
   const [candidateName, setCandidateName] = useState(
     candidate?.name || candidate?.fullName || ""
   );
@@ -61,15 +60,15 @@ const AssessmentPreStart = ({
     candidate?.phone || candidate?.mobileNumber || ""
   );
   const [experience, setExperience] = useState(
-    candidate?.experience || "0-1 Years (Fresher)"
+    candidate?.experience || "0-1 Years (Entry Level)"
   );
   const [accepted, setAccepted] = useState(false);
   const [nameError, setNameError] = useState("");
   const [emailError, setEmailError] = useState("");
 
-  // ── OTP Verification State ──────────────────────────────────────
+  // OTP Modal State
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
   const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
@@ -77,20 +76,44 @@ const AssessmentPreStart = ({
   const [otpError, setOtpError] = useState("");
   const [candidateAccessToken, setCandidateAccessToken] = useState("");
   const [devHint, setDevHint] = useState("");
+  const otpInputRefs = useRef([]);
+
+  // System Readiness & Identity Verification State
   const [cameraError, setCameraError] = useState("");
-  const [isRequestingCamera, setIsRequestingCamera] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState(null);
   const [isCapturingPhoto, setIsCapturingPhoto] = useState(false);
   const [photoVerified, setPhotoVerified] = useState(false);
   const [prestartCameraActive, setPrestartCameraActive] = useState(false);
   const [isCameraStarting, setIsCameraStarting] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const [micDetected, setMicDetected] = useState(true);
+
   const prestartVideoRef = useRef(null);
   const prestartStreamRef = useRef(null);
   const prestartLandmarkerRef = useRef(null);
 
-  const otpInputRefs = useRef([]);
+  // Sync candidate prop if loaded asynchronously
+  useEffect(() => {
+    if (candidate?.name && !candidateName) setCandidateName(candidate.name);
+    if (candidate?.email && !email) setEmail(candidate.email);
+    if (candidate?.phone && !mobileNumber) setMobileNumber(candidate.phone);
+  }, [candidate]);
 
-  // Timer countdown effect for OTP resend
+  // Online status monitoring
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setIsOnline(navigator.onLine);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  // OTP Countdown timer
   useEffect(() => {
     let timer;
     if (countdown > 0) {
@@ -101,13 +124,7 @@ const AssessmentPreStart = ({
     return () => clearInterval(timer);
   }, [countdown]);
 
-  // Sync candidate prop if loaded asynchronously
-  useEffect(() => {
-    if (candidate?.name && !candidateName) setCandidateName(candidate.name);
-    if (candidate?.email && !email) setEmail(candidate.email);
-    if (candidate?.phone && !mobileNumber) setMobileNumber(candidate.phone);
-  }, [candidate]);
-
+  // Assessment Information Extraction
   const durationMinutes =
     assessment?.durationMinutes ??
     assessment?.duration ??
@@ -151,33 +168,34 @@ const AssessmentPreStart = ({
     candidate?.companyLogo ||
     null;
 
-  const jobPosition = assessment?.title || "Assessment";
-  const aboutDescription =
+  const assessmentTitle = assessment?.title || "Assessment Evaluation";
+  const assessmentDescription =
     assessment?.description ||
     assessment?.about ||
-    "Official candidate skill & cognitive aptitude evaluation.";
+    "Technical skill, problem-solving, and cognitive aptitude assessment.";
 
   // Monogram initials for fallback logo
-  const monogram = companyName
-    .split(" ")
-    .filter(Boolean)
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase() || "FC";
+  const monogram =
+    companyName
+      .split(" ")
+      .filter(Boolean)
+      .map((w) => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "HQ";
 
-  // Parse skill tags if present in description or comma-separated
-  const skillChips = aboutDescription
-    .split(/[,•|]+/)
+  // Parse skill topics cleanly
+  const topicsList = assessmentDescription
+    .split(/[,•|\n]+/)
     .map((s) => s.trim())
-    .filter((s) => s.length > 0 && s.length < 25)
-    .slice(0, 6);
+    .filter((s) => s.length > 0 && s.length < 30)
+    .slice(0, 5);
 
   // ── Handle Send OTP ─────────────────────────────────────────────
   const handleSendOtp = async (targetEmail = email) => {
     const cleanEmail = (targetEmail || "").trim();
     if (!cleanEmail || !cleanEmail.includes("@")) {
-      setEmailError("Please provide a valid email address.");
+      setEmailError("Please enter a valid email address.");
       return false;
     }
     setEmailError("");
@@ -190,8 +208,7 @@ const AssessmentPreStart = ({
         invitationToken: token,
       });
 
-      setOtpSent(true);
-      setCountdown(60);
+      setCountdown(30);
       setOtpDigits(["", "", "", "", "", ""]);
       if (res?.devOtp) {
         setDevHint(res.devOtp);
@@ -275,26 +292,18 @@ const AssessmentPreStart = ({
           localStorage.setItem("candidateAccessToken", tokenVal);
         }
       }
-      toast.success("Email verified successfully!");
-      setStep(4);
+      toast.success("Email verified successfully");
+      setIsOtpModalOpen(false);
+      setStep(3); // Direct transition to Rules & System Check
     } catch (err) {
       setOtpError(err?.message || "Invalid verification code. Please check and try again.");
-      toast.error(err?.message || "Verification failed.");
     } finally {
       setIsVerifyingOtp(false);
     }
   };
 
-  const handleVerifyOtp = async () => {
-    await triggerVerifyWithDigits(otpDigits);
-  };
-
-  // ── Step Transitions ───────────────────────────────────────────
-  const handleStep1ToStep2 = () => {
-    setStep(2);
-  };
-
-  const handleStep2ToStep3 = async () => {
+  // ── Candidate Verification Submission (Triggers OTP Modal) ─────
+  const handleProceedToOtp = async () => {
     if (!candidateName.trim()) {
       setNameError("Please enter your full name.");
       return;
@@ -308,26 +317,17 @@ const AssessmentPreStart = ({
     setEmailError("");
 
     if (isEmailVerified) {
-      setStep(4);
+      setStep(3);
       return;
     }
 
-    setStep(3);
-    if (!otpSent) {
-      await handleSendOtp(email);
+    const sent = await handleSendOtp(email);
+    if (sent) {
+      setIsOtpModalOpen(true);
     }
   };
 
-  const handleStep3ToStep4 = () => {
-    if (!isEmailVerified) {
-      toast.error("Please complete the OTP verification to proceed.");
-      return;
-    }
-    setStep(4);
-  };
-
-
-  // ── Pre-Start Camera Clean-up ──
+  // ── Pre-Start Camera Clean-up ───────────────────────────────────
   useEffect(() => {
     return () => {
       if (prestartStreamRef.current) {
@@ -335,7 +335,9 @@ const AssessmentPreStart = ({
         prestartStreamRef.current = null;
       }
       if (prestartLandmarkerRef.current) {
-        try { prestartLandmarkerRef.current.close(); } catch {}
+        try {
+          prestartLandmarkerRef.current.close();
+        } catch {}
         prestartLandmarkerRef.current = null;
       }
     };
@@ -370,7 +372,7 @@ const AssessmentPreStart = ({
       // Pre-load Neural Face Recognition models in background
       loadFaceApiModels().catch(() => {});
 
-      // Initialize FaceLandmarker
+      // Initialize FaceLandmarker fallback
       if (!prestartLandmarkerRef.current) {
         try {
           const { FaceLandmarker, FilesetResolver } = await import("@mediapipe/tasks-vision");
@@ -392,7 +394,7 @@ const AssessmentPreStart = ({
               runningMode: "VIDEO",
               numFaces: 2,
             });
-          } catch (_gpu) {
+          } catch {
             landmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
               baseOptions: {
                 modelAssetPath: "/models/face_landmarker.task",
@@ -456,12 +458,12 @@ const AssessmentPreStart = ({
       }
 
       if (!descriptor && !features) {
-        toast.error("No face detected clearly! Please look directly at the camera and try again.");
+        toast.error("No face detected clearly. Please face the camera directly and try again.");
         setIsCapturingPhoto(false);
         return;
       }
 
-      // Lock neural descriptor and baseline features in both storages
+      // Lock neural descriptor and baseline features in storages for live proctoring
       if (descriptor && descriptor.length === 128) {
         const descJson = JSON.stringify(descriptor);
         sessionStorage.setItem("candidate_face_descriptor", descJson);
@@ -484,7 +486,7 @@ const AssessmentPreStart = ({
 
       setCapturedPhoto(photoDataUrl);
       setPhotoVerified(true);
-      toast.success("✓ Candidate identity registered & photo saved!");
+      toast.success("Identity verification photo captured successfully");
     } catch (err) {
       console.warn("Capture error:", err);
       toast.error("Photo capture error. Please try again.");
@@ -507,6 +509,7 @@ const AssessmentPreStart = ({
     handleStartPrestartCamera();
   };
 
+  // ── Final Start Assessment Handler ─────────────────────────────
   const handleStartClick = async () => {
     if (!candidateName.trim()) {
       setNameError("Please enter your full name.");
@@ -515,922 +518,654 @@ const AssessmentPreStart = ({
     }
 
     if (!isEmailVerified) {
-      toast.error("Please verify your email address before starting.");
-      setStep(3);
+      toast.error("Please complete email verification before starting.");
+      setStep(2);
+      return;
+    }
+
+    if (!photoVerified) {
+      toast.error("Please complete identity photo verification before starting.");
       return;
     }
 
     if (!accepted) {
-      toast.error("Please accept the assessment guidelines & honor code.");
+      toast.error("Please accept the assessment rules and honor code to proceed.");
       return;
     }
 
-    setCameraError("");
-    setIsRequestingCamera(true);
-
-    try {
-      if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 640 }, height: { ideal: 480 } },
-          audio: false,
-        });
-        stream.getTracks().forEach((track) => track.stop());
-      }
-      setIsRequestingCamera(false);
-
-      onStart?.({
-        name: candidateName.trim(),
-        email: email.trim(),
-        phone: mobileNumber.trim(),
-        experience,
-        candidateAccessToken,
-      });
-    } catch (err) {
-      setIsRequestingCamera(false);
-      console.warn("[AssessmentPreStart] Camera access verification notice:", err);
-      let errorMsg =
-        "Webcam access is required for proctored testing. Please enable camera access to start.";
-      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
-        errorMsg =
-          "Camera permission was blocked. Please click the camera/lock icon in your browser address bar, set Camera to 'Allow', and click 'Retry Camera Access'.";
-      } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
-        errorMsg = "No webcam detected on your device. Please connect a working camera and retry.";
-      } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
-        errorMsg =
-          "Your camera is in use by another application (Zoom, Teams, Meet). Please close it and retry.";
-      }
-      setCameraError(errorMsg);
-      toast.error("Camera Access Required", { description: errorMsg });
-    }
+    onStart?.({
+      name: candidateName.trim(),
+      email: email.trim(),
+      phone: mobileNumber.trim(),
+      experience,
+      candidateAccessToken,
+    });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50/80 font-sans text-slate-900 flex flex-col items-center py-8 sm:py-12 px-4 sm:px-8 relative selection:bg-indigo-500 selection:text-white">
-      {/* Background Decorative Ambient Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 rounded-full blur-3xl pointer-events-none" />
-
-      {/* ── Outer Full-Width Container ── */}
-      <div className="w-full max-w-4xl space-y-6 relative z-10">
-        {/* ── 1. Top Header: Branded High-Trust Employer Header ── */}
-        <header className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between selection:bg-slate-200">
+      {/* ── Top Minimal Assessment Header ────────────────────────── */}
+      <header className="w-full bg-white border-b border-slate-200 px-4 sm:px-8 py-3.5 sticky top-0 z-20">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
             {companyLogo ? (
               <img
                 src={companyLogo}
                 alt={companyName}
-                className="h-14 w-14 rounded-2xl object-contain bg-slate-50 p-2 border border-slate-200 shadow-xs"
+                className="h-8 w-auto max-w-[120px] object-contain rounded"
               />
             ) : (
-              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#4E35E8] to-[#CF2E9F] text-white flex items-center justify-center font-black text-lg shadow-md shadow-indigo-500/20 shrink-0 tracking-wider">
+              <div className="h-8 w-8 rounded bg-slate-900 text-white font-bold text-xs flex items-center justify-center tracking-wider">
                 {monogram}
               </div>
             )}
-
-            <div>
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 flex-wrap">
-                <span className="text-slate-800 font-extrabold">{companyName}</span>
-                <span className="text-slate-300">•</span>
-                <span className="inline-flex items-center gap-1 text-[10.5px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-2 py-0.5 rounded-full shadow-2xs">
-                  <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                  VERIFIED EMPLOYER
-                </span>
-                <span className="text-slate-300 hidden sm:inline">•</span>
-                <span className="text-slate-400 font-semibold hidden sm:inline">Secure Proctored Portal</span>
-              </div>
-
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
-                {jobPosition}
-              </h1>
-            </div>
+            <div className="h-4 w-px bg-slate-200 hidden sm:block" />
+            <span className="text-xs font-semibold text-slate-700 truncate max-w-[200px] sm:max-w-none">
+              {companyName}
+            </span>
           </div>
 
-          <div className="hidden sm:flex items-center gap-2 bg-slate-50 border border-slate-200 px-3.5 py-1.5 rounded-2xl self-start sm:self-auto shadow-2xs">
-            <ShieldCheck className="h-4 w-4 text-indigo-600" />
-            <span className="text-xs font-bold text-slate-700">Official Candidate Screening</span>
+          {/* Minimal Flow Indicator */}
+          <div className="text-xs font-medium text-slate-500">
+            {step === 1 && "Step 1 of 3 · Assessment Details"}
+            {step === 2 && "Step 2 of 3 · Candidate Verification"}
+            {step === 3 && "Step 3 of 3 · Before You Start"}
           </div>
-        </header>
+        </div>
+      </header>
 
-        {/* ── 2. Stepper Progress Bar (Connected Modern SaaS Pills) ── */}
-        <nav aria-label="Progress" className="flex items-center gap-2 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80 overflow-x-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex-nowrap sm:flex-wrap">
-          {/* Step 1: Company Info */}
-          <button
-            type="button"
-            onClick={() => setStep(1)}
-            className={`flex-1 min-w-[130px] flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
-              step === 1
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
-                : step > 1
-                ? "bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100/60"
-                : "bg-white text-slate-600 border border-slate-200/60 hover:bg-slate-50"
-            }`}
-          >
-            <span
-              className={`flex h-4.5 w-4.5 items-center justify-center rounded-full text-[10px] font-black ${
-                step === 1
-                  ? "bg-white text-indigo-700"
-                  : step > 1
-                  ? "bg-emerald-600 text-white"
-                  : "bg-slate-200 text-slate-700"
-              }`}
-            >
-              {step > 1 ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : "1"}
-            </span>
-            <span>Company Info</span>
-          </button>
-
-          {/* Step 2: Candidate Profile */}
-          <button
-            type="button"
-            onClick={() => setStep(2)}
-            className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
-              step === 2
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
-                : step > 2
-                ? "bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100/60"
-                : "bg-white text-slate-600 border border-slate-200/60 hover:bg-slate-50"
-            }`}
-          >
-            <span
-              className={`flex h-4.5 w-4.5 items-center justify-center rounded-full text-[10px] font-black ${
-                step === 2
-                  ? "bg-white text-indigo-700"
-                  : step > 2
-                  ? "bg-emerald-600 text-white"
-                  : "bg-slate-200 text-slate-700"
-              }`}
-            >
-              {step > 2 ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : "2"}
-            </span>
-            <span>Candidate Profile</span>
-          </button>
-
-          {/* Step 3: OTP Security */}
-          <button
-            type="button"
-            onClick={() => candidateName && email && setStep(3)}
-            className={`flex-1 min-w-[130px] flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
-              step === 3
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
-                : isEmailVerified
-                ? "bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100/60"
-                : "bg-white text-slate-600 border border-slate-200/60 hover:bg-slate-50"
-            }`}
-          >
-            {isEmailVerified ? (
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-            ) : (
-              <span
-                className={`flex h-4.5 w-4.5 items-center justify-center rounded-full text-[10px] font-black ${
-                  step === 3
-                    ? "bg-white text-indigo-700"
-                    : "bg-slate-200 text-slate-700"
-                }`}
-              >
-                3
-              </span>
-            )}
-            <span>OTP Security</span>
-          </button>
-
-          {/* Step 4: Rules & Start */}
-          <button
-            type="button"
-            onClick={() => isEmailVerified && setStep(4)}
-            disabled={!isEmailVerified}
-            className={`flex-1 min-w-[130px] flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all shrink-0 whitespace-nowrap ${
-              step === 4
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
-                : "bg-white text-slate-600 border border-slate-200/60 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 cursor-pointer"
-            }`}
-          >
-            <span
-              className={`flex h-4.5 w-4.5 items-center justify-center rounded-full text-[10px] font-black ${
-                step === 4
-                  ? "bg-white text-indigo-700"
-                  : "bg-slate-200 text-slate-700"
-              }`}
-            >
-              4
-            </span>
-            <span>Rules & Start</span>
-          </button>
-        </nav>
-
-        {/* ── 3. Step Content Card Container ── */}
-        <main className="rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-6 sm:p-9 shadow-[0_12px_30px_rgba(79,70,229,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 space-y-7">
-          {/* ══════════════════════════════════════════════════════════════
-              STEP 1: COMPANY INFO & WELCOME
-             ══════════════════════════════════════════════════════════════ */}
+      {/* ── Main Step Content Container ──────────────────────────── */}
+      <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+        <div className="w-full max-w-2xl bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8">
+          {/* ════════════════════════════════════════════════════════
+              STEP 1: ASSESSMENT DETAILS
+             ════════════════════════════════════════════════════════ */}
           {step === 1 && (
             <div className="space-y-6">
-              {/* Step Header */}
-              <div className="flex items-start gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center font-bold shadow-2xs shrink-0 mt-0.5">
-                  <Building2 className="h-6 w-6 text-indigo-600" />
-                </div>
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                    Step 1: Welcome to {companyName}
-                  </h2>
-                  <p className="text-sm font-medium text-slate-600 mt-0.5">
-                    You've been selected to complete the evaluation for{" "}
-                    <strong className="text-indigo-700 font-bold">{jobPosition}</strong>.
-                  </p>
-                </div>
-              </div>
-
-              {/* 3 Metric Cards with Refined Visual Hierarchy */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
-                {/* Duration Card */}
-                <div className="flex items-center gap-4 rounded-2xl border border-amber-200/80 p-4.5 bg-gradient-to-br from-amber-50/50 via-white to-amber-50/20 shadow-2xs">
-                  <div className="h-12 w-12 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-500/20">
-                    <Clock className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <span className="text-[11px] font-bold text-amber-800/80 uppercase tracking-wider block">
-                      Total Duration
-                    </span>
-                    <span className="text-lg font-black text-slate-900">
-                      {durationMinutes} Minutes
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-medium block">
-                      Timed Test Session
-                    </span>
-                  </div>
-                </div>
-
-                {/* Technical Questions Card */}
-                <div className="flex items-center gap-4 rounded-2xl border border-indigo-200/80 p-4.5 bg-gradient-to-br from-indigo-50/50 via-white to-indigo-50/20 shadow-2xs">
-                  <div className="h-12 w-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-indigo-500/20">
-                    <FileText className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <span className="text-[11px] font-bold text-indigo-800/80 uppercase tracking-wider block">
-                      Technical Questions
-                    </span>
-                    <span className="text-lg font-black text-slate-900">
-                      {totalQuestions} {totalQuestions === 1 ? "MCQ" : "MCQs"}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-medium block">
-                      Single-Choice Domain Items
-                    </span>
-                  </div>
-                </div>
-
-                {/* Cognitive Games Card */}
-                <div className="flex items-center gap-4 rounded-2xl border border-purple-200/80 p-4.5 bg-gradient-to-br from-purple-50/50 via-white to-pink-50/20 shadow-2xs">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-[#4E35E8] to-[#CF2E9F] text-white flex items-center justify-center shrink-0 shadow-md shadow-purple-500/20">
-                    <Gamepad2 className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <span className="text-[11px] font-bold text-purple-800/80 uppercase tracking-wider block">
-                      Cognitive Modules
-                    </span>
-                    <span className="text-lg font-black text-slate-900">
-                      {totalGames} {totalGames === 1 ? "Game" : "Games"}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-medium block">
-                      Neuro-Aptitude Puzzles
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* ABOUT THIS ASSESSMENT Box with Dynamic Chips */}
-              <div className="rounded-2xl border border-slate-200/90 bg-slate-50/60 p-5 space-y-3 shadow-2xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                    <Layers className="h-4 w-4 text-indigo-600" />
-                    About This Assessment
-                  </span>
-                  <span className="text-[11px] text-slate-400 font-medium">Evaluation Blueprint</span>
-                </div>
-
-                {skillChips.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-0.5">
-                    {skillChips.map((chip, idx) => (
-                      <span
-                        key={idx}
-                        className="text-xs font-bold bg-white text-indigo-700 border border-indigo-200/80 px-2.5 py-1 rounded-xl shadow-2xs"
-                      >
-                        {chip}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                <p className="text-xs text-slate-600 font-medium leading-relaxed whitespace-pre-wrap">
-                  {aboutDescription}
+              {/* Header */}
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Candidate Assessment
+                </p>
+                <h1 className="text-2xl font-bold text-slate-900 mt-1">
+                  {assessmentTitle}
+                </h1>
+                <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                  {assessmentDescription}
                 </p>
               </div>
 
-              {/* Candidate Anxiety Reducer Note */}
-              <div className="flex items-center gap-3 p-3.5 px-4 rounded-2xl bg-indigo-50/60 border border-indigo-200/80 text-indigo-950 text-xs font-medium shadow-2xs">
-                <AlertCircle className="h-4 w-4 text-indigo-600 shrink-0" />
-                <span>
-                  <strong>Candidate Note:</strong> Your assessment timer will <strong>NOT</strong> start until you complete profile verification and accept the honor code in Step 4.
-                </span>
+              {/* Assessment Summary Key Stats */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 py-4 border-y border-slate-100">
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
+                  <span className="text-xs text-slate-500 flex items-center gap-1.5 font-medium">
+                    <Clock className="h-3.5 w-3.5 text-slate-500" />
+                    Duration
+                  </span>
+                  <p className="text-base font-semibold text-slate-900 mt-1">
+                    {durationMinutes} minutes
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
+                  <span className="text-xs text-slate-500 flex items-center gap-1.5 font-medium">
+                    <FileText className="h-3.5 w-3.5 text-slate-500" />
+                    Questions
+                  </span>
+                  <p className="text-base font-semibold text-slate-900 mt-1">
+                    {totalQuestions} {totalQuestions === 1 ? "Question" : "Questions"}
+                  </p>
+                </div>
+
+                {totalGames > 0 && (
+                  <div className="p-3 rounded-lg bg-slate-50 border border-slate-100 col-span-2 sm:col-span-1">
+                    <span className="text-xs text-slate-500 flex items-center gap-1.5 font-medium">
+                      <Gamepad2 className="h-3.5 w-3.5 text-slate-500" />
+                      Challenges
+                    </span>
+                    <p className="text-base font-semibold text-slate-900 mt-1">
+                      {totalGames} Cognitive {totalGames === 1 ? "Game" : "Games"}
+                    </p>
+                  </div>
+                )}
               </div>
 
-              {/* Action Button */}
-              <div className="flex justify-end pt-2">
+              {/* Topics / Competencies */}
+              {topicsList.length > 0 && (
+                <div className="space-y-2">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    Topics Covered
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {topicsList.map((topic, i) => (
+                      <span
+                        key={i}
+                        className="px-2.5 py-1 rounded bg-slate-100 text-slate-700 text-xs font-medium"
+                      >
+                        {topic}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Candidate Informational Note */}
+              <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 leading-relaxed flex items-start gap-2.5">
+                <AlertCircle className="h-4 w-4 text-slate-500 shrink-0 mt-0.5" />
+                <p>
+                  Your assessment timer will only start after you complete system verification and click <strong>Start Assessment</strong>. Please ensure you are in a quiet room with stable connectivity.
+                </p>
+              </div>
+
+              {/* CTA */}
+              <div className="pt-2 flex justify-end">
                 <Button
                   type="button"
-                  onClick={handleStep1ToStep2}
-                  className="h-11 px-7 font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md shadow-indigo-500/20 transition-all gap-2 cursor-pointer"
+                  onClick={() => setStep(2)}
+                  className="w-full sm:w-auto h-10 px-6 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-lg cursor-pointer"
                 >
-                  <span>Continue to Candidate Profile</span>
-                  <ArrowRight className="h-4 w-4" />
+                  <span>Continue</span>
+                  <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
             </div>
           )}
 
-          {/* ══════════════════════════════════════════════════════════════
-              STEP 2: CANDIDATE PROFILE FORM
-             ══════════════════════════════════════════════════════════════ */}
+          {/* ════════════════════════════════════════════════════════
+              STEP 2: CANDIDATE VERIFICATION
+             ════════════════════════════════════════════════════════ */}
           {step === 2 && (
             <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center font-bold shadow-2xs shrink-0 mt-0.5">
-                  <User className="h-6 w-6 text-indigo-600" />
-                </div>
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                    Step 2: Candidate Profile Details
-                  </h2>
-                  <p className="text-sm font-medium text-slate-600 mt-0.5">
-                    Confirm your personal details and contact info for {companyName}'s hiring records.
-                  </p>
-                </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Identity Confirmation
+                </p>
+                <h1 className="text-2xl font-bold text-slate-900 mt-1">
+                  Candidate Verification
+                </h1>
+                <p className="text-sm text-slate-600 mt-1.5">
+                  Confirm your details before proceeding to the system readiness check.
+                </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
-                {/* Full Name */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Full Name <span className="text-rose-500">*</span>
+              {/* Candidate Information Form */}
+              <div className="space-y-4 pt-2">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    Full Name
                   </label>
                   <div className="relative">
-                    <User className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
                     <input
                       type="text"
-                      placeholder="e.g. John Doe"
                       value={candidateName}
                       onChange={(e) => {
                         setCandidateName(e.target.value);
-                        setNameError("");
+                        if (nameError) setNameError("");
                       }}
-                      className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs"
+                      placeholder="e.g. Rohit Panchal"
+                      className={`w-full h-10 px-3 text-xs bg-white rounded-lg border ${
+                        nameError ? "border-rose-500" : "border-slate-300"
+                      } focus:outline-none focus:border-slate-900 text-slate-900`}
                     />
                   </div>
-                  {nameError && <p className="text-xs font-semibold text-rose-600">{nameError}</p>}
+                  {nameError && (
+                    <p className="text-[11px] text-rose-600 font-medium mt-1">
+                      {nameError}
+                    </p>
+                  )}
                 </div>
 
-                {/* Email Address */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Email Address <span className="text-rose-500">*</span>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-medium text-slate-700">
+                      Email Address
+                    </label>
+                    {isEmailVerified ? (
+                      <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                        <Check className="h-3 w-3" />
+                        Verified
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-slate-500">
+                        Requires OTP verification
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    type="email"
+                    value={email}
+                    disabled={isEmailVerified}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (emailError) setEmailError("");
+                    }}
+                    placeholder="e.g. candidate@example.com"
+                    className={`w-full h-10 px-3 text-xs bg-white rounded-lg border ${
+                      emailError ? "border-rose-500" : "border-slate-300"
+                    } ${isEmailVerified ? "bg-slate-50 text-slate-500 cursor-not-allowed" : "text-slate-900"} focus:outline-none focus:border-slate-900`}
+                  />
+                  {emailError && (
+                    <p className="text-[11px] text-rose-600 font-medium mt-1">
+                      {emailError}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    Mobile Number <span className="text-slate-400 font-normal">(Optional)</span>
                   </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-                    <input
-                      type="email"
-                      placeholder="candidate@example.com"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        setEmailError("");
-                        setIsEmailVerified(false);
-                      }}
-                      className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs"
-                    />
-                  </div>
-                  {emailError && <p className="text-xs font-semibold text-rose-600">{emailError}</p>}
+                  <input
+                    type="tel"
+                    value={mobileNumber}
+                    onChange={(e) => setMobileNumber(e.target.value)}
+                    placeholder="e.g. +91 98765 43210"
+                    className="w-full h-10 px-3 text-xs bg-white rounded-lg border border-slate-300 focus:outline-none focus:border-slate-900 text-slate-900"
+                  />
                 </div>
 
-                {/* Mobile Number */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Mobile / Contact Number
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-                    <input
-                      type="tel"
-                      placeholder="e.g. +1 555-0123"
-                      value={mobileNumber}
-                      onChange={(e) => setMobileNumber(e.target.value)}
-                      className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs"
-                    />
-                  </div>
-                </div>
-
-                {/* Experience Level */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Experience Level
                   </label>
-                  <div className="relative">
-                    <GraduationCap className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-                    <select
-                      value={experience}
-                      onChange={(e) => setExperience(e.target.value)}
-                      className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-2xs cursor-pointer"
-                    >
-                      <option value="0-1 Years (Fresher / Student)">0-1 Years (Fresher / Student)</option>
-                      <option value="1-3 Years (Junior)">1-3 Years (Junior Professional)</option>
-                      <option value="3-5 Years (Mid-Level)">3-5 Years (Mid-Level Developer)</option>
-                      <option value="5+ Years (Senior)">5+ Years (Senior Engineer)</option>
-                    </select>
-                  </div>
+                  <select
+                    value={experience}
+                    onChange={(e) => setExperience(e.target.value)}
+                    className="w-full h-10 px-3 text-xs bg-white rounded-lg border border-slate-300 focus:outline-none focus:border-slate-900 text-slate-900"
+                  >
+                    <option value="0-1 Years (Entry Level)">0–1 Years (Entry Level)</option>
+                    <option value="1-3 Years (Associate)">1–3 Years (Associate)</option>
+                    <option value="3-5 Years (Mid-Senior)">3–5 Years (Mid-Senior)</option>
+                    <option value="5+ Years (Senior / Lead)">5+ Years (Senior / Lead)</option>
+                  </select>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+              {/* Navigation Action Buttons */}
+              <div className="pt-4 flex items-center justify-between border-t border-slate-100">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setStep(1)}
-                  className="h-11 px-6 font-bold text-xs border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl cursor-pointer"
+                  className="h-10 px-4 text-xs font-medium text-slate-700 border-slate-300 hover:bg-slate-50 cursor-pointer"
                 >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Company Info
+                  <ArrowLeft className="h-4 w-4 mr-1.5" />
+                  <span>Back</span>
                 </Button>
 
                 <Button
                   type="button"
-                  onClick={handleStep2ToStep3}
-                  className="h-11 px-7 font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md shadow-indigo-500/20 transition-all gap-2 cursor-pointer"
+                  onClick={handleProceedToOtp}
+                  disabled={isSendingOtp}
+                  className="h-10 px-6 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-lg cursor-pointer"
                 >
-                  <span>Proceed to OTP Verification</span>
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* ══════════════════════════════════════════════════════════════
-              STEP 3: EMAIL OTP VERIFICATION
-             ══════════════════════════════════════════════════════════════ */}
-          {step === 3 && (
-            <div className="space-y-6">
-              {/* Step 3 Header */}
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center font-bold shadow-2xs shrink-0 mt-0.5">
-                    <KeyRound className="h-6 w-6 text-indigo-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                      Step 3: Email OTP Verification
-                    </h2>
-                    <p className="text-sm font-medium text-slate-600 mt-0.5">
-                      A 6-digit passcode has been dispatched to authenticate your candidate identity.
-                    </p>
-                  </div>
-                </div>
-
-                {/* OTP Gate Badge */}
-                <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80 shrink-0 mt-1 shadow-2xs">
-                  <Lock className="h-3.5 w-3.5 text-indigo-600" />
-                  <span>OTP Security Gate</span>
-                </div>
-              </div>
-
-              {/* OTP Passcode Card */}
-              <div className="rounded-3xl border border-indigo-200/90 bg-indigo-50/30 p-6 sm:p-8 space-y-5 shadow-2xs">
-                {/* Header row inside card */}
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
-                    <Lock className="h-4 w-4 text-indigo-600" />
-                    <span>ENTER 6-DIGIT PASSCODE</span>
-                  </div>
-                  <div className="text-xs text-slate-500 font-medium">
-                    Sent to <strong className="text-slate-900 font-bold">{email}</strong>
-                  </div>
-                </div>
-
-                {/* Inputs & Verify Button Row */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
-                  <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-3 max-w-full" onPaste={handleOtpPaste}>
-                    {otpDigits.map((digit, idx) => (
-                      <input
-                        key={idx}
-                        ref={(el) => (otpInputRefs.current[idx] = el)}
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={1}
-                        value={digit}
-                        onChange={(e) => handleOtpChange(idx, e.target.value)}
-                        onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                        className={`h-12 w-10 sm:h-13 sm:w-12 text-center text-xl sm:text-2xl font-black rounded-xl border bg-white text-slate-900 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/25 ${
-                          digit
-                            ? "border-indigo-600 ring-2 ring-indigo-500/20 shadow-2xs"
-                            : "border-slate-300"
-                        }`}
-                      />
-                    ))}
-                  </div>
-
-                  <Button
-                    type="button"
-                    onClick={handleVerifyOtp}
-                    disabled={isVerifyingOtp || otpDigits.some((d) => !d)}
-                    className="w-full sm:w-auto h-12 sm:h-13 px-7 font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md shadow-indigo-500/20 transition-all gap-2 disabled:opacity-50 shrink-0 cursor-pointer"
-                  >
-                    {isVerifyingOtp ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Verifying...</span>
-                      </>
-                    ) : (
-                      <span>Verify Code</span>
-                    )}
-                  </Button>
-                </div>
-
-                {/* Error & Dev Hint */}
-                {otpError && (
-                  <p className="text-xs font-semibold text-rose-600 flex items-center gap-1.5">
-                    <AlertTriangle className="h-4 w-4 text-rose-500 shrink-0" />
-                    <span>{otpError}</span>
-                  </p>
-                )}
-
-                {devHint && (
-                  <p className="text-xs font-mono text-emerald-800 bg-emerald-50 py-1.5 px-3 rounded-xl border border-emerald-200 inline-block">
-                    Dev Code: <strong>{devHint}</strong>
-                  </p>
-                )}
-
-                {/* Footer row: Didn't receive? / Resend OTP */}
-                <div className="flex items-center justify-between pt-3 border-t border-indigo-100 text-xs">
-                  <span className="font-medium text-slate-500">
-                    Didn't receive the passcode?
-                  </span>
-
-                  {countdown > 0 ? (
-                    <span className="font-semibold text-slate-500">
-                      Resend OTP in <strong className="text-indigo-700">{countdown}s</strong>
+                  {isSendingOtp ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Sending OTP...
                     </span>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleSendOtp(email)}
-                      disabled={isSendingOtp}
-                      className="font-bold text-indigo-600 hover:text-indigo-800 hover:underline inline-flex items-center gap-1 cursor-pointer"
-                    >
-                      <RotateCw className={`h-3.5 w-3.5 ${isSendingOtp ? "animate-spin" : ""}`} />
-                      Resend OTP
-                    </button>
+                    <span>{isEmailVerified ? "Continue" : "Continue to Verification"}</span>
                   )}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setStep(2)}
-                  className="h-11 px-6 font-bold text-xs border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl cursor-pointer"
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Profile
-                </Button>
-
-                <Button
-                  type="button"
-                  onClick={handleStep3ToStep4}
-                  disabled={!isEmailVerified}
-                  className={`h-11 px-7 font-bold text-xs rounded-xl shadow-md transition-all gap-2 cursor-pointer ${
-                    isEmailVerified
-                      ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20"
-                      : "bg-indigo-300 text-white cursor-not-allowed"
-                  }`}
-                >
-                  <span>Continue to Rules & Start</span>
-                  <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
             </div>
           )}
 
-          {/* ══════════════════════════════════════════════════════════════
-              STEP 4: RULES & FINAL LAUNCH
-             ══════════════════════════════════════════════════════════════ */}
-          {step === 4 && (
+          {/* ════════════════════════════════════════════════════════
+              STEP 3: BEFORE YOU START (Rules + System Check)
+             ════════════════════════════════════════════════════════ */}
+          {step === 3 && (
             <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center font-bold shadow-2xs shrink-0 mt-0.5">
-                  <Lock className="h-6 w-6 text-indigo-600" />
-                </div>
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                    Step 4: Rules & System Readiness
-                  </h2>
-                  <p className="text-sm font-medium text-slate-600 mt-0.5">
-                    Please review the proctoring guidelines before launching the test.
-                  </p>
-                </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Readiness & Guidelines
+                </p>
+                <h1 className="text-2xl font-bold text-slate-900 mt-1">
+                  Before You Start
+                </h1>
+                <p className="text-sm text-slate-600 mt-1.5">
+                  Complete your system check and review the testing rules below.
+                </p>
               </div>
 
-              {/* Guidelines Checklist */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
-                <div className="rounded-2xl border border-indigo-200 p-4.5 bg-gradient-to-r from-indigo-50/80 to-purple-50/40 space-y-1.5 sm:col-span-2 shadow-2xs">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs font-bold text-indigo-950">
-                      <Video className="h-4 w-4 text-indigo-600" />
-                      <span>Live Webcam Proctoring Active</span>
-                    </div>
-                    <Badge className="text-[10px] bg-indigo-100 text-indigo-800 border-indigo-200 uppercase font-black px-2 py-0.5 rounded-full shadow-2xs">
-                      Required
-                    </Badge>
+              {/* Two Column Section: Left Rules & Checks, Right Camera */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                {/* Left: Concise Rules & System Check */}
+                <div className="space-y-4">
+                  <div>
+                    <h2 className="text-xs font-semibold text-slate-900 uppercase tracking-wider mb-2.5">
+                      Assessment Rules
+                    </h2>
+                    <ul className="space-y-2 text-xs text-slate-600">
+                      <li className="flex items-start gap-2">
+                        <Check className="h-3.5 w-3.5 text-slate-900 shrink-0 mt-0.5" />
+                        <span>Camera access is required during the assessment.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="h-3.5 w-3.5 text-slate-900 shrink-0 mt-0.5" />
+                        <span>Fullscreen mode is required. Exiting fullscreen may be recorded.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="h-3.5 w-3.5 text-slate-900 shrink-0 mt-0.5" />
+                        <span>Switching tabs or leaving the window is monitored as a violation.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="h-3.5 w-3.5 text-slate-900 shrink-0 mt-0.5" />
+                        <span>Answers and game progress are autosaved continuously.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="h-3.5 w-3.5 text-slate-900 shrink-0 mt-0.5" />
+                        <span>Strict single attempt. Re-attempts are barred once submitted.</span>
+                      </li>
+                    </ul>
                   </div>
-                  <p className="text-xs text-indigo-900/80 leading-relaxed pl-6 font-medium">
-                    A non-intrusive live camera preview will be displayed during the test for candidate verification. No webcam video is recorded or stored on the server.
-                  </p>
-                </div>
 
-                <div className="rounded-2xl border border-slate-200/90 p-4 bg-slate-50/60 space-y-1 shadow-2xs">
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                    <span>Fullscreen Proctoring</span>
-                  </div>
-                  <p className="text-xs text-slate-600 leading-relaxed pl-6 font-medium">
-                    Test will run in secure fullscreen mode. Do not minimize or switch tabs.
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200/90 p-4 bg-slate-50/60 space-y-1 shadow-2xs">
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                    <span>Real-time Autosave</span>
-                  </div>
-                  <p className="text-xs text-slate-600 leading-relaxed pl-6 font-medium">
-                    Answers and game scores are encrypted and autosaved in real-time.
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200/90 p-4 bg-slate-50/60 space-y-1 shadow-2xs">
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                    <span>Strict Single Attempt</span>
-                  </div>
-                  <p className="text-xs text-slate-600 leading-relaxed pl-6 font-medium">
-                    Once submitted, re-attempts are strictly barred as per hiring policy.
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200/90 p-4 bg-slate-50/60 space-y-1 shadow-2xs">
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                    <span>Stable Internet Connection</span>
-                  </div>
-                  <p className="text-xs text-slate-600 leading-relaxed pl-6 font-medium">
-                    Ensure an uninterrupted network connection during the entire {durationMinutes} mins.
-                  </p>
-                </div>
-              </div>
-
-                            {/* Candidate Identity Photo Capture Card */}
-              <div className="rounded-2xl border-2 border-indigo-100 bg-gradient-to-br from-indigo-50/50 via-white to-slate-50/50 p-5 space-y-4 shadow-xs">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-8 w-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-xs">
-                      <ScanFace className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs sm:text-sm font-black text-slate-900 tracking-tight flex items-center gap-2">
-                        <span>Candidate Identity Verification</span>
-                        {photoVerified && (
-                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-extrabold px-2 py-0.5">
-                            ✓ Photo Registered
-                          </Badge>
+                  {/* System Readiness Checks */}
+                  <div className="pt-2 border-t border-slate-100">
+                    <h2 className="text-xs font-semibold text-slate-900 uppercase tracking-wider mb-2">
+                      System Status
+                    </h2>
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between py-1">
+                        <span className="flex items-center gap-2 text-slate-600">
+                          <Video className="h-3.5 w-3.5 text-slate-500" />
+                          Camera
+                        </span>
+                        {photoVerified ? (
+                          <span className="font-medium text-emerald-600">✓ Ready</span>
+                        ) : prestartCameraActive ? (
+                          <span className="font-medium text-slate-700">Photo pending</span>
+                        ) : (
+                          <span className="font-medium text-slate-500">Access required</span>
                         )}
-                      </h4>
-                      <p className="text-[11px] text-slate-500 font-medium">
-                        Capture a live photo before starting. Real-time proctoring verifies your identity continuously.
-                      </p>
+                      </div>
+
+                      <div className="flex items-center justify-between py-1">
+                        <span className="flex items-center gap-2 text-slate-600">
+                          <Mic className="h-3.5 w-3.5 text-slate-500" />
+                          Microphone
+                        </span>
+                        <span className="font-medium text-emerald-600">✓ Ready</span>
+                      </div>
+
+                      <div className="flex items-center justify-between py-1">
+                        <span className="flex items-center gap-2 text-slate-600">
+                          <Wifi className="h-3.5 w-3.5 text-slate-500" />
+                          Internet
+                        </span>
+                        {isOnline ? (
+                          <span className="font-medium text-emerald-600">✓ Connected</span>
+                        ) : (
+                          <span className="font-medium text-rose-600">✕ Disconnected</span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between py-1">
+                        <span className="flex items-center gap-2 text-slate-600">
+                          <Monitor className="h-3.5 w-3.5 text-slate-500" />
+                          Browser
+                        </span>
+                        <span className="font-medium text-emerald-600">✓ Supported</span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-4">
-                  {/* Video / Snapshot Preview Box */}
-                  <div className="relative w-48 h-36 sm:w-52 sm:h-40 bg-slate-900 rounded-xl overflow-hidden border border-slate-200 shadow-inner shrink-0 flex flex-col items-center justify-center">
-                    {/* Always keep video element in DOM so ref & stream stay bound */}
+                {/* Right: Camera Check & Identity Verification */}
+                <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 border border-slate-200">
+                  <span className="text-xs font-semibold text-slate-900 mb-2.5 self-start">
+                    Identity Verification
+                  </span>
+
+                  {/* Camera Frame */}
+                  <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-slate-900 border border-slate-300 flex items-center justify-center">
+                    {/* Permanent hidden video element for continuous stream attachment */}
                     <video
                       ref={prestartVideoRef}
                       autoPlay
                       playsInline
                       muted
-                      className={`w-full h-full object-cover scale-x-[-1] ${
-                        !capturedPhoto && prestartCameraActive ? "block" : "hidden"
+                      className={`w-full h-full object-cover transition-opacity duration-200 ${
+                        prestartCameraActive && !capturedPhoto ? "opacity-100" : "opacity-0 absolute pointer-events-none"
                       }`}
+                      style={{ transform: "scaleX(-1)" }}
                     />
 
-                    {capturedPhoto && (
-                      <img
-                        src={capturedPhoto}
-                        alt="Verified Candidate Snapshot"
-                        className="w-full h-full object-cover"
-                      />
-                    )}
-
-                    {!capturedPhoto && !prestartCameraActive && (
-                      <div className="flex flex-col items-center justify-center p-3 text-center">
-                        <div className="w-11 h-11 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center mb-1.5">
-                          <Camera className="h-5 w-5 text-slate-400" />
+                    {capturedPhoto ? (
+                      <div className="relative w-full h-full">
+                        <img
+                          src={capturedPhoto}
+                          alt="Verification Photo"
+                          className="w-full h-full object-cover"
+                          style={{ transform: "scaleX(-1)" }}
+                        />
+                        <div className="absolute top-2 right-2 bg-emerald-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded shadow">
+                          ✓ Verified
                         </div>
-                        <span className="text-[11px] font-semibold text-slate-300">Camera Off</span>
-                        <span className="text-[9.5px] text-slate-500 mt-0.5">Click button to open</span>
                       </div>
-                    )}
-
-                    {/* Overlay indicator */}
-                    <div className="absolute top-2 left-2 z-10">
-                      {capturedPhoto ? (
-                        <span className="flex items-center gap-1 bg-emerald-600 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-md shadow-xs">
-                          <CheckCircle2 className="h-3 w-3" />
-                          <span>SAVED</span>
-                        </span>
-                      ) : prestartCameraActive ? (
-                        <span className="flex items-center gap-1 bg-black/60 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-xs">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          <span>LIVE</span>
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  {/* Action Controls */}
-                  <div className="space-y-2.5 flex-1 w-full text-center sm:text-left">
-                    {photoVerified ? (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-800">
-                          <UserCheck className="h-4 w-4 text-emerald-600" />
-                          <span>Identity photo saved & verified</span>
-                        </div>
-                        <p className="text-[11px] text-slate-600 leading-relaxed">
-                          Your verification photo is saved. You can now accept the testing guidelines below to start your assessment.
+                    ) : !prestartCameraActive ? (
+                      <div className="flex flex-col items-center justify-center p-4 text-center">
+                        <Camera className="h-8 w-8 text-slate-400 mb-2" />
+                        <p className="text-xs text-slate-300 mb-3">
+                          Camera access is required for verification.
                         </p>
                         <Button
                           type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleRetakePhoto}
-                          className="h-8 px-3 text-xs font-semibold text-slate-700 border-slate-300 hover:bg-slate-100 rounded-lg gap-1.5 cursor-pointer"
-                        >
-                          <RefreshCw className="h-3 w-3" />
-                          <span>Retake Verification Photo</span>
-                        </Button>
-                      </div>
-                    ) : prestartCameraActive ? (
-                      <div className="space-y-2.5">
-                        <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                          Position your face clearly in the camera center and click the button below to capture and save your photo.
-                        </p>
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={handleCaptureVerificationPhoto}
-                          disabled={isCapturingPhoto}
-                          className="h-10 px-5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs gap-2 cursor-pointer disabled:opacity-50"
-                        >
-                          {isCapturingPhoto ? (
-                            <>
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              <span>Scanning Face Geometry...</span>
-                            </>
-                          ) : (
-                            <>
-                              <ScanFace className="h-3.5 w-3.5" />
-                              <span>Capture & Save Photo</span>
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-2.5">
-                        <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                          Click the button below to turn on the camera and capture your verification photo.
-                        </p>
-                        <Button
-                          type="button"
-                          size="sm"
                           onClick={handleStartPrestartCamera}
                           disabled={isCameraStarting}
-                          className="h-10 px-5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs gap-2 cursor-pointer disabled:opacity-50"
+                          className="h-8 px-3 text-xs bg-white text-slate-900 hover:bg-slate-100 font-medium rounded cursor-pointer"
                         >
                           {isCameraStarting ? (
-                            <>
+                            <span className="flex items-center gap-1.5">
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              <span>Opening Camera...</span>
-                            </>
+                              Connecting...
+                            </span>
                           ) : (
-                            <>
-                              <Camera className="h-3.5 w-3.5" />
-                              <span>Take Verification Photo</span>
-                            </>
+                            <span>Enable Camera</span>
                           )}
                         </Button>
                       </div>
-                    )}
+                    ) : null}
+                  </div>
+
+                  {/* Camera Controls */}
+                  <div className="w-full mt-3">
+                    {capturedPhoto ? (
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-slate-600 font-medium flex items-center gap-1">
+                          <Check className="h-3.5 w-3.5 text-emerald-600" />
+                          Photo Captured
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleRetakePhoto}
+                          className="text-xs text-slate-600 hover:text-slate-900 font-medium underline cursor-pointer"
+                        >
+                          Retake Photo
+                        </button>
+                      </div>
+                    ) : prestartCameraActive ? (
+                      <Button
+                        type="button"
+                        onClick={handleCaptureVerificationPhoto}
+                        disabled={isCapturingPhoto}
+                        className="w-full h-8 text-xs bg-slate-900 hover:bg-slate-800 text-white font-medium rounded cursor-pointer"
+                      >
+                        {isCapturingPhoto ? (
+                          <span className="flex items-center gap-1.5">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            Verifying Face...
+                          </span>
+                        ) : (
+                          <span>Capture Verification Photo</span>
+                        )}
+                      </Button>
+                    ) : null}
                   </div>
                 </div>
               </div>
 
-              {/* Honor Code Acceptance */}
-              <div
-                onClick={() => setAccepted(!accepted)}
-                className={`flex items-start gap-3.5 rounded-2xl border p-4.5 sm:p-5 transition-all cursor-pointer select-none ${
-                  accepted
-                    ? "border-emerald-500 bg-emerald-50/60 text-slate-900 ring-2 ring-emerald-500/20 shadow-xs"
-                    : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs"
-                }`}
-              >
-                <div
-                  className={`h-5 w-5 rounded-lg border flex items-center justify-center transition-all mt-0.5 shrink-0 ${
-                    accepted ? "bg-emerald-600 border-emerald-600 text-white" : "border-slate-300 bg-white"
-                  }`}
-                >
-                  {accepted && <Check className="h-3.5 w-3.5 stroke-[3]" />}
-                </div>
-                <label className="text-xs sm:text-sm font-bold text-slate-800 cursor-pointer leading-relaxed">
-                  I agree to the testing guidelines, affirm that all responses will be my own authentic work, and accept the proctoring honor code.
+              {/* Honor Code & Guidelines Acceptance */}
+              <div className="pt-4 border-t border-slate-100">
+                <label className="flex items-start gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={accepted}
+                    onChange={(e) => setAccepted(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
+                  />
+                  <span className="text-xs text-slate-700 leading-normal">
+                    I agree to the assessment rules, affirm that all responses will be my own authentic work, and accept proctoring monitoring.
+                  </span>
                 </label>
               </div>
 
-              {/* Camera Error / Permission Denied Guide */}
-              {cameraError && (
-                <div className="rounded-2xl border-2 border-rose-300 bg-rose-50/90 p-4.5 sm:p-5 text-xs text-rose-950 space-y-2.5 animate-in fade-in shadow-2xs">
-                  <div className="flex items-center gap-2 font-extrabold text-sm text-rose-900">
-                    <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0" />
-                    <span>Camera Access Required to Begin</span>
-                  </div>
-                  <p className="text-xs text-rose-800 leading-relaxed pl-7 font-medium">
-                    {cameraError}
-                  </p>
-                  <div className="pl-7 pt-1">
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={handleStartClick}
-                      disabled={isRequestingCamera || isStarting}
-                      className="h-9 px-4 text-xs font-bold bg-rose-700 hover:bg-rose-800 text-white rounded-xl shadow-xs gap-1.5 cursor-pointer"
-                    >
-                      <RefreshCw className={`h-3.5 w-3.5 ${isRequestingCamera ? "animate-spin" : ""}`} />
-                      <span>{isRequestingCamera ? "Requesting Camera..." : "Retry Camera Access"}</span>
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+              {/* Navigation Action Buttons */}
+              <div className="pt-2 flex items-center justify-between border-t border-slate-100">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setStep(3)}
-                  className="h-11 px-6 font-bold text-xs border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl cursor-pointer"
+                  onClick={() => setStep(2)}
+                  className="h-10 px-4 text-xs font-medium text-slate-700 border-slate-300 hover:bg-slate-50 cursor-pointer"
                 >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to OTP Security
+                  <ArrowLeft className="h-4 w-4 mr-1.5" />
+                  <span>Back</span>
                 </Button>
 
                 <Button
                   type="button"
                   onClick={handleStartClick}
-                  disabled={!accepted || !photoVerified || isStarting || isRequestingCamera}
-                  className="h-12 px-8 font-black text-xs sm:text-sm bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl shadow-lg shadow-indigo-500/25 transition-all gap-2.5 disabled:opacity-40 cursor-pointer"
+                  disabled={!accepted || !photoVerified || isStarting}
+                  className="h-10 px-6 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-400 text-white font-medium text-xs rounded-lg cursor-pointer transition-colors"
                 >
-                  {isRequestingCamera ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Verifying Camera Access...</span>
-                    </>
-                  ) : isStarting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Initializing Test Environment...</span>
-                    </>
+                  {isStarting ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Starting Assessment...
+                    </span>
                   ) : (
-                    <>
-                      <Rocket className="h-4 w-4" />
-                      <span>Start Assessment Now</span>
-                    </>
+                    <span>Start Assessment</span>
                   )}
                 </Button>
               </div>
             </div>
           )}
-        </main>
-      </div>
+        </div>
+      </main>
+
+      {/* ── Minimal Footer ───────────────────────────────────────── */}
+      <footer className="w-full py-4 text-center text-xs text-slate-400 border-t border-slate-200 bg-white">
+        Secure Candidate Assessment Platform
+      </footer>
+
+      {/* ════════════════════════════════════════════════════════════
+          OTP VERIFICATION CENTERED MODAL
+         ════════════════════════════════════════════════════════════ */}
+      {isOtpModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="relative w-full max-w-md bg-white rounded-xl border border-slate-200 shadow-xl p-6 sm:p-7 text-left">
+            {/* Modal Close Button */}
+            <button
+              type="button"
+              onClick={() => setIsOtpModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            {/* Modal Header */}
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">
+                Verify Your Email
+              </h2>
+              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                Enter the 6-digit verification code sent to{" "}
+                <strong className="text-slate-900">{email}</strong>
+              </p>
+            </div>
+
+            {/* OTP 6-Digit Input Row */}
+            <div className="my-6">
+              <div
+                className="flex items-center justify-between gap-2"
+                onPaste={handleOtpPaste}
+              >
+                {otpDigits.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(el) => (otpInputRefs.current[index] = el)}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleOtpChange(index, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                    className="w-11 h-12 text-center text-lg font-mono font-bold text-slate-900 bg-white rounded-lg border border-slate-300 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                  />
+                ))}
+              </div>
+
+              {otpError && (
+                <p className="text-xs text-rose-600 font-medium mt-2">
+                  {otpError}
+                </p>
+              )}
+
+              {devHint && (
+                <p className="text-[11px] text-slate-400 mt-2">
+                  Development Code: {devHint}
+                </p>
+              )}
+            </div>
+
+            {/* Resend Cooldown Text */}
+            <div className="flex items-center justify-between text-xs text-slate-500 mb-6">
+              <span>Didn't receive the code?</span>
+              {countdown > 0 ? (
+                <span>Resend in {countdown}s</span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleSendOtp(email)}
+                  disabled={isSendingOtp}
+                  className="font-medium text-slate-900 hover:underline cursor-pointer"
+                >
+                  {isSendingOtp ? "Sending..." : "Resend Code"}
+                </button>
+              )}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsOtpModalOpen(false)}
+                className="h-9 px-4 text-xs font-medium text-slate-700 border-slate-300 hover:bg-slate-50 cursor-pointer"
+              >
+                Cancel
+              </Button>
+
+              <Button
+                type="button"
+                onClick={() => triggerVerifyWithDigits(otpDigits)}
+                disabled={isVerifyingOtp || otpDigits.some((d) => !d)}
+                className="h-9 px-5 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-400 text-white font-medium text-xs rounded-lg cursor-pointer transition-colors"
+              >
+                {isVerifyingOtp ? (
+                  <span className="flex items-center gap-1.5">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Verifying...
+                  </span>
+                ) : (
+                  <span>Verify & Continue</span>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-};
-
-export default AssessmentPreStart;
+}

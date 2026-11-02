@@ -501,10 +501,10 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
                   <Button
                     type="button"
                     onClick={handleNextQuestion}
-                    className={`h-9 sm:h-10 px-6 sm:px-7 font-bold text-xs shadow-sm cursor-pointer ${
+                    className={`h-9 sm:h-10 px-6 sm:px-7 font-bold text-xs shadow-sm cursor-pointer rounded-lg ${
                       currentQuestionIndex === questions.length - 1 && currentSectionIndex === sections.length - 1
-                        ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-600/25"
-                        : "bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-indigo-600/25"
+                        ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                        : "bg-slate-900 hover:bg-slate-800 text-white"
                     }`}
                   >
                     <span>
@@ -726,9 +726,9 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
               <Button
                 type="button"
                 onClick={onReview}
-                className="w-full h-11 px-4 text-xs font-bold rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white gap-2 shadow-md shadow-emerald-600/25 cursor-pointer transition-all hover:scale-[1.01]"
+                className="w-full h-10 px-4 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white gap-2 shadow-xs cursor-pointer transition-colors"
               >
-                <Send className="h-4 w-4" />
+                <Send className="h-3.5 w-3.5" />
                 <span>Submit Assessment</span>
               </Button>
             </div>
