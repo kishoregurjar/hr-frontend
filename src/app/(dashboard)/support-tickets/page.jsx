@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
@@ -14,6 +14,7 @@ import {
   X,
   Search,
   CheckCircle2,
+  AlertCircle,
   MoreHorizontal,
   CircleDashed,
   ShieldAlert,
@@ -26,10 +27,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useAuth } from "@/features/auth/context";
 import {
-  getCompanySupportRequests,
-  updateCompanySupportStatus,
-  replyCompanySupportRequest,
-} from "@/lib/api/support";
+  useCompanySupportTickets,
+  useUpdateCompanySupportStatus,
+  useReplyCompanySupportRequest,
+} from "@/features/support";
 
 const STATUS_CONFIG = {
   OPEN: {
@@ -72,12 +73,11 @@ export default function CompanySupportTicketsPage() {
   const stat3Ref = useRef(null);
   const stat4Ref = useRef(null);
 
-  // State
-  const [requests, setRequests] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Filter & Search State
   const [statusFilter, setStatusFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Drawer / Action State
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [replyText, setReplyText] = useState("");
   const [isReplying, setIsReplying] = useState(false);
@@ -133,31 +133,56 @@ export default function CompanySupportTicketsPage() {
     (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) ||
     "Facebook Company";
 
+  // Derive tenant/company identity for strictly isolated caching
+  const companyId =
+    user?.companyId ||
+    user?.activeCompany?.id ||
+    user?.companies?.[0]?.id ||
+    (typeof window !== "undefined"
+      ? localStorage.getItem("companyId") ||
+        localStorage.getItem("active_company_id")
+      : null) ||
+    "default-company";
+
+  // ── React Query: Company Support Tickets with stale-while-revalidate caching ──
+  const {
+    data,
+    isLoading,
+    isFetching,
+    isError,
+    error,
+    refetch,
+  } = useCompanySupportTickets(
+    companyId,
+    { limit: 100, sortOrder: "desc" },
+    { enabled: isOwnerOrAdmin }
+  );
+
+  const requests = useMemo(() => data?.items || [], [data?.items]);
+
+  // Keep drawer open selection in sync with fresh background data
+  useEffect(() => {
+    if (selectedRequest?.id && requests.length > 0) {
+      const fresh = requests.find((r) => r.id === selectedRequest.id);
+      if (
+        fresh &&
+        (fresh.status !== selectedRequest.status ||
+          fresh.adminReply !== selectedRequest.adminReply ||
+          fresh.repliedAt !== selectedRequest.repliedAt)
+      ) {
+        setSelectedRequest(fresh);
+      }
+    }
+  }, [requests, selectedRequest?.id]);
+
+  // Mutations
+  const updateStatusMutation = useUpdateCompanySupportStatus(companyId);
+  const replyMutation = useReplyCompanySupportRequest(companyId);
+
   // Reset page when search or filter changes
   useEffect(() => {
     setPage(1);
   }, [searchQuery, statusFilter]);
-
-  const fetchRequests = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const params = { limit: 100, sortOrder: "desc" };
-      const data = await getCompanySupportRequests(params);
-      setRequests(data.items || []);
-    } catch (err) {
-      toast.error(err?.message || "Failed to load company support tickets.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isOwnerOrAdmin) {
-      fetchRequests();
-    } else {
-      setIsLoading(false);
-    }
-  }, [fetchRequests, isOwnerOrAdmin]);
 
   // ── 3D Parallax Scroll Handler ──
   const handleScroll = () => {
@@ -191,12 +216,9 @@ export default function CompanySupportTicketsPage() {
   const handleStatusChange = async (requestId, newStatus) => {
     try {
       setIsUpdatingStatus(true);
-      await updateCompanySupportStatus(requestId, newStatus);
+      await updateStatusMutation.mutateAsync({ requestId, status: newStatus });
       toast.success(
         `Status updated to ${STATUS_CONFIG[newStatus]?.label || newStatus}.`
-      );
-      setRequests((prev) =>
-        prev.map((r) => (r.id === requestId ? { ...r, status: newStatus } : r))
       );
       if (selectedRequest?.id === requestId) {
         setSelectedRequest((prev) =>
@@ -214,10 +236,10 @@ export default function CompanySupportTicketsPage() {
     if (!replyText.trim() || !selectedRequest) return;
     try {
       setIsReplying(true);
-      const result = await replyCompanySupportRequest(
-        selectedRequest.id,
-        replyText.trim()
-      );
+      const result = await replyMutation.mutateAsync({
+        requestId: selectedRequest.id,
+        reply: replyText.trim(),
+      });
 
       if (result?.emailSent === false) {
         toast.warning(
@@ -235,9 +257,6 @@ export default function CompanySupportTicketsPage() {
       };
 
       setReplyText("");
-      setRequests((prev) =>
-        prev.map((r) => (r.id === selectedRequest.id ? updatedRequest : r))
-      );
       setSelectedRequest(updatedRequest);
     } catch (err) {
       toast.error(err?.message || "Failed to send reply.");
@@ -292,31 +311,36 @@ export default function CompanySupportTicketsPage() {
     );
   }
 
-  // Summary KPIs matching screenshot
-  const stats = {
+  // Summary KPIs derived directly from cached tickets
+  const stats = useMemo(() => ({
     total: requests.length,
     open: requests.filter((r) => r.status === "OPEN").length,
     inProgress: requests.filter((r) => r.status === "IN_PROGRESS").length,
     resolved: requests.filter((r) => r.status === "RESOLVED").length,
-  };
+  }), [requests]);
 
   // Filtered requests
-  const filteredRequests = requests.filter((req) => {
-    const q = searchQuery.toLowerCase();
-    const matchesSearch =
-      req.subject?.toLowerCase().includes(q) ||
-      req.user?.name?.toLowerCase().includes(q) ||
-      req.user?.email?.toLowerCase().includes(q) ||
-      req.message?.toLowerCase().includes(q);
-    const matchesStatus = statusFilter ? req.status === statusFilter : true;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredRequests = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    return requests.filter((req) => {
+      const matchesSearch =
+        !q ||
+        req.subject?.toLowerCase().includes(q) ||
+        req.user?.name?.toLowerCase().includes(q) ||
+        req.user?.email?.toLowerCase().includes(q) ||
+        req.message?.toLowerCase().includes(q);
+      const matchesStatus = statusFilter ? req.status === statusFilter : true;
+      return matchesSearch && matchesStatus;
+    });
+  }, [requests, searchQuery, statusFilter]);
 
   const totalPages = Math.ceil(filteredRequests.length / ITEMS_PER_PAGE) || 1;
-  const paginatedRequests = filteredRequests.slice(
-    (page - 1) * ITEMS_PER_PAGE,
-    page * ITEMS_PER_PAGE
-  );
+  const paginatedRequests = useMemo(() => {
+    return filteredRequests.slice(
+      (page - 1) * ITEMS_PER_PAGE,
+      page * ITEMS_PER_PAGE
+    );
+  }, [filteredRequests, page]);
 
   return (
     <div 
@@ -343,13 +367,23 @@ export default function CompanySupportTicketsPage() {
           </div>
 
           <div className="relative z-10 space-y-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
-                Support Tickets
-              </h1>
-              <p className="text-white/85 text-xs sm:text-sm font-medium mt-1">
-                {companyName} &bull; team requests review karein aur reply karein
-              </p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
+                  Support Tickets
+                </h1>
+                <p className="text-white/85 text-xs sm:text-sm font-medium mt-1">
+                  {companyName} &bull; Review and reply to team requests
+                </p>
+              </div>
+
+              {/* Background Syncing Pill Indicator */}
+              {isFetching && !isLoading && (
+                <div className="self-start sm:self-center flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-md text-white border border-white/25 shadow-2xs animate-in fade-in">
+                  <RefreshCw className="h-3 w-3 animate-spin text-white" />
+                  <span>Syncing...</span>
+                </div>
+              )}
             </div>
 
             {/* 4 Stat Boxes with Staggered Parallax */}
@@ -433,18 +467,19 @@ export default function CompanySupportTicketsPage() {
 
             <button
               type="button"
-              onClick={fetchRequests}
-              disabled={isLoading}
-              title="Refresh tickets list"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              title={isFetching ? "Syncing tickets..." : "Refresh tickets list"}
               className="p-2.5 rounded-full border border-slate-200/90 bg-white hover:bg-slate-50 text-slate-600 transition shadow-xs cursor-pointer ml-1"
             >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin text-indigo-600" : ""}`} />
+              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin text-indigo-600" : ""}`} />
             </button>
           </div>
         </div>
 
         {/* Ticket Cards List */}
-        {isLoading ? (
+        {isLoading && requests.length === 0 ? (
+          /* Initial Loading Skeleton: only rendered when NO cached data is available */
           <div className="space-y-4 pt-2">
             {[1, 2, 3].map((i) => (
               <div
@@ -465,6 +500,24 @@ export default function CompanySupportTicketsPage() {
                 <div className="h-4 bg-slate-100 rounded w-1/4 pt-2" />
               </div>
             ))}
+          </div>
+        ) : isError && requests.length === 0 ? (
+          /* Initial Error State: displayed only when initial request fails with zero cache */
+          <div className="bg-white rounded-3xl border border-rose-200/90 p-12 text-center flex flex-col items-center justify-center space-y-3 shadow-xs">
+            <div className="w-14 h-14 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mb-1 border border-rose-100">
+              <AlertCircle className="h-7 w-7 text-rose-500" />
+            </div>
+            <h3 className="text-base font-bold text-slate-800">Failed to load support tickets</h3>
+            <p className="text-xs sm:text-sm text-slate-500 max-w-sm leading-relaxed">
+              {error?.message || "There was an error loading company tickets. Please try again."}
+            </p>
+            <Button
+              type="button"
+              onClick={() => refetch()}
+              className="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold px-5 cursor-pointer shadow-xs"
+            >
+              Try Again
+            </Button>
           </div>
         ) : paginatedRequests.length === 0 ? (
           <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center flex flex-col items-center justify-center space-y-3 shadow-xs">
@@ -564,7 +617,7 @@ export default function CompanySupportTicketsPage() {
                 size="sm"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="h-8 text-xs font-semibold px-3 rounded-full"
+                className="h-8 text-xs font-semibold px-3 rounded-full cursor-pointer"
               >
                 Previous
               </Button>
@@ -573,7 +626,7 @@ export default function CompanySupportTicketsPage() {
                 size="sm"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="h-8 text-xs font-semibold px-3 rounded-full"
+                className="h-8 text-xs font-semibold px-3 rounded-full cursor-pointer"
               >
                 Next
               </Button>

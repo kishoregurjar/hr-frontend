@@ -35,11 +35,11 @@ const DeleteQuestionDialog = ({ question }) => {
       <AlertDialogTrigger asChild>
         <Button
           type="button"
-          variant="destructive"
+          variant="outline"
           size="sm"
-          className="min-w-[100px] flex-1"
+          className="h-8 px-2.5 rounded-xl border-rose-200 text-rose-600 bg-rose-50/50 hover:bg-rose-100/80 hover:text-rose-700 hover:border-rose-300 text-xs font-bold gap-1 shadow-2xs cursor-pointer transition shrink-0"
         >
-          <Trash2 className="mr-2 h-4 w-4" />
+          <Trash2 className="h-3.5 w-3.5" />
           Delete
         </Button>
       </AlertDialogTrigger>

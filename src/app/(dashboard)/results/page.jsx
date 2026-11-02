@@ -1185,9 +1185,9 @@ export default function ResultsAndRankingPage() {
       {/* ── 6. DETAILED CANDIDATE SCORECARD MODAL ── */}
       {selectedCandidate && (
         <Dialog open={Boolean(selectedCandidate)} onOpenChange={() => setSelectedCandidate(null)}>
-          <DialogContent className="max-w-2xl w-[94vw] sm:w-full p-0 overflow-hidden rounded-3xl border border-white/90 shadow-2xl font-sans bg-white max-h-[92vh] flex flex-col">
+          <DialogContent showCloseButton={false} className="w-[94vw] sm:max-w-2xl p-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-white/90 shadow-2xl font-sans bg-white max-h-[92vh] flex flex-col">
             {/* Header: Signature Gradient Banner */}
-            <div className="relative bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] text-white p-6 sm:p-7 overflow-hidden shrink-0 select-none">
+            <div className="relative bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] text-white p-4 sm:p-6 sm:p-7 overflow-hidden shrink-0 select-none">
               {/* Subtle Ambient Rings & Glow */}
               <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-white/10 blur-xl pointer-events-none" />
               <div className="absolute top-2 right-12 w-28 h-28 rounded-full border border-white/15 pointer-events-none" />
@@ -1229,7 +1229,7 @@ export default function ResultsAndRankingPage() {
             </div>
 
             {/* Scrollable Content Body with smooth custom scrollbar */}
-            <div className="p-6 sm:p-7 space-y-6 overflow-y-auto flex-1 no-scrollbar [scrollbar-width:none]">
+            <div className="p-4 sm:p-6 sm:p-7 space-y-5 sm:space-y-6 overflow-y-auto flex-1 no-scrollbar [scrollbar-width:none]">
               {/* Score Highlight KPI Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 text-center">
                 <div className="p-3.5 rounded-2xl bg-slate-50/90 border border-slate-100 shadow-2xs">
@@ -1550,19 +1550,19 @@ export default function ResultsAndRankingPage() {
 
       {/* ── 7. NEXT ROUND INTERVIEW SCHEDULING MODAL ── */}
       <Dialog open={isInterviewModalOpen} onOpenChange={setIsInterviewModalOpen}>
-        <DialogContent className="max-w-xl p-0 overflow-hidden rounded-3xl border border-white/90 shadow-2xl font-sans bg-white">
+        <DialogContent className="w-[92vw] sm:max-w-xl p-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-white/90 shadow-2xl font-sans bg-white max-h-[92vh] flex flex-col">
           {/* Header */}
-          <div className="bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-6 text-white relative overflow-hidden">
+          <div className="bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-4 sm:p-6 text-white relative overflow-hidden shrink-0 select-none">
             <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/10 blur-xl pointer-events-none" />
-            <div className="flex items-center gap-3 relative z-10">
-              <div className="h-12 w-12 rounded-2xl bg-white/20 border border-white/30 text-white flex items-center justify-center font-black text-lg shadow-inner">
-                <Calendar className="h-6 w-6 text-white" />
+            <div className="flex items-center gap-3 relative z-10 pr-6">
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-white/20 border border-white/30 text-white flex items-center justify-center font-black text-base sm:text-lg shadow-inner shrink-0">
+                <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
-              <div>
-                <DialogTitle className="text-xl font-extrabold text-white tracking-tight">
+              <div className="min-w-0">
+                <DialogTitle className="text-lg sm:text-xl font-extrabold text-white tracking-tight leading-snug">
                   Schedule Next Round Interview
                 </DialogTitle>
-                <DialogDescription className="text-xs text-white/80 mt-0.5">
+                <DialogDescription className="text-xs text-white/80 mt-0.5 line-clamp-2">
                   Send personalized email invitations with meeting link to {interviewTargets.length} selected candidate{interviewTargets.length > 1 ? "s" : ""}.
                 </DialogDescription>
               </div>
@@ -1570,7 +1570,7 @@ export default function ResultsAndRankingPage() {
           </div>
 
           {/* Form Body */}
-          <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto no-scrollbar [scrollbar-width:none]">
+          <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 min-h-0 no-scrollbar [scrollbar-width:none]">
             {/* Target Candidates Badges */}
             <div>
               <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 block">
@@ -1609,30 +1609,30 @@ export default function ResultsAndRankingPage() {
               <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1.5 block">
                 Interview Mode *
               </label>
-              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100/90 rounded-2xl border border-slate-200">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-1 bg-slate-100/90 rounded-2xl border border-slate-200">
                 <button
                   type="button"
                   onClick={() => setInterviewForm((prev) => ({ ...prev, interviewMode: "OFFLINE" }))}
-                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     interviewForm.interviewMode === "OFFLINE"
                       ? "bg-white text-emerald-800 shadow-sm border border-emerald-300/80"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
-                  <Building2 className="h-4 w-4 text-emerald-600" />
+                  <Building2 className="h-4 w-4 text-emerald-600 shrink-0" />
                   <span>In-Person (Offline in Company)</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setInterviewForm((prev) => ({ ...prev, interviewMode: "ONLINE" }))}
-                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     interviewForm.interviewMode === "ONLINE"
                       ? "bg-white text-blue-800 shadow-sm border border-blue-300/80"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
-                  <Video className="h-4 w-4 text-blue-600" />
+                  <Video className="h-4 w-4 text-blue-600 shrink-0" />
                   <span>Online (Google Meet / Zoom)</span>
                 </button>
               </div>
@@ -1736,41 +1736,42 @@ export default function ResultsAndRankingPage() {
               />
             </div>
 
-            {/* Footer Actions */}
-            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsInterviewModalOpen(false)}
-                className="rounded-xl px-4 text-xs font-bold text-slate-600 cursor-pointer border-slate-200"
-              >
-                Cancel
-              </Button>
+          </div>
 
-              <Button
-                type="button"
-                disabled={
-                  isSendingInvites ||
-                  !interviewTargets.length ||
-                  !interviewForm.roundName.trim() ||
-                  !interviewForm.scheduledAt
-                }
-                onClick={handleDispatchInterviewInvites}
-                className="rounded-xl px-5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white gap-2 shadow-sm shadow-indigo-500/20 cursor-pointer"
-              >
-                {isSendingInvites ? (
-                  <>
-                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                    Sending Invitations...
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-3.5 w-3.5" />
-                    Send Invitation Email{interviewTargets.length > 1 ? "s" : ""}
-                  </>
-                )}
-              </Button>
-            </div>
+          {/* Pinned Bottom Footer Actions */}
+          <div className="shrink-0 bg-slate-50/90 border-t border-slate-100 p-3 sm:p-4 px-4 sm:px-6 flex items-center justify-between gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsInterviewModalOpen(false)}
+              className="rounded-xl px-4 text-xs font-bold text-slate-600 cursor-pointer border-slate-200"
+            >
+              Cancel
+            </Button>
+
+            <Button
+              type="button"
+              disabled={
+                isSendingInvites ||
+                !interviewTargets.length ||
+                !interviewForm.roundName.trim() ||
+                !interviewForm.scheduledAt
+              }
+              onClick={handleDispatchInterviewInvites}
+              className="rounded-xl px-5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white gap-2 shadow-sm shadow-indigo-500/20 cursor-pointer"
+            >
+              {isSendingInvites ? (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  <span>Sending...</span>
+                </>
+              ) : (
+                <>
+                  <Send className="h-3.5 w-3.5" />
+                  <span>Send Invitation{interviewTargets.length > 1 ? "s" : ""}</span>
+                </>
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

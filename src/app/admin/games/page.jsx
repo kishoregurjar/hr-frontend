@@ -856,7 +856,7 @@ export default function AdminGamesPage() {
             </div>
 
             {/* Companies Spacious Grid List */}
-            <div className="p-6 max-h-[380px] overflow-y-auto space-y-2">
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-2 flex-1 min-h-0">
               {filteredModalCompanies.length === 0 ? (
                 <div className="p-8 text-center text-slate-400 text-xs">
                   No organizations found matching "{companySearchQuery}".

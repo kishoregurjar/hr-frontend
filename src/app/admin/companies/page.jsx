@@ -419,7 +419,7 @@ function AdminCompaniesContent() {
 
         {/* ── 3. Register New Company Modal ── */}
         <Dialog open={isRegisterModalOpen} onOpenChange={setIsRegisterModalOpen}>
-          <DialogContent className="sm:max-w-2xl rounded-3xl p-6 sm:p-8 font-sans border border-slate-200/90 shadow-2xl">
+          <DialogContent className="w-[94vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl p-4 sm:p-8 font-sans border border-slate-200/90 shadow-2xl">
             <DialogHeader className="space-y-3 pb-2 border-b border-slate-100">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">

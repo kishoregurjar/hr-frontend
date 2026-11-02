@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   getCurrentUserApi,
   loginApi,
@@ -23,6 +24,7 @@ const AuthContext = createContext({
 });
 
 export const AuthProvider = ({ children }) => {
+  const queryClient = useQueryClient();
   const [token, setToken] = useState(() => {
     if (typeof window === "undefined") return null;
     return (
@@ -148,6 +150,7 @@ export const AuthProvider = ({ children }) => {
           err?.code === "COMPANY_SUSPENDED" ||
           err?.message?.includes("suspended")
         ) {
+          queryClient.clear();
           clearAllAuthStorage();
           setToken(null);
           setUser(null);
@@ -207,6 +210,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await logoutApi();
     } finally {
+      queryClient.clear();
       clearAllAuthStorage();
       setToken(null);
       setUser(null);

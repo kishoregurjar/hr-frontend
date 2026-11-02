@@ -31,19 +31,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
-  getCompanyProfile,
-  updateCompanyProfile,
-  uploadCompanyLogo,
-  getCompanyMembers,
-  updateMemberRole,
-  removeMember,
-  deactivateMember,
-  reactivateMember,
-  transferOwnership,
-  sendMemberInvitation,
-  getCompanyInvitations,
-  revokeInvitation,
-} from "@/lib/api/company";
+  useCompanyProfileQuery,
+  useCompanyMembersQuery,
+  useCompanyInvitationsQuery,
+  useUpdateCompanyProfileMutation,
+  useUploadCompanyLogoMutation,
+  useSendMemberInvitationMutation,
+  useRevokeInvitationMutation,
+  useUpdateMemberRoleMutation,
+  useDeactivateMemberMutation,
+  useReactivateMemberMutation,
+  useRemoveMemberMutation,
+  useTransferOwnershipMutation,
+} from "@/features/company";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/context";
 
@@ -59,7 +59,6 @@ export default function CompanySettingsPage() {
 
   const initialTab = searchParams.get("tab") || "profile";
   const [activeTab, setActiveTab] = useState(initialTab); // 'profile' | 'members' | 'invitations'
-  const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
@@ -81,6 +80,74 @@ export default function CompanySettingsPage() {
     }
   }, [searchParams]);
 
+  // Multi-tenant isolated company identifier
+  const companyId =
+    user?.companyId ||
+    user?.activeCompany?.id ||
+    user?.companies?.[0]?.id ||
+    (typeof window !== "undefined"
+      ? localStorage.getItem("companyId") ||
+        localStorage.getItem("active_company_id")
+      : null) ||
+    "default-company";
+
+  // Active Company Role determination
+  const activeCompanyRole =
+    user?.activeCompany?.role ||
+    user?.companies?.[0]?.role ||
+    user?.companyRole ||
+    (user?.isOwner ? "OWNER" : "") ||
+    (typeof window !== "undefined"
+      ? localStorage.getItem("active_company_role") ||
+        localStorage.getItem("companyRole")
+      : "") ||
+    user?.role ||
+    "";
+
+  const isOwnerOrAdmin = Boolean(
+    user?.isOwner ||
+    user?.isAdmin ||
+    String(activeCompanyRole).toUpperCase() === "OWNER" ||
+    String(activeCompanyRole).toUpperCase() === "ADMIN" ||
+    String(activeCompanyRole).toUpperCase() === "COMPANY_OWNER" ||
+    String(activeCompanyRole).toUpperCase() === "COMPANY_ADMIN" ||
+    user?.companyRole === "OWNER" ||
+    user?.companyRole === "ADMIN" ||
+    user?.role === "Company Owner" ||
+    user?.role === "HR Admin"
+  );
+
+  // Filter state for invitations
+  const [invitationStatusFilter, setInvitationStatusFilter] = useState("PENDING"); // 'PENDING' | 'ACCEPTED' | 'ALL'
+
+  // ── React Query: Company Profile, Team Members & Invitations with stale-while-revalidate ──
+  const {
+    data: companyProfileData,
+    isLoading: loadingProfile,
+    isFetching: isFetchingProfile,
+    refetch: refetchCompany,
+  } = useCompanyProfileQuery(companyId, { enabled: isOwnerOrAdmin });
+
+  const {
+    data: membersData,
+    isLoading: loadingMembers,
+    isFetching: isFetchingMembers,
+    refetch: refetchMembers,
+  } = useCompanyMembersQuery(companyId, { page: 1, limit: 50 }, { enabled: isOwnerOrAdmin });
+
+  const {
+    data: invitationsData,
+    isLoading: loadingInvites,
+    isFetching: isFetchingInvites,
+    refetch: refetchInvites,
+  } = useCompanyInvitationsQuery(companyId, invitationStatusFilter, { enabled: isOwnerOrAdmin });
+
+  const members = useMemo(() => (Array.isArray(membersData) ? membersData : []), [membersData]);
+  const invitations = useMemo(() => (Array.isArray(invitationsData) ? invitationsData : []), [invitationsData]);
+
+  const isAnyFetching = isFetchingProfile || isFetchingMembers || isFetchingInvites;
+  const isInitialLoading = loadingProfile && !companyProfileData && members.length === 0;
+
   // Profile Form State
   const [company, setCompany] = useState({
     name: defaultCompanyName,
@@ -98,12 +165,54 @@ export default function CompanySettingsPage() {
     description: "",
   });
 
-  // Members & Invites State
-  const [members, setMembers] = useState([]);
-  const [invitations, setInvitations] = useState([]);
-  const [invitationStatusFilter, setInvitationStatusFilter] = useState("PENDING"); // 'PENDING' | 'ACCEPTED' | 'ALL'
-  const [loadingMembers, setLoadingMembers] = useState(false);
-  const [loadingInvites, setLoadingInvites] = useState(false);
+  // Sync loaded profile into form state
+  useEffect(() => {
+    if (companyProfileData && (companyProfileData.id || companyProfileData.name || companyProfileData.companyName)) {
+      const compName = companyProfileData.name || companyProfileData.companyName || defaultCompanyName;
+      const compLogo = companyProfileData.logoUrl || companyProfileData.logo || defaultCompanyLogo;
+      const compWebsite = companyProfileData.website || companyProfileData.websiteUrl || "";
+      const compIndustry = companyProfileData.industry || "Technology";
+      const compEmail = companyProfileData.email || companyProfileData.officialEmail || "";
+      const compPhone = companyProfileData.phone || "";
+      const compAddress = companyProfileData.address || "";
+      const compCity = companyProfileData.city || "";
+      const compCountry = companyProfileData.country || "";
+      const compDesc = companyProfileData.description || companyProfileData.about || "";
+
+      setCompany({
+        ...companyProfileData,
+        name: compName,
+        logoUrl: compLogo,
+      });
+
+      setFormData((prev) => ({
+        ...prev,
+        name: compName,
+        website: compWebsite,
+        websiteUrl: compWebsite,
+        industry: compIndustry,
+        email: compEmail,
+        officialEmail: compEmail,
+        phone: compPhone,
+        address: compAddress,
+        city: compCity,
+        country: compCountry,
+        description: compDesc,
+        about: compDesc,
+      }));
+
+      if (compLogo && typeof window !== "undefined") {
+        localStorage.setItem("companyLogo", compLogo);
+      }
+      if (compName && typeof window !== "undefined") {
+        localStorage.setItem("companyName", compName);
+      }
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("companyLogoUpdated"));
+        window.dispatchEvent(new Event("companyUpdated"));
+      }
+    }
+  }, [companyProfileData, defaultCompanyName, defaultCompanyLogo]);
 
   // Invite Modal / Form
   const [inviteEmail, setInviteEmail] = useState("");
@@ -114,128 +223,26 @@ export default function CompanySettingsPage() {
   const [transferTargetMember, setTransferTargetMember] = useState(null);
   const [transferring, setTransferring] = useState(false);
 
-  const fetchCompanyData = async () => {
-    try {
-      setLoading(true);
-      const data = await getCompanyProfile();
-      if (data && (data.id || data.name || data.companyName)) {
-        const compName = data.name || data.companyName || defaultCompanyName;
-        const compLogo = data.logoUrl || data.logo || defaultCompanyLogo;
-        const compWebsite = data.website || data.websiteUrl || "";
-        const compIndustry = data.industry || "Technology";
-        const compEmail = data.email || data.officialEmail || "";
-        const compPhone = data.phone || "";
-        const compAddress = data.address || "";
-        const compCity = data.city || "";
-        const compCountry = data.country || "";
-        const compDesc = data.description || data.about || "";
-
-        setCompany({
-          ...data,
-          name: compName,
-          logoUrl: compLogo,
-        });
-
-        setFormData({
-          name: compName,
-          website: compWebsite,
-          websiteUrl: compWebsite,
-          industry: compIndustry,
-          email: compEmail,
-          officialEmail: compEmail,
-          phone: compPhone,
-          address: compAddress,
-          city: compCity,
-          country: compCountry,
-          description: compDesc,
-          about: compDesc,
-        });
-
-        if (compLogo && typeof window !== "undefined") {
-          localStorage.setItem("companyLogo", compLogo);
-        }
-        if (compName && typeof window !== "undefined") {
-          localStorage.setItem("companyName", compName);
-        }
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new Event("companyLogoUpdated"));
-          window.dispatchEvent(new Event("companyUpdated"));
-        }
-      } else {
-        setCompany(null);
-      }
-    } catch {
-      const fallbackName =
-        (typeof window !== "undefined" ? localStorage.getItem("companyName") : null) || defaultCompanyName;
-      if (fallbackName) {
-        setCompany({
-          name: fallbackName,
-          logoUrl: typeof window !== "undefined" ? localStorage.getItem("companyLogo") || "" : "",
-        });
-        setFormData((prev) => ({ ...prev, name: fallbackName }));
-      } else {
-        setCompany(null);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchMembers = async () => {
-    try {
-      setLoadingMembers(true);
-      const res = await getCompanyMembers({ page: 1, limit: 50 });
-      const list = Array.isArray(res)
-        ? res
-        : res?.data?.data?.members ||
-          res?.data?.members ||
-          res?.members ||
-          (Array.isArray(res?.data) ? res?.data : []);
-      setMembers(list || []);
-    } catch {
-      setMembers([]);
-    } finally {
-      setLoadingMembers(false);
-    }
-  };
-
-  const fetchInvites = async (status = invitationStatusFilter) => {
-    try {
-      setLoadingInvites(true);
-      const params = { page: 1, limit: 50 };
-      if (status && status !== "ALL") {
-        params.status = status;
-      }
-      const res = await getCompanyInvitations(params);
-      const list = Array.isArray(res)
-        ? res
-        : res?.data?.data?.invitations ||
-          res?.data?.invitations ||
-          res?.invitations ||
-          (Array.isArray(res?.data) ? res?.data : []);
-      setInvitations(list || []);
-    } catch {
-      setInvitations([]);
-    } finally {
-      setLoadingInvites(false);
-    }
-  };
+  // Mutations
+  const updateProfileMutation = useUpdateCompanyProfileMutation(companyId);
+  const uploadLogoMutation = useUploadCompanyLogoMutation(companyId);
+  const sendInviteMutation = useSendMemberInvitationMutation(companyId);
+  const revokeInviteMutation = useRevokeInvitationMutation(companyId);
+  const updateRoleMutation = useUpdateMemberRoleMutation(companyId);
+  const deactivateMemberMutation = useDeactivateMemberMutation(companyId);
+  const reactivateMemberMutation = useReactivateMemberMutation(companyId);
+  const removeMemberMutation = useRemoveMemberMutation(companyId);
+  const transferOwnershipMutation = useTransferOwnershipMutation(companyId);
 
   const handleFilterChange = (status) => {
     setInvitationStatusFilter(status);
-    fetchInvites(status);
   };
 
-  useEffect(() => {
-    fetchCompanyData();
-    if (initialTab === "members") fetchMembers();
-    if (initialTab === "invitations") fetchInvites(invitationStatusFilter);
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === "members" && members.length === 0) fetchMembers();
-    if (activeTab === "invitations" && invitations.length === 0) fetchInvites(invitationStatusFilter);
-  }, [activeTab]);
+  const handleRefreshAll = () => {
+    refetchCompany();
+    refetchMembers();
+    refetchInvites();
+  };
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
@@ -255,7 +262,7 @@ export default function CompanySettingsPage() {
         description: formData.description || formData.about || "",
         about: formData.description || formData.about || "",
       };
-      const res = await updateCompanyProfile(payload);
+      const res = await updateProfileMutation.mutateAsync(payload);
       toast.success("Company profile updated successfully!");
       if (res?.name && typeof window !== "undefined") {
         localStorage.setItem("companyName", res.name);
@@ -264,7 +271,6 @@ export default function CompanySettingsPage() {
         window.dispatchEvent(new Event("companyLogoUpdated"));
         window.dispatchEvent(new Event("companyUpdated"));
       }
-      await fetchCompanyData();
     } catch (err) {
       toast.error(err.message || "Failed to update profile.");
     } finally {
@@ -283,7 +289,7 @@ export default function CompanySettingsPage() {
 
     setUploadingLogo(true);
     try {
-      const res = await uploadCompanyLogo(file);
+      const res = await uploadLogoMutation.mutateAsync(file);
       const logoUrl =
         res?.data?.logoUrl ||
         res?.logoUrl ||
@@ -299,7 +305,6 @@ export default function CompanySettingsPage() {
         }
       }
       toast.success("Company logo uploaded successfully!");
-      await fetchCompanyData();
     } catch (err) {
       toast.error(err?.response?.data?.message || err.message || "Failed to upload logo.");
     } finally {
@@ -315,14 +320,12 @@ export default function CompanySettingsPage() {
     }
     setSendingInvite(true);
     try {
-      await sendMemberInvitation({ email: inviteEmail, role: inviteRole });
+      await sendInviteMutation.mutateAsync({ email: inviteEmail, role: inviteRole });
       toast.success(`Invitation sent to ${inviteEmail} (${inviteRole})`);
       setInviteEmail("");
-      fetchInvites();
     } catch (err) {
       const msg = err?.response?.data?.message || err?.message || "Failed to send invitation.";
       toast.error(msg);
-      fetchInvites();
     } finally {
       setSendingInvite(false);
     }
@@ -330,9 +333,8 @@ export default function CompanySettingsPage() {
 
   const handleRevokeInvite = async (invitationId) => {
     try {
-      await revokeInvitation(invitationId);
+      await revokeInviteMutation.mutateAsync(invitationId);
       toast.success("Invitation revoked successfully.");
-      setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
     } catch (err) {
       toast.error(err.message || "Failed to revoke invitation.");
     }
@@ -340,11 +342,8 @@ export default function CompanySettingsPage() {
 
   const handleUpdateRole = async (memberId, newRole) => {
     try {
-      await updateMemberRole(memberId, newRole);
+      await updateRoleMutation.mutateAsync({ memberId, role: newRole });
       toast.success(`Role updated to ${newRole}`);
-      setMembers((prev) =>
-        prev.map((m) => (m.id === memberId ? { ...m, role: newRole } : m))
-      );
     } catch (err) {
       toast.error(err.message || "Failed to update member role.");
     }
@@ -353,11 +352,8 @@ export default function CompanySettingsPage() {
   const handleDeactivateMember = async (memberId) => {
     if (!confirm("Deactivate this account?\nThis user will no longer be able to log in until the account is reactivated.")) return;
     try {
-      await deactivateMember(memberId);
+      await deactivateMemberMutation.mutateAsync(memberId);
       toast.success("Member deactivated.");
-      setMembers((prev) =>
-        prev.map((m) => (m.id === memberId ? { ...m, user: { ...m.user, status: "DEACTIVATED" } } : m))
-      );
     } catch (err) {
       toast.error(err.message || "Failed to deactivate member.");
     }
@@ -366,13 +362,20 @@ export default function CompanySettingsPage() {
   const handleReactivateMember = async (memberId) => {
     if (!confirm("Reactivate this account?\nThis user will be able to log in again.")) return;
     try {
-      await reactivateMember(memberId);
+      await reactivateMemberMutation.mutateAsync(memberId);
       toast.success("Member reactivated.");
-      setMembers((prev) =>
-        prev.map((m) => (m.id === memberId ? { ...m, user: { ...m.user, status: "ACTIVE" } } : m))
-      );
     } catch (err) {
       toast.error(err.message || "Failed to reactivate member.");
+    }
+  };
+
+  const handleRemoveMember = async (memberId) => {
+    if (!confirm("Are you sure you want to remove this member? This action cannot be undone.")) return;
+    try {
+      await removeMemberMutation.mutateAsync(memberId);
+      toast.success("Member removed.");
+    } catch (err) {
+      toast.error(err.message || "Failed to remove member.");
     }
   };
 
@@ -380,10 +383,9 @@ export default function CompanySettingsPage() {
     if (!transferTargetMember) return;
     setTransferring(true);
     try {
-      await transferOwnership(transferTargetMember.id);
+      await transferOwnershipMutation.mutateAsync(transferTargetMember.id);
       toast.success(`Ownership transferred successfully to ${transferTargetMember.user?.email || "member"}`);
       setTransferTargetMember(null);
-      fetchMembers();
     } catch (err) {
       toast.error(err.message || "Failed to transfer ownership.");
     } finally {
@@ -391,26 +393,7 @@ export default function CompanySettingsPage() {
     }
   };
 
-  const activeCompanyRole =
-    user?.activeCompany?.role ||
-    user?.companies?.[0]?.role ||
-    user?.companyRole ||
-    (user?.isOwner ? "OWNER" : "") ||
-    user?.role ||
-    "Owner";
 
-  const isOwnerOrAdmin = Boolean(
-    user?.isOwner ||
-    user?.isAdmin ||
-    String(activeCompanyRole).toUpperCase() === "OWNER" ||
-    String(activeCompanyRole).toUpperCase() === "ADMIN" ||
-    String(activeCompanyRole).toUpperCase() === "COMPANY_OWNER" ||
-    String(activeCompanyRole).toUpperCase() === "COMPANY_ADMIN" ||
-    user?.companyRole === "OWNER" ||
-    user?.companyRole === "ADMIN" ||
-    user?.role === "Company Owner" ||
-    user?.role === "HR Admin"
-  );
 
   // ── Parallax Scroll Handler ──
   const handleScroll = () => {
@@ -563,16 +546,13 @@ export default function CompanySettingsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  fetchCompanyData();
-                  fetchMembers();
-                  fetchInvites();
-                }}
+                onClick={handleRefreshAll}
+                disabled={isAnyFetching}
                 className="text-xs h-8 px-3 gap-1.5 bg-white/15 hover:bg-white/25 text-white border border-white/30 font-semibold rounded-xl shadow-xs cursor-pointer transition-all"
                 title="Refresh Workspace Data"
               >
-                <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-white" : ""}`} />
-                <span>Refresh Data</span>
+                <RefreshCw className={`h-3.5 w-3.5 ${isAnyFetching ? "animate-spin text-white" : ""}`} />
+                <span>{isAnyFetching ? "Syncing..." : "Refresh Data"}</span>
               </Button>
             </div>
           </div>
@@ -1110,11 +1090,12 @@ export default function CompanySettingsPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => fetchInvites(invitationStatusFilter)}
+                    onClick={() => refetchInvites()}
+                    disabled={isFetchingInvites}
                     className="h-7 px-2 text-slate-500 hover:text-slate-900 ml-1 cursor-pointer"
                     title="Refresh invitations list"
                   >
-                    <RefreshCw className={`h-3.5 w-3.5 ${loadingInvites ? "animate-spin" : ""}`} />
+                    <RefreshCw className={`h-3.5 w-3.5 ${isFetchingInvites ? "animate-spin text-indigo-600" : ""}`} />
                   </Button>
                 </div>
               </div>

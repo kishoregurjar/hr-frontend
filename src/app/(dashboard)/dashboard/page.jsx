@@ -95,7 +95,7 @@ export default function DashboardPage() {
 
           {/* Subtitle */}
           <p className="text-white/85 text-xs sm:text-sm font-medium leading-relaxed max-w-2xl">
-            Welcome back, {firstName} - aaj ka recruitment overview
+            Welcome back, {firstName} - here is your recruitment overview for today
           </p>
         </div>
       </div>
