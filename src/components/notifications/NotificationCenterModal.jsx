@@ -365,38 +365,15 @@ export default function NotificationCenterModal({ isOpen, onClose }) {
                     {/* Notification Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span
-                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${visuals.badgeColor}`}
-                          >
-                            {visuals.badge}
-                          </span>
-
-                          {/* Score Pill Badge if present */}
-                          {score !== undefined && score !== null && (
-                            <span
-                              className={`px-2 py-0.5 rounded-md text-[10px] font-black border ${
-                                score >= 70
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                  : score >= 50
-                                  ? "bg-amber-50 text-amber-700 border-amber-200"
-                                  : "bg-rose-50 text-rose-700 border-rose-200"
-                              }`}
-                            >
-                              Score: {score}%
-                            </span>
-                          )}
-
-                          <h4
-                            className={`text-sm truncate leading-tight ${
-                              notif.isRead
-                                ? "font-bold text-slate-800"
-                                : "font-black text-slate-950"
-                            }`}
-                          >
-                            {notif.title}
-                          </h4>
-                        </div>
+                        <h4
+                          className={`text-sm truncate leading-tight ${
+                            notif.isRead
+                              ? "font-bold text-slate-800"
+                              : "font-black text-slate-950"
+                          }`}
+                        >
+                          {notif.title}
+                        </h4>
 
                         {/* Timestamp */}
                         <span className="text-[11px] text-slate-400 font-medium shrink-0">
