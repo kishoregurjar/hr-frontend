@@ -633,16 +633,39 @@ export const getAllResults = async () => {
         });
       }
 
+      const resolvedPhoto =
+        item.verificationPhoto ||
+        item.candidate?.verificationPhoto ||
+        item.candidate?.metadata?.verificationPhoto ||
+        item.metadata?.verificationPhoto ||
+        (item.candidate?.metadata && typeof item.candidate.metadata === "string"
+          ? (() => {
+              try { return JSON.parse(item.candidate.metadata)?.verificationPhoto; } catch { return null; }
+            })()
+          : null) ||
+        null;
+
+      const resolvedPhotoAt =
+        item.photoCapturedAt ||
+        item.candidate?.photoCapturedAt ||
+        item.candidate?.metadata?.photoCapturedAt ||
+        item.metadata?.photoCapturedAt ||
+        null;
+
       return {
         id: item.id || item._id || item.attemptId || `res-${idx}`,
         attemptId: item.id || item._id || item.attemptId,
         assessmentId: item.assessmentId || item.assessment?.id,
         candidateName,
         email,
+        verificationPhoto: resolvedPhoto,
+        photoCapturedAt: resolvedPhotoAt,
         candidate: {
           id: item.candidate?.id || item.candidateId,
           name: candidateName,
           email,
+          verificationPhoto: resolvedPhoto,
+          photoCapturedAt: resolvedPhotoAt,
         },
         assessmentTitle,
         assessment: {

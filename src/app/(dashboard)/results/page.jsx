@@ -36,6 +36,8 @@ import {
   AlertCircle,
   BookOpen,
   X,
+  Camera,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/features/auth/context";
@@ -446,63 +448,39 @@ export default function ResultsAndRankingPage() {
   };
 
   const getRankMedal = (rank, totalCandidates = 1, status = "") => {
-    // FAILED or unranked candidates do NOT receive medals or ranks
     if (status === "FAILED" || rank === null || rank === undefined) {
-      return (
-        <div className="inline-flex flex-col items-center justify-center py-1 px-2.5 rounded-xl bg-slate-50/80 border border-slate-200/70 text-slate-400">
-          <span className="font-bold text-xs leading-none">—</span>
-          <span className="text-[9px] font-semibold mt-0.5 tracking-tight">Unranked</span>
-        </div>
-      );
+      return <span className="font-bold text-xs text-slate-400">—</span>;
     }
 
     const numRank = Number(rank) || 1;
     if (numRank === 1) {
       return (
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-500/10 via-amber-400/15 to-yellow-500/10 border border-amber-300/80 shadow-2xs">
-          <span className="text-base leading-none drop-shadow-xs">🥇</span>
-          <div className="flex flex-col text-left">
-            <span className="text-[11px] font-black text-amber-700 leading-none">Rank #1</span>
-            {totalCandidates > 1 && (
-              <span className="text-[9px] text-amber-600/80 font-bold mt-0.5">of {totalCandidates}</span>
-            )}
-          </div>
-        </div>
+        <span className="font-black text-sm text-slate-900 inline-flex items-center justify-center gap-1">
+          <span className="text-sm">🥇</span>
+          <span>1</span>
+        </span>
       );
     }
     if (numRank === 2) {
       return (
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-slate-100 via-slate-200/50 to-slate-100 border border-slate-300/80 shadow-2xs">
-          <span className="text-base leading-none drop-shadow-xs">🥈</span>
-          <div className="flex flex-col text-left">
-            <span className="text-[11px] font-black text-slate-700 leading-none">Rank #2</span>
-            {totalCandidates > 1 && (
-              <span className="text-[9px] text-slate-500 font-bold mt-0.5">of {totalCandidates}</span>
-            )}
-          </div>
-        </div>
+        <span className="font-black text-sm text-slate-800 inline-flex items-center justify-center gap-1">
+          <span className="text-sm">🥈</span>
+          <span>2</span>
+        </span>
       );
     }
     if (numRank === 3) {
       return (
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-orange-500/10 via-amber-600/10 to-orange-500/5 border border-amber-600/30 shadow-2xs">
-          <span className="text-base leading-none drop-shadow-xs">🥉</span>
-          <div className="flex flex-col text-left">
-            <span className="text-[11px] font-black text-amber-900 leading-none">Rank #3</span>
-            {totalCandidates > 1 && (
-              <span className="text-[9px] text-amber-800/80 font-bold mt-0.5">of {totalCandidates}</span>
-            )}
-          </div>
-        </div>
+        <span className="font-black text-sm text-slate-800 inline-flex items-center justify-center gap-1">
+          <span className="text-sm">🥉</span>
+          <span>3</span>
+        </span>
       );
     }
     return (
-      <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-200/80 shadow-2xs">
-        <span className="font-black text-xs text-slate-700 leading-none">#{numRank}</span>
-        {totalCandidates > 1 && (
-          <span className="text-[9.5px] text-slate-400 font-bold leading-none">/ {totalCandidates}</span>
-        )}
-      </div>
+      <span className="font-black text-sm text-slate-600">
+        {numRank}
+      </span>
     );
   };
 
@@ -723,11 +701,25 @@ export default function ResultsAndRankingPage() {
                   </Badge>
                 </div>
 
-                <div>
-                  <h4 className="font-extrabold text-base text-slate-900 group-hover:text-indigo-600 transition-colors">
-                    {candidate.candidateName}
-                  </h4>
-                  <p className="text-xs text-slate-500 mt-0.5 truncate">{candidate.email}</p>
+                <div className="flex items-center gap-3">
+                  {candidate.verificationPhoto ? (
+                    <div className="relative shrink-0">
+                      <img
+                        src={candidate.verificationPhoto}
+                        alt={candidate.candidateName}
+                        className="h-10 w-10 rounded-xl object-cover border border-indigo-200/80 shadow-2xs group-hover:scale-105 transition-transform"
+                      />
+                      <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center shadow-xs" title="Webcam Photo Verified">
+                        <ShieldCheck className="h-2.5 w-2.5 text-white stroke-[2.5]" />
+                      </span>
+                    </div>
+                  ) : null}
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-extrabold text-base text-slate-900 group-hover:text-indigo-600 transition-colors truncate">
+                      {candidate.candidateName}
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-0.5 truncate">{candidate.email}</p>
+                  </div>
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-600">
@@ -948,15 +940,31 @@ export default function ResultsAndRankingPage() {
                         {/* Candidate */}
                         <td className="py-4 px-5">
                           <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500/15 via-purple-500/10 to-indigo-600/10 border border-indigo-200/60 text-indigo-700 font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
-                              {String(item.candidateName || "C")
-                                .split(" ")
-                                .filter(Boolean)
-                                .map((n) => n[0])
-                                .slice(0, 2)
-                                .join("")
-                                .toUpperCase()}
-                            </div>
+                            {item.verificationPhoto ? (
+                              <div className="relative shrink-0">
+                                <img
+                                  src={item.verificationPhoto}
+                                  alt={item.candidateName}
+                                  className="h-9 w-9 rounded-xl object-cover border border-indigo-200/80 shadow-2xs group-hover:scale-105 transition-transform"
+                                />
+                                <span
+                                  className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center shadow-2xs"
+                                  title="Webcam Identity Verified"
+                                >
+                                  <ShieldCheck className="h-2 w-2 text-white stroke-[3]" />
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500/15 via-purple-500/10 to-indigo-600/10 border border-indigo-200/60 text-indigo-700 font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                                {String(item.candidateName || "C")
+                                  .split(" ")
+                                  .filter(Boolean)
+                                  .map((n) => n[0])
+                                  .slice(0, 2)
+                                  .join("")
+                                  .toUpperCase()}
+                              </div>
+                            )}
                             <div className="min-w-0">
                               <p className="font-extrabold text-slate-900 text-sm leading-tight truncate group-hover:text-indigo-600 transition-colors">
                                 {item.candidateName}
@@ -1194,9 +1202,25 @@ export default function ResultsAndRankingPage() {
 
               <div className="flex items-start justify-between gap-4 relative z-10">
                 <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
-                  <div className="h-13 w-13 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center font-black text-xl sm:text-2xl shadow-inner shrink-0 uppercase">
-                    {selectedCandidate.candidateName.charAt(0)}
-                  </div>
+                  {selectedCandidate.verificationPhoto ? (
+                    <div className="relative h-13 w-13 sm:h-14 sm:w-14 shrink-0">
+                      <img
+                        src={selectedCandidate.verificationPhoto}
+                        alt={`Photo of ${selectedCandidate.candidateName}`}
+                        className="h-13 w-13 sm:h-14 sm:w-14 rounded-2xl object-cover border-2 border-white/70 shadow-md"
+                      />
+                      <span
+                        className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center shadow-xs"
+                        title="Webcam Identity Verified"
+                      >
+                        <ShieldCheck className="h-3 w-3 text-white stroke-[2.5]" />
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="h-13 w-13 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center font-black text-xl sm:text-2xl shadow-inner shrink-0 uppercase">
+                      {selectedCandidate.candidateName.charAt(0)}
+                    </div>
+                  )}
                   <div className="space-y-1 min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <DialogTitle className="text-xl sm:text-2xl font-black text-white tracking-tight truncate drop-shadow-xs">
@@ -1230,6 +1254,84 @@ export default function ResultsAndRankingPage() {
 
             {/* Scrollable Content Body with smooth custom scrollbar */}
             <div className="p-6 sm:p-7 space-y-6 overflow-y-auto flex-1 no-scrollbar [scrollbar-width:none]">
+              {/* Candidate Identity Verification Card (Pre-Start Webcam Snapshot) */}
+              <div className="p-4 sm:p-5 rounded-3xl bg-slate-50/90 border border-slate-200/90 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-lg bg-indigo-50 border border-indigo-200/80 flex items-center justify-center text-indigo-600">
+                      <Camera className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-xs sm:text-[13px] text-slate-900 tracking-tight">
+                        Candidate Identity Verification
+                      </h4>
+                      <p className="text-[11px] text-slate-500 font-medium">
+                        Live webcam photo captured prior to test commencement
+                      </p>
+                    </div>
+                  </div>
+
+                  {selectedCandidate.verificationPhoto ? (
+                    <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-300 text-[10.5px] font-extrabold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-2xs">
+                      <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 stroke-[2.5]" />
+                      Verified Pre-Test Photo
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-slate-100 text-slate-500 border-slate-200 text-[10.5px] font-semibold px-2.5 py-1 rounded-full">
+                      No Photo Recorded
+                    </Badge>
+                  )}
+                </div>
+
+                {selectedCandidate.verificationPhoto ? (
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+                    <div className="relative group shrink-0">
+                      <img
+                        src={selectedCandidate.verificationPhoto}
+                        alt={`Identity verification photo of ${selectedCandidate.candidateName}`}
+                        className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-2 border-indigo-100 shadow-sm transition-transform group-hover:scale-102"
+                      />
+                      <div className="absolute inset-0 bg-slate-950/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                        <span className="text-[10px] text-white font-bold bg-slate-900/80 px-2 py-0.5 rounded-md">
+                          Verified
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 text-center sm:text-left flex-1 min-w-0">
+                      <div className="space-y-0.5">
+                        <p className="text-xs font-bold text-slate-900 flex items-center justify-center sm:justify-start gap-1.5">
+                          <span>Identity Authenticated</span>
+                          <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        </p>
+                        <p className="text-[11.5px] text-slate-600 leading-relaxed font-medium">
+                          Verify that the candidate attending your offline or video interview matches this webcam photo captured during screening to prevent proxy test-taking.
+                        </p>
+                      </div>
+
+                      <div className="pt-1.5 border-t border-slate-100 flex items-center justify-center sm:justify-start gap-2 text-[11px] text-slate-500">
+                        <Clock className="h-3.5 w-3.5 text-slate-400" />
+                        <span>
+                          Captured on{" "}
+                          <strong className="text-slate-700 font-semibold">
+                            {selectedCandidate.photoCapturedAt
+                              ? new Date(selectedCandidate.photoCapturedAt).toLocaleString(undefined, {
+                                  dateStyle: "medium",
+                                  timeStyle: "short",
+                                })
+                              : selectedCandidate.completedAt || "Test Start"}
+                          </strong>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-2xl bg-white border border-dashed border-slate-200 text-center text-slate-400 text-xs font-medium">
+                    No webcam verification photo was captured for this candidate attempt.
+                  </div>
+                )}
+              </div>
+
               {/* Score Highlight KPI Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 text-center">
                 <div className="p-3.5 rounded-2xl bg-slate-50/90 border border-slate-100 shadow-2xs">

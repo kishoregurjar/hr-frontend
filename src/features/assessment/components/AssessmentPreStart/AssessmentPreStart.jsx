@@ -524,12 +524,20 @@ export default function AssessmentPreStart({
       return;
     }
 
+    const photoToPass =
+      capturedPhoto ||
+      (typeof window !== "undefined"
+        ? sessionStorage.getItem("candidate_photo_url") || localStorage.getItem("candidate_photo_url")
+        : null);
+
     onStart?.({
       name: candidateName.trim(),
       email: email.trim(),
       phone: candidate?.phone || "",
       experience: candidate?.experience || "",
       candidateAccessToken,
+      verificationPhoto: photoToPass,
+      photoCapturedAt: new Date().toISOString(),
     });
   };
 

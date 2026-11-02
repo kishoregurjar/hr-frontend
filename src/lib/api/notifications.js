@@ -45,3 +45,11 @@ export const deleteNotification = async (id) => {
   return res?.data?.data || res?.data || res;
 };
 
+/**
+ * Clear all notifications
+ */
+export const clearAllNotifications = async () => {
+  const res = await axiosClient.delete("/notifications/clear-all");
+  return res?.data?.data || res?.data || res;
+};
+

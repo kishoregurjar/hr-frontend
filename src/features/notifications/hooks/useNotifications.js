@@ -11,6 +11,7 @@ import {
   markNotificationAsRead,
   markAllNotificationsAsRead,
   deleteNotification,
+  clearAllNotifications,
 } from "@/lib/api/notifications";
 
 export const NOTIFICATION_QUERY_KEYS = {
@@ -101,6 +102,23 @@ export function useNotifications(filter = "all") {
     },
   });
 
+  // 6. Clear all mutation
+  const clearAllMutation = useMutation({
+    mutationFn: clearAllNotifications,
+    onSuccess: () => {
+      queryClient.setQueryData(NOTIFICATION_QUERY_KEYS.UNREAD_COUNT, 0);
+      queryClient.setQueriesData(
+        { queryKey: ["notifications"] },
+        () => ({
+          notifications: [],
+          pagination: { total: 0, totalPages: 0, page: 1, limit: 25 },
+        })
+      );
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      toast.success("All notifications cleared");
+    },
+  });
+
   // 6. Real-Time WebSockets Listener (Zero DB Polling)
   useEffect(() => {
     if (!socket || !isConnected) return;
@@ -151,7 +169,9 @@ export function useNotifications(filter = "all") {
     markAsRead: markAsReadMutation.mutate,
     markAllAsRead: markAllAsReadMutation.mutate,
     deleteNotification: deleteMutation.mutate,
+    clearAll: clearAllMutation.mutate,
     isMarkingAll: markAllAsReadMutation.isPending,
+    isClearingAll: clearAllMutation.isPending,
   };
 }
 

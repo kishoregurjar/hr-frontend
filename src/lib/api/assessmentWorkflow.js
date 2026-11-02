@@ -28,6 +28,12 @@ export const startAssessmentWorkflow = async (token, candidateInfo = {}) => {
     ? { ...assignment, status: "In Progress" }
     : await startAssignment(token);
 
+  const photo =
+    candidateInfo?.verificationPhoto ||
+    (typeof window !== "undefined"
+      ? sessionStorage.getItem("candidate_photo_url") || localStorage.getItem("candidate_photo_url")
+      : null);
+
   const attempt = await startAttempt({
     assignmentId: startedAssignment.id,
     candidateId: startedAssignment.candidateId,
@@ -35,6 +41,8 @@ export const startAssessmentWorkflow = async (token, candidateInfo = {}) => {
     candidateAccessToken: candidateInfo?.candidateAccessToken,
     candidateName: candidateInfo?.name,
     candidatePhone: candidateInfo?.phone,
+    verificationPhoto: photo,
+    photoCapturedAt: candidateInfo?.photoCapturedAt || new Date().toISOString(),
     assessmentId: startedAssignment.assessmentId || assessment?.id,
     assessment,
     assessmentTitle: assessment?.title,
