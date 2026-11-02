@@ -128,9 +128,6 @@ export default function NotificationsPage() {
     if (!notif.isRead) {
       markAsRead(notif.id);
     }
-    if (notif.link) {
-      router.push(notif.link);
-    }
   };
 
   return (
@@ -344,16 +341,7 @@ export default function NotificationsPage() {
                       </p>
 
                       {/* Actions */}
-                      <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
-                        {notif.link ? (
-                          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 group-hover:text-indigo-800 transition">
-                            <span>Open Assessment Result Details</span>
-                            <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
-                          </div>
-                        ) : (
-                          <div />
-                        )}
-
+                      <div className="mt-2.5 flex items-center justify-end gap-2">
                         <div
                           className="flex items-center gap-2"
                           onClick={(e) => e.stopPropagation()}

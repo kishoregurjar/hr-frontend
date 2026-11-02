@@ -150,10 +150,6 @@ export default function NotificationCenterModal({ isOpen, onClose }) {
     if (!notif.isRead) {
       markAsRead(notif.id);
     }
-    if (notif.link) {
-      onClose();
-      router.push(notif.link);
-    }
   };
 
   const handleOpenFullPage = () => {
@@ -413,41 +409,32 @@ export default function NotificationCenterModal({ isOpen, onClose }) {
                         {notif.message}
                       </p>
 
-                      {/* Action Links & Metadata Chips */}
-                      <div className="mt-2.5 flex items-center justify-between gap-2 flex-wrap">
-                        {notif.link ? (
-                          <div className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 group-hover:text-indigo-800 transition">
-                            <span>View Candidate Results</span>
-                            <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
-                          </div>
-                        ) : (
-                          <div />
-                        )}
-
-                        {/* Action buttons (Delete & Toggle Read) */}
-                        <div
-                          className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {!notif.isRead && (
-                            <button
-                              type="button"
-                              onClick={() => markAsRead(notif.id)}
-                              title="Mark as read"
-                              className="px-2 py-1 text-[11px] font-semibold text-slate-600 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition"
-                            >
-                              Mark read
-                            </button>
-                          )}
+                      {/* Action buttons (Delete & Toggle Read) */}
+                      <div className="mt-2 flex items-center justify-end gap-1.5 opacity-80 group-hover:opacity-100 transition">
+                        {!notif.isRead && (
                           <button
                             type="button"
-                            onClick={() => deleteNotification(notif.id)}
-                            title="Delete notification"
-                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markAsRead(notif.id);
+                            }}
+                            title="Mark as read"
+                            className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            Mark read
                           </button>
-                        </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteNotification(notif.id);
+                          }}
+                          title="Delete notification"
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </div>
 
