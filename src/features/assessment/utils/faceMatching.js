@@ -16,7 +16,11 @@ let modelLoadingPromise = null;
 export async function getFaceApi() {
   if (typeof window === "undefined") return null;
   if (!faceApiPromise) {
-    faceApiPromise = import("@vladmandic/face-api");
+    faceApiPromise = import("@vladmandic/face-api").catch((err) => {
+      console.warn("[faceMatching] Could not load @vladmandic/face-api:", err?.message || err);
+      faceApiPromise = null;
+      return null;
+    });
   }
   return faceApiPromise;
 }

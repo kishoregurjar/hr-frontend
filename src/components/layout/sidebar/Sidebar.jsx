@@ -396,7 +396,7 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
 
       {/* ── Logout Confirmation Dialog Modal ── */}
       <Dialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
-        <DialogContent className="sm:max-w-md rounded-2xl p-6">
+        <DialogContent className="w-[92vw] sm:max-w-md rounded-2xl p-5 sm:p-6">
           <DialogHeader className="space-y-3">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 border border-rose-100">
               <LogOut className="h-6 w-6" />

@@ -598,7 +598,7 @@ const AssessmentList = () => {
 
       {/* ── 6. Floating Bulk Selection Action Bar ── */}
       {selectedIds.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-slate-900 text-white shadow-2xl border border-slate-800 animate-in fade-in slide-in-from-bottom-4">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-wrap sm:flex-nowrap items-center justify-center gap-2.5 sm:gap-3 px-4 py-2.5 rounded-2xl bg-slate-900 text-white shadow-2xl border border-slate-800 animate-in fade-in slide-in-from-bottom-4 max-w-[calc(100vw-2rem)] w-max">
           <span className="text-xs font-bold">
             {selectedIds.length} assessment{selectedIds.length > 1 ? "s" : ""} selected
           </span>

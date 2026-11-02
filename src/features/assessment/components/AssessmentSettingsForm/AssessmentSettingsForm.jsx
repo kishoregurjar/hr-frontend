@@ -68,7 +68,7 @@ const AssessmentSettingsForm = ({
   };
 
   return (
-    <div className="rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-6 sm:p-8 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 font-sans space-y-6">
+    <div className="rounded-2xl sm:rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-4 sm:p-8 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 font-sans space-y-6">
       <div className="border-b border-slate-100 pb-4">
         <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
           <Sliders className="h-5 w-5 text-indigo-600" />
@@ -176,12 +176,12 @@ const AssessmentSettingsForm = ({
           </div>
 
           {/* Navigation Buttons */}
-          <div className="flex items-center justify-between border-t border-slate-100 pt-6">
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-between border-t border-slate-100 pt-6 gap-3">
             <Button
               type="button"
               variant="outline"
               onClick={onBack}
-              className="h-10 px-5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs gap-1.5 shadow-2xs transition-all cursor-pointer"
+              className="w-full sm:w-auto h-11 sm:h-10 px-5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs gap-1.5 shadow-2xs transition-all cursor-pointer justify-center"
             >
               <ArrowLeft className="h-3.5 w-3.5 mr-1" />
               Back
@@ -189,7 +189,7 @@ const AssessmentSettingsForm = ({
 
             <Button
               type="submit"
-              className="h-10 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs gap-1.5 shadow-sm shadow-indigo-500/20 transition-all cursor-pointer"
+              className="w-full sm:w-auto h-11 sm:h-10 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs gap-1.5 shadow-sm shadow-indigo-500/20 transition-all cursor-pointer justify-center"
             >
               <span>Continue to Review</span>
               <ArrowRight className="h-3.5 w-3.5 ml-1" />

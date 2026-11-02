@@ -29,7 +29,7 @@ const QuestionCard = ({ question, isSelected = false, onToggleSelect }) => {
       className="h-full"
     >
       <div
-        className={`h-full rounded-2xl border bg-white p-5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group ${
+        className={`h-full rounded-2xl border bg-white p-4 sm:p-5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group ${
           isSelected
             ? "border-blue-500 ring-2 ring-blue-500/20 bg-blue-50/15"
             : "border-slate-200/90 hover:border-blue-300"
@@ -45,9 +45,9 @@ const QuestionCard = ({ question, isSelected = false, onToggleSelect }) => {
                 onChange={onToggleSelect}
                 className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer transition"
               />
-              <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10.5px] font-bold gap-1 px-2.5 py-0.5">
-                <Tag className="h-3 w-3 text-blue-600" />
-                {question.category || "General"}
+              <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10.5px] font-bold gap-1 px-2.5 py-0.5 truncate max-w-[150px]">
+                <Tag className="h-3 w-3 text-blue-600 shrink-0" />
+                <span className="truncate">{question.category || "General"}</span>
               </Badge>
             </div>
 
@@ -81,12 +81,12 @@ const QuestionCard = ({ question, isSelected = false, onToggleSelect }) => {
         </div>
 
         {/* Footer & Actions */}
-        <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-          <span className="text-[11px] text-slate-400 font-medium">
+        <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <span className="text-[11.5px] text-slate-400 font-medium order-2 sm:order-1">
             Updated {formatDate(question.updatedAt)}
           </span>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1.5 order-1 sm:order-2 flex-wrap">
             <QuestionPreviewSheet question={question} />
             <EditQuestionDialog question={question} />
             <DeleteQuestionDialog question={question} />

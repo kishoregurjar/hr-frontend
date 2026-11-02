@@ -130,7 +130,7 @@ const ImportCandidatesDialog = ({ existingCandidates = [] }) => {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
+      <DialogContent className="w-[94vw] sm:max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-2xl sm:rounded-3xl">
         <DialogHeader>
           <DialogTitle>Import Candidates</DialogTitle>
           <DialogDescription>

@@ -17,7 +17,9 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/features/auth/context";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { submitSupportRequest, getMyRequests } from "@/lib/api/support";
+import { SUPPORT_QUERY_KEYS } from "@/features/support";
 
 const STATUS_CONFIG = {
   OPEN: { 
@@ -39,6 +41,7 @@ const STATUS_CONFIG = {
 
 export default function SupportPage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   // Scroll & Parallax Refs
   const scrollContainerRef = useRef(null);
@@ -144,6 +147,7 @@ export default function SupportPage() {
       setSubject("");
       setMessage("");
       toast.success("Support request submitted successfully!");
+      queryClient.invalidateQueries({ queryKey: SUPPORT_QUERY_KEYS.all });
       fetchRequests();
 
       setTimeout(() => setSubmitted(false), 5000);
@@ -215,7 +219,7 @@ export default function SupportPage() {
 
           {/* Subtitle */}
           <p className="text-white/85 text-xs sm:text-sm font-normal max-w-2xl leading-relaxed">
-            Recruitment workspace mein koi problem hai? Ticket submit karein, hamari support team jaldi resolve karegi.
+            Having an issue with your recruitment workspace? Submit a ticket and our support team will resolve it promptly.
           </p>
 
           {/* 3 Metric / Response Time Cards (With Staggered Parallax Elevation) */}
@@ -285,7 +289,7 @@ export default function SupportPage() {
                   Ticket Submitted!
                 </h3>
                 <p className="text-sm text-slate-600 max-w-xs leading-relaxed">
-                  Aapka support ticket submit ho gaya hai. Hamari team jaldi resolve karegi.
+                  Your support ticket has been submitted. Our team will resolve it shortly.
                 </p>
                 <button
                   type="button"
@@ -444,7 +448,7 @@ export default function SupportPage() {
                   No tickets found
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-400 max-w-xs leading-relaxed">
-                  Aapke submit kiye gaye tickets yahan dikhenge.
+                  Your submitted support tickets will appear here.
                 </p>
               </div>
             ) : (

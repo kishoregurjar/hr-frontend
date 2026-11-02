@@ -8,6 +8,7 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import { RESULT_QUERY_KEYS } from "../features/result/constants";
 import { CANDIDATE_QUERY_KEYS } from "../features/candidate/constants";
 import { HIRING_QUERY_KEYS } from "../features/hiring/constants";
+import { SUPPORT_QUERY_KEYS } from "../features/support";
 
 const getCleanSocketUrl = () => {
   const envSocket = process.env.NEXT_PUBLIC_SOCKET_URL;
@@ -100,6 +101,14 @@ export function SocketProvider({ children }) {
       queryClient.invalidateQueries({ queryKey: ["company"] });
     });
 
+    socketInstance.on("SUPPORT_TICKET_CREATED", () => {
+      queryClient.invalidateQueries({ queryKey: SUPPORT_QUERY_KEYS.all });
+    });
+
+    socketInstance.on("SUPPORT_TICKET_UPDATED", () => {
+      queryClient.invalidateQueries({ queryKey: SUPPORT_QUERY_KEYS.all });
+    });
+
     return () => {
       socketInstance.off("connect");
       socketInstance.off("disconnect");
@@ -108,6 +117,8 @@ export function SocketProvider({ children }) {
       socketInstance.off("ASSESSMENT_SUBMITTED");
       socketInstance.off("NEW_JOB_APPLICATION");
       socketInstance.off("COMPANY_MEMBER_JOINED");
+      socketInstance.off("SUPPORT_TICKET_CREATED");
+      socketInstance.off("SUPPORT_TICKET_UPDATED");
       socketInstance.disconnect();
     };
   }, [accessToken, isAuthenticated, queryClient, setSocket, setConnected]);

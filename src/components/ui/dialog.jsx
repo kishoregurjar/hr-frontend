@@ -110,7 +110,7 @@ export function DialogContent({
       <DialogOverlay />
       <div
         className={cn(
-          "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 rounded-lg animate-in fade-in-0 zoom-in-95",
+          "fixed left-[50%] top-[50%] z-50 grid w-[calc(100vw-1.5rem)] sm:w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 rounded-2xl sm:rounded-3xl animate-in fade-in-0 zoom-in-95 max-h-[calc(100dvh-2rem)] overflow-y-auto",
           className
         )}
         {...props}

@@ -16,7 +16,7 @@ import {
 import { useCreateCandidate } from "../../hooks";
 import CandidateForm from "../CandidateForm";
 
-const AddCandidateDialog = ({ trigger }) => {
+const AddCandidateDialog = ({ trigger, className }) => {
   const [open, setOpen] = useState(false);
   const createCandidate = useCreateCandidate();
 
@@ -54,15 +54,18 @@ const AddCandidateDialog = ({ trigger }) => {
         {trigger || (
           <Button
             type="button"
-            className="gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs h-9 px-4 rounded-xl shadow-xs shadow-indigo-500/20 cursor-pointer"
+            className={
+              className ||
+              "w-full sm:w-auto justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs h-9 px-4 rounded-xl shadow-xs shadow-indigo-500/20 cursor-pointer"
+            }
           >
-            <Plus className="h-3.5 w-3.5" />
-            Add Candidate
+            <Plus className="h-3.5 w-3.5 shrink-0" />
+            <span>Add Candidate</span>
           </Button>
         )}
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden rounded-3xl border border-white/90 shadow-2xl font-sans bg-white">
+      <DialogContent className="w-[92vw] sm:max-w-[480px] p-0 overflow-hidden rounded-3xl border border-white/90 shadow-2xl font-sans bg-white max-h-[90vh] flex flex-col">
         {/* ── 1. SIGNATURE GRADIENT HEADER ── */}
         <div className="bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-6 text-white relative overflow-hidden select-none">
           {/* Subtle Ambient Rings & Glow */}
@@ -91,7 +94,7 @@ const AddCandidateDialog = ({ trigger }) => {
         </div>
 
         {/* ── 2. FORM BODY ── */}
-        <div className="p-6">
+        <div className="p-5 sm:p-6 overflow-y-auto">
           <CandidateForm
             onSubmit={handleSubmit}
             onCancel={() => setOpen(false)}
