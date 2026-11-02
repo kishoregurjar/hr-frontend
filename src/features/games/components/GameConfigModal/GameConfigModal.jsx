@@ -125,7 +125,7 @@ const GameConfigModal = ({ game, open, onOpenChange, onSave }) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden rounded-3xl border border-white/90 shadow-2xl font-sans bg-white">
+      <DialogContent showCloseButton={false} className="sm:max-w-[500px] p-0 overflow-hidden rounded-3xl border border-white/90 shadow-2xl font-sans bg-white">
         {/* ── 1. Top Hero Header with 3D Parallax Gradient ── */}
         <div className="shrink-0 bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-6 text-white rounded-t-3xl relative overflow-hidden select-none shadow-md">
           {/* Subtle Ambient 3D Glow Accents */}
@@ -164,7 +164,7 @@ const GameConfigModal = ({ game, open, onOpenChange, onSave }) => {
         </div>
 
         {/* ── 2. Modal Form Body ── */}
-        <form onSubmit={handleSave} className="p-6 space-y-5">
+        <form onSubmit={handleSave} className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1">
           {/* Game Benchmark Summary Pill */}
           <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-slate-50 to-indigo-50/30 border border-slate-200/80 text-xs">
             <div className="flex items-center gap-2">

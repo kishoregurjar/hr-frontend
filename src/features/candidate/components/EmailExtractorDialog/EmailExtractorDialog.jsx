@@ -45,7 +45,11 @@ import {
   useDisconnectMailbox,
 } from "../../hooks";
 
-const EmailExtractorDialog = ({ triggerText = "Extract from Emails" }) => {
+const EmailExtractorDialog = ({
+  triggerText = "Extract from Emails",
+  trigger,
+  className,
+}) => {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("inbox"); // "inbox" | "resume" | "manual"
@@ -160,15 +164,20 @@ const EmailExtractorDialog = ({ triggerText = "Extract from Emails" }) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          className="relative gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 font-semibold text-xs h-9 px-4 rounded-xl shadow-2xs transition-all cursor-pointer"
-        >
-          <Mail className="h-4 w-4 text-indigo-600" />
-          {triggerText}
-        </Button>
+        {trigger || (
+          <Button
+            className={
+              className ||
+              "w-full sm:w-auto justify-center relative gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 font-semibold text-xs h-9 px-4 rounded-xl shadow-2xs transition-all cursor-pointer"
+            }
+          >
+            <Mail className="h-4 w-4 text-indigo-600 shrink-0" />
+            <span className="truncate">{triggerText}</span>
+          </Button>
+        )}
       </DialogTrigger>
 
-      <DialogContent className="max-w-xl p-6 rounded-2xl border-slate-200">
+      <DialogContent className="w-[94vw] sm:max-w-xl p-4 sm:p-6 rounded-2xl border-slate-200 max-h-[92vh] overflow-y-auto">
         {/* ── HEADER ── */}
         <DialogHeader className="pb-3 border-b border-slate-100">
           <div className="flex items-center gap-3">

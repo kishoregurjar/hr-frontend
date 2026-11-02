@@ -56,9 +56,9 @@ const EditCandidateDialog = ({ candidate }) => {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden rounded-3xl border border-white/90 shadow-2xl font-sans bg-white">
+      <DialogContent className="w-[92vw] sm:max-w-[480px] p-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-white/90 shadow-2xl font-sans bg-white max-h-[90vh] flex flex-col">
         {/* ── 1. SIGNATURE GRADIENT HEADER ── */}
-        <div className="bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-6 text-white relative overflow-hidden select-none">
+        <div className="bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-4 sm:p-6 text-white relative overflow-hidden select-none shrink-0">
           {/* Subtle Ambient Rings & Glow */}
           <div className="absolute -top-12 -right-12 w-36 h-36 rounded-full bg-white/10 blur-xl pointer-events-none" />
           <div className="absolute top-2 right-10 w-24 h-24 rounded-full border border-white/15 pointer-events-none" />
@@ -85,7 +85,7 @@ const EditCandidateDialog = ({ candidate }) => {
         </div>
 
         {/* ── 2. FORM BODY ── */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
           <CandidateForm
             defaultValues={{
               name: candidate.name ?? "",

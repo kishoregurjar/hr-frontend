@@ -70,7 +70,7 @@ const ForgotPasswordDialog = ({ initialEmail = "" }) => {
         </button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-[92vw] sm:max-w-md p-4 sm:p-6 rounded-2xl sm:rounded-3xl">
         <DialogHeader>
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 mb-2 border border-blue-100">
             <KeyRound className="h-6 w-6" />

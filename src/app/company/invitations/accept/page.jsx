@@ -86,7 +86,7 @@ function AcceptInvitationContent() {
             </div>
             {error.toLowerCase().includes("does not match") && (
               <p className="text-xs text-slate-600">
-                Aapka current account (<strong>{currentUserEmail}</strong>) is invitation ke email se match nahi karta. Please us email se login karein jis par invitation bheja gaya tha.
+                Your current account (<strong>{currentUserEmail}</strong>) does not match the invitation email. Please sign in with the email address that received the invitation.
               </p>
             )}
           </div>
