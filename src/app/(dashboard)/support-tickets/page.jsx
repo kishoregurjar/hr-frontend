@@ -352,7 +352,7 @@ export default function CompanySupportTicketsPage() {
       <div className="pt-6 sm:pt-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div
           ref={midHeroRef}
-          className="relative bg-gradient-to-r from-[#3826C7] via-[#5B37EB] to-[#0284C7] text-white rounded-3xl sm:rounded-4xl p-6 sm:p-8 lg:p-10 shadow-xl shadow-indigo-950/15 overflow-hidden select-none will-change-transform"
+          className="relative bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] text-white rounded-3xl sm:rounded-4xl p-6 sm:p-8 lg:p-10 shadow-xl shadow-indigo-950/15 overflow-hidden select-none will-change-transform"
           style={{ transform: "translate3d(0, 0, 0)" }}
         >
           {/* Far Background Orbs & Rings inside the Hero Card */}
@@ -364,6 +364,8 @@ export default function CompanySupportTicketsPage() {
             <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-white/15 blur-2xl" />
             <div className="absolute -top-12 -right-12 w-72 h-72 rounded-full border border-white/20" />
             <div className="absolute top-8 right-16 w-52 h-52 rounded-full border border-white/15" />
+            <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-white/40 blur-[1px] animate-pulse" />
+            <div className="absolute top-1/3 left-2/3 w-2.5 h-2.5 rounded-full bg-pink-200/50 blur-[1px] animate-pulse" />
           </div>
 
           <div className="relative z-10 space-y-4">
@@ -455,10 +457,10 @@ export default function CompanySupportTicketsPage() {
                 key={opt.value}
                 type="button"
                 onClick={() => setStatusFilter(opt.value)}
-                className={`px-5 py-2 text-xs font-bold rounded-full transition-all cursor-pointer whitespace-nowrap shadow-xs ${
+                className={`px-5 py-2 text-xs font-bold rounded-full transition-all cursor-pointer whitespace-nowrap ${
                   statusFilter === opt.value
-                    ? "bg-slate-900 text-white"
-                    : "bg-white text-slate-700 border border-slate-200/90 hover:bg-slate-50"
+                    ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/25 ring-2 ring-indigo-600/20"
+                    : "bg-white text-slate-600 border border-slate-200/90 hover:bg-slate-50 hover:text-slate-900 shadow-xs"
                 }`}
               >
                 {opt.label}

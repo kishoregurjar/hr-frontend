@@ -135,29 +135,38 @@ export default function NotificationsPage() {
       {/* ============================================================== */}
       {/* Top Banner Header */}
       {/* ============================================================== */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-r from-indigo-700 via-purple-700 to-indigo-900 p-6 sm:p-8 text-white shadow-xl shadow-indigo-950/10">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-6 sm:p-8 text-white shadow-xl shadow-indigo-950/15">
+        {/* Decorative Background Orbs & Concentric Rings */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-white/15 blur-2xl" />
+          <div className="absolute -top-12 -right-12 w-72 h-72 rounded-full border border-white/20" />
+          <div className="absolute top-8 right-16 w-52 h-52 rounded-full border border-white/15" />
+          <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-white/40 blur-[1px] animate-pulse" />
+          <div className="absolute top-1/3 left-2/3 w-2.5 h-2.5 rounded-full bg-pink-200/50 blur-[1px] animate-pulse" />
+        </div>
+
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold text-indigo-100 mb-3">
-              <Bell className="h-3.5 w-3.5" />
-              <span>Activity & Notification Feed</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-xs font-semibold text-white mb-3 shadow-xs">
+              <Bell className="h-3.5 w-3.5 text-indigo-100" />
+              <span>Activity &amp; Notification Feed</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white drop-shadow-sm">
               Notifications
             </h1>
-            <p className="text-indigo-100/90 text-sm mt-1 max-w-xl">
+            <p className="text-white/85 text-xs sm:text-sm mt-1 max-w-xl font-medium">
               Track real-time candidate test completions, proctoring security alerts, and assessment invitations.
             </p>
           </div>
 
-          <div className="flex items-center gap-2 self-start md:self-center">
+          <div className="flex items-center gap-2.5 self-start md:self-center">
             {unreadCount > 0 && (
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => markAllAsRead()}
                 disabled={isMarkingAll}
-                className="bg-white text-indigo-900 hover:bg-indigo-50 font-bold rounded-2xl shadow-sm text-xs cursor-pointer gap-1.5"
+                className="bg-white text-indigo-900 hover:bg-slate-50 font-bold rounded-full shadow-xs text-xs cursor-pointer gap-1.5 px-4 h-9"
               >
                 <CheckCheck className="h-4 w-4 text-indigo-600" />
                 <span>Mark All Read</span>
@@ -168,7 +177,7 @@ export default function NotificationsPage() {
               variant="outline"
               size="sm"
               onClick={() => refetch()}
-              className="bg-white/10 hover:bg-white/20 text-white border-white/20 rounded-2xl text-xs cursor-pointer gap-1.5"
+              className="bg-white/15 hover:bg-white/25 text-white border-white/25 rounded-full text-xs font-semibold cursor-pointer gap-1.5 px-4 h-9 backdrop-blur-md shadow-xs transition-all"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               <span>Refresh</span>
@@ -184,14 +193,14 @@ export default function NotificationsPage() {
         {/* Filter & Search Bar */}
         <div className="p-4 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           {/* Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
             <button
               type="button"
               onClick={() => setActiveTab("all")}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
+              className={`px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === "all"
-                  ? "bg-slate-900 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/25 ring-2 ring-indigo-600/20"
+                  : "bg-white text-slate-600 border border-slate-200/90 hover:bg-slate-50 hover:text-slate-900 shadow-xs"
               }`}
             >
               All Notifications ({notifications.length})
@@ -199,17 +208,21 @@ export default function NotificationsPage() {
             <button
               type="button"
               onClick={() => setActiveTab("unread")}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 flex items-center gap-2 ${
+              className={`px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-2 ${
                 activeTab === "unread"
-                  ? "bg-slate-900 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/25 ring-2 ring-indigo-600/20"
+                  : "bg-white text-slate-600 border border-slate-200/90 hover:bg-slate-50 hover:text-slate-900 shadow-xs"
               }`}
             >
               <span>Unread</span>
               {unreadCount > 0 && (
-                <span className={`px-2 py-0.2 rounded-full text-[10px] font-black ${
-                  activeTab === "unread" ? "bg-white text-slate-900" : "bg-rose-600 text-white"
-                }`}>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-black tracking-tight ${
+                    activeTab === "unread"
+                      ? "bg-white/25 text-white"
+                      : "bg-rose-500 text-white"
+                  }`}
+                >
                   {unreadCount}
                 </span>
               )}
@@ -217,10 +230,10 @@ export default function NotificationsPage() {
             <button
               type="button"
               onClick={() => setActiveTab("ASSESSMENT")}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
+              className={`px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === "ASSESSMENT"
-                  ? "bg-slate-900 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/25 ring-2 ring-indigo-600/20"
+                  : "bg-white text-slate-600 border border-slate-200/90 hover:bg-slate-50 hover:text-slate-900 shadow-xs"
               }`}
             >
               Assessments
@@ -228,10 +241,10 @@ export default function NotificationsPage() {
             <button
               type="button"
               onClick={() => setActiveTab("CANDIDATE")}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
+              className={`px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === "CANDIDATE"
-                  ? "bg-slate-900 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/25 ring-2 ring-indigo-600/20"
+                  : "bg-white text-slate-600 border border-slate-200/90 hover:bg-slate-50 hover:text-slate-900 shadow-xs"
               }`}
             >
               Candidates
@@ -240,13 +253,13 @@ export default function NotificationsPage() {
 
           {/* Search Box */}
           <div className="relative w-full sm:w-64 shrink-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by candidate, title..."
-              className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+              className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200/90 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition font-medium placeholder:text-slate-400 shadow-xs"
             />
           </div>
         </div>
@@ -260,8 +273,8 @@ export default function NotificationsPage() {
             </div>
           ) : filteredNotifications.length === 0 ? (
             <div className="py-20 px-4 text-center flex flex-col items-center justify-center bg-white rounded-3xl border border-dashed border-slate-200">
-              <div className="w-16 h-16 rounded-3xl bg-indigo-50 text-indigo-500 flex items-center justify-center mb-3">
-                <Bell className="h-8 w-8 stroke-1" />
+              <div className="w-16 h-16 rounded-3xl bg-indigo-50/80 border border-indigo-100 text-indigo-600 flex items-center justify-center mb-3 shadow-xs">
+                <Bell className="h-8 w-8 stroke-[1.5]" />
               </div>
               <h3 className="text-base font-bold text-slate-800">No notifications to show</h3>
               <p className="text-xs text-slate-400 mt-1 max-w-sm">
@@ -328,7 +341,7 @@ export default function NotificationsPage() {
                             <button
                               type="button"
                               onClick={() => markAsRead(notif.id)}
-                              className="px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-slate-100 rounded-xl transition"
+                              className="px-3 py-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100/80 rounded-full border border-indigo-200/60 transition cursor-pointer"
                             >
                               Mark as read
                             </button>
