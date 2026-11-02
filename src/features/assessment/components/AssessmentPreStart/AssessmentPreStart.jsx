@@ -7,8 +7,6 @@ import {
   Building2,
   User,
   Mail,
-  Phone,
-  Briefcase,
   Gamepad2,
   CheckCircle2,
   RotateCw,
@@ -56,12 +54,6 @@ export default function AssessmentPreStart({
   const [email, setEmail] = useState(
     candidate?.email || candidate?.candidateEmail || ""
   );
-  const [mobileNumber, setMobileNumber] = useState(
-    candidate?.phone || candidate?.mobileNumber || ""
-  );
-  const [experience, setExperience] = useState(
-    candidate?.experience || "0-1 Years (Entry Level)"
-  );
   const [accepted, setAccepted] = useState(false);
   const [nameError, setNameError] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -96,7 +88,6 @@ export default function AssessmentPreStart({
   useEffect(() => {
     if (candidate?.name && !candidateName) setCandidateName(candidate.name);
     if (candidate?.email && !email) setEmail(candidate.email);
-    if (candidate?.phone && !mobileNumber) setMobileNumber(candidate.phone);
   }, [candidate]);
 
   // Online status monitoring
@@ -536,8 +527,8 @@ export default function AssessmentPreStart({
     onStart?.({
       name: candidateName.trim(),
       email: email.trim(),
-      phone: mobileNumber.trim(),
-      experience,
+      phone: candidate?.phone || "",
+      experience: candidate?.experience || "",
       candidateAccessToken,
     });
   };
@@ -749,35 +740,6 @@ export default function AssessmentPreStart({
                       {emailError}
                     </p>
                   )}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Mobile Number <span className="text-slate-400 font-normal">(Optional)</span>
-                  </label>
-                  <input
-                    type="tel"
-                    value={mobileNumber}
-                    onChange={(e) => setMobileNumber(e.target.value)}
-                    placeholder="e.g. +91 98765 43210"
-                    className="w-full h-10 px-3 text-xs bg-white rounded-lg border border-slate-300 focus:outline-none focus:border-slate-900 text-slate-900"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Experience Level
-                  </label>
-                  <select
-                    value={experience}
-                    onChange={(e) => setExperience(e.target.value)}
-                    className="w-full h-10 px-3 text-xs bg-white rounded-lg border border-slate-300 focus:outline-none focus:border-slate-900 text-slate-900"
-                  >
-                    <option value="0-1 Years (Entry Level)">0–1 Years (Entry Level)</option>
-                    <option value="1-3 Years (Associate)">1–3 Years (Associate)</option>
-                    <option value="3-5 Years (Mid-Senior)">3–5 Years (Mid-Senior)</option>
-                    <option value="5+ Years (Senior / Lead)">5+ Years (Senior / Lead)</option>
-                  </select>
                 </div>
               </div>
 
