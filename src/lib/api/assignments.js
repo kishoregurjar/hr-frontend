@@ -23,7 +23,7 @@ const extractArrayData = (res) => {
 
 export const getAssignments = async () => {
   try {
-    const res = await axiosClient.get("/attempts");
+    const res = await axiosClient.get("/invitations");
     const list = extractArrayData(res);
 
     if (Array.isArray(list) && list.length > 0) {
@@ -48,10 +48,10 @@ export const getAssignments = async () => {
           email,
           candidateEmail: email,
           assessmentTitle,
-          status: item.status || "Invited",
+          status: item.status || "SENT",
           token,
           invitationToken: token,
-          invitedAt: item.createdAt || item.startedAt || item.invitedAt || new Date().toISOString(),
+          invitedAt: item.invitedAt || item.sentAt || item.createdAt || new Date().toISOString(),
           createdAt: item.createdAt,
           expiresAt: item.expiresAt,
           startedAt: item.startedAt,

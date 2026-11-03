@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import {
   Send,
   RefreshCw,
@@ -24,6 +25,7 @@ import { useCandidatesQuery, useAssignmentsQuery } from "@/features/candidate/ho
 import { AssignAssessmentDialog } from "@/features/candidate/components";
 
 export default function InvitationsPage() {
+  const router = useRouter();
   const { user } = useAuth();
 
   // Scroll & Parallax Refs
