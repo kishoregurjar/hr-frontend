@@ -228,23 +228,23 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
   return (
     <>
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 flex-col bg-white text-slate-800 border-r border-slate-200/90 transition-transform duration-300 ease-in-out lg:static lg:h-full lg:translate-x-0 shrink-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-68 flex-col bg-white text-slate-800 border-r border-slate-200/90 transition-transform duration-300 ease-in-out lg:static lg:h-full lg:translate-x-0 shrink-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* ── 1. Top Dynamic Company Workspace Header (Light Glassmorphic Capsule) ── */}
         <div className="h-[64px] min-h-[64px] max-h-[64px] shrink-0 flex items-center justify-between px-3 border-b border-slate-100/90 bg-white">
-          <div className="relative flex items-center gap-3 w-full h-[50px] px-2.5 rounded-[22px] bg-gradient-to-b from-white/95 via-slate-50/90 to-slate-100/80 border border-slate-200/70 shadow-[0_4px_16px_rgba(15,23,42,0.06)] backdrop-blur-md transition-all duration-200 group min-w-0 flex-1">
+          <div className="relative flex items-center gap-3 w-full h-[52px] px-2.5 rounded-[18px] bg-gradient-to-b from-white via-slate-50 to-slate-100/90 border border-slate-200/80 shadow-[0_2px_10px_rgba(15,23,42,0.04)] backdrop-blur-md transition-all duration-200 group min-w-0 flex-1">
             {/* Elevated Clean White Logo Box */}
-            <div className="h-[38px] w-[38px] rounded-[16px] bg-white border border-slate-200/80 p-1.5 flex items-center justify-center shrink-0 shadow-xs group-hover:shadow-sm transition-all overflow-hidden">
+            <div className="h-[44px] w-[44px] rounded-[14px] bg-white border border-slate-200/90 p-0.5 flex items-center justify-center shrink-0 shadow-xs group-hover:shadow-sm transition-all overflow-hidden">
               {companyLogo ? (
                 <img
                   src={companyLogo}
                   alt={companyName || "Company Logo"}
-                  className="h-full w-full object-contain"
+                  className="h-full w-full object-contain rounded-[10px]"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 font-extrabold text-xs text-white">
+                <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-gradient-to-br from-slate-900 to-slate-800 font-black text-sm text-white">
                   {getCompanyInitials(companyName)}
                 </div>
               )}
@@ -253,7 +253,7 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
             {/* Company Name Typography */}
             <div className="min-w-0 flex-1">
               <span
-                className="font-extrabold text-[14px] text-slate-900 tracking-tight leading-tight truncate block group-hover:text-slate-800 transition-colors"
+                className="font-black text-[15px] sm:text-[15.5px] text-slate-900 tracking-tight leading-tight truncate block group-hover:text-indigo-600 transition-colors"
                 title={companyName || "HireQuest"}
               >
                 {companyName || "HireQuest"}
@@ -271,7 +271,7 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
         </div>
 
         {/* ── 2. Navigation Links ── */}
-        <nav className="flex-1 px-3 py-3.5 space-y-1.5 overflow-y-auto">
+        <nav className="flex-1 px-3 py-3.5 space-y-1.5 overflow-y-auto no-scrollbar">
           {visibleNavItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item);
@@ -282,18 +282,20 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
                 href={item.href}
                 prefetch={false}
                 onClick={onClose}
-                className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                className={`group flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-[15.5px] transition-all duration-150 ${
                   active
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/25 font-bold"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80"
+                    ? "bg-gradient-to-r from-[#4E35E8] to-[#6D38F0] text-white shadow-md shadow-indigo-600/30 font-black"
+                    : "text-slate-800 hover:text-slate-950 hover:bg-slate-100/90 font-extrabold"
                 }`}
               >
                 <Icon
-                  className={`h-5 w-5 shrink-0 ${
-                    active ? "text-white" : "text-slate-400"
+                  className={`h-[22px] w-[22px] shrink-0 stroke-[2.25] transition-transform duration-150 group-hover:scale-105 ${
+                    active ? "text-white" : "text-slate-500 group-hover:text-indigo-600"
                   }`}
                 />
-                <span className="truncate">{item.title}</span>
+                <span className={`truncate tracking-tight ${active ? "font-black" : "font-extrabold"}`}>
+                  {item.title}
+                </span>
               </Link>
             );
           })}
@@ -360,20 +362,20 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
                 <img
                   src={user.avatarUrl}
                   alt={displayName}
-                  className="h-9 w-9 rounded-xl object-cover border border-indigo-200/60 shadow-xs shrink-0"
+                  className="h-10 w-10 rounded-2xl object-cover border border-indigo-200/60 shadow-xs shrink-0"
                 />
               ) : (
-                <div className="h-9 w-9 rounded-xl bg-indigo-600 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-xs">
+                <div className="h-10 w-10 rounded-2xl bg-indigo-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
                   {getInitials(displayName)}
                 </div>
               )}
 
               {/* Owner Name & Role */}
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-slate-900 truncate leading-tight">
+                <p className="text-sm font-extrabold text-slate-900 truncate leading-tight">
                   {displayName}
                 </p>
-                <p className="text-[11px] text-slate-500 font-medium truncate mt-0.5">
+                <p className="text-[11px] text-slate-500 font-semibold truncate mt-0.5">
                   {isOwnerOrAdmin ? "Company Owner" : "Recruiter"}
                 </p>
               </div>

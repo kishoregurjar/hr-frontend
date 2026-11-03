@@ -1,12 +1,18 @@
 "use client";
 
-import { useState, useMemo, useEffect, forwardRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, Mailbox, ChevronLeft, ChevronRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { getAttempts } from "@/lib/api/attempts";
+
+const getCandidateInitials = (name) => {
+  const str = String(name || "Candidate").trim();
+  const parts = str.split(" ").filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+};
 
 const RecentResultsTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -65,49 +71,49 @@ const RecentResultsTable = () => {
   }, [totalPages, validPage]);
 
   return (
-    <div className="rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-6 sm:p-7 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 space-y-5 font-sans transition-shadow duration-200 hover:shadow-lg">
+    <div className="rounded-3xl border border-slate-200/80 bg-white/95 backdrop-blur-md p-6 sm:p-8 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 space-y-6 font-sans transition-shadow duration-200 hover:shadow-lg">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
         <div>
-          <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+          <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
             Recent Assessment Results
           </h3>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">
+          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
             Highest scoring candidates evaluated across modules
           </p>
         </div>
         <Link
           href="/results"
-          className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition shadow-2xs self-start sm:self-auto cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50/80 hover:bg-indigo-100 text-indigo-700 text-xs sm:text-sm font-bold transition-all shadow-2xs self-start sm:self-auto cursor-pointer border border-indigo-200/60 hover:shadow-xs"
         >
           <span>View full leaderboard</span>
-          <ArrowRight className="h-3.5 w-3.5" />
+          <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs">
-          <thead className="text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2.5">
+        <table className="w-full text-left">
+          <thead className="text-xs font-extrabold uppercase tracking-wider text-slate-500 border-b border-slate-200/80 bg-slate-50/60">
             <tr>
-              <th className="py-2.5 px-3">NO.</th>
-              <th className="py-2.5 px-3">CANDIDATE</th>
-              <th className="py-2.5 px-3">ASSESSMENT</th>
-              <th className="py-2.5 px-3">SCORE</th>
-              <th className="py-2.5 px-3">TIME</th>
-              <th className="py-2.5 px-3 text-right">STATUS</th>
+              <th className="py-3 px-4 rounded-l-2xl">NO.</th>
+              <th className="py-3 px-4">CANDIDATE</th>
+              <th className="py-3 px-4">ASSESSMENT</th>
+              <th className="py-3 px-4">SCORE</th>
+              <th className="py-3 px-4">TIME</th>
+              <th className="py-3 px-4 text-right rounded-r-2xl">STATUS</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-slate-800 font-medium">
+          <tbody className="divide-y divide-slate-100 text-slate-800">
             {submittedAttempts.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-12 text-center text-slate-500">
-                  <div className="flex flex-col items-center justify-center space-y-2">
-                    <div className="w-14 h-14 rounded-full bg-indigo-50/80 border border-indigo-100/60 flex items-center justify-center mb-1 shadow-inner">
-                      <Mailbox className="h-7 w-7 text-indigo-500" />
+                <td colSpan={6} className="py-14 text-center text-slate-500">
+                  <div className="flex flex-col items-center justify-center space-y-3">
+                    <div className="w-16 h-16 rounded-3xl bg-indigo-50/80 border border-indigo-100 text-indigo-600 flex items-center justify-center mb-1 shadow-xs">
+                      <Mailbox className="h-8 w-8 stroke-[1.5]" />
                     </div>
-                    <p className="text-sm font-bold text-slate-800">No test results submitted yet</p>
-                    <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
+                    <p className="text-base font-bold text-slate-800">No test results submitted yet</p>
+                    <p className="text-xs sm:text-sm text-slate-400 max-w-sm leading-relaxed">
                       When invited candidates take tests, their evaluated scores will appear here.
                     </p>
                   </div>
@@ -125,32 +131,59 @@ const RecentResultsTable = () => {
                 const timeText = minutes ? `${minutes}m` : row.timeSpent || "24m";
 
                 return (
-                  <tr key={row.id || idx} className="hover:bg-slate-50/60 transition">
-                    <td className="py-3.5 px-3 font-extrabold text-slate-900">
+                  <tr key={row.id || idx} className="hover:bg-slate-50/80 transition-colors">
+                    {/* Rank */}
+                    <td className="py-4 px-4 font-extrabold text-sm sm:text-base text-slate-900">
                       {globalRank}
                     </td>
-                    <td className="py-3.5 px-3">
-                      <p className="font-bold text-slate-900">{row.candidateName || "Candidate"}</p>
-                      <p className="text-[11px] text-muted-foreground">{row.candidateEmail || "email"}</p>
+
+                    {/* Candidate with Avatar */}
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-700 font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                          {getCandidateInitials(row.candidateName)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-extrabold text-sm sm:text-[15px] text-slate-900 truncate leading-tight">
+                            {row.candidateName || "Candidate"}
+                          </p>
+                          <p className="text-xs text-slate-500 font-medium truncate mt-0.5">
+                            {row.candidateEmail || "—"}
+                          </p>
+                        </div>
+                      </div>
                     </td>
-                    <td className="py-3.5 px-3 text-muted-foreground max-w-[180px] truncate">
-                      {row.assessmentTitle || "Assessment"}
+
+                    {/* Assessment Title */}
+                    <td className="py-4 px-4">
+                      <p
+                        className="text-xs sm:text-sm font-semibold text-slate-700 max-w-[200px] truncate"
+                        title={row.assessmentTitle || "Assessment"}
+                      >
+                        {row.assessmentTitle || "Assessment"}
+                      </p>
                     </td>
-                    <td className="py-3.5 px-3">
-                      <span className="font-extrabold text-emerald-600">
+
+                    {/* Score */}
+                    <td className="py-4 px-4">
+                      <span className="inline-flex items-center text-sm sm:text-base font-black text-emerald-600">
                         {row.score !== null ? `${row.score}%` : "—"}
                       </span>
                     </td>
-                    <td className="py-3.5 px-3 text-muted-foreground font-bold">
-                      {timeText}
+
+                    {/* Time */}
+                    <td className="py-4 px-4">
+                      <span className="text-xs sm:text-sm font-bold text-slate-600">
+                        {timeText}
+                      </span>
                     </td>
-                    <td className="py-3.5 px-3 text-right">
-                      <Badge
-                        variant="outline"
-                        className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px] font-extrabold uppercase px-2 py-0.5"
-                      >
-                        {row.status || "Completed"}
-                      </Badge>
+
+                    {/* Status Pill with Dot */}
+                    <td className="py-4 px-4 text-right">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-300/80 shadow-2xs">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+                        <span>{String(row.status || "SUBMITTED").toUpperCase()}</span>
+                      </span>
                     </td>
                   </tr>
                 );
@@ -162,22 +195,22 @@ const RecentResultsTable = () => {
 
       {/* Pagination Footer */}
       {submittedAttempts.length > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs text-muted-foreground">
-          <div className="flex items-center gap-2 text-xs">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100 text-xs sm:text-sm text-slate-500 font-medium">
+          <div className="flex items-center gap-2">
             <span>
-              Showing <span className="font-bold text-slate-800">{startIndex + 1}</span> to{" "}
-              <span className="font-bold text-slate-800">{endIndex}</span> of{" "}
-              <span className="font-bold text-slate-800">{submittedAttempts.length}</span> candidates
+              Showing <span className="font-extrabold text-slate-800">{startIndex + 1}</span> to{" "}
+              <span className="font-extrabold text-slate-800">{endIndex}</span> of{" "}
+              <span className="font-extrabold text-slate-800">{submittedAttempts.length}</span> candidates
             </span>
-            <div className="hidden sm:flex items-center gap-1.5 ml-2 border-l pl-3">
-              <span className="text-[11px] text-slate-400">Rows per page:</span>
+            <div className="hidden sm:flex items-center gap-2 ml-3 border-l border-slate-200 pl-3">
+              <span className="text-xs text-slate-400">Rows per page:</span>
               <select
                 value={pageSize}
                 onChange={(e) => {
                   setPageSize(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="h-7 rounded-md border border-slate-200 bg-white px-1.5 text-[11px] font-semibold text-slate-700 shadow-2xs focus:border-blue-500 focus:outline-hidden"
+                className="h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 shadow-2xs focus:border-indigo-500 focus:outline-hidden cursor-pointer"
               >
                 <option value={5}>5</option>
                 <option value={10}>10</option>
@@ -193,9 +226,9 @@ const RecentResultsTable = () => {
                 size="sm"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={validPage === 1}
-                className="h-8 px-2.5 text-xs font-semibold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                className="h-9 px-3 rounded-xl text-xs font-bold border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
               >
-                <ChevronLeft className="h-3.5 w-3.5 mr-0.5" />
+                <ChevronLeft className="h-4 w-4 mr-0.5" />
                 Prev
               </Button>
 
@@ -218,10 +251,10 @@ const RecentResultsTable = () => {
                       variant={isActive ? "default" : "outline"}
                       size="sm"
                       onClick={() => setCurrentPage(pageNum)}
-                      className={`h-8 w-8 p-0 text-xs font-bold transition-all cursor-pointer ${
+                      className={`h-9 w-9 p-0 rounded-xl text-xs font-black transition-all cursor-pointer ${
                         isActive
-                          ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs"
-                          : "text-slate-700 hover:bg-slate-100"
+                          ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm shadow-indigo-500/25 ring-2 ring-indigo-600/20"
+                          : "border-slate-200 text-slate-700 hover:bg-slate-100 shadow-2xs font-bold"
                       }`}
                     >
                       {pageNum}
@@ -235,10 +268,10 @@ const RecentResultsTable = () => {
                 size="sm"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={validPage === totalPages}
-                className="h-8 px-2.5 text-xs font-semibold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                className="h-9 px-3 rounded-xl text-xs font-bold border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
               >
                 Next
-                <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
+                <ChevronRight className="h-4 w-4 ml-0.5" />
               </Button>
             </div>
           )}
