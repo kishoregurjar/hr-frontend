@@ -272,7 +272,7 @@ export default function AssessmentCompleted({
   return (
     <div className="min-h-screen bg-slate-50 py-16 px-4 sm:px-6 lg:px-8 font-sans flex items-center justify-center">
       <div className="max-w-md w-full space-y-4">
-        {/* ── CLEAN ASSESSMENT COMPLETION CARD ── */}
+        {/* â”€â”€ CLEAN ASSESSMENT COMPLETION CARD â”€â”€ */}
         <div className="rounded-xl border border-slate-200 bg-white p-8 sm:p-10 shadow-sm text-center">
           {/* Company Branding Logo or Monogram */}
           {companyLogo ? (
@@ -294,7 +294,6 @@ export default function AssessmentCompleted({
           {/* Success Check Icon */}
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600">
             <CheckCircle2 className="h-7 w-7 text-emerald-600" />
-          </div>
           </div>
 
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
