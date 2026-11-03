@@ -60,11 +60,21 @@ axiosClient.interceptors.request.use(
         sessionStorage.getItem("invitationToken") ||
         localStorage.getItem("invitationToken");
 
-      const adminToken =
+      let adminToken =
         localStorage.getItem(AUTH_STORAGE_KEYS.TOKEN) ||
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken") ||
         localStorage.getItem("jwt");
+
+      if (!adminToken) {
+        try {
+          const urlParams = new URLSearchParams(window.location.search);
+          const handoffToken = urlParams.get("auth_token");
+          if (handoffToken) {
+            adminToken = handoffToken;
+          }
+        } catch {}
+      }
 
       // Candidate test taking endpoints use candidateToken, all HR management endpoints use adminToken
       const tokenToUse = isCandidateEndpoint
@@ -76,11 +86,21 @@ axiosClient.interceptors.request.use(
       }
 
       // ── X-Company-Id & x-company-id Header for Multi-Tenant APIs ──
-      const companyId =
+      let companyId =
         localStorage.getItem("companyId") ||
         localStorage.getItem("active_company_id") ||
         localStorage.getItem("hirequest_company_id") ||
         sessionStorage.getItem("companyId");
+
+      if (!companyId) {
+        try {
+          const urlParams = new URLSearchParams(window.location.search);
+          const handoffCompanyId = urlParams.get("company_id");
+          if (handoffCompanyId) {
+            companyId = handoffCompanyId;
+          }
+        } catch {}
+      }
 
       const storedUserRaw = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
       let isSuperAdmin = false;
@@ -107,7 +127,7 @@ axiosClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ── Production Single Token Refresh Queue ──
+// â”€â”€ Production Single Token Refresh Queue â”€â”€
 let isRefreshing = false;
 let failedQueue = [];
 
@@ -339,7 +359,13 @@ axiosClient.interceptors.response.use(
         processQueue(refreshErr, null);
         if (typeof window !== "undefined") {
           const currentPath = window.location.pathname || "";
+          const hasHandoffToken =
+            typeof window.location.search === "string" &&
+            (window.location.search.includes("auth_token=") ||
+              window.location.search.includes("token="));
+
           const isExemptFromExpiredRedirect =
+            hasHandoffToken ||
             currentPath.includes("/activate-owner") ||
             currentPath.includes("/accept-invitation") ||
             currentPath.includes("/login") ||

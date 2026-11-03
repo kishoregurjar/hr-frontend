@@ -26,8 +26,9 @@ import { Label } from "@/components/ui/label";
 /**
  * Helper to compute the destination URL for workspace owners after activation.
  * Automatically switches host to the company's dedicated subdomain or custom domain.
+ * Supports passing full session handoff parameters across isolated browser origins.
  */
-function resolveTenantRedirectUrl(targetRoute, company, authToken = null) {
+function resolveTenantRedirectUrl(targetRoute, company, sessionData = null) {
   if (typeof window === "undefined") return targetRoute;
   const currentHost = window.location.host;
   const protocol = window.location.protocol;
@@ -40,9 +41,35 @@ function resolveTenantRedirectUrl(targetRoute, company, authToken = null) {
     .replace(/\/+$/, "");
 
   let baseTarget = targetRoute;
-  if (authToken && targetRoute.startsWith("/dashboard")) {
+  const accessToken =
+    sessionData?.accessToken ||
+    (typeof sessionData === "string" ? sessionData : null);
+
+  if (accessToken && targetRoute.startsWith("/dashboard")) {
     const separator = targetRoute.includes("?") ? "&" : "?";
-    baseTarget = `${targetRoute}${separator}auth_token=${encodeURIComponent(authToken)}`;
+    const queryParams = new URLSearchParams();
+    queryParams.set("auth_token", accessToken);
+
+    if (sessionData?.refreshToken) {
+      queryParams.set("refresh_token", sessionData.refreshToken);
+    }
+    if (company?.id) {
+      queryParams.set("company_id", company.id);
+    }
+    if (company?.name) {
+      queryParams.set("company_name", company.name);
+    }
+    if (slug) {
+      queryParams.set("company_slug", slug);
+    }
+    if (sessionData?.user?.name) {
+      queryParams.set("user_name", sessionData.user.name);
+    }
+    if (sessionData?.user?.email) {
+      queryParams.set("user_email", sessionData.user.email);
+    }
+
+    baseTarget = `${targetRoute}${separator}${queryParams.toString()}`;
   }
 
   // 1. Custom Domain Priority (e.g. careers.tesla.com)
@@ -247,9 +274,15 @@ function ActivateOwnerContent() {
         targetRoute = "/take-test";
       }
 
+      const sessionData = {
+        accessToken,
+        refreshToken,
+        user: userData,
+      };
+
       const finalRedirectUrl = isPlatformAdmin
         ? targetRoute
-        : resolveTenantRedirectUrl(targetRoute, primaryCompany, accessToken);
+        : resolveTenantRedirectUrl(targetRoute, primaryCompany, sessionData);
 
       setRedirectUrl(finalRedirectUrl);
       setIsSuccess(true);
