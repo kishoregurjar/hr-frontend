@@ -25,6 +25,24 @@ const AuthContext = createContext({
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => {
     if (typeof window === "undefined") return null;
+
+    // Handle cross-subdomain handoff (e.g. post-activation redirect to tenant subdomain)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlToken = urlParams.get("auth_token");
+      if (urlToken) {
+        localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, urlToken);
+        urlParams.delete("auth_token");
+        const remainingQuery = urlParams.toString();
+        const cleanUrl =
+          window.location.pathname +
+          (remainingQuery ? `?${remainingQuery}` : "") +
+          window.location.hash;
+        window.history.replaceState({}, document.title, cleanUrl);
+        return urlToken;
+      }
+    } catch {}
+
     return (
       localStorage.getItem(AUTH_STORAGE_KEYS.TOKEN) ||
       localStorage.getItem("token") ||

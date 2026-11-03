@@ -23,6 +23,48 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+/**
+ * Helper to compute the destination URL for workspace owners after activation.
+ * Automatically switches host to the company's dedicated subdomain or custom domain.
+ */
+function resolveTenantRedirectUrl(targetRoute, company, authToken = null) {
+  if (typeof window === "undefined") return targetRoute;
+  const currentHost = window.location.host;
+  const protocol = window.location.protocol;
+  const port = window.location.port ? `:${window.location.port}` : "";
+  const slug = (company?.slug || "").trim().toLowerCase();
+  const customDomain = (company?.customDomain || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/\/+$/, "");
+
+  let baseTarget = targetRoute;
+  if (authToken && targetRoute.startsWith("/dashboard")) {
+    const separator = targetRoute.includes("?") ? "&" : "?";
+    baseTarget = `${targetRoute}${separator}auth_token=${encodeURIComponent(authToken)}`;
+  }
+
+  // 1. Custom Domain Priority (e.g. careers.tesla.com)
+  if (customDomain) {
+    return `${protocol}//${customDomain}${baseTarget}`;
+  }
+
+  // 2. Dedicated Tenant Subdomain Priority (e.g. tesla-labs.localhost:3000 or tesla-labs.hirequest.com)
+  if (slug) {
+    if (currentHost.includes("localhost")) {
+      if (currentHost.startsWith(`${slug}.`)) return baseTarget;
+      return `${protocol}//${slug}.localhost${port}${baseTarget}`;
+    }
+    if (currentHost.includes("hirequest.com")) {
+      if (currentHost.startsWith(`${slug}.`)) return baseTarget;
+      return `https://${slug}.hirequest.com${baseTarget}`;
+    }
+  }
+
+  return baseTarget;
+}
+
 function ActivateOwnerContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -156,7 +198,7 @@ function ActivateOwnerContent() {
 
       const userData = payload?.user || payload?.data?.user;
       const companies = payload?.companies || payload?.data?.companies || [];
-      const primaryCompany = (Array.isArray(companies) && companies[0]) || payload?.company;
+      const primaryCompany = (Array.isArray(companies) && companies[0]) || payload?.company || companyInfo;
 
       const userRole = userData?.role || payload?.user?.role || response?.user?.role || "";
       const rawPlatformRole = String(userRole).toUpperCase().trim();
@@ -205,13 +247,17 @@ function ActivateOwnerContent() {
         targetRoute = "/take-test";
       }
 
-      setRedirectUrl(targetRoute);
+      const finalRedirectUrl = isPlatformAdmin
+        ? targetRoute
+        : resolveTenantRedirectUrl(targetRoute, primaryCompany, accessToken);
+
+      setRedirectUrl(finalRedirectUrl);
       setIsSuccess(true);
-      toast.success("Account activated successfully! Logging you in...");
+      toast.success("Account activated successfully! Redirecting to your workspace...");
 
       // Role-aware auto-login redirect
       setTimeout(() => {
-        window.location.href = targetRoute;
+        window.location.href = finalRedirectUrl;
       }, 1000);
     } catch (err) {
       const errMsg =
@@ -256,6 +302,8 @@ function ActivateOwnerContent() {
 
   // State 4: Account Already Activated Screen
   if (isAlreadyActive) {
+    const tenantLoginUrl = resolveTenantRedirectUrl("/login?activated=true", companyInfo);
+
     return (
       <div className="flex flex-col items-center justify-center p-6 text-center space-y-5">
         <div className="h-14 w-14 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100">
@@ -279,14 +327,15 @@ function ActivateOwnerContent() {
         </div>
 
         <div className="pt-2 w-full">
-          <Link href="/login?activated=true" className="block w-full">
-            <Button
-              className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span>Sign In to Your Workspace</span>
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
+          <Button
+            onClick={() => {
+              window.location.href = tenantLoginUrl;
+            }}
+            className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>Sign In to Your Workspace</span>
+            <ArrowRight className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     );
