@@ -165,7 +165,81 @@ export default function AssessmentPreStart({
     assessment?.about ||
     "Technical skill, problem-solving, and cognitive aptitude assessment.";
 
-  // Monogram initials for fallback logo
+  // Monogram initials for fallback logo (e.g. CG)
+  const brandColor =
+    assessment?.brandColor ||
+    assessment?.company?.brandColor ||
+    assessment?.createdBy?.company?.brandColor ||
+    null;
+
+  const accentColor =
+    assessment?.accentColor ||
+    assessment?.company?.accentColor ||
+    assessment?.createdBy?.company?.accentColor ||
+    null;
+
+  const faviconUrl =
+    assessment?.faviconUrl ||
+    assessment?.company?.faviconUrl ||
+    assessment?.createdBy?.company?.faviconUrl ||
+    null;
+
+  const brandTagline =
+    assessment?.brandTagline ||
+    assessment?.company?.brandTagline ||
+    assessment?.createdBy?.company?.brandTagline ||
+    null;
+
+  const showPoweredByHireQuest =
+    (assessment?.showPoweredByHireQuest ??
+      assessment?.company?.showPoweredByHireQuest ??
+      assessment?.createdBy?.company?.showPoweredByHireQuest) !== false;
+
+  useEffect(() => {
+    if (faviconUrl && typeof document !== "undefined") {
+      let link = document.querySelector("link[rel*='icon']");
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "shortcut icon";
+        document.head.appendChild(link);
+      }
+      const prevIcon = link.href;
+      link.href = faviconUrl;
+      return () => {
+        if (prevIcon) link.href = prevIcon;
+      };
+    }
+  }, [faviconUrl]);
+
+  useEffect(() => {
+    if (companyName && typeof document !== "undefined") {
+      const prevTitle = document.title;
+      document.title = `${companyName} | ${assessmentTitle}`;
+      return () => {
+        document.title = prevTitle;
+      };
+    }
+  }, [companyName, assessmentTitle]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && (companyName || companyLogo || brandColor)) {
+      try {
+        sessionStorage.setItem(
+          "candidate_company_branding",
+          JSON.stringify({
+            companyName,
+            companyLogo,
+            brandColor,
+            accentColor,
+            faviconUrl,
+            brandTagline,
+            showPoweredByHireQuest,
+          })
+        );
+      } catch {}
+    }
+  }, [companyName, companyLogo, brandColor, accentColor, faviconUrl, brandTagline, showPoweredByHireQuest]);
+
   const monogram =
     companyName
       .split(" ")
@@ -544,7 +618,7 @@ export default function AssessmentPreStart({
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between selection:bg-slate-200">
       {/* ── Top Minimal Assessment Header ────────────────────────── */}
-      <header className="w-full bg-white border-b border-slate-200 px-4 sm:px-8 py-3.5 sticky top-0 z-20">
+      <header className="w-full bg-white border-b border-slate-200 px-4 sm:px-8 py-3.5 sticky top-0 z-20" style={brandColor ? { borderTop: `3px solid ${brandColor}` } : {}}>
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             {companyLogo ? (
@@ -559,9 +633,15 @@ export default function AssessmentPreStart({
               </div>
             )}
             <div className="h-4 w-px bg-slate-200 hidden sm:block" />
-            <span className="text-xs font-semibold text-slate-700 truncate max-w-[200px] sm:max-w-none">
-              {companyName}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-700 truncate max-w-[200px] sm:max-w-none">
+                {companyName}
+              </span>
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-1.5 py-0.2 rounded-full">
+                <CheckCircle2 className="h-2.5 w-2.5 text-emerald-600" />
+                VERIFIED
+              </span>
+            </div>
           </div>
 
           {/* Minimal Flow Indicator */}
@@ -662,6 +742,7 @@ export default function AssessmentPreStart({
                   type="button"
                   onClick={() => setStep(2)}
                   className="w-full sm:w-auto h-10 px-6 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-lg cursor-pointer"
+                  style={brandColor ? { backgroundColor: brandColor } : {}}
                 >
                   <span>Continue</span>
                   <ArrowRight className="h-4 w-4 ml-2" />
@@ -1008,6 +1089,7 @@ export default function AssessmentPreStart({
                   onClick={handleStartClick}
                   disabled={!accepted || !photoVerified || isStarting}
                   className="h-10 px-6 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-400 text-white font-medium text-xs rounded-lg cursor-pointer transition-colors"
+                  style={brandColor ? { backgroundColor: brandColor } : {}}
                 >
                   {isStarting ? (
                     <span className="flex items-center gap-2">
@@ -1026,116 +1108,14 @@ export default function AssessmentPreStart({
 
       {/* ── Minimal Footer ───────────────────────────────────────── */}
       <footer className="w-full py-4 text-center text-xs text-slate-400 border-t border-slate-200 bg-white">
-        Secure Candidate Assessment Platform
+        {showPoweredByHireQuest ? (
+          <span>
+            Evaluated by <strong className="text-slate-600">{companyName}</strong> &bull; Powered by HireQuest
+          </span>
+        ) : (
+          <span>{companyName} Confidential & Proprietary Evaluation System</span>
+        )}
       </footer>
-
-      {/* ════════════════════════════════════════════════════════════
-          OTP VERIFICATION CENTERED MODAL
-         ════════════════════════════════════════════════════════════ */}
-      {isOtpModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="relative w-full max-w-md bg-white rounded-xl border border-slate-200 shadow-xl p-6 sm:p-7 text-left">
-            {/* Modal Close Button */}
-            <button
-              type="button"
-              onClick={() => setIsOtpModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
-
-            {/* Modal Header */}
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">
-                Verify Your Email
-              </h2>
-              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                Enter the 6-digit verification code sent to{" "}
-                <strong className="text-slate-900">{email}</strong>
-              </p>
-            </div>
-
-            {/* OTP 6-Digit Input Row */}
-            <div className="my-6">
-              <div
-                className="flex items-center justify-between gap-2"
-                onPaste={handleOtpPaste}
-              >
-                {otpDigits.map((digit, index) => (
-                  <input
-                    key={index}
-                    ref={(el) => (otpInputRefs.current[index] = el)}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleOtpChange(index, e.target.value)}
-                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                    className="w-11 h-12 text-center text-lg font-mono font-bold text-slate-900 bg-white rounded-lg border border-slate-300 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
-                  />
-                ))}
-              </div>
-
-              {otpError && (
-                <p className="text-xs text-rose-600 font-medium mt-2">
-                  {otpError}
-                </p>
-              )}
-
-              {devHint && (
-                <p className="text-[11px] text-slate-400 mt-2">
-                  Development Code: {devHint}
-                </p>
-              )}
-            </div>
-
-            {/* Resend Cooldown Text */}
-            <div className="flex items-center justify-between text-xs text-slate-500 mb-6">
-              <span>Didn't receive the code?</span>
-              {countdown > 0 ? (
-                <span>Resend in {countdown}s</span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => handleSendOtp(email)}
-                  disabled={isSendingOtp}
-                  className="font-medium text-slate-900 hover:underline cursor-pointer"
-                >
-                  {isSendingOtp ? "Sending..." : "Resend Code"}
-                </button>
-              )}
-            </div>
-
-            {/* Modal Actions */}
-            <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsOtpModalOpen(false)}
-                className="h-9 px-4 text-xs font-medium text-slate-700 border-slate-300 hover:bg-slate-50 cursor-pointer"
-              >
-                Cancel
-              </Button>
-
-              <Button
-                type="button"
-                onClick={() => triggerVerifyWithDigits(otpDigits)}
-                disabled={isVerifyingOtp || otpDigits.some((d) => !d)}
-                className="h-9 px-5 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-400 text-white font-medium text-xs rounded-lg cursor-pointer transition-colors"
-              >
-                {isVerifyingOtp ? (
-                  <span className="flex items-center gap-1.5">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    Verifying...
-                  </span>
-                ) : (
-                  <span>Verify & Continue</span>
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

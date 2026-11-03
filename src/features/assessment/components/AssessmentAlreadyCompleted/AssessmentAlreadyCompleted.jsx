@@ -37,6 +37,11 @@ export default function AssessmentAlreadyCompleted({
       })
     : null;
 
+  const showPoweredByHireQuest =
+    (assessment?.showPoweredByHireQuest ??
+      assessment?.company?.showPoweredByHireQuest ??
+      assignment?.company?.showPoweredByHireQuest) !== false;
+
   const monogram = companyName
     ? companyName
         .split(" ")
@@ -106,9 +111,15 @@ export default function AssessmentAlreadyCompleted({
         </div>
 
         {/* Platform Signature */}
-        <p className="text-center text-[11px] text-slate-400 font-medium mt-6">
-          HireQuest Talent Assessment Platform
-        </p>
+        {showPoweredByHireQuest ? (
+          <p className="text-center text-[11px] text-slate-400 font-medium mt-6">
+            HireQuest Talent Assessment Platform
+          </p>
+        ) : (
+          <p className="text-center text-[11px] text-slate-400 font-medium mt-6">
+            {companyName} Confidential & Proprietary Evaluation System
+          </p>
+        )}
       </div>
     </div>
   );

@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 import { LoginForm } from "../components";
 import { useAuth } from "../context";
 import { clearAllAuthStorage } from "@/lib/api/auth";
+import { getPublicCompanyBranding } from "@/lib/api/company";
 
 const LoginPage = () => {
   const router = useRouter();
@@ -14,6 +15,80 @@ const LoginPage = () => {
   const isActivated = searchParams.get("activated") === "true";
   const { user, isAuthenticated, isLoading, logout } = useAuth();
 
+  const [tenantBranding, setTenantBranding] = useState(null);
+
+  // 1. Detect incoming tenant from subdomain, cookie, or query parameter
+  useEffect(() => {
+    let slug = searchParams.get("tenant");
+
+    if (!slug && typeof window !== "undefined") {
+      // Check cookie set by Next.js middleware
+      const cookies = document.cookie.split("; ");
+      const tenantCookie = cookies
+        .find((row) => row.startsWith("hq_tenant_slug="))
+        ?.split("=")[1];
+      if (tenantCookie) {
+        slug = tenantCookie;
+      } else {
+        // Fallback: parse hostname (e.g. acme.localhost or acme.hirequest.com)
+        const host = window.location.hostname.toLowerCase();
+        if (host.endsWith(".localhost")) {
+          const parts = host.split(".");
+          if (parts.length >= 2 && parts[0] && parts[0] !== "www") {
+            slug = parts[0];
+          }
+        } else if (host.endsWith(".hirequest.com")) {
+          const parts = host.replace(/\.hirequest\.com$/, "").split(".");
+          const sub = parts[parts.length - 1];
+          if (sub && !["www", "admin", "api", "app"].includes(sub)) {
+            slug = sub;
+          }
+        }
+      }
+    }
+
+    if (slug) {
+      getPublicCompanyBranding(slug)
+        .then((res) => {
+          const data = res?.data || res;
+          if (data && data.companyName) {
+            setTenantBranding(data);
+          }
+        })
+        .catch(() => {
+          // Graceful fallback to default HireQuest branding
+        });
+    }
+  }, [searchParams]);
+
+  // 2. Dynamic document title & favicon
+  useEffect(() => {
+    if (tenantBranding?.companyName && typeof document !== "undefined") {
+      const prevTitle = document.title;
+      document.title = `${tenantBranding.companyName} | Sign In`;
+      return () => {
+        document.title = prevTitle;
+      };
+    }
+  }, [tenantBranding?.companyName]);
+
+  useEffect(() => {
+    if (tenantBranding?.faviconUrl && typeof document !== "undefined") {
+      let link = document.querySelector("link[rel*='icon']");
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "shortcut icon";
+        document.head.appendChild(link);
+      }
+      const prevIcon = link.href;
+      link.href = tenantBranding.faviconUrl;
+      return () => {
+        if (prevIcon) link.href = prevIcon;
+      };
+    }
+  }, [tenantBranding?.faviconUrl]);
+
+  // 3. Auth Redirection
   useEffect(() => {
     if (isActivated) {
       clearAllAuthStorage();
@@ -52,19 +127,50 @@ const LoginPage = () => {
       <div className="absolute top-1/3 right-0 h-96 w-96 rounded-full bg-purple-200/35 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 left-1/4 h-80 w-80 rounded-full bg-indigo-100/50 blur-3xl pointer-events-none" />
 
-      {/* Top Header: HireQuest Logo */}
+      {/* Top Header: Branded Logo or HireQuest Logo */}
       <div className="relative z-10">
-        <Link href="/" className="inline-flex items-center gap-2.5 group">
-          <div className="h-9 w-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
-            <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-              <rect x="4" y="4" width="4.5" height="16" rx="2.25" />
-              <rect x="15.5" y="4" width="4.5" height="16" rx="2.25" />
-              <rect x="7" y="10" width="10" height="4" rx="2" />
-            </svg>
-          </div>
-          <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">
-            HireQuest
-          </span>
+        <Link href="/" className="inline-flex items-center gap-3 group">
+          {tenantBranding ? (
+            <>
+              {tenantBranding.logoUrl ? (
+                <img
+                  src={tenantBranding.logoUrl}
+                  alt={tenantBranding.companyName}
+                  className="h-10 w-10 rounded-xl object-contain bg-white border border-slate-200/90 p-1 shadow-xs group-hover:scale-105 transition-transform"
+                />
+              ) : (
+                <div
+                  className="h-10 w-10 rounded-xl flex items-center justify-center text-white font-black text-base shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform"
+                  style={{ backgroundColor: tenantBranding.brandColor || "#2563eb" }}
+                >
+                  {tenantBranding.companyName.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div>
+                <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 block leading-tight">
+                  {tenantBranding.companyName}
+                </span>
+                {tenantBranding.brandTagline && (
+                  <span className="text-xs text-slate-500 font-medium block">
+                    {tenantBranding.brandTagline}
+                  </span>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="h-9 w-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
+                <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="4" y="4" width="4.5" height="16" rx="2.25" />
+                  <rect x="15.5" y="4" width="4.5" height="16" rx="2.25" />
+                  <rect x="7" y="10" width="10" height="4" rx="2" />
+                </svg>
+              </div>
+              <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">
+                HireQuest
+              </span>
+            </>
+          )}
         </Link>
       </div>
 
@@ -74,14 +180,36 @@ const LoginPage = () => {
           {/* Left Hero Section */}
           <div className="lg:col-span-6 xl:col-span-7 space-y-6 sm:space-y-8">
             <div className="space-y-3 sm:space-y-5">
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-slate-900 leading-[1.15] sm:leading-[1.1]">
-                Find <br className="hidden sm:inline" />
-                Great Talent <br className="hidden sm:inline" />
-                <span className="text-blue-600">Faster</span>
-              </h1>
-              <p className="text-sm sm:text-base lg:text-lg text-slate-500 font-normal max-w-lg leading-relaxed">
-                A modern recruitment platform to post jobs, manage candidates, conduct assessments and hire the best talent.
-              </p>
+              {tenantBranding ? (
+                <>
+                  <h1 className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-slate-900 leading-[1.15] sm:leading-[1.1]">
+                    Empowering <br className="hidden sm:inline" />
+                    Great Hiring <br className="hidden sm:inline" />
+                    at{" "}
+                    <span
+                      style={{
+                        color: tenantBranding.brandColor || "#2563eb",
+                      }}
+                    >
+                      {tenantBranding.companyName}
+                    </span>
+                  </h1>
+                  <p className="text-sm sm:text-base lg:text-lg text-slate-500 font-normal max-w-lg leading-relaxed">
+                    Official candidate evaluation & team talent management portal for {tenantBranding.companyName}.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h1 className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-slate-900 leading-[1.15] sm:leading-[1.1]">
+                    Find <br className="hidden sm:inline" />
+                    Great Talent <br className="hidden sm:inline" />
+                    <span className="text-blue-600">Faster</span>
+                  </h1>
+                  <p className="text-sm sm:text-base lg:text-lg text-slate-500 font-normal max-w-lg leading-relaxed">
+                    A modern recruitment platform to post jobs, manage candidates, conduct assessments and hire the best talent.
+                  </p>
+                </>
+              )}
             </div>
 
             {/* Social Proof Avatars */}
@@ -104,7 +232,9 @@ const LoginPage = () => {
                 />
               </div>
               <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                Trusted by 500+ companies
+                {tenantBranding
+                  ? `Dedicated enterprise workspace for ${tenantBranding.companyName}`
+                  : "Trusted by 500+ companies worldwide"}
               </p>
             </div>
           </div>
@@ -117,7 +247,9 @@ const LoginPage = () => {
                   Welcome Back
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-400 font-normal">
-                  Sign in to your HireQuest account
+                  {tenantBranding
+                    ? `Sign in to your ${tenantBranding.companyName} workspace`
+                    : "Sign in to your HireQuest account"}
                 </p>
               </div>
 
@@ -127,9 +259,17 @@ const LoginPage = () => {
         </div>
       </div>
 
-      {/* Empty footer spacer to maintain balance */}
-      <div className="relative z-10 text-xs text-slate-400 hidden lg:block">
-        © {new Date().getFullYear()} HireQuest. All rights reserved.
+      {/* Footer with conditional "Powered by HireQuest" */}
+      <div className="relative z-10 text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2 pt-4">
+        <span>
+          © {new Date().getFullYear()}{" "}
+          {tenantBranding ? tenantBranding.companyName : "HireQuest"}. All rights reserved.
+        </span>
+        {tenantBranding?.showPoweredByHireQuest !== false && (
+          <span className="text-[11px] text-slate-400/80">
+            Powered by HireQuest SaaS
+          </span>
+        )}
       </div>
     </div>
   );

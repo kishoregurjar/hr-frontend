@@ -437,3 +437,57 @@ export const updateGameConfig = async (gameId, payload) => {
   return res?.data?.data || res?.data || res;
 };
 
+
+
+/**
+ * ─────────────────────────────────────────────────────────────
+ * White-Label Branding APIs (Phase 3B)
+ * ─────────────────────────────────────────────────────────────
+ */
+
+/**
+ * Get current authenticated company white-label branding settings
+ */
+export const getCompanyBranding = async () => {
+  const res = await axiosClient.get("/companies/me/branding");
+  return res?.data?.data || res?.data || res;
+};
+
+/**
+ * Update white-label branding settings (OWNER / ADMIN only)
+ * @param {Object} payload - { brandColor, accentColor, brandTagline, showPoweredByHireQuest }
+ */
+export const updateCompanyBranding = async (payload) => {
+  const res = await axiosClient.patch("/companies/me/branding", payload);
+  return res?.data?.data || res?.data || res;
+};
+
+/**
+ * Upload company favicon (OWNER / ADMIN only)
+ * @param {File} file - .ico, .png, .webp image file (max 512KB)
+ */
+export const uploadCompanyFavicon = async (file) => {
+  const formData = new FormData();
+  formData.append("favicon", file);
+  const res = await axiosClient.post("/companies/me/favicon", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res?.data?.data || res?.data || res;
+};
+
+/**
+ * Delete company favicon (revert to default)
+ */
+export const deleteCompanyFavicon = async () => {
+  const res = await axiosClient.delete("/companies/me/favicon");
+  return res?.data?.data || res?.data || res;
+};
+
+/**
+ * Retrieve public white-label branding by company slug (Unauthenticated candidate portal)
+ * @param {string} slug - Company slug identifier
+ */
+export const getPublicCompanyBranding = async (slug) => {
+  const res = await axiosClient.get(`/companies/public/${slug}/branding`);
+  return res?.data?.data || res?.data || res;
+};

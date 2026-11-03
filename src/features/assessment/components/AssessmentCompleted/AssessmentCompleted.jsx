@@ -28,10 +28,36 @@ export default function AssessmentCompleted({
   attempt,
   submissionResult,
 }) {
-  // Ensure all proctoring webcam/audio hardware tracks are fully released
+  const [branding, setBranding] = useState(null);
+
+  // Ensure all proctoring webcam/audio hardware tracks are fully released and resolve tenant branding
   useEffect(() => {
     stopActiveMediaStream();
+    try {
+      const stored = sessionStorage.getItem("candidate_company_branding");
+      if (stored) {
+        setBranding(JSON.parse(stored));
+      }
+    } catch {}
   }, []);
+
+  const companyName =
+    branding?.name ||
+    assessment?.companyName ||
+    assessment?.company?.name ||
+    attempt?.assessment?.companyName ||
+    "Company";
+
+  const companyLogo =
+    branding?.logoUrl ||
+    assessment?.companyLogo ||
+    assessment?.company?.logoUrl ||
+    null;
+
+  const showPoweredByHireQuest =
+    (branding?.showPoweredByHireQuest ??
+      assessment?.showPoweredByHireQuest ??
+      assessment?.company?.showPoweredByHireQuest) !== false;
 
   const submittedAt = attempt?.submittedAt
     ? new Date(attempt.submittedAt).toLocaleString(undefined, {
@@ -246,8 +272,25 @@ export default function AssessmentCompleted({
   return (
     <div className="min-h-screen bg-slate-50 py-16 px-4 sm:px-6 lg:px-8 font-sans flex items-center justify-center">
       <div className="max-w-md w-full space-y-4">
-        {/* ── CLEAN ASSESSMENT COMPLETION CARD ── */}
+        {/* â”€â”€ CLEAN ASSESSMENT COMPLETION CARD â”€â”€ */}
         <div className="rounded-xl border border-slate-200 bg-white p-8 sm:p-10 shadow-sm text-center">
+          {/* Company Branding Logo or Monogram */}
+          {companyLogo ? (
+            <div className="mx-auto mb-4 flex justify-center">
+              <img
+                src={companyLogo}
+                alt={companyName}
+                className="h-9 max-w-[180px] object-contain"
+              />
+            </div>
+          ) : companyName && companyName !== "Company" ? (
+            <div className="mx-auto mb-3">
+              <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                {companyName}
+              </span>
+            </div>
+          ) : null}
+
           {/* Success Check Icon */}
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600">
             <CheckCircle2 className="h-7 w-7 text-emerald-600" />
@@ -271,9 +314,15 @@ export default function AssessmentCompleted({
         </div>
 
         <div className="text-center">
-          <p className="text-[11px] text-slate-400">
-            HireQuest Talent Assessment Platform
-          </p>
+          {showPoweredByHireQuest ? (
+            <p className="text-[11px] text-slate-400">
+              Evaluated by {companyName} &bull; Powered by HireQuest
+            </p>
+          ) : (
+            <p className="text-[11px] text-slate-400">
+              {companyName} Confidential & Proprietary Evaluation System
+            </p>
+          )}
         </div>
       </div>
     </div>

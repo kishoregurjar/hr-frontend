@@ -430,6 +430,7 @@ export default function ResultsAndRankingPage() {
       return;
     }
 
+    const orgPrefix = companyName ? `# Organization: ${companyName}\n# Exported Date: ${new Date().toLocaleString()}\n` : "";
     const headers = "Rank,Candidate Name,Email,Assessment,Score,Percentage,Status,Time Spent,Integrity\n";
     const rows = filteredResults
       .map(
@@ -438,11 +439,12 @@ export default function ResultsAndRankingPage() {
       )
       .join("\n");
 
-    const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([orgPrefix + headers + rows], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `candidate_rankings_${new Date().toISOString().slice(0, 10)}.csv`;
+    const fileSlug = (user?.company?.slug || companyName || "candidate").toLowerCase().replace(/[^a-z0-9]/g, "_");
+    a.download = `${fileSlug}_rankings_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     toast.success("Rankings report downloaded successfully!");
   };
@@ -1235,6 +1237,11 @@ export default function ResultsAndRankingPage() {
                           <XCircle className="h-3 w-3 mr-1" /> Not Qualified
                         </Badge>
                       )}
+                      {companyName && (
+                        <Badge className="bg-white/20 text-white border-white/30 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full">
+                          <Building2 className="h-3 w-3 mr-1" /> {companyName}
+                        </Badge>
+                      )}
                     </div>
                     <DialogDescription className="text-xs sm:text-sm text-white/80 font-medium truncate">
                       {selectedCandidate.email} • {selectedCandidate.assessmentTitle}
@@ -1635,8 +1642,12 @@ export default function ResultsAndRankingPage() {
                     Schedule Next Round
                   </Button>
                 )}
+                {companyName && (
+                  <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">
+                    {companyName} Talent Evaluation
+                  </span>
+                )}
               </div>
-
               <button
                 type="button"
                 onClick={() => setSelectedCandidate(null)}

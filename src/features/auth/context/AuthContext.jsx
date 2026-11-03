@@ -27,6 +27,80 @@ export const AuthProvider = ({ children }) => {
   const queryClient = useQueryClient();
   const [token, setToken] = useState(() => {
     if (typeof window === "undefined") return null;
+
+    // Handle cross-subdomain handoff (e.g. post-activation redirect to tenant subdomain)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlToken = urlParams.get("auth_token");
+      const urlRefreshToken = urlParams.get("refresh_token");
+      const urlCompanyId = urlParams.get("company_id");
+      const urlCompanyName = urlParams.get("company_name");
+      const urlCompanySlug = urlParams.get("company_slug");
+      const urlUserName = urlParams.get("user_name");
+      const urlUserEmail = urlParams.get("user_email");
+
+      if (urlToken) {
+        localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, urlToken);
+        localStorage.setItem("token", urlToken);
+        localStorage.setItem("accessToken", urlToken);
+        localStorage.setItem("jwt", urlToken);
+
+        if (urlRefreshToken) {
+          localStorage.setItem("hirequest_refresh_token", urlRefreshToken);
+          localStorage.setItem("refreshToken", urlRefreshToken);
+        }
+
+        if (urlCompanyId) {
+          localStorage.setItem("companyId", urlCompanyId);
+          localStorage.setItem("active_company_id", urlCompanyId);
+          localStorage.setItem("hirequest_company_id", urlCompanyId);
+        }
+
+        if (urlCompanyName) {
+          localStorage.setItem("companyName", urlCompanyName);
+        }
+
+        if (urlCompanySlug) {
+          localStorage.setItem("companySlug", urlCompanySlug);
+        }
+
+        // Pre-seed canonical user in localStorage so child components mount with complete profile
+        const handoffUser = {
+          name: urlUserName || (urlCompanyName ? `${urlCompanyName} Admin` : "Workspace Owner"),
+          email: urlUserEmail || "",
+          company: urlCompanyName || "",
+          companyName: urlCompanyName || "",
+          companyId: urlCompanyId || "",
+          companyRole: "OWNER",
+          role: "Company Owner",
+          rawRole: "OWNER",
+          isOwner: true,
+          activeCompany: {
+            id: urlCompanyId || "",
+            name: urlCompanyName || "",
+            role: "OWNER",
+          },
+        };
+        localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(handoffUser));
+
+        urlParams.delete("auth_token");
+        urlParams.delete("refresh_token");
+        urlParams.delete("company_id");
+        urlParams.delete("company_name");
+        urlParams.delete("company_slug");
+        urlParams.delete("user_name");
+        urlParams.delete("user_email");
+
+        const remainingQuery = urlParams.toString();
+        const cleanUrl =
+          window.location.pathname +
+          (remainingQuery ? `?${remainingQuery}` : "") +
+          window.location.hash;
+        window.history.replaceState({}, document.title, cleanUrl);
+        return urlToken;
+      }
+    } catch {}
+
     return (
       localStorage.getItem(AUTH_STORAGE_KEYS.TOKEN) ||
       localStorage.getItem("token") ||
@@ -39,7 +113,29 @@ export const AuthProvider = ({ children }) => {
     if (typeof window === "undefined") return null;
     try {
       const stored = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
-      return stored ? JSON.parse(stored) : null;
+      if (stored) return JSON.parse(stored);
+
+      const compId = localStorage.getItem("companyId");
+      const compName = localStorage.getItem("companyName");
+      if (compId || compName) {
+        return {
+          id: "",
+          name: compName ? `${compName} Admin` : "Workspace Owner",
+          company: compName || "",
+          companyName: compName || "",
+          companyId: compId || "",
+          companyRole: "OWNER",
+          role: "Company Owner",
+          rawRole: "OWNER",
+          isOwner: true,
+          activeCompany: {
+            id: compId || "",
+            name: compName || "",
+            role: "OWNER",
+          },
+        };
+      }
+      return null;
     } catch {
       return null;
     }

@@ -23,12 +23,82 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+/**
+ * Helper to compute the destination URL for workspace owners after activation.
+ * Automatically switches host to the company's dedicated subdomain or custom domain.
+ * Supports passing full session handoff parameters across isolated browser origins.
+ */
+function resolveTenantRedirectUrl(targetRoute, company, sessionData = null) {
+  if (typeof window === "undefined") return targetRoute;
+  const currentHost = window.location.host;
+  const protocol = window.location.protocol;
+  const port = window.location.port ? `:${window.location.port}` : "";
+  const slug = (company?.slug || "").trim().toLowerCase();
+  const customDomain = (company?.customDomain || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/\/+$/, "");
+
+  let baseTarget = targetRoute;
+  const accessToken =
+    sessionData?.accessToken ||
+    (typeof sessionData === "string" ? sessionData : null);
+
+  if (accessToken && targetRoute.startsWith("/dashboard")) {
+    const separator = targetRoute.includes("?") ? "&" : "?";
+    const queryParams = new URLSearchParams();
+    queryParams.set("auth_token", accessToken);
+
+    if (sessionData?.refreshToken) {
+      queryParams.set("refresh_token", sessionData.refreshToken);
+    }
+    if (company?.id) {
+      queryParams.set("company_id", company.id);
+    }
+    if (company?.name) {
+      queryParams.set("company_name", company.name);
+    }
+    if (slug) {
+      queryParams.set("company_slug", slug);
+    }
+    if (sessionData?.user?.name) {
+      queryParams.set("user_name", sessionData.user.name);
+    }
+    if (sessionData?.user?.email) {
+      queryParams.set("user_email", sessionData.user.email);
+    }
+
+    baseTarget = `${targetRoute}${separator}${queryParams.toString()}`;
+  }
+
+  // 1. Custom Domain Priority (e.g. careers.tesla.com)
+  if (customDomain) {
+    return `${protocol}//${customDomain}${baseTarget}`;
+  }
+
+  // 2. Dedicated Tenant Subdomain Priority (e.g. tesla-labs.localhost:3000 or tesla-labs.hirequest.com)
+  if (slug) {
+    if (currentHost.includes("localhost")) {
+      if (currentHost.startsWith(`${slug}.`)) return baseTarget;
+      return `${protocol}//${slug}.localhost${port}${baseTarget}`;
+    }
+    if (currentHost.includes("hirequest.com")) {
+      if (currentHost.startsWith(`${slug}.`)) return baseTarget;
+      return `https://${slug}.hirequest.com${baseTarget}`;
+    }
+  }
+
+  return baseTarget;
+}
+
 function ActivateOwnerContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") || "";
 
   const [isVerifying, setIsVerifying] = useState(true);
+  const [companyInfo, setCompanyInfo] = useState(null);
   const [tokenValid, setTokenValid] = useState(true);
   const [isAlreadyActive, setIsAlreadyActive] = useState(false);
   const [password, setPassword] = useState("");
@@ -52,8 +122,12 @@ function ActivateOwnerContent() {
       }
 
       try {
-        await verifyOwnerActivationApi(token);
+        const verifyRes = await verifyOwnerActivationApi(token);
         if (isMounted) {
+          const vData = verifyRes?.data || verifyRes;
+          if (vData?.company) {
+            setCompanyInfo(vData.company);
+          }
           setTokenValid(true);
           setIsVerifying(false);
         }
@@ -151,7 +225,7 @@ function ActivateOwnerContent() {
 
       const userData = payload?.user || payload?.data?.user;
       const companies = payload?.companies || payload?.data?.companies || [];
-      const primaryCompany = (Array.isArray(companies) && companies[0]) || payload?.company;
+      const primaryCompany = (Array.isArray(companies) && companies[0]) || payload?.company || companyInfo;
 
       const userRole = userData?.role || payload?.user?.role || response?.user?.role || "";
       const rawPlatformRole = String(userRole).toUpperCase().trim();
@@ -200,13 +274,23 @@ function ActivateOwnerContent() {
         targetRoute = "/take-test";
       }
 
-      setRedirectUrl(targetRoute);
+      const sessionData = {
+        accessToken,
+        refreshToken,
+        user: userData,
+      };
+
+      const finalRedirectUrl = isPlatformAdmin
+        ? targetRoute
+        : resolveTenantRedirectUrl(targetRoute, primaryCompany, sessionData);
+
+      setRedirectUrl(finalRedirectUrl);
       setIsSuccess(true);
-      toast.success("Account activated successfully! Logging you in...");
+      toast.success("Account activated successfully! Redirecting to your workspace...");
 
       // Role-aware auto-login redirect
       setTimeout(() => {
-        window.location.href = targetRoute;
+        window.location.href = finalRedirectUrl;
       }, 1000);
     } catch (err) {
       const errMsg =
@@ -251,6 +335,8 @@ function ActivateOwnerContent() {
 
   // State 4: Account Already Activated Screen
   if (isAlreadyActive) {
+    const tenantLoginUrl = resolveTenantRedirectUrl("/login?activated=true", companyInfo);
+
     return (
       <div className="flex flex-col items-center justify-center p-6 text-center space-y-5">
         <div className="h-14 w-14 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100">
@@ -274,14 +360,15 @@ function ActivateOwnerContent() {
         </div>
 
         <div className="pt-2 w-full">
-          <Link href="/login?activated=true" className="block w-full">
-            <Button
-              className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span>Sign In to Your Workspace</span>
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
+          <Button
+            onClick={() => {
+              window.location.href = tenantLoginUrl;
+            }}
+            className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>Sign In to Your Workspace</span>
+            <ArrowRight className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     );
@@ -355,6 +442,30 @@ function ActivateOwnerContent() {
   // State 2: Valid Link - Set Password Form
   return (
     <div className="space-y-5">
+      {companyInfo?.name && (
+        <div className="flex items-center gap-3 p-3 bg-slate-50/90 border border-slate-200 rounded-2xl mb-1 shadow-2xs">
+          {companyInfo.logoUrl ? (
+            <img
+              src={companyInfo.logoUrl}
+              alt={companyInfo.name}
+              className="h-10 w-10 rounded-xl object-contain bg-white border border-slate-200/80 p-1 shrink-0"
+            />
+          ) : (
+            <div
+              className="h-10 w-10 rounded-xl flex items-center justify-center font-black text-sm text-white shrink-0 shadow-2xs"
+              style={{ backgroundColor: companyInfo.brandColor || "#2563eb" }}
+            >
+              {companyInfo.name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-black text-slate-900 truncate tracking-tight">{companyInfo.name}</p>
+            <p className="text-[11px] text-slate-500 font-medium truncate">
+              {companyInfo.brandTagline || "Enterprise Dedicated Workspace"}
+            </p>
+          </div>
+        </div>
+      )}
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
         {/* New Password */}
         <div className="space-y-1.5">

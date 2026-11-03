@@ -60,6 +60,32 @@ export const invitationService = {
         assignment?.companyLogo ||
         assignment?.candidate?.company?.logoUrl ||
         null,
+      brandColor:
+        assessment?.company?.brandColor ||
+        assessment?.createdBy?.company?.brandColor ||
+        assessment?.brandColor ||
+        assignment?.company?.brandColor ||
+        null,
+      accentColor:
+        assessment?.company?.accentColor ||
+        assessment?.createdBy?.company?.accentColor ||
+        assessment?.accentColor ||
+        assignment?.company?.accentColor ||
+        null,
+      faviconUrl:
+        assessment?.company?.faviconUrl ||
+        assessment?.createdBy?.company?.faviconUrl ||
+        assignment?.company?.faviconUrl ||
+        null,
+      brandTagline:
+        assessment?.company?.brandTagline ||
+        assessment?.createdBy?.company?.brandTagline ||
+        assignment?.company?.brandTagline ||
+        null,
+      showPoweredByHireQuest:
+        (assessment?.company?.showPoweredByHireQuest ??
+          assessment?.createdBy?.company?.showPoweredByHireQuest ??
+          assignment?.company?.showPoweredByHireQuest) !== false,
       durationMinutes: assessment?.durationMinutes || assessment?.duration || 60,
       passingScore: assessment?.passingScore || 60,
       questions,

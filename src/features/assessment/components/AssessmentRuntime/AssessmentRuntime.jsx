@@ -27,6 +27,38 @@ import CameraPreview from "../CameraPreview/CameraPreview";
 
 const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent }) => {
   const sections = useMemo(() => buildRuntimeSections(assessment), [assessment]);
+
+  const [branding] = useState(() => {
+    let cached = null;
+    if (typeof window !== "undefined") {
+      try {
+        const stored = sessionStorage.getItem("candidate_company_branding");
+        if (stored) cached = JSON.parse(stored);
+      } catch {}
+    }
+    return {
+      companyName:
+        assessment?.companyName ||
+        assessment?.company?.name ||
+        cached?.companyName ||
+        "",
+      companyLogo:
+        assessment?.companyLogo ||
+        assessment?.company?.logoUrl ||
+        cached?.companyLogo ||
+        null,
+      brandColor:
+        assessment?.brandColor ||
+        assessment?.company?.brandColor ||
+        cached?.brandColor ||
+        null,
+      brandTagline:
+        assessment?.brandTagline ||
+        assessment?.company?.brandTagline ||
+        cached?.brandTagline ||
+        null,
+    };
+  });
   const updateProgress = useUpdateAttemptProgress();
   const saveResponse = useSaveQuizResponse();
 
@@ -271,21 +303,41 @@ const AssessmentRuntime = ({ assessment, attempt, onReview, onProctoringEvent })
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
-      {/* ── 1. Top Header Bar (Proctored CBT Style) ── */}
+      {/* ── 1. Top Header Bar (Company Branded & Live Proctored) ── */}
       <header className="bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 py-3.5 shadow-2xs sticky top-0 z-30">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
-            </span>
-            <div className="flex items-center gap-2">
-              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/80">
-                <ShieldCheck className="h-3 w-3" />
-                Live Proctored
-              </span>
-              <h1 className="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight">
-                Online Test - {assessment.title || "Assessment"}
+          <div className="flex items-center gap-3 min-w-0">
+            {branding.companyLogo ? (
+              <img
+                src={branding.companyLogo}
+                alt={branding.companyName || "Hiring Company"}
+                className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl object-contain bg-white border border-slate-200/80 p-0.5 shrink-0 shadow-2xs"
+              />
+            ) : branding.companyName ? (
+              <div
+                className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl flex items-center justify-center font-black text-xs text-white shrink-0 shadow-2xs"
+                style={{ backgroundColor: branding.brandColor || "#2563eb" }}
+              >
+                {branding.companyName.charAt(0).toUpperCase()}
+              </div>
+            ) : (
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            )}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                {branding.companyName && (
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 truncate max-w-[160px] sm:max-w-[260px]">
+                    {branding.companyName}
+                  </span>
+                )}
+                <span className="hidden sm:inline-flex items-center gap-1 text-[9.5px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200/80">
+                  <ShieldCheck className="h-2.5 w-2.5" />
+                  Live Proctored
+                </span>
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0 sm:hidden" />
+              </div>
+              <h1 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight leading-tight truncate max-w-[200px] sm:max-w-md">
+                {assessment.title || "Assessment"}
               </h1>
             </div>
           </div>
