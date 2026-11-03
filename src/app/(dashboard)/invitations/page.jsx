@@ -46,6 +46,7 @@ export default function InvitationsPage() {
     "Facebook Company";
 
   const [assessmentFilter, setAssessmentFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -141,31 +142,51 @@ export default function InvitationsPage() {
 
   const stats = useMemo(() => {
     const total = dynamicInvitations.length;
-    const sent = dynamicInvitations.filter(
-      (inv) => String(inv.status || "").toUpperCase() === "SENT" || !inv.status
-    ).length;
+    const sent = dynamicInvitations.filter((inv) => {
+      const s = String(inv.status || "").toUpperCase();
+      return s === "SENT" || s === "PENDING" || !inv.status;
+    }).length;
     const inProgress = dynamicInvitations.filter((inv) => {
       const s = String(inv.status || "").toUpperCase();
-      return s === "IN PROGRESS" || s === "STARTED" || s === "IN_PROGRESS";
+      return s === "IN PROGRESS" || s === "STARTED" || s === "IN_PROGRESS" || s === "OPENED";
     }).length;
-    const completed = dynamicInvitations.filter(
-      (inv) => String(inv.status || "").toUpperCase() === "COMPLETED"
-    ).length;
+    const completed = dynamicInvitations.filter((inv) => {
+      const s = String(inv.status || "").toUpperCase();
+      return s === "COMPLETED" || s === "SUBMITTED";
+    }).length;
 
     return { total, sent, inProgress, completed };
   }, [dynamicInvitations]);
 
   const filteredInvitations = useMemo(() => {
-    if (assessmentFilter === "ALL") return dynamicInvitations;
-    return dynamicInvitations.filter((inv) =>
-      inv.assessmentTitle.toLowerCase().includes(assessmentFilter.toLowerCase())
-    );
-  }, [dynamicInvitations, assessmentFilter]);
+    let list = dynamicInvitations;
+    if (assessmentFilter !== "ALL") {
+      list = list.filter((inv) =>
+        inv.assessmentTitle.toLowerCase().includes(assessmentFilter.toLowerCase())
+      );
+    }
+    if (statusFilter !== "ALL") {
+      list = list.filter((inv) => {
+        const s = String(inv.status || "").toUpperCase();
+        if (statusFilter === "COMPLETED") {
+          return s === "COMPLETED" || s === "SUBMITTED";
+        }
+        if (statusFilter === "IN_PROGRESS") {
+          return s === "IN PROGRESS" || s === "STARTED" || s === "IN_PROGRESS" || s === "OPENED";
+        }
+        if (statusFilter === "SENT") {
+          return s === "SENT" || s === "PENDING" || !inv.status;
+        }
+        return true;
+      });
+    }
+    return list;
+  }, [dynamicInvitations, assessmentFilter, statusFilter]);
 
   // Reset pagination to first page when filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [assessmentFilter]);
+  }, [assessmentFilter, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredInvitations.length / pageSize));
   const validPage = Math.min(Math.max(1, currentPage), totalPages);
@@ -205,7 +226,17 @@ export default function InvitationsPage() {
 
   const getStatusBadge = (status) => {
     const s = String(status || "").toUpperCase();
-    if (s === "IN PROGRESS" || s === "STARTED" || s === "IN_PROGRESS") {
+    if (s === "COMPLETED" || s === "SUBMITTED") {
+      return (
+        <Badge
+          variant="outline"
+          className="bg-emerald-50 text-emerald-700 border-emerald-300 font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-full"
+        >
+          Completed
+        </Badge>
+      );
+    }
+    if (s === "IN PROGRESS" || s === "STARTED" || s === "IN_PROGRESS" || s === "OPENED") {
       return (
         <Badge
           variant="outline"
@@ -215,13 +246,13 @@ export default function InvitationsPage() {
         </Badge>
       );
     }
-    if (s === "COMPLETED") {
+    if (s === "EXPIRED") {
       return (
         <Badge
           variant="outline"
-          className="bg-emerald-50 text-emerald-700 border-emerald-300 font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-full"
+          className="bg-rose-50 text-rose-700 border-rose-300 font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-full"
         >
-          Completed
+          Expired
         </Badge>
       );
     }
@@ -418,7 +449,7 @@ export default function InvitationsPage() {
               <select
                 value={assessmentFilter}
                 onChange={(e) => setAssessmentFilter(e.target.value)}
-                className="h-10 px-3.5 rounded-full border border-slate-200/90 bg-slate-50/50 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer transition max-w-[280px] truncate"
+                className="h-10 px-3.5 rounded-full border border-slate-200/90 bg-slate-50/50 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer transition max-w-[220px] truncate"
               >
                 <option value="ALL">All Assessments ({dynamicInvitations.length})</option>
                 {assessments.map((a) => (
@@ -426,6 +457,21 @@ export default function InvitationsPage() {
                     {a.title}
                   </option>
                 ))}
+              </select>
+            </div>
+
+            {/* Filter by Status */}
+            <div className="flex items-center gap-1.5 w-full sm:w-auto">
+              <span className="text-xs font-bold text-slate-600 shrink-0">Status:</span>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="h-10 px-3.5 rounded-full border border-slate-200/90 bg-slate-50/50 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer transition"
+              >
+                <option value="ALL">All Statuses ({dynamicInvitations.length})</option>
+                <option value="SENT">Sent ({stats.sent})</option>
+                <option value="IN_PROGRESS">In Progress ({stats.inProgress})</option>
+                <option value="COMPLETED">Completed ({stats.completed})</option>
               </select>
             </div>
 
@@ -544,15 +590,30 @@ export default function InvitationsPage() {
                       {/* Actions */}
                       <td className="py-4 px-5 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleCopyLink(inv.token)}
-                            className="h-8 px-2.5 text-xs font-semibold rounded-xl gap-1.5 border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs cursor-pointer"
-                          >
-                            <Copy className="h-3.5 w-3.5 text-slate-500" />
-                            Copy Link
-                          </Button>
+                          {String(inv.status || "").toUpperCase() === "COMPLETED" ||
+                          String(inv.status || "").toUpperCase() === "SUBMITTED" ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => router.push("/results")}
+                              className="h-8 px-3 text-xs font-semibold rounded-xl gap-1.5 border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100/80 shadow-2xs cursor-pointer transition-all"
+                              title="View Completed Scorecard in Results"
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                              <span>View Result</span>
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleCopyLink(inv.token)}
+                              className="h-8 px-2.5 text-xs font-semibold rounded-xl gap-1.5 border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs cursor-pointer transition-all"
+                              title="Copy Assessment Link"
+                            >
+                              <Copy className="h-3.5 w-3.5 text-slate-500" />
+                              <span>Copy Link</span>
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>

@@ -142,11 +142,7 @@ export function useNotifications(filter = "all") {
         }
       );
 
-      // Show real-time informative toast popup
-      toast.info(newNotif.title, {
-        description: newNotif.message,
-        duration: 5000,
-      });
+      // Real-time silent update: count and feed update without disruptive screen toasts
 
       // Invalidate notifications queries to ensure full sync across all active views
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
