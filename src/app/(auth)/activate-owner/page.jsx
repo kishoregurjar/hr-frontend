@@ -72,16 +72,16 @@ function resolveTenantRedirectUrl(targetRoute, company, sessionData = null) {
     baseTarget = `${targetRoute}${separator}${queryParams.toString()}`;
   }
 
-  // 1. Custom Domain Priority (e.g. careers.tesla.com)
-  if (customDomain) {
+  // 1. Custom Domain Priority (only if explicitly verified)
+  if (customDomain && company?.customDomainVerified === true) {
     return `${protocol}//${customDomain}${baseTarget}`;
   }
 
-  // 2. Dedicated Tenant Subdomain Priority (e.g. tesla-labs.localhost:3000 or tesla-labs.hirequest.com)
+  // 2. Dedicated Tenant Subdomain Priority (e.g. tesla-labs.hirequest.com)
   if (slug) {
     if (currentHost.includes("localhost")) {
-      if (currentHost.startsWith(`${slug}.`)) return baseTarget;
-      return `${protocol}//${slug}.localhost${port}${baseTarget}`;
+      // In local dev, stay on current localhost origin
+      return baseTarget;
     }
     if (currentHost.includes("hirequest.com")) {
       if (currentHost.startsWith(`${slug}.`)) return baseTarget;
