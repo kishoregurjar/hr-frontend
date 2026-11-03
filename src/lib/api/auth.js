@@ -130,6 +130,16 @@ export const normalizeUser = (resData, fallbackEmail = "") => {
     .trim()
     .replace(/\s+/g, "_");
 
+  const avatarUrl =
+    rawUser.avatarUrl ||
+    rawUser.avatar_url ||
+    rawUser.avatar ||
+    payload?.user?.avatarUrl ||
+    payload?.avatarUrl ||
+    resData?.data?.avatarUrl ||
+    resData?.avatarUrl ||
+    null;
+
   const isPlatformAdmin =
     rawPlatformRole === "SUPER_ADMIN" ||
     rawPlatformRole === "PLATFORM_ADMIN" ||
@@ -146,6 +156,7 @@ export const normalizeUser = (resData, fallbackEmail = "") => {
       companyId: "",
       companyLogo: "",
       companyRole: null,
+      avatarUrl,
       role: "SUPER_ADMIN",
       rawRole: rawPlatformRole || "SUPER_ADMIN",
       displayRole: "Super Admin",
@@ -207,6 +218,7 @@ export const normalizeUser = (resData, fallbackEmail = "") => {
     rawRole: companyRole,
     isOwner: isOwner,
     isAdmin: isAdmin,
+    avatarUrl,
     activeCompany: {
       id: companyId,
       name: companyName,
@@ -680,4 +692,63 @@ export const updateUserProfileApi = async ({ name }) => {
   return user || payload?.user;
 };
 
+/**
+ * Upload User Profile Photo / Avatar
+ * Endpoint: POST /api/v1/auth/me/avatar
+ */
+export const uploadUserAvatarApi = async (file) => {
+  const formData = new FormData();
+  formData.append("avatar", file);
 
+  const res = await axiosClient.post("/auth/me/avatar", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  const payload = res?.data?.data || res?.data || res;
+  const newAvatarUrl = payload?.avatarUrl || payload?.user?.avatarUrl;
+
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
+      if (stored) {
+        const prev = JSON.parse(stored);
+        const updated = {
+          ...prev,
+          avatarUrl: newAvatarUrl,
+        };
+        localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(updated));
+      }
+    } catch {}
+    window.dispatchEvent(new Event("userProfileUpdated"));
+  }
+
+  return payload;
+};
+
+/**
+ * Remove User Profile Photo / Avatar
+ * Endpoint: DELETE /api/v1/auth/me/avatar
+ */
+export const removeUserAvatarApi = async () => {
+  const res = await axiosClient.delete("/auth/me/avatar");
+  const payload = res?.data?.data || res?.data || res;
+
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
+      if (stored) {
+        const prev = JSON.parse(stored);
+        const updated = {
+          ...prev,
+          avatarUrl: null,
+        };
+        localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(updated));
+      }
+    } catch {}
+    window.dispatchEvent(new Event("userProfileUpdated"));
+  }
+
+  return payload;
+};

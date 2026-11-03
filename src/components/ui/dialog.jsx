@@ -96,6 +96,7 @@ export function DialogOverlay({ className, ...props }) {
 export function DialogContent({
   className,
   children,
+  showCloseButton = true,
   onPointerDownOutside,
   onInteractOutside,
   onEscapeKeyDown,
@@ -109,19 +110,21 @@ export function DialogContent({
       <DialogOverlay />
       <div
         className={cn(
-          "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 rounded-lg animate-in fade-in-0 zoom-in-95",
+          "fixed left-[50%] top-[50%] z-50 grid w-[calc(100vw-1.5rem)] sm:w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 rounded-2xl sm:rounded-3xl animate-in fade-in-0 zoom-in-95 max-h-[calc(100dvh-2rem)] overflow-y-auto",
           className
         )}
         {...props}
       >
         {children}
-        <button
-          onClick={() => setOpen(false)}
-          className="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none"
-        >
-          <X className="h-4 w-4" />
-          <span className="sr-only">Close</span>
-        </button>
+        {showCloseButton && (
+          <button
+            onClick={() => setOpen(false)}
+            className="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none"
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </button>
+        )}
       </div>
     </DialogPortal>
   );

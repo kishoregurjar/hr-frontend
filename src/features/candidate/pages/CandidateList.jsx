@@ -347,7 +347,7 @@ const CandidateList = () => {
       className="-m-4 md:-m-6 h-[calc(100dvh-64px)] max-h-[calc(100dvh-64px)] overflow-y-auto overflow-x-hidden relative bg-[#f8fafc] no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden font-sans"
     >
       {/* ── Layer 1 & 2: 3D Parallax Hero Header ── */}
-      <div className="relative bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] text-white pt-10 pb-36 md:pb-40 px-6 md:px-12 overflow-hidden shadow-lg select-none">
+      <div className="relative bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] text-white pt-8 pb-32 sm:pt-10 sm:pb-36 md:pb-40 px-4 sm:px-6 md:px-12 overflow-hidden shadow-lg select-none">
         
         {/* Far Background: Rotating Ambient Orbs & Concentric Rings */}
         <div
@@ -392,17 +392,17 @@ const CandidateList = () => {
           </div>
 
           {/* Recruiter Mailbox & Top Actions Row */}
-          <div className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md p-2.5 px-4 flex flex-wrap lg:flex-nowrap items-center justify-between gap-3 text-white shadow-xs">
+          <div className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md p-3 sm:p-2.5 sm:px-4 flex flex-col md:flex-row md:items-center justify-between gap-3 text-white shadow-xs">
             {/* Left: Compact Inbound Mailbox Status */}
-            <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0 w-full md:w-auto">
               <div className="h-8 w-8 rounded-xl bg-white/20 border border-white/30 text-white flex items-center justify-center shrink-0 shadow-2xs">
                 <Mail className="h-4 w-4" />
               </div>
-              <div className="text-xs min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
+              <div className="text-xs min-w-0 flex-1 md:flex-initial">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                   <span className="font-bold text-white shrink-0 text-xs">Recruiter Mailbox:</span>
                   {mailboxStatus?.connected ? (
-                    <Badge className="bg-emerald-500/20 text-emerald-200 border-emerald-400/40 text-[11px] py-0.5 px-2.5 flex items-center gap-1.5 font-semibold max-w-[220px] truncate rounded-full">
+                    <Badge className="bg-emerald-500/20 text-emerald-200 border-emerald-400/40 text-[11px] py-0.5 px-2.5 flex items-center gap-1.5 font-semibold max-w-[200px] sm:max-w-[260px] truncate rounded-full">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
                       <span className="truncate">{mailboxStatus?.email || user?.email || "Connected"}</span>
                     </Badge>
@@ -417,7 +417,7 @@ const CandidateList = () => {
             </div>
 
             {/* Right: Actions (Sync Mailbox + Extract + Add Candidate) */}
-            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 flex-wrap">
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-2.5 w-full md:w-auto shrink-0 pt-2 md:pt-0 border-t border-white/10 md:border-t-0">
               {mailboxStatus?.connected ? (
                 <Dialog open={isSyncDialogOpen} onOpenChange={setIsSyncDialogOpen}>
                   <DialogTrigger asChild>
@@ -425,7 +425,7 @@ const CandidateList = () => {
                       type="button"
                       size="sm"
                       disabled={syncMailboxMutation.isPending || mailboxStatus?.isSyncingNow}
-                      className="text-xs h-8 px-3 gap-1.5 bg-white/15 hover:bg-white/25 text-white border border-white/30 font-semibold rounded-xl shadow-xs cursor-pointer disabled:opacity-50 transition-all"
+                      className="text-xs h-9 sm:h-8 px-3 gap-1.5 bg-white/15 hover:bg-white/25 text-white border border-white/30 font-semibold rounded-xl shadow-xs cursor-pointer disabled:opacity-50 transition-all flex-1 sm:flex-initial justify-center"
                     >
                       {syncMailboxMutation.isPending || mailboxStatus?.isSyncingNow ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -435,7 +435,7 @@ const CandidateList = () => {
                       {syncMailboxMutation.isPending || mailboxStatus?.isSyncingNow ? "Syncing..." : "Sync Mailbox"}
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
+                  <DialogContent className="w-[92vw] sm:max-w-[425px] p-4 sm:p-6 rounded-2xl sm:rounded-3xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Sync Mailbox</DialogTitle>
                       <DialogDescription>
@@ -587,7 +587,7 @@ const CandidateList = () => {
                   size="sm"
                   onClick={() => connectGoogleMutation.mutate()}
                   disabled={connectGoogleMutation.isPending}
-                  className="text-xs h-8 px-3 gap-1.5 bg-white text-indigo-700 hover:bg-slate-50 font-bold rounded-xl shadow-xs cursor-pointer"
+                  className="text-xs h-9 sm:h-8 px-3 gap-1.5 bg-white text-indigo-700 hover:bg-slate-50 font-bold rounded-xl shadow-xs cursor-pointer flex-1 sm:flex-initial justify-center"
                 >
                   {connectGoogleMutation.isPending ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -601,16 +601,35 @@ const CandidateList = () => {
               {/* Separator */}
               <div className="h-5 w-[1px] bg-white/30 mx-0.5 hidden sm:block" />
 
-              {/* Extract from Emails & Add Candidate */}
-              <EmailExtractorDialog triggerText="Extract from Emails" />
-              <AddCandidateDialog />
+              {/* Extract from Emails */}
+              <div className="flex-1 sm:flex-initial min-w-0">
+                <EmailExtractorDialog
+                  triggerText="Extract from Emails"
+                  className="w-full sm:w-auto justify-center relative gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 font-semibold text-xs h-9 px-3 sm:px-4 rounded-xl shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+                />
+              </div>
+
+              {/* Add Candidate (Primary Action) */}
+              <div className="w-full sm:w-auto min-w-0">
+                <AddCandidateDialog
+                  trigger={
+                    <Button
+                      type="button"
+                      className="w-full sm:w-auto justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs h-9 px-4 rounded-xl shadow-xs shadow-indigo-500/20 cursor-pointer"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      <span>Add Candidate</span>
+                    </Button>
+                  }
+                />
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* ── Layer 3: Foreground (1.0x Normal Speed - Overlapping 4 Stat Cards & Candidate Content) ── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 md:-mt-24 relative z-20 space-y-6 pb-20">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 -mt-20 md:-mt-24 relative z-20 space-y-5 sm:space-y-6 pb-20">
         
         {/* ── 1. 4 KPI Stat Cards ── */}
         <CandidateStatsCards candidates={candidates} />
@@ -618,7 +637,7 @@ const CandidateList = () => {
         {/* ── 2. Filters & Search Toolbar (3D Glassmorphic Card) ── */}
         <div className="rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-4 sm:p-5 shadow-[0_12px_30px_rgba(79,70,229,0.06),0_2px_8px_rgba(0,0,0,0.02)] ring-1 ring-slate-900/5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
           {/* Search Input */}
-          <div className="relative flex-1 min-w-[260px]">
+          <div className="relative flex-1 min-w-0 sm:min-w-[260px]">
             <Search className="h-4 w-4 absolute left-4 top-3 text-slate-400" />
             <input
               type="text"
@@ -633,7 +652,7 @@ const CandidateList = () => {
           </div>
 
           {/* Dropdowns */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-wrap items-center gap-2.5 sm:gap-3 w-full md:w-auto">
+          <div className="grid grid-cols-2 md:flex md:flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
             <div className="flex items-center gap-1.5 w-full sm:w-auto">
               <Filter className="h-3.5 w-3.5 text-slate-400 shrink-0" />
               <span className="text-xs font-bold text-slate-600 shrink-0">Status:</span>
@@ -796,7 +815,7 @@ const CandidateList = () => {
 
         {/* ── 4. Candidate Table Card ── */}
         <div
-          className="rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-6 sm:p-7 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 space-y-4 font-sans transition-all duration-200"
+          className="rounded-2xl sm:rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-3.5 sm:p-6 md:p-7 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 space-y-4 font-sans transition-all duration-200"
         >
           <CandidateTable
             candidates={paginatedCandidates}

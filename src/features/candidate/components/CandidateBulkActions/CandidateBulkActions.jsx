@@ -16,7 +16,7 @@ const CandidateBulkActions = ({
   const handleClear = onClear || onClearSelection;
 
   return (
-    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 flex items-center gap-4 bg-slate-900/95 text-white border border-slate-700/80 shadow-2xl backdrop-blur-md px-5 py-3 rounded-2xl animate-in fade-in slide-in-from-bottom-4 duration-200 font-sans">
+    <div className="fixed bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 z-40 flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-start gap-2.5 sm:gap-4 bg-slate-900/95 text-white border border-slate-700/80 shadow-2xl backdrop-blur-md px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl animate-in fade-in slide-in-from-bottom-4 duration-200 font-sans max-w-[calc(100vw-32px)] w-max">
       <div className="flex items-center gap-2.5">
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white text-xs font-black shadow-sm">
           {selectedCount}

@@ -472,8 +472,8 @@ const AssessmentBuilder = ({
             }
           }}
         >
-          <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-3xl border border-white/90 shadow-2xl font-sans bg-white">
-            <div className="bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-6 text-white text-center relative select-none">
+          <DialogContent className="w-[92vw] sm:max-w-md p-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-white/90 shadow-2xl font-sans bg-white max-h-[90vh] flex flex-col">
+            <div className="bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-4 sm:p-6 text-white text-center relative select-none shrink-0">
               <div className="mx-auto w-12 h-12 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center mb-3 shadow-xs">
                 <CheckCircle2 className="h-6 w-6 text-white" />
               </div>
@@ -485,7 +485,7 @@ const AssessmentBuilder = ({
               </DialogDescription>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
               {/* Copy Test Link */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">

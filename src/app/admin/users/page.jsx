@@ -205,17 +205,25 @@ export default function AdminUsersPage() {
                     <tr key={user.id} className="hover:bg-slate-50/60 transition">
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                            {typeof user.name === "string" && user.name.trim()
-                              ? user.name
-                                  .split(" ")
-                                  .filter(Boolean)
-                                  .map((n) => n[0])
-                                  .slice(0, 2)
-                                  .join("")
-                                  .toUpperCase()
-                              : "U"}
-                          </div>
+                          {user.avatarUrl ? (
+                            <img
+                              src={user.avatarUrl}
+                              alt={user.name || "User"}
+                              className="h-8 w-8 rounded-full object-cover shrink-0 border border-slate-200 shadow-2xs"
+                            />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                              {typeof user.name === "string" && user.name.trim()
+                                ? user.name
+                                    .split(" ")
+                                    .filter(Boolean)
+                                    .map((n) => n[0])
+                                    .slice(0, 2)
+                                    .join("")
+                                    .toUpperCase()
+                                : "U"}
+                            </div>
+                          )}
                           <div>
                             <p className="font-bold text-slate-900 text-sm">
                               {user.name}

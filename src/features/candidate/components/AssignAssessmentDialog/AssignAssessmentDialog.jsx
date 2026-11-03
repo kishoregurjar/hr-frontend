@@ -166,9 +166,9 @@ const AssignAssessmentDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg p-0 overflow-hidden rounded-3xl border border-white/90 shadow-2xl font-sans bg-white">
+      <DialogContent className="w-[92vw] sm:max-w-lg p-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-white/90 shadow-2xl font-sans bg-white max-h-[92vh] flex flex-col">
         {/* ── 1. SIGNATURE EXECUTIVE HEADER ── */}
-        <div className="bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-6 text-white relative overflow-hidden">
+        <div className="bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-4 sm:p-6 text-white relative overflow-hidden shrink-0 select-none">
           <div className="absolute right-0 top-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative z-10 flex items-start gap-3.5">
@@ -193,7 +193,7 @@ const AssignAssessmentDialog = ({
         </div>
 
         {/* ── 2. BODY CONTENT ── */}
-        <div className="p-6 space-y-5">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1 min-h-0">
           {/* Candidates Summary Pill */}
           <div className="rounded-xl border border-slate-200/90 bg-slate-50/80 p-3.5 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
@@ -355,7 +355,7 @@ const AssignAssessmentDialog = ({
           )}
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 shrink-0">
             <Button
               type="button"
               variant="outline"

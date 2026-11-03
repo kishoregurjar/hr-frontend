@@ -271,13 +271,32 @@ const CandidateTable = ({
                   {/* Candidate Name & Role with Avatar */}
                   <TableCell className="py-3.5 px-4">
                     <div className="flex items-center gap-3">
-                      {/* Initials Squircle Avatar */}
-                      <div
-                        onClick={() => onViewDetails && onViewDetails(candidate)}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/15 via-purple-500/15 to-indigo-600/20 border border-indigo-200/80 text-indigo-700 font-black text-xs shadow-2xs cursor-pointer group-hover:scale-105 transition-transform"
-                      >
-                        {getInitials(displayName)}
-                      </div>
+                      {/* Photo or Initials Squircle Avatar */}
+                      {candidate.verificationPhoto || candidate.metadata?.verificationPhoto ? (
+                        <div
+                          onClick={() => onViewDetails && onViewDetails(candidate)}
+                          className="relative h-9 w-9 shrink-0 cursor-pointer group-hover:scale-105 transition-transform"
+                        >
+                          <img
+                            src={candidate.verificationPhoto || candidate.metadata?.verificationPhoto}
+                            alt={displayName}
+                            className="h-9 w-9 rounded-xl object-cover border border-indigo-200 shadow-2xs"
+                          />
+                          <span
+                            className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center shadow-2xs"
+                            title="Webcam Identity Verified"
+                          >
+                            <Check className="h-2 w-2 text-white stroke-[3]" />
+                          </span>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => onViewDetails && onViewDetails(candidate)}
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/15 via-purple-500/15 to-indigo-600/20 border border-indigo-200/80 text-indigo-700 font-black text-xs shadow-2xs cursor-pointer group-hover:scale-105 transition-transform"
+                        >
+                          {getInitials(displayName)}
+                        </div>
+                      )}
 
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">

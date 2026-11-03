@@ -133,11 +133,9 @@ const CandidateExtractorDrawer = ({
         if (!nextOpen) handleClose();
       }}
     >
-      <DialogContent 
-        className="max-w-4xl h-[90vh] max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-3xl border border-white/90 bg-white shadow-2xl font-sans"
-      >
+      <DialogContent showCloseButton={false} className="w-[95vw] sm:max-w-4xl h-[90vh] max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-white/90 bg-white shadow-2xl font-sans">
         {/* ── 1. Top Hero Profile Header (Fixed) ─────────────────────── */}
-        <div className="shrink-0 bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-6 text-white rounded-t-3xl relative overflow-hidden select-none shadow-md">
+        <div className="shrink-0 bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-4 sm:p-6 text-white rounded-t-2xl sm:rounded-t-3xl relative overflow-hidden select-none shadow-md">
           {/* Subtle Ambient 3D Glow Accents */}
           <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-white/15 blur-2xl pointer-events-none" />
           <div className="absolute top-1/2 left-1/3 h-28 w-28 rounded-full bg-pink-300/10 blur-xl pointer-events-none" />

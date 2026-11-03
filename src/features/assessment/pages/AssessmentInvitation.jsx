@@ -44,14 +44,25 @@ const AssessmentInvitation = ({ token }) => {
   const handleStart = async (candidateInfo = {}) => {
     await enterFullscreen().catch(() => { });
 
+    const photo =
+      candidateInfo?.verificationPhoto ||
+      (typeof window !== "undefined"
+        ? sessionStorage.getItem("candidate_photo_url") || localStorage.getItem("candidate_photo_url")
+        : null);
+
     if (token && typeof window !== "undefined") {
       sessionStorage.setItem("invitationToken", token);
       sessionStorage.setItem("candidate_invitation_token", token);
+      if (photo) {
+        sessionStorage.setItem("candidate_photo_url", photo);
+      }
     }
 
     startAssessmentMutation.mutate(
       {
         ...candidateInfo,
+        verificationPhoto: photo,
+        photoCapturedAt: candidateInfo?.photoCapturedAt || new Date().toISOString(),
         assignment: data?.assignment,
         assessment: data?.assessment,
       },

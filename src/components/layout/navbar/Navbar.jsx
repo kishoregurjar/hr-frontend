@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { PAGE_TITLES } from "@/constants";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import NotificationBell from "./NotificationBell";
 
 const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
   const pathname = usePathname();
@@ -38,6 +39,11 @@ const Navbar = ({ onMenuClick, impersonatedCompany = null }) => {
             </Badge>
           )}
         </div>
+      </div>
+
+      {/* Right Section: Notification Center */}
+      <div className="flex items-center gap-2 shrink-0">
+        <NotificationBell />
       </div>
     </header>
   );

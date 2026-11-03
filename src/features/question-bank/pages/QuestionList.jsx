@@ -365,7 +365,7 @@ const QuestionList = () => {
         )}
 
         {/* ── 3. Questions Container (Table or Grid) ── */}
-        <div className="rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-6 sm:p-7 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 space-y-4 font-sans transition-all duration-200">
+        <div className="rounded-2xl sm:rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-3.5 sm:p-7 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 space-y-4 font-sans transition-all duration-200 overflow-hidden">
           {isLoading ? (
             <QuestionGridSkeleton />
           ) : isError ? (

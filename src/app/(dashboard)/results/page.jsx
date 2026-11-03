@@ -36,6 +36,8 @@ import {
   AlertCircle,
   BookOpen,
   X,
+  Camera,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/features/auth/context";
@@ -448,57 +450,39 @@ export default function ResultsAndRankingPage() {
   };
 
   const getRankMedal = (rank, totalCandidates = 1, status = "") => {
-    // FAILED or unranked candidates do NOT receive medals or ranks
     if (status === "FAILED" || rank === null || rank === undefined) {
-      return (
-        <div className="flex flex-col items-center justify-center">
-          <span className="font-bold text-slate-400 text-sm leading-none">—</span>
-          <span className="text-[9.5px] text-slate-400 font-semibold mt-0.5">Unranked</span>
-        </div>
-      );
+      return <span className="font-bold text-xs text-slate-400">—</span>;
     }
 
     const numRank = Number(rank) || 1;
     if (numRank === 1) {
       return (
-        <div className="flex flex-col items-center justify-center">
-          <span className="text-lg leading-none">🥇</span>
-          <span className="text-[10px] font-black text-amber-600 mt-0.5">Rank #1</span>
-          {totalCandidates > 1 && (
-            <span className="text-[9px] text-slate-400 font-semibold">of {totalCandidates}</span>
-          )}
-        </div>
+        <span className="font-black text-sm text-slate-900 inline-flex items-center justify-center gap-1">
+          <span className="text-sm">🥇</span>
+          <span>1</span>
+        </span>
       );
     }
     if (numRank === 2) {
       return (
-        <div className="flex flex-col items-center justify-center">
-          <span className="text-lg leading-none">🥈</span>
-          <span className="text-[10px] font-black text-slate-600 mt-0.5">Rank #2</span>
-          {totalCandidates > 1 && (
-            <span className="text-[9px] text-slate-400 font-semibold">of {totalCandidates}</span>
-          )}
-        </div>
+        <span className="font-black text-sm text-slate-800 inline-flex items-center justify-center gap-1">
+          <span className="text-sm">🥈</span>
+          <span>2</span>
+        </span>
       );
     }
     if (numRank === 3) {
       return (
-        <div className="flex flex-col items-center justify-center">
-          <span className="text-lg leading-none">🥉</span>
-          <span className="text-[10px] font-black text-amber-800 mt-0.5">Rank #3</span>
-          {totalCandidates > 1 && (
-            <span className="text-[9px] text-slate-400 font-semibold">of {totalCandidates}</span>
-          )}
-        </div>
+        <span className="font-black text-sm text-slate-800 inline-flex items-center justify-center gap-1">
+          <span className="text-sm">🥉</span>
+          <span>3</span>
+        </span>
       );
     }
     return (
-      <div className="flex flex-col items-center justify-center">
-        <span className="font-extrabold text-xs text-slate-600">#{numRank}</span>
-        {totalCandidates > 1 && (
-          <span className="text-[9px] text-slate-400 font-semibold">of {totalCandidates}</span>
-        )}
-      </div>
+      <span className="font-black text-sm text-slate-600">
+        {numRank}
+      </span>
     );
   };
 
@@ -719,11 +703,25 @@ export default function ResultsAndRankingPage() {
                   </Badge>
                 </div>
 
-                <div>
-                  <h4 className="font-extrabold text-base text-slate-900 group-hover:text-indigo-600 transition-colors">
-                    {candidate.candidateName}
-                  </h4>
-                  <p className="text-xs text-slate-500 mt-0.5 truncate">{candidate.email}</p>
+                <div className="flex items-center gap-3">
+                  {candidate.verificationPhoto ? (
+                    <div className="relative shrink-0">
+                      <img
+                        src={candidate.verificationPhoto}
+                        alt={candidate.candidateName}
+                        className="h-10 w-10 rounded-xl object-cover border border-indigo-200/80 shadow-2xs group-hover:scale-105 transition-transform"
+                      />
+                      <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center shadow-xs" title="Webcam Photo Verified">
+                        <ShieldCheck className="h-2.5 w-2.5 text-white stroke-[2.5]" />
+                      </span>
+                    </div>
+                  ) : null}
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-extrabold text-base text-slate-900 group-hover:text-indigo-600 transition-colors truncate">
+                      {candidate.candidateName}
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-0.5 truncate">{candidate.email}</p>
+                  </div>
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-600">
@@ -860,7 +858,7 @@ export default function ResultsAndRankingPage() {
         <div className="rounded-3xl border border-white/90 bg-white/95 backdrop-blur-md p-6 sm:p-7 shadow-[0_12px_30px_rgba(79,70,229,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-slate-900/5 space-y-4 font-sans transition-all duration-200">
           <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-2xs">
             <table className="w-full text-left text-xs min-w-[760px]">
-              <thead className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+              <thead className="bg-slate-50/90 border-b border-slate-200/80 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
                 <tr>
                   {selectedAssessment !== "ALL" && (
                     <th className="py-3.5 px-4 w-10 text-center animate-in fade-in">
@@ -876,7 +874,7 @@ export default function ResultsAndRankingPage() {
                       />
                     </th>
                   )}
-                  <th className="py-3.5 px-4 w-14 text-center">Rank</th>
+                  <th className="py-3.5 px-4 w-28 text-center">Rank</th>
                   <th className="py-3.5 px-5">Candidate</th>
                   <th className="py-3.5 px-5">Assessment Module</th>
                   <th className="py-3.5 px-5 text-center">Score & Pass %</th>
@@ -902,150 +900,207 @@ export default function ResultsAndRankingPage() {
                     </td>
                   </tr>
                 ) : (
-                  paginatedResults.map((item) => (
-                    <tr
-                      key={item.id}
-                      className={`hover:bg-slate-50/70 transition group ${
-                        selectedCandidateIds.includes(item.id) ? "bg-indigo-50/40" : ""
-                      }`}
-                    >
-                      {/* Select Checkbox */}
-                      {selectedAssessment !== "ALL" && (
-                        <td className="py-4 px-4 text-center animate-in fade-in">
-                          <input
-                            type="checkbox"
-                            checked={selectedCandidateIds.includes(item.id)}
-                            onChange={() => handleToggleSelect(item.id)}
-                            aria-label={`Select ${item.candidateName}`}
-                            className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
-                          />
+                  paginatedResults.map((item) => {
+                    const isQualified = item.status === "QUALIFIED";
+                    const isInReview = item.status === "IN_REVIEW";
+                    const scoreColor = isQualified
+                      ? "text-emerald-600"
+                      : isInReview
+                      ? "text-amber-600"
+                      : "text-rose-600";
+                    const barColor = isQualified
+                      ? "bg-emerald-500"
+                      : isInReview
+                      ? "bg-amber-500"
+                      : "bg-rose-500";
+
+                    return (
+                      <tr
+                        key={item.id}
+                        className={`hover:bg-indigo-50/25 transition-colors duration-150 group ${
+                          selectedCandidateIds.includes(item.id) ? "bg-indigo-50/50" : ""
+                        }`}
+                      >
+                        {/* Select Checkbox */}
+                        {selectedAssessment !== "ALL" && (
+                          <td className="py-4 px-4 text-center animate-in fade-in">
+                            <input
+                              type="checkbox"
+                              checked={selectedCandidateIds.includes(item.id)}
+                              onChange={() => handleToggleSelect(item.id)}
+                              aria-label={`Select ${item.candidateName}`}
+                              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
+                            />
+                          </td>
+                        )}
+
+                        {/* Rank */}
+                        <td className="py-4 px-4 text-center font-extrabold">
+                          {getRankMedal(item.assessmentRank, item.assessmentTotalCandidates, item.status)}
                         </td>
-                      )}
 
-                      {/* Rank */}
-                      <td className="py-4 px-4 text-center font-extrabold">
-                        {getRankMedal(item.assessmentRank, item.assessmentTotalCandidates, item.status)}
-                      </td>
-
-                      {/* Candidate */}
-                      <td className="py-4 px-5">
-                        <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-slate-900 to-indigo-950 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
-                            {String(item.candidateName || "C")
-                              .split(" ")
-                              .filter(Boolean)
-                              .map((n) => n[0])
-                              .slice(0, 2)
-                              .join("")
-                              .toUpperCase()}
+                        {/* Candidate */}
+                        <td className="py-4 px-5">
+                          <div className="flex items-center gap-3">
+                            {item.verificationPhoto ? (
+                              <div className="relative shrink-0">
+                                <img
+                                  src={item.verificationPhoto}
+                                  alt={item.candidateName}
+                                  className="h-9 w-9 rounded-xl object-cover border border-indigo-200/80 shadow-2xs group-hover:scale-105 transition-transform"
+                                />
+                                <span
+                                  className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center shadow-2xs"
+                                  title="Webcam Identity Verified"
+                                >
+                                  <ShieldCheck className="h-2 w-2 text-white stroke-[3]" />
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500/15 via-purple-500/10 to-indigo-600/10 border border-indigo-200/60 text-indigo-700 font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                                {String(item.candidateName || "C")
+                                  .split(" ")
+                                  .filter(Boolean)
+                                  .map((n) => n[0])
+                                  .slice(0, 2)
+                                  .join("")
+                                  .toUpperCase()}
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="font-extrabold text-slate-900 text-sm leading-tight truncate group-hover:text-indigo-600 transition-colors">
+                                {item.candidateName}
+                              </p>
+                              <p className="text-xs text-slate-500 mt-0.5 truncate">{item.email}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-extrabold text-slate-900 text-sm leading-tight">
-                              {item.candidateName}
-                            </p>
-                            <p className="text-xs text-slate-500 mt-0.5">{item.email}</p>
+                        </td>
+
+                        {/* Assessment */}
+                        <td className="py-4 px-5">
+                          <div className="space-y-1">
+                            <p className="font-bold text-slate-800 text-xs sm:text-[13px]">{item.assessmentTitle}</p>
+                            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                              <Clock className="h-3 w-3 text-slate-400" />
+                              <span>{item.timeSpent}</span>
+                              <span className="text-slate-300">•</span>
+                              <span>{item.completedAt}</span>
+                            </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Assessment */}
-                      <td className="py-4 px-5">
-                        <div className="space-y-0.5">
-                          <p className="font-bold text-slate-800">{item.assessmentTitle}</p>
-                          <p className="text-[11px] text-slate-500 flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {item.timeSpent} • {item.completedAt}
-                          </p>
-                        </div>
-                      </td>
-
-                      {/* Score */}
-                      <td className="py-4 px-5 text-center">
-                        <span className="font-black text-sm text-slate-900">
-                          {item.score}/{item.maxScore || 100}
-                        </span>
-                        <span className="block text-[11px] font-bold text-emerald-600">
-                          ({item.percentage}%)
-                        </span>
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-4 px-5">
-                        <div className="flex flex-col gap-1 items-start">
-                          <Badge
-                            className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
-                              item.status === "QUALIFIED"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                                : item.status === "IN_REVIEW"
-                                ? "bg-amber-50 text-amber-700 border-amber-300"
-                                : "bg-rose-50 text-rose-700 border-rose-300"
-                            }`}
-                          >
-                            {item.status === "QUALIFIED" ? "Qualified" : item.status === "IN_REVIEW" ? "In Review" : "Failed"}
-                          </Badge>
-
-                          {item.status === "QUALIFIED" &&
-                            item.interview &&
-                            (!item.interview.assessmentTitle ||
-                              item.assessmentTitle?.toLowerCase().includes(item.interview.assessmentTitle?.toLowerCase()) ||
-                              item.interview.assessmentTitle?.toLowerCase().includes(item.assessmentTitle?.toLowerCase()) ||
-                              item.interview.roundName?.toLowerCase().includes(item.assessmentTitle?.toLowerCase())) && (
-                              <span
-                                className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/90 px-2 py-0.5 rounded-full shadow-2xs"
-                                title={`Interview Scheduled: ${item.interview.formattedDate || item.interview.roundName}`}
-                              >
-                                <Calendar className="h-2.5 w-2.5 text-indigo-600" />
-                                Interview Invited
+                        {/* Score */}
+                        <td className="py-4 px-5 text-center">
+                          <div className="inline-flex flex-col items-center">
+                            <div className="flex items-baseline gap-1">
+                              <span className="font-black text-sm text-slate-900">
+                                {item.score}
                               </span>
-                          )}
-                        </div>
-                      </td>
+                              <span className="text-[11px] font-semibold text-slate-400">
+                                /{item.maxScore || 100}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-1">
+                              <div className="w-12 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-300 ${barColor}`}
+                                  style={{ width: `${Math.min(100, Math.max(0, item.percentage || 0))}%` }}
+                                />
+                              </div>
+                              <span className={`text-[11px] font-extrabold ${scoreColor}`}>
+                                ({item.percentage}%)
+                              </span>
+                            </div>
+                          </div>
+                        </td>
 
-                      {/* Actions */}
-                      <td className="py-4 px-5 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {item.status === "QUALIFIED" && (() => {
-                            const isCurrentAssessmentInvited =
-                              Boolean(item.interview) &&
+                        {/* Status */}
+                        <td className="py-4 px-5">
+                          <div className="flex flex-col gap-1.5 items-start">
+                            <div
+                              className={`inline-flex items-center gap-1.5 text-[10.5px] font-black uppercase px-2.5 py-0.5 rounded-full border shadow-2xs ${
+                                isQualified
+                                  ? "bg-emerald-50/90 text-emerald-700 border-emerald-300/80"
+                                  : isInReview
+                                  ? "bg-amber-50/90 text-amber-700 border-amber-300/80"
+                                  : "bg-rose-50/90 text-rose-700 border-rose-300/80"
+                              }`}
+                            >
+                              <span
+                                className={`h-1.5 w-1.5 rounded-full ${
+                                  isQualified
+                                    ? "bg-emerald-500 animate-pulse"
+                                    : isInReview
+                                    ? "bg-amber-500"
+                                    : "bg-rose-500"
+                                }`}
+                              />
+                              {isQualified ? "Qualified" : isInReview ? "In Review" : "Failed"}
+                            </div>
+
+                            {isQualified &&
+                              item.interview &&
                               (!item.interview.assessmentTitle ||
                                 item.assessmentTitle?.toLowerCase().includes(item.interview.assessmentTitle?.toLowerCase()) ||
                                 item.interview.assessmentTitle?.toLowerCase().includes(item.assessmentTitle?.toLowerCase()) ||
-                                item.interview.roundName?.toLowerCase().includes(item.assessmentTitle?.toLowerCase()));
+                                item.interview.roundName?.toLowerCase().includes(item.assessmentTitle?.toLowerCase())) && (
+                                <span
+                                  className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 bg-indigo-50/90 border border-indigo-200 px-2 py-0.5 rounded-full shadow-2xs"
+                                  title={`Interview Scheduled: ${item.interview.formattedDate || item.interview.roundName}`}
+                                >
+                                  <Calendar className="h-2.5 w-2.5 text-indigo-600" />
+                                  Interview Invited
+                                </span>
+                            )}
+                          </div>
+                        </td>
 
-                            return (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openInterviewModalForSingle(item)}
-                                className={`h-8 px-2.5 rounded-xl text-xs font-bold gap-1 shadow-2xs cursor-pointer transition ${
-                                  isCurrentAssessmentInvited
-                                    ? "border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 hover:text-indigo-800 text-indigo-700"
-                                    : "border-emerald-200 bg-emerald-50/50 hover:bg-emerald-100 hover:text-emerald-800 text-emerald-700"
-                                }`}
-                                title={
-                                  isCurrentAssessmentInvited
-                                    ? `Interview already scheduled for ${item.interview.formattedDate}`
-                                    : "Schedule Next Round Interview"
-                                }
-                              >
-                                <Calendar className="h-3.5 w-3.5" />
-                                {isCurrentAssessmentInvited ? "Re-invite" : "Invite"}
-                              </Button>
-                            );
-                          })()}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedCandidate(item)}
-                            className="h-8 px-3 rounded-xl border-slate-200 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 text-xs font-bold gap-1 shadow-2xs cursor-pointer transition"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                            Scorecard
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                        {/* Actions */}
+                        <td className="py-4 px-5 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {isQualified && (() => {
+                              const isCurrentAssessmentInvited =
+                                Boolean(item.interview) &&
+                                (!item.interview.assessmentTitle ||
+                                  item.assessmentTitle?.toLowerCase().includes(item.interview.assessmentTitle?.toLowerCase()) ||
+                                  item.interview.assessmentTitle?.toLowerCase().includes(item.assessmentTitle?.toLowerCase()) ||
+                                  item.interview.roundName?.toLowerCase().includes(item.assessmentTitle?.toLowerCase()));
+
+                              return (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openInterviewModalForSingle(item)}
+                                  className={`h-8 px-2.5 rounded-xl text-xs font-bold gap-1.5 shadow-2xs cursor-pointer transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] ${
+                                    isCurrentAssessmentInvited
+                                      ? "border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 hover:text-indigo-800 text-indigo-700"
+                                      : "border-emerald-200 bg-emerald-50/60 hover:bg-emerald-100 hover:text-emerald-800 text-emerald-700"
+                                  }`}
+                                  title={
+                                    isCurrentAssessmentInvited
+                                      ? `Interview already scheduled for ${item.interview.formattedDate}`
+                                      : "Schedule Next Round Interview"
+                                  }
+                                >
+                                  <Calendar className="h-3.5 w-3.5" />
+                                  {isCurrentAssessmentInvited ? "Re-invite" : "Invite"}
+                                </Button>
+                              );
+                            })()}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedCandidate(item)}
+                              className="h-8 px-3 rounded-xl border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 hover:text-indigo-700 text-slate-700 text-xs font-bold gap-1.5 shadow-2xs cursor-pointer transition-all duration-150 hover:scale-[1.02] active:scale-[0.98]"
+                            >
+                              <Eye className="h-3.5 w-3.5 text-slate-500" />
+                              Scorecard
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -1140,18 +1195,34 @@ export default function ResultsAndRankingPage() {
       {/* ── 6. DETAILED CANDIDATE SCORECARD MODAL ── */}
       {selectedCandidate && (
         <Dialog open={Boolean(selectedCandidate)} onOpenChange={() => setSelectedCandidate(null)}>
-          <DialogContent className="max-w-2xl w-[94vw] sm:w-full p-0 overflow-hidden rounded-3xl border border-white/90 shadow-2xl font-sans bg-white max-h-[92vh] flex flex-col">
+          <DialogContent showCloseButton={false} className="w-[94vw] sm:max-w-2xl p-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-white/90 shadow-2xl font-sans bg-white max-h-[92vh] flex flex-col">
             {/* Header: Signature Gradient Banner */}
-            <div className="relative bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] text-white p-6 sm:p-7 overflow-hidden shrink-0 select-none">
+            <div className="relative bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] text-white p-4 sm:p-6 sm:p-7 overflow-hidden shrink-0 select-none">
               {/* Subtle Ambient Rings & Glow */}
               <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-white/10 blur-xl pointer-events-none" />
               <div className="absolute top-2 right-12 w-28 h-28 rounded-full border border-white/15 pointer-events-none" />
 
               <div className="flex items-start justify-between gap-4 relative z-10">
                 <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
-                  <div className="h-13 w-13 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center font-black text-xl sm:text-2xl shadow-inner shrink-0 uppercase">
-                    {selectedCandidate.candidateName.charAt(0)}
-                  </div>
+                  {selectedCandidate.verificationPhoto ? (
+                    <div className="relative h-13 w-13 sm:h-14 sm:w-14 shrink-0">
+                      <img
+                        src={selectedCandidate.verificationPhoto}
+                        alt={`Photo of ${selectedCandidate.candidateName}`}
+                        className="h-13 w-13 sm:h-14 sm:w-14 rounded-2xl object-cover border-2 border-white/70 shadow-md"
+                      />
+                      <span
+                        className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center shadow-xs"
+                        title="Webcam Identity Verified"
+                      >
+                        <ShieldCheck className="h-3 w-3 text-white stroke-[2.5]" />
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="h-13 w-13 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center font-black text-xl sm:text-2xl shadow-inner shrink-0 uppercase">
+                      {selectedCandidate.candidateName.charAt(0)}
+                    </div>
+                  )}
                   <div className="space-y-1 min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <DialogTitle className="text-xl sm:text-2xl font-black text-white tracking-tight truncate drop-shadow-xs">
@@ -1189,7 +1260,84 @@ export default function ResultsAndRankingPage() {
             </div>
 
             {/* Scrollable Content Body with smooth custom scrollbar */}
-            <div className="p-6 sm:p-7 space-y-6 overflow-y-auto flex-1 no-scrollbar [scrollbar-width:none]">
+<div className="p-4 sm:p-6 sm:p-7 space-y-5 sm:space-y-6 overflow-y-auto flex-1 no-scrollbar [scrollbar-width:none]">
+              {/* Candidate Identity Verification Card (Pre-Start Webcam Snapshot) */}
+              <div className="p-4 sm:p-5 rounded-3xl bg-slate-50/90 border border-slate-200/90 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-lg bg-indigo-50 border border-indigo-200/80 flex items-center justify-center text-indigo-600">
+                      <Camera className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-xs sm:text-[13px] text-slate-900 tracking-tight">
+                        Candidate Identity Verification
+                      </h4>
+                      <p className="text-[11px] text-slate-500 font-medium">
+                        Live webcam photo captured prior to test commencement
+                      </p>
+                    </div>
+                  </div>
+
+                  {selectedCandidate.verificationPhoto ? (
+                    <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-300 text-[10.5px] font-extrabold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-2xs">
+                      <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 stroke-[2.5]" />
+                      Verified Pre-Test Photo
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-slate-100 text-slate-500 border-slate-200 text-[10.5px] font-semibold px-2.5 py-1 rounded-full">
+                      No Photo Recorded
+                    </Badge>
+                  )}
+                </div>
+
+                {selectedCandidate.verificationPhoto ? (
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+                    <div className="relative group shrink-0">
+                      <img
+                        src={selectedCandidate.verificationPhoto}
+                        alt={`Identity verification photo of ${selectedCandidate.candidateName}`}
+                        className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-2 border-indigo-100 shadow-sm transition-transform group-hover:scale-102"
+                      />
+                      <div className="absolute inset-0 bg-slate-950/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                        <span className="text-[10px] text-white font-bold bg-slate-900/80 px-2 py-0.5 rounded-md">
+                          Verified
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 text-center sm:text-left flex-1 min-w-0">
+                      <div className="space-y-0.5">
+                        <p className="text-xs font-bold text-slate-900 flex items-center justify-center sm:justify-start gap-1.5">
+                          <span>Identity Authenticated</span>
+                          <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        </p>
+                        <p className="text-[11.5px] text-slate-600 leading-relaxed font-medium">
+                          Verify that the candidate attending your offline or video interview matches this webcam photo captured during screening to prevent proxy test-taking.
+                        </p>
+                      </div>
+
+                      <div className="pt-1.5 border-t border-slate-100 flex items-center justify-center sm:justify-start gap-2 text-[11px] text-slate-500">
+                        <Clock className="h-3.5 w-3.5 text-slate-400" />
+                        <span>
+                          Captured on{" "}
+                          <strong className="text-slate-700 font-semibold">
+                            {selectedCandidate.photoCapturedAt
+                              ? new Date(selectedCandidate.photoCapturedAt).toLocaleString(undefined, {
+                                  dateStyle: "medium",
+                                  timeStyle: "short",
+                                })
+                              : selectedCandidate.completedAt || "Test Start"}
+                          </strong>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-2xl bg-white border border-dashed border-slate-200 text-center text-slate-400 text-xs font-medium">
+                    No webcam verification photo was captured for this candidate attempt.
+                  </div>
+                )}
+              </div>
               {/* Score Highlight KPI Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 text-center">
                 <div className="p-3.5 rounded-2xl bg-slate-50/90 border border-slate-100 shadow-2xs">
@@ -1514,19 +1662,19 @@ export default function ResultsAndRankingPage() {
 
       {/* ── 7. NEXT ROUND INTERVIEW SCHEDULING MODAL ── */}
       <Dialog open={isInterviewModalOpen} onOpenChange={setIsInterviewModalOpen}>
-        <DialogContent className="max-w-xl p-0 overflow-hidden rounded-3xl border border-white/90 shadow-2xl font-sans bg-white">
+        <DialogContent className="w-[92vw] sm:max-w-xl p-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-white/90 shadow-2xl font-sans bg-white max-h-[92vh] flex flex-col">
           {/* Header */}
-          <div className="bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-6 text-white relative overflow-hidden">
+          <div className="bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-4 sm:p-6 text-white relative overflow-hidden shrink-0 select-none">
             <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/10 blur-xl pointer-events-none" />
-            <div className="flex items-center gap-3 relative z-10">
-              <div className="h-12 w-12 rounded-2xl bg-white/20 border border-white/30 text-white flex items-center justify-center font-black text-lg shadow-inner">
-                <Calendar className="h-6 w-6 text-white" />
+            <div className="flex items-center gap-3 relative z-10 pr-6">
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-white/20 border border-white/30 text-white flex items-center justify-center font-black text-base sm:text-lg shadow-inner shrink-0">
+                <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
-              <div>
-                <DialogTitle className="text-xl font-extrabold text-white tracking-tight">
+              <div className="min-w-0">
+                <DialogTitle className="text-lg sm:text-xl font-extrabold text-white tracking-tight leading-snug">
                   Schedule Next Round Interview
                 </DialogTitle>
-                <DialogDescription className="text-xs text-white/80 mt-0.5">
+                <DialogDescription className="text-xs text-white/80 mt-0.5 line-clamp-2">
                   Send personalized email invitations with meeting link to {interviewTargets.length} selected candidate{interviewTargets.length > 1 ? "s" : ""}.
                 </DialogDescription>
               </div>
@@ -1534,7 +1682,7 @@ export default function ResultsAndRankingPage() {
           </div>
 
           {/* Form Body */}
-          <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto no-scrollbar [scrollbar-width:none]">
+          <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 min-h-0 no-scrollbar [scrollbar-width:none]">
             {/* Target Candidates Badges */}
             <div>
               <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 block">
@@ -1573,30 +1721,30 @@ export default function ResultsAndRankingPage() {
               <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1.5 block">
                 Interview Mode *
               </label>
-              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100/90 rounded-2xl border border-slate-200">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-1 bg-slate-100/90 rounded-2xl border border-slate-200">
                 <button
                   type="button"
                   onClick={() => setInterviewForm((prev) => ({ ...prev, interviewMode: "OFFLINE" }))}
-                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     interviewForm.interviewMode === "OFFLINE"
                       ? "bg-white text-emerald-800 shadow-sm border border-emerald-300/80"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
-                  <Building2 className="h-4 w-4 text-emerald-600" />
+                  <Building2 className="h-4 w-4 text-emerald-600 shrink-0" />
                   <span>In-Person (Offline in Company)</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setInterviewForm((prev) => ({ ...prev, interviewMode: "ONLINE" }))}
-                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     interviewForm.interviewMode === "ONLINE"
                       ? "bg-white text-blue-800 shadow-sm border border-blue-300/80"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
-                  <Video className="h-4 w-4 text-blue-600" />
+                  <Video className="h-4 w-4 text-blue-600 shrink-0" />
                   <span>Online (Google Meet / Zoom)</span>
                 </button>
               </div>
@@ -1700,41 +1848,42 @@ export default function ResultsAndRankingPage() {
               />
             </div>
 
-            {/* Footer Actions */}
-            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsInterviewModalOpen(false)}
-                className="rounded-xl px-4 text-xs font-bold text-slate-600 cursor-pointer border-slate-200"
-              >
-                Cancel
-              </Button>
+          </div>
 
-              <Button
-                type="button"
-                disabled={
-                  isSendingInvites ||
-                  !interviewTargets.length ||
-                  !interviewForm.roundName.trim() ||
-                  !interviewForm.scheduledAt
-                }
-                onClick={handleDispatchInterviewInvites}
-                className="rounded-xl px-5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white gap-2 shadow-sm shadow-indigo-500/20 cursor-pointer"
-              >
-                {isSendingInvites ? (
-                  <>
-                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                    Sending Invitations...
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-3.5 w-3.5" />
-                    Send Invitation Email{interviewTargets.length > 1 ? "s" : ""}
-                  </>
-                )}
-              </Button>
-            </div>
+          {/* Pinned Bottom Footer Actions */}
+          <div className="shrink-0 bg-slate-50/90 border-t border-slate-100 p-3 sm:p-4 px-4 sm:px-6 flex items-center justify-between gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsInterviewModalOpen(false)}
+              className="rounded-xl px-4 text-xs font-bold text-slate-600 cursor-pointer border-slate-200"
+            >
+              Cancel
+            </Button>
+
+            <Button
+              type="button"
+              disabled={
+                isSendingInvites ||
+                !interviewTargets.length ||
+                !interviewForm.roundName.trim() ||
+                !interviewForm.scheduledAt
+              }
+              onClick={handleDispatchInterviewInvites}
+              className="rounded-xl px-5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white gap-2 shadow-sm shadow-indigo-500/20 cursor-pointer"
+            >
+              {isSendingInvites ? (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  <span>Sending...</span>
+                </>
+              ) : (
+                <>
+                  <Send className="h-3.5 w-3.5" />
+                  <span>Send Invitation{interviewTargets.length > 1 ? "s" : ""}</span>
+                </>
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

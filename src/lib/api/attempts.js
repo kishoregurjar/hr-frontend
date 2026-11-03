@@ -302,6 +302,8 @@ export const startAttempt = async ({
   candidateAccessToken = null,
   candidateName = "",
   candidatePhone = "",
+  verificationPhoto = null,
+  photoCapturedAt = null,
   assessmentId,
   assessment,
   assessmentTitle,
@@ -355,6 +357,13 @@ export const startAttempt = async ({
           }
         : {};
 
+      const resolvedPhoto =
+        verificationPhoto ||
+        candidateInfo?.verificationPhoto ||
+        (typeof window !== "undefined"
+          ? sessionStorage.getItem("candidate_photo_url") || localStorage.getItem("candidate_photo_url")
+          : null);
+
       const requestKey = `start_token_${token}_${assessmentId || ""}`;
       let resPromise = inFlightRequests.get(requestKey);
       if (!resPromise) {
@@ -367,6 +376,8 @@ export const startAttempt = async ({
             candidateSessionToken: candidateToken,
             sessionToken: candidateToken,
             assessmentId,
+            verificationPhoto: resolvedPhoto,
+            photoCapturedAt: photoCapturedAt || candidateInfo?.photoCapturedAt || new Date().toISOString(),
           },
           { headers }
         ).finally(() => {
