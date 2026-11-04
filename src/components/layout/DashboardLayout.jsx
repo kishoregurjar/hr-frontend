@@ -6,6 +6,7 @@ import { ArrowLeft, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Navbar } from "./navbar";
 import { Sidebar } from "./sidebar";
+import { HRCopilotWidget } from "@/components/ai/HRCopilotWidget";
 
 const DashboardLayout = ({ children }) => {
   const router = useRouter();
@@ -86,6 +87,8 @@ const DashboardLayout = ({ children }) => {
           </main>
         </div>
       </div>
+      {/* Floating HR AI Copilot Assistant Widget */}
+      <HRCopilotWidget />
     </div>
   );
 };

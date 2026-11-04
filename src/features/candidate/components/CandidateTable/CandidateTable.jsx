@@ -272,13 +272,13 @@ const CandidateTable = ({
                   <TableCell className="py-3.5 px-4">
                     <div className="flex items-center gap-3">
                       {/* Photo or Initials Squircle Avatar */}
-                      {candidate.verificationPhoto || candidate.metadata?.verificationPhoto ? (
+                      {candidate.verificationPhoto ? (
                         <div
                           onClick={() => onViewDetails && onViewDetails(candidate)}
                           className="relative h-9 w-9 shrink-0 cursor-pointer group-hover:scale-105 transition-transform"
                         >
                           <img
-                            src={candidate.verificationPhoto || candidate.metadata?.verificationPhoto}
+                            src={candidate.verificationPhoto}
                             alt={displayName}
                             className="h-9 w-9 rounded-xl object-cover border border-indigo-200 shadow-2xs"
                           />
