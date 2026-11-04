@@ -17,21 +17,22 @@ const LoginPage = () => {
 
   const [tenantBranding, setTenantBranding] = useState(null);
 
-  // 1. Detect incoming tenant from subdomain, cookie, or query parameter
+  // 1. Detect incoming tenant from hostname or explicit query parameter
   useEffect(() => {
-    let slug = searchParams.get("tenant");
+    let slug = null;
 
-    if (!slug && typeof window !== "undefined") {
-      // Check cookie set by Next.js middleware
-      const cookies = document.cookie.split("; ");
-      const tenantCookie = cookies
-        .find((row) => row.startsWith("hq_tenant_slug="))
-        ?.split("=")[1];
-      if (tenantCookie) {
-        slug = tenantCookie;
-      } else {
-        // Fallback: parse hostname (e.g. acme.localhost or acme.hirequest.com)
-        const host = window.location.hostname.toLowerCase();
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname.toLowerCase();
+      const isPlatformRoot = [
+        "localhost",
+        "127.0.0.1",
+        "hirequest.com",
+        "www.hirequest.com",
+        "app.hirequest.com",
+        "admin.hirequest.com",
+      ].includes(host);
+
+      if (!isPlatformRoot) {
         if (host.endsWith(".localhost")) {
           const parts = host.split(".");
           if (parts.length >= 2 && parts[0] && parts[0] !== "www") {
@@ -43,6 +44,25 @@ const LoginPage = () => {
           if (sub && !["www", "admin", "api", "app"].includes(sub)) {
             slug = sub;
           }
+        } else {
+          slug = host;
+        }
+
+        if (!slug) {
+          const cookies = document.cookie.split("; ");
+          const idCookie = cookies
+            .find((row) => row.startsWith("hq_tenant_identifier="))
+            ?.split("=")[1];
+          const slugCookie = cookies
+            .find((row) => row.startsWith("hq_tenant_slug="))
+            ?.split("=")[1];
+          if (idCookie) slug = decodeURIComponent(idCookie);
+          else if (slugCookie) slug = decodeURIComponent(slugCookie);
+        }
+      } else {
+        const queryTenant = searchParams.get("tenant");
+        if (queryTenant) {
+          slug = queryTenant;
         }
       }
     }
@@ -56,8 +76,10 @@ const LoginPage = () => {
           }
         })
         .catch(() => {
-          // Graceful fallback to default HireQuest branding
+          setTenantBranding(null);
         });
+    } else {
+      setTenantBranding(null);
     }
   }, [searchParams]);
 
@@ -109,6 +131,25 @@ const LoginPage = () => {
         role === "PLATFORM_ADMIN" ||
         user?.email?.toLowerCase().includes("admin") ||
         user?.isSuperAdmin;
+
+      const host = typeof window !== "undefined" ? window.location.hostname.toLowerCase() : "";
+      const isPlatformRoot = [
+        "localhost",
+        "127.0.0.1",
+        "hirequest.com",
+        "www.hirequest.com",
+        "app.hirequest.com",
+        "admin.hirequest.com",
+      ].includes(host);
+
+      if (isPlatformRoot && !isSuperAdmin) {
+        // Company users on platform root should not stay logged into platform root
+        clearAllAuthStorage();
+        try {
+          logout();
+        } catch {}
+        return;
+      }
 
       if (isSuperAdmin) {
         router.push("/admin");

@@ -4,7 +4,7 @@ import { AUTH_STORAGE_KEYS } from "@/features/auth/constants";
 const rawBaseURL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  "https://hr-backend-production-6cbb.up.railway.app";
+  "http://localhost:5000";
 
 const cleanBaseURL = rawBaseURL
   .replace(/\/api\/v1\/?$/, "")
@@ -66,15 +66,7 @@ axiosClient.interceptors.request.use(
         localStorage.getItem("accessToken") ||
         localStorage.getItem("jwt");
 
-      if (!adminToken) {
-        try {
-          const urlParams = new URLSearchParams(window.location.search);
-          const handoffToken = urlParams.get("auth_token");
-          if (handoffToken) {
-            adminToken = handoffToken;
-          }
-        } catch {}
-      }
+
 
       // Candidate test taking endpoints use candidateToken, all HR management endpoints use adminToken
       const tokenToUse = isCandidateEndpoint
@@ -84,6 +76,48 @@ axiosClient.interceptors.request.use(
       if (tokenToUse) {
         config.headers.Authorization = `Bearer ${tokenToUse}`;
       }
+
+      // ── X-Tenant-Identifier Header for Multi-Tenant APIs ──
+      try {
+        let tenantIdentifier = null;
+        const host = window.location.hostname.toLowerCase();
+        const isRootHost = [
+          "localhost",
+          "127.0.0.1",
+          "hirequest.com",
+          "www.hirequest.com",
+          "app.hirequest.com",
+          "admin.hirequest.com",
+        ].includes(host);
+
+        if (!isRootHost) {
+          if (host.endsWith(".localhost")) {
+            const parts = host.split(".");
+            if (parts.length >= 2 && parts[0] && parts[0] !== "www") {
+              tenantIdentifier = parts[0];
+            }
+          } else if (host.endsWith(".hirequest.com")) {
+            const parts = host.replace(/\.hirequest\.com$/, "").split(".");
+            const sub = parts[parts.length - 1];
+            if (sub && !["www", "admin", "api", "app"].includes(sub)) {
+              tenantIdentifier = sub;
+            }
+          } else {
+            tenantIdentifier = host;
+          }
+
+          if (!tenantIdentifier) {
+            const idMatch = document.cookie.match(/(?:^|;\s*)hq_tenant_identifier=([^;]+)/);
+            if (idMatch) tenantIdentifier = decodeURIComponent(idMatch[1]);
+          }
+        }
+
+        if (tenantIdentifier) {
+          config.headers["X-Tenant-Identifier"] = tenantIdentifier;
+        } else {
+          delete config.headers["X-Tenant-Identifier"];
+        }
+      } catch {}
 
       // ── X-Company-Id & x-company-id Header for Multi-Tenant APIs ──
       let companyId =
@@ -359,13 +393,8 @@ axiosClient.interceptors.response.use(
         processQueue(refreshErr, null);
         if (typeof window !== "undefined") {
           const currentPath = window.location.pathname || "";
-          const hasHandoffToken =
-            typeof window.location.search === "string" &&
-            (window.location.search.includes("auth_token=") ||
-              window.location.search.includes("token="));
-
           const isExemptFromExpiredRedirect =
-            hasHandoffToken ||
+            currentPath.includes("/auth/handoff") ||
             currentPath.includes("/activate-owner") ||
             currentPath.includes("/accept-invitation") ||
             currentPath.includes("/login") ||

@@ -190,18 +190,58 @@ export default function AdminCompanyDetailsPage({ params }) {
                 </Badge>
               </div>
 
-              <div className="flex items-center gap-4 text-xs text-slate-500 flex-wrap">
-                {company.domain && (
-                  <span className="flex items-center gap-1 font-medium">
-                    <Globe className="h-3.5 w-3.5 text-slate-400" />
-                    {company.domain}
-                  </span>
+              <div className="flex items-center gap-3 text-xs text-slate-500 flex-wrap pt-1">
+                <Badge
+                  variant="outline"
+                  className={`text-[10.5px] font-bold ${
+                    company.customDomain || company.domainMode === "CUSTOM_DOMAIN"
+                      ? "border-indigo-200 text-indigo-700 bg-indigo-50/70"
+                      : "border-blue-200 text-blue-700 bg-blue-50/70"
+                  }`}
+                >
+                  {company.customDomain || company.domainMode === "CUSTOM_DOMAIN"
+                    ? "Custom Domain"
+                    : "HireQuest Subdomain"}
+                </Badge>
+
+                {company.customDomain && (
+                  <Badge
+                    variant="outline"
+                    className={`text-[10px] font-semibold ${
+                      company.customDomainVerified
+                        ? "border-emerald-200 text-emerald-700 bg-emerald-50"
+                        : "border-amber-200 text-amber-700 bg-amber-50"
+                    }`}
+                  >
+                    {company.customDomainVerified ? "Verified" : "Pending DNS Verification"}
+                  </Badge>
                 )}
+
+                <span className="text-slate-400 font-mono text-xs">
+                  {company.customDomain ? company.customDomain : `${company.slug}.hirequest.com`}
+                </span>
+
+                <a
+                  href={
+                    company.localPreviewUrl ||
+                    (company.customDomain
+                      ? `http://${company.customDomain.split(".")[0]}.localhost:3000`
+                      : `http://${company.slug}.localhost:3000`)
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-blue-600 hover:underline font-semibold text-xs"
+                >
+                  <span>Open Local Portal</span>
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+
                 {company.slug && (
                   <span className="text-slate-400">
-                    Slug: <strong>{company.slug}</strong>
+                    Slug: <strong className="font-mono text-slate-700">{company.slug}</strong>
                   </span>
                 )}
+
                 {company.createdAt && (
                   <span className="text-slate-400">
                     Onboarded: {new Date(company.createdAt).toLocaleDateString()}

@@ -137,6 +137,12 @@ const LoginForm = () => {
       } else if (rawMsg.toLowerCase().includes("activation") || rawMsg.toLowerCase().includes("invited") || code === "PENDING_ACTIVATION") {
         resolvedType = "PENDING_ACTIVATION";
         resolvedMsg = "Your account is pending activation. Please check your email for the activation link.";
+      } else if (code === "COMPANY_LOGIN_REQUIRED" || rawMsg.toLowerCase().includes("organization's login url")) {
+        resolvedType = "COMPANY_LOGIN_REQUIRED";
+        resolvedMsg = "Please use your organization's login URL to access your workspace.";
+      } else if (code === "TENANT_ACCESS_DENIED" || rawMsg.toLowerCase().includes("do not have access to this organization")) {
+        resolvedType = "TENANT_ACCESS_DENIED";
+        resolvedMsg = rawMsg || "You do not have access to this organization's workspace.";
       } else if (
         status === 503 ||
         code === "DATABASE_CONNECTION_ERROR" ||
@@ -240,6 +246,20 @@ const LoginForm = () => {
       {errorType === "PENDING_ACTIVATION" && (
         <div className="rounded-2xl border border-blue-200 bg-blue-50/90 p-3.5 text-xs text-blue-800 font-medium flex items-start gap-2.5">
           <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
+      {errorType === "COMPANY_LOGIN_REQUIRED" && (
+        <div className="rounded-2xl border border-amber-300 bg-amber-50 p-3.5 text-xs text-amber-900 font-medium flex items-start gap-2.5">
+          <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
+      {errorType === "TENANT_ACCESS_DENIED" && (
+        <div className="rounded-2xl border border-rose-300 bg-rose-50 p-3.5 text-xs text-rose-800 font-medium flex items-start gap-2.5">
+          <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
           <span>{errorMessage}</span>
         </div>
       )}
