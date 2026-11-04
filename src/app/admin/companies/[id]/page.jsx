@@ -22,6 +22,11 @@ import {
   RefreshCw,
   ExternalLink,
   ShieldCheck,
+  Crown,
+  Phone,
+  MapPin,
+  Calendar,
+  UserCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import AdminHeader from "@/components/admin/AdminHeader";
@@ -149,6 +154,27 @@ export default function AdminCompanyDetailsPage({ params }) {
     stats?.ownerActivation === null ||
     stats?.ownerActivation?.status === "ACTIVATED";
 
+  const totalMembers =
+    stats?.members?.total ??
+    stats?.statistics?.members?.total ??
+    company?.members?.length ??
+    0;
+
+  const activeMembers =
+    stats?.members?.active ??
+    stats?.statistics?.members?.active ??
+    company?.members?.filter((m) => m.user?.status === "ACTIVE").length ??
+    0;
+
+  const pendingInvitations =
+    stats?.invitations?.pending ??
+    stats?.statistics?.invitations?.pending ??
+    company?._count?.invitations ??
+    0;
+
+  const membersList = company?.members || [];
+  const invitationsList = company?.invitations || [];
+
   return (
     <>
       <AdminHeader
@@ -172,7 +198,15 @@ export default function AdminCompanyDetailsPage({ params }) {
         <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className="h-16 w-16 rounded-2xl bg-slate-900 text-white font-black text-xl flex items-center justify-center shrink-0 shadow-md">
-              {company.logo || company.name?.slice(0, 2).toUpperCase() || "CO"}
+              {company.logoUrl ? (
+                <img
+                  src={company.logoUrl}
+                  alt={company.name}
+                  className="h-full w-full object-cover rounded-2xl"
+                />
+              ) : (
+                company.name?.slice(0, 2).toUpperCase() || "CO"
+              )}
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2.5 flex-wrap">
@@ -191,11 +225,17 @@ export default function AdminCompanyDetailsPage({ params }) {
               </div>
 
               <div className="flex items-center gap-4 text-xs text-slate-500 flex-wrap">
-                {company.domain && (
-                  <span className="flex items-center gap-1 font-medium">
+                {(company.website || company.domain) && (
+                  <a
+                    href={company.website || `https://${company.domain}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1 font-medium hover:text-blue-600 transition-colors"
+                  >
                     <Globe className="h-3.5 w-3.5 text-slate-400" />
-                    {company.domain}
-                  </span>
+                    {company.domain || company.website}
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
                 )}
                 {company.slug && (
                   <span className="text-slate-400">
@@ -302,55 +342,25 @@ export default function AdminCompanyDetailsPage({ params }) {
             </div>
           </div>
 
-          {/* Right Column: Live Organization Statistics */}
+          {/* Right Column: Live Organization Statistics & Metadata */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {/* Stat 1: Members */}
-              <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                    Team Members
-                  </span>
-                  <Users className="h-4 w-4 text-blue-600" />
+            {/* Stat: Workspace Team Members */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Workspace Team Members
+                </span>
+                <div className="flex items-baseline gap-3">
+                  <p className="text-3xl font-black text-slate-900">
+                    {totalMembers}
+                  </p>
+                  <p className="text-xs text-slate-500 font-medium">
+                    {activeMembers} active workspace {activeMembers === 1 ? "member" : "members"}
+                  </p>
                 </div>
-                <p className="text-2xl font-black text-slate-900">
-                  {stats?.members?.total ?? 0}
-                </p>
-                <p className="text-[11px] text-slate-500">
-                  {stats?.members?.active ?? 0} active HR recruiters
-                </p>
               </div>
-
-              {/* Stat 2: Active Job Roles */}
-              <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                    Job Openings
-                  </span>
-                  <Briefcase className="h-4 w-4 text-indigo-600" />
-                </div>
-                <p className="text-2xl font-black text-slate-900">
-                  {stats?.jobs?.total ?? 0}
-                </p>
-                <p className="text-[11px] text-slate-500">
-                  {stats?.jobs?.active ?? 0} published assessments
-                </p>
-              </div>
-
-              {/* Stat 3: Pending Invitations */}
-              <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                    Candidate Invites
-                  </span>
-                  <Clock className="h-4 w-4 text-amber-600" />
-                </div>
-                <p className="text-2xl font-black text-slate-900">
-                  {stats?.invitations?.pending ?? 0}
-                </p>
-                <p className="text-[11px] text-slate-500">
-                  Pending test completions
-                </p>
+              <div className="h-12 w-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                <Users className="h-6 w-6" />
               </div>
             </div>
 
@@ -364,19 +374,190 @@ export default function AdminCompanyDetailsPage({ params }) {
                 </div>
                 <div className="p-3 rounded-xl bg-slate-50 space-y-1">
                   <span className="text-slate-500 font-medium">Workspace Domain</span>
-                  <p className="font-bold text-slate-900">{company.domain || "Standard Tenant"}</p>
+                  <p className="font-bold text-slate-900">{company.domain || company.customDomain || (company.slug ? `${company.slug}.hirequest.app` : "Standard Tenant")}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-slate-50 space-y-1">
                   <span className="text-slate-500 font-medium">Database Identifier</span>
-                  <p className="font-mono text-[11px] text-slate-800">{company.id}</p>
+                  <p className="font-mono text-[11px] text-slate-800 break-all">{company.id}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-slate-50 space-y-1">
                   <span className="text-slate-500 font-medium">Platform Isolation</span>
                   <p className="font-bold text-emerald-600">Multi-Tenant Tenant-Isolated</p>
                 </div>
+                {company.industry && (
+                  <div className="p-3 rounded-xl bg-slate-50 space-y-1">
+                    <span className="text-slate-500 font-medium">Industry</span>
+                    <p className="font-bold text-slate-900">{company.industry}</p>
+                  </div>
+                )}
+                {company.phone && (
+                  <div className="p-3 rounded-xl bg-slate-50 space-y-1">
+                    <span className="text-slate-500 font-medium">Contact Phone</span>
+                    <p className="font-bold text-slate-900">{company.phone}</p>
+                  </div>
+                )}
+                {(company.city || company.country || company.address) && (
+                  <div className="p-3 rounded-xl bg-slate-50 space-y-1 sm:col-span-2">
+                    <span className="text-slate-500 font-medium">Office Location</span>
+                    <p className="font-bold text-slate-900">
+                      {[company.address, company.city, company.country].filter(Boolean).join(", ")}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
+        </div>
+
+        {/* ── 3. Workspace Team Members & Recruiters Table ── */}
+        <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-blue-600" />
+                <h2 className="text-lg font-bold text-slate-900">
+                  Workspace Team Members
+                </h2>
+                <Badge className="bg-slate-100 text-slate-700 font-bold text-xs ml-1">
+                  {membersList.length}
+                </Badge>
+              </div>
+              <p className="text-xs text-slate-500">
+                All registered owners, HR managers, and recruiters belonging to this organization workspace.
+              </p>
+            </div>
+          </div>
+
+          {membersList.length === 0 ? (
+            <div className="p-12 text-center rounded-2xl bg-slate-50 border border-dashed border-slate-200 space-y-3">
+              <Users className="h-10 w-10 text-slate-300 mx-auto" />
+              <p className="text-sm font-bold text-slate-700">No Team Members Found</p>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                No active team members or recruiters are currently recorded for this tenant.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-2xl border border-slate-200/80">
+              <table className="w-full text-left text-xs text-slate-600">
+                <thead className="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200/80">
+                  <tr>
+                    <th scope="col" className="px-6 py-3.5">Member</th>
+                    <th scope="col" className="px-6 py-3.5">Email</th>
+                    <th scope="col" className="px-6 py-3.5">Workspace Role</th>
+                    <th scope="col" className="px-6 py-3.5">Account Status</th>
+                    <th scope="col" className="px-6 py-3.5">Joined Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {membersList.map((m) => {
+                    const memberName = m.user?.name || m.user?.email?.split("@")[0] || "Team Member";
+                    const memberEmail = m.user?.email || "—";
+                    const memberRole = (m.role || "MEMBER").toUpperCase();
+                    const memberStatus = (m.user?.status || "ACTIVE").toUpperCase();
+                    const initials = memberName.slice(0, 2).toUpperCase();
+
+                    return (
+                      <tr key={m.id} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 rounded-xl bg-slate-900 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                              {initials}
+                            </div>
+                            <span className="font-bold text-slate-900">
+                              {memberName}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-slate-600 font-mono text-[11.5px]">
+                            {memberEmail}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          {memberRole === "OWNER" ? (
+                            <Badge className="bg-purple-50 text-purple-700 border-purple-200 font-extrabold text-[10.5px] gap-1">
+                              <Crown className="h-3 w-3" />
+                              OWNER
+                            </Badge>
+                          ) : memberRole === "RECRUITER" ? (
+                            <Badge className="bg-blue-50 text-blue-700 border-blue-200 font-extrabold text-[10.5px]">
+                              RECRUITER
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-slate-100 text-slate-700 border-slate-200 font-extrabold text-[10.5px]">
+                              {memberRole}
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <Badge
+                            className={
+                              memberStatus === "ACTIVE"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 font-extrabold text-[10.5px]"
+                                : memberStatus === "INVITED"
+                                ? "bg-amber-50 text-amber-700 border-amber-200 font-extrabold text-[10.5px]"
+                                : "bg-rose-50 text-rose-700 border-rose-200 font-extrabold text-[10.5px]"
+                            }
+                          >
+                            {memberStatus}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 text-slate-500">
+                          {m.createdAt ? new Date(m.createdAt).toLocaleDateString() : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Pending Invitations Sub-table (if any invitations exist) */}
+          {invitationsList.length > 0 && (
+            <div className="space-y-3 pt-4 border-t border-slate-100">
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-amber-600" />
+                <h3 className="text-sm font-bold text-slate-900">
+                  Pending Recruiter Invitations ({invitationsList.length})
+                </h3>
+              </div>
+              <div className="overflow-x-auto rounded-2xl border border-slate-200/80">
+                <table className="w-full text-left text-xs text-slate-600">
+                  <thead className="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200/80">
+                    <tr>
+                      <th scope="col" className="px-6 py-3">Invited Email</th>
+                      <th scope="col" className="px-6 py-3">Invited Role</th>
+                      <th scope="col" className="px-6 py-3">Invitation Status</th>
+                      <th scope="col" className="px-6 py-3">Sent Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {invitationsList.map((inv) => (
+                      <tr key={inv.id} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="px-6 py-3 font-mono font-medium text-slate-900">
+                          {inv.email}
+                        </td>
+                        <td className="px-6 py-3">
+                          <Badge className="bg-blue-50 text-blue-700 border-blue-200 font-bold text-[10.5px]">
+                            {inv.role || "RECRUITER"}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-3">
+                          <Badge className="bg-amber-50 text-amber-700 border-amber-200 font-bold text-[10.5px]">
+                            {inv.status || "PENDING"}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-3 text-slate-500">
+                          {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString() : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </>

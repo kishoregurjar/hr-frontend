@@ -150,7 +150,8 @@ export const getAdminCompanyDetails = async (companyId) => {
 export const getAdminCompanyStatistics = async (companyId) => {
   try {
     const res = await axiosClient.get(`/super-admin/companies/${companyId}/statistics`);
-    return res?.data?.data || res?.data || res;
+    const data = res?.data?.data || res?.data || res;
+    return data?.statistics || data;
   } catch {
     return null;
   }
