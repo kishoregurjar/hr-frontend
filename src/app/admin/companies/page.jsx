@@ -90,11 +90,24 @@ function AdminCompaniesContent() {
 
   const [companyForm, setCompanyForm] = useState({
     name: "",
+    domainMode: "SUBDOMAIN",
+    customDomain: "",
     domain: "",
+    website: "",
     ownerName: "",
     ownerEmail: "",
     plan: "Enterprise",
   });
+
+  const slugPreview = companyForm.name
+    ? companyForm.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+    : "company";
+
+  const customDomainClean = companyForm.customDomain
+    ? companyForm.customDomain.replace(/^https?:\/\//, "").replace(/[:\/].*$/, "").toLowerCase().trim()
+    : "";
+
+  const customDomainPrefix = customDomainClean.split(".")[0] || "company";
 
   const fetchCompanies = async () => {
     try {
@@ -158,13 +171,28 @@ function AdminCompaniesContent() {
       return;
     }
 
+    if (companyForm.domainMode === "CUSTOM_DOMAIN") {
+      const cleanDomain = (companyForm.customDomain || "").trim();
+      if (!cleanDomain) {
+        toast.error("Please enter a custom domain (e.g. facebookcompany.com).");
+        return;
+      }
+      if (!cleanDomain.includes(".")) {
+        toast.error("Please enter a valid domain format (e.g. company.com).");
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
       await createAdminCompany({
         companyName: companyForm.name.trim(),
+        domainMode: companyForm.domainMode,
+        customDomain: companyForm.domainMode === "CUSTOM_DOMAIN" ? companyForm.customDomain.trim() : undefined,
+        domain: companyForm.domainMode === "CUSTOM_DOMAIN" ? companyForm.customDomain.trim() : undefined,
+        website: companyForm.website?.trim() || undefined,
         ownerName: companyForm.ownerName.trim() || undefined,
         ownerEmail: companyForm.ownerEmail.trim(),
-        domain: companyForm.domain.trim() || undefined,
         plan: companyForm.plan || "Enterprise",
       });
 
@@ -172,7 +200,10 @@ function AdminCompaniesContent() {
       setIsRegisterModalOpen(false);
       setCompanyForm({
         name: "",
+        domainMode: "SUBDOMAIN",
+        customDomain: "",
         domain: "",
+        website: "",
         ownerName: "",
         ownerEmail: "",
         plan: "Enterprise",
@@ -341,11 +372,58 @@ function AdminCompaniesContent() {
                         </div>
                       </td>
 
-                      {/* Domain / Website */}
+                      {/* Domain & Routing */}
                       <td className="py-4 px-4">
-                        <span className="text-slate-600 font-medium">
-                          {company.domain || company.website || company.slug || "—"}
-                        </span>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] font-bold ${
+                                company.customDomain || company.domainMode === "CUSTOM_DOMAIN"
+                                  ? "border-indigo-200 text-indigo-700 bg-indigo-50/70"
+                                  : "border-blue-200 text-blue-700 bg-blue-50/70"
+                              }`}
+                            >
+                              {company.customDomain || company.domainMode === "CUSTOM_DOMAIN"
+                                ? "Custom Domain"
+                                : "HireQuest Subdomain"}
+                            </Badge>
+
+                            {company.customDomain && (
+                              <Badge
+                                variant="outline"
+                                className={`text-[9.5px] font-semibold ${
+                                  company.customDomainVerified
+                                    ? "border-emerald-200 text-emerald-700 bg-emerald-50"
+                                    : "border-amber-200 text-amber-700 bg-amber-50"
+                                }`}
+                              >
+                                {company.customDomainVerified ? "Verified" : "Pending DNS"}
+                              </Badge>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <a
+                              href={
+                                company.localPreviewUrl ||
+                                (company.customDomain
+                                  ? `http://${company.customDomain.split(".")[0]}.localhost:3000`
+                                  : `http://${company.slug}.localhost:3000`)
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                              className="font-mono text-xs font-semibold text-slate-700 hover:text-blue-600 transition-colors inline-flex items-center gap-1"
+                            >
+                              <span>
+                                {company.customDomain
+                                  ? company.customDomain
+                                  : `${company.slug}.hirequest.com`}
+                              </span>
+                              <ExternalLink className="h-3 w-3 text-slate-400 inline" />
+                            </a>
+                          </div>
+                        </div>
                       </td>
 
                       {/* Status */}
@@ -468,7 +546,7 @@ function AdminCompaniesContent() {
               {/* 2-Column Responsive Form Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                 {/* Organization Name */}
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 sm:col-span-2">
                   <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1">
                     Organization Name <span className="text-rose-500 font-black">*</span>
                   </Label>
@@ -477,28 +555,131 @@ function AdminCompaniesContent() {
                     <Input
                       value={companyForm.name}
                       onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
-                      placeholder="e.g. Acme Corporation"
+                      placeholder="e.g. Facebook Company or Acme Corp"
                       required
                       className="pl-10 h-11 rounded-xl text-xs sm:text-sm font-medium border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600 shadow-2xs"
                     />
                   </div>
                 </div>
 
-                {/* Domain / Website */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                    Company Domain / Website <span className="text-slate-400 font-normal lowercase text-[11px]">(optional)</span>
+                {/* Domain Type Selection */}
+                <div className="space-y-2 sm:col-span-2">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1">
+                    Domain Hosting Mode <span className="text-rose-500 font-black">*</span>
                   </Label>
-                  <div className="relative">
-                    <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                    <Input
-                      value={companyForm.domain}
-                      onChange={(e) => setCompanyForm({ ...companyForm, domain: e.target.value })}
-                      placeholder="e.g. acme.com"
-                      className="pl-10 h-11 rounded-xl text-xs sm:text-sm font-medium border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600 shadow-2xs"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setCompanyForm({ ...companyForm, domainMode: "SUBDOMAIN" })}
+                      className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        companyForm.domainMode === "SUBDOMAIN"
+                          ? "border-blue-600 bg-blue-50/60 ring-2 ring-blue-600/20"
+                          : "border-slate-200 bg-white hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold text-slate-900">HireQuest Subdomain</span>
+                        <Badge variant="outline" className="text-[10px] font-bold border-blue-300 text-blue-700 bg-blue-50">
+                          Included
+                        </Badge>
+                      </div>
+                      <p className="text-[11.5px] text-slate-500">
+                        Hosted on HireQuest infrastructure (e.g. <span className="font-mono text-blue-600 font-semibold">{slugPreview}.hirequest.com</span>)
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setCompanyForm({ ...companyForm, domainMode: "CUSTOM_DOMAIN" })}
+                      className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        companyForm.domainMode === "CUSTOM_DOMAIN"
+                          ? "border-indigo-600 bg-indigo-50/60 ring-2 ring-indigo-600/20"
+                          : "border-slate-200 bg-white hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold text-slate-900">Custom Domain</span>
+                        <Badge variant="outline" className="text-[10px] font-bold border-indigo-300 text-indigo-700 bg-indigo-50">
+                          White-Label
+                        </Badge>
+                      </div>
+                      <p className="text-[11.5px] text-slate-500">
+                        Company's own dedicated FQDN (e.g. <span className="font-mono text-indigo-600 font-semibold">facebookcompany.com</span>)
+                      </p>
+                    </button>
                   </div>
                 </div>
+
+                {/* Subdomain Mode Details */}
+                {companyForm.domainMode === "SUBDOMAIN" ? (
+                  <div className="sm:col-span-2 p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-700">Subdomain Access URLs</span>
+                      <span className="text-[11px] font-mono text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
+                        Slug: {slugPreview}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                      <div className="bg-white p-2.5 rounded-lg border border-slate-200">
+                        <span className="text-slate-400 block text-[10px] uppercase font-bold">Local Development</span>
+                        <span className="font-mono text-slate-800 font-semibold break-all">
+                          http://{slugPreview}.localhost:3000
+                        </span>
+                      </div>
+                      <div className="bg-white p-2.5 rounded-lg border border-slate-200">
+                        <span className="text-slate-400 block text-[10px] uppercase font-bold">Production</span>
+                        <span className="font-mono text-slate-800 font-semibold break-all">
+                          https://{slugPreview}.hirequest.com
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* Custom Domain Mode Details */
+                  <div className="sm:col-span-2 space-y-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1">
+                        Enterprise Custom Domain <span className="text-rose-500 font-black">*</span>
+                      </Label>
+                      <div className="relative">
+                        <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                        <Input
+                          value={companyForm.customDomain}
+                          onChange={(e) => setCompanyForm({ ...companyForm, customDomain: e.target.value })}
+                          placeholder="e.g. facebookcompany.com or careers.acme.com"
+                          required
+                          className="pl-10 h-11 rounded-xl text-xs sm:text-sm font-medium border-slate-200 focus-visible:ring-2 focus-visible:ring-indigo-600 shadow-2xs font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-indigo-50/50 border border-indigo-100 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-indigo-950">White-Label Routing Preview</span>
+                        <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px] font-bold">
+                          Pending DNS Verification
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                        <div className="bg-white p-2.5 rounded-lg border border-indigo-100">
+                          <span className="text-slate-400 block text-[10px] uppercase font-bold">Local Dev Simulation (Active)</span>
+                          <span className="font-mono text-indigo-700 font-semibold break-all">
+                            http://{customDomainPrefix}.localhost:3000
+                          </span>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-lg border border-indigo-100">
+                          <span className="text-slate-400 block text-[10px] uppercase font-bold">Production Target</span>
+                          <span className="font-mono text-slate-800 font-semibold break-all">
+                            https://{customDomainClean || "yourcompany.com"}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-normal">
+                        ⚡ In local development, custom domain simulation operates immediately on <span className="font-mono font-medium">{customDomainPrefix}.localhost:3000</span> without DNS configuration.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Owner Work Email */}
                 <div className="space-y-1.5">

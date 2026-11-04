@@ -752,3 +752,26 @@ export const removeUserAvatarApi = async () => {
 
   return payload;
 };
+
+
+/**
+ * Create a single-use exchange ticket for secure cross-origin authentication
+ * Endpoint: POST /api/v1/auth/exchange-ticket
+ */
+export const createExchangeTicketApi = async (targetCompanyId = null) => {
+  const res = await axiosClient.post("/auth/exchange-ticket", {
+    targetCompanyId,
+  });
+  return res?.data?.data || res?.data || res;
+};
+
+/**
+ * Consume a single-use exchange ticket
+ * Endpoint: POST /api/v1/auth/exchange-ticket/consume
+ */
+export const consumeExchangeTicketApi = async (ticket) => {
+  const res = await axiosClient.post("/auth/exchange-ticket/consume", {
+    ticket,
+  });
+  return res?.data?.data || res?.data || res;
+};

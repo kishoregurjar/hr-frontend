@@ -28,61 +28,16 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => {
     if (typeof window === "undefined") return null;
 
-    // Handle cross-subdomain handoff (e.g. post-activation redirect to tenant subdomain)
+    // Security hygiene: If an external link or attacker passes auth_token/refresh_token in the URL,
+    // strip the parameters immediately and NEVER ingest tokens from URL query parameters.
     try {
       const urlParams = new URLSearchParams(window.location.search);
-      const urlToken = urlParams.get("auth_token");
-      const urlRefreshToken = urlParams.get("refresh_token");
-      const urlCompanyId = urlParams.get("company_id");
-      const urlCompanyName = urlParams.get("company_name");
-      const urlCompanySlug = urlParams.get("company_slug");
-      const urlUserName = urlParams.get("user_name");
-      const urlUserEmail = urlParams.get("user_email");
-
-      if (urlToken) {
-        localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, urlToken);
-        localStorage.setItem("token", urlToken);
-        localStorage.setItem("accessToken", urlToken);
-        localStorage.setItem("jwt", urlToken);
-
-        if (urlRefreshToken) {
-          localStorage.setItem("hirequest_refresh_token", urlRefreshToken);
-          localStorage.setItem("refreshToken", urlRefreshToken);
-        }
-
-        if (urlCompanyId) {
-          localStorage.setItem("companyId", urlCompanyId);
-          localStorage.setItem("active_company_id", urlCompanyId);
-          localStorage.setItem("hirequest_company_id", urlCompanyId);
-        }
-
-        if (urlCompanyName) {
-          localStorage.setItem("companyName", urlCompanyName);
-        }
-
-        if (urlCompanySlug) {
-          localStorage.setItem("companySlug", urlCompanySlug);
-        }
-
-        // Pre-seed canonical user in localStorage so child components mount with complete profile
-        const handoffUser = {
-          name: urlUserName || (urlCompanyName ? `${urlCompanyName} Admin` : "Workspace Owner"),
-          email: urlUserEmail || "",
-          company: urlCompanyName || "",
-          companyName: urlCompanyName || "",
-          companyId: urlCompanyId || "",
-          companyRole: "OWNER",
-          role: "Company Owner",
-          rawRole: "OWNER",
-          isOwner: true,
-          activeCompany: {
-            id: urlCompanyId || "",
-            name: urlCompanyName || "",
-            role: "OWNER",
-          },
-        };
-        localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(handoffUser));
-
+      if (
+        urlParams.has("auth_token") ||
+        urlParams.has("refresh_token") ||
+        urlParams.has("company_id") ||
+        urlParams.has("company_slug")
+      ) {
         urlParams.delete("auth_token");
         urlParams.delete("refresh_token");
         urlParams.delete("company_id");
@@ -97,7 +52,6 @@ export const AuthProvider = ({ children }) => {
           (remainingQuery ? `?${remainingQuery}` : "") +
           window.location.hash;
         window.history.replaceState({}, document.title, cleanUrl);
-        return urlToken;
       }
     } catch {}
 

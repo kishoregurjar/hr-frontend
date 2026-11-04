@@ -218,11 +218,16 @@ export const revokeOwnerActivation = async (companyId) => {
  * Endpoint: POST /api/v1/super-admin/companies
  */
 export const createAdminCompany = async (payload) => {
-  const rawDomain = (payload.domain || payload.website || "").trim();
-  const formattedWebsite = rawDomain
-    ? rawDomain.startsWith("http://") || rawDomain.startsWith("https://")
-      ? rawDomain
-      : `https://${rawDomain}`
+  const domainMode = payload.domainMode === "CUSTOM_DOMAIN" ? "CUSTOM_DOMAIN" : "SUBDOMAIN";
+  const rawCustomDomain = (payload.customDomain || payload.domain || "").trim();
+  const rawWebsite = (payload.website || "").trim();
+
+  const formattedWebsite = rawWebsite
+    ? rawWebsite.startsWith("http://") || rawWebsite.startsWith("https://")
+      ? rawWebsite
+      : `https://${rawWebsite}`
+    : domainMode === "CUSTOM_DOMAIN" && rawCustomDomain
+    ? `https://${rawCustomDomain}`
     : undefined;
 
   const companyName = (payload.companyName || payload.name || "").trim();
@@ -232,9 +237,10 @@ export const createAdminCompany = async (payload) => {
   const body = {
     companyName: companyName,
     name: companyName,
+    domainMode,
     website: formattedWebsite,
-    domain: rawDomain || undefined,
-    customDomain: rawDomain || undefined,
+    domain: domainMode === "CUSTOM_DOMAIN" ? rawCustomDomain : undefined,
+    customDomain: domainMode === "CUSTOM_DOMAIN" ? rawCustomDomain : undefined,
     industry: payload.industry || "Information Technology",
     email: ownerEmail,
     ownerEmail: ownerEmail,

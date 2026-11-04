@@ -17,7 +17,7 @@ import {
   Building2,
   Sparkles,
 } from "lucide-react";
-import { activateOwnerApi, verifyOwnerActivationApi, normalizeUser, setAuthSession, clearAllAuthStorage } from "@/lib/api/auth";
+import { activateOwnerApi, verifyOwnerActivationApi, normalizeUser, setAuthSession, clearAllAuthStorage, createExchangeTicketApi } from "@/lib/api/auth";
 import { AUTH_STORAGE_KEYS } from "@/features/auth/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,9 +26,9 @@ import { Label } from "@/components/ui/label";
 /**
  * Helper to compute the destination URL for workspace owners after activation.
  * Automatically switches host to the company's dedicated subdomain or custom domain.
- * Supports passing full session handoff parameters across isolated browser origins.
+ * Strictly NEVER appends JWT or session tokens to URLs.
  */
-function resolveTenantRedirectUrl(targetRoute, company, sessionData = null) {
+function resolveTenantRedirectUrl(targetRoute, company) {
   if (typeof window === "undefined") return targetRoute;
   const currentHost = window.location.host;
   const protocol = window.location.protocol;
@@ -40,48 +40,28 @@ function resolveTenantRedirectUrl(targetRoute, company, sessionData = null) {
     .replace(/^https?:\/\//, "")
     .replace(/\/+$/, "");
 
-  let baseTarget = targetRoute;
-  const accessToken =
-    sessionData?.accessToken ||
-    (typeof sessionData === "string" ? sessionData : null);
-
-  if (accessToken && targetRoute.startsWith("/dashboard")) {
-    const separator = targetRoute.includes("?") ? "&" : "?";
-    const queryParams = new URLSearchParams();
-    queryParams.set("auth_token", accessToken);
-
-    if (sessionData?.refreshToken) {
-      queryParams.set("refresh_token", sessionData.refreshToken);
-    }
-    if (company?.id) {
-      queryParams.set("company_id", company.id);
-    }
-    if (company?.name) {
-      queryParams.set("company_name", company.name);
-    }
-    if (slug) {
-      queryParams.set("company_slug", slug);
-    }
-    if (sessionData?.user?.name) {
-      queryParams.set("user_name", sessionData.user.name);
-    }
-    if (sessionData?.user?.email) {
-      queryParams.set("user_email", sessionData.user.email);
-    }
-
-    baseTarget = `${targetRoute}${separator}${queryParams.toString()}`;
-  }
+  // Clean target route without leaking auth tokens
+  const baseTarget = targetRoute.split("?")[0] === "/dashboard" ? "/dashboard" : targetRoute;
 
   // 1. Custom Domain Priority (only if explicitly verified)
   if (customDomain && company?.customDomainVerified === true) {
-    return `${protocol}//${customDomain}${baseTarget}`;
+    const targetHost = currentHost.includes("localhost")
+      ? `${customDomain}.localhost${port}`
+      : customDomain;
+    if (currentHost.toLowerCase() === targetHost.toLowerCase()) {
+      return baseTarget;
+    }
+    return `${protocol}//${targetHost}${baseTarget}`;
   }
 
   // 2. Dedicated Tenant Subdomain Priority (e.g. tesla-labs.hirequest.com)
   if (slug) {
     if (currentHost.includes("localhost")) {
-      // In local dev, stay on current localhost origin
-      return baseTarget;
+      const targetHost = `${slug}.localhost${port}`;
+      if (currentHost.toLowerCase() === targetHost.toLowerCase()) {
+        return baseTarget;
+      }
+      return `${protocol}//${targetHost}${baseTarget}`;
     }
     if (currentHost.includes("hirequest.com")) {
       if (currentHost.startsWith(`${slug}.`)) return baseTarget;
@@ -274,15 +254,29 @@ function ActivateOwnerContent() {
         targetRoute = "/take-test";
       }
 
-      const sessionData = {
-        accessToken,
-        refreshToken,
-        user: userData,
-      };
-
-      const finalRedirectUrl = isPlatformAdmin
+      let finalRedirectUrl = isPlatformAdmin
         ? targetRoute
-        : resolveTenantRedirectUrl(targetRoute, primaryCompany, sessionData);
+        : resolveTenantRedirectUrl(targetRoute, primaryCompany);
+
+      // If cross-origin redirection is needed, request single-use exchange ticket
+      if (
+        typeof window !== "undefined" &&
+        finalRedirectUrl.startsWith("http")
+      ) {
+        try {
+          const targetUrlObj = new URL(finalRedirectUrl);
+          if (targetUrlObj.host.toLowerCase() !== window.location.host.toLowerCase()) {
+            const ticketRes = await createExchangeTicketApi(primaryCompany?.id);
+            if (ticketRes?.ticket) {
+              targetUrlObj.pathname = "/auth/handoff";
+              targetUrlObj.search = `?ticket=${encodeURIComponent(ticketRes.ticket)}&redirect=${encodeURIComponent(targetRoute)}`;
+              finalRedirectUrl = targetUrlObj.toString();
+            }
+          }
+        } catch (e) {
+          console.warn("Cross-origin ticket handoff fallback:", e);
+        }
+      }
 
       setRedirectUrl(finalRedirectUrl);
       setIsSuccess(true);
