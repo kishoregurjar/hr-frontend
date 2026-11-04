@@ -72,8 +72,10 @@ function resolveTenantRedirectUrl(targetRoute, company, sessionData = null) {
     baseTarget = `${targetRoute}${separator}${queryParams.toString()}`;
   }
 
-  // 1. Custom Domain Priority (e.g. careers.tesla.com)
-  if (customDomain) {
+  // 1. Custom Domain Priority (ONLY if verified, or in dev if explicitly a localhost test domain)
+  const isCustomDomainVerified = Boolean(company?.customDomainVerified);
+  const isLocalhostCustom = customDomain.endsWith(".localhost") || customDomain === "localhost";
+  if (customDomain && (isCustomDomainVerified || isLocalhostCustom)) {
     return `${protocol}//${customDomain}${baseTarget}`;
   }
 

@@ -1116,6 +1116,115 @@ export default function AssessmentPreStart({
           <span>{companyName} Confidential & Proprietary Evaluation System</span>
         )}
       </footer>
+
+      {/* ════════════════════════════════════════════════════════════
+          OTP VERIFICATION CENTERED MODAL
+         ════════════════════════════════════════════════════════════ */}
+      {isOtpModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="relative w-full max-w-md bg-white rounded-xl border border-slate-200 shadow-xl p-6 sm:p-7 text-left">
+            {/* Modal Close Button */}
+            <button
+              type="button"
+              onClick={() => setIsOtpModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            {/* Modal Header */}
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">
+                Verify Your Email
+              </h2>
+              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                Enter the 6-digit verification code sent to{" "}
+                <strong className="text-slate-900">{email}</strong>
+              </p>
+            </div>
+
+            {/* OTP 6-Digit Input Row */}
+            <div className="my-6">
+              <div
+                className="flex items-center justify-between gap-2"
+                onPaste={handleOtpPaste}
+              >
+                {otpDigits.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(el) => (otpInputRefs.current[index] = el)}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleOtpChange(index, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                    className="w-11 h-12 text-center text-lg font-mono font-bold text-slate-900 bg-white rounded-lg border border-slate-300 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                  />
+                ))}
+              </div>
+
+              {otpError && (
+                <p className="text-xs text-rose-600 font-medium mt-2">
+                  {otpError}
+                </p>
+              )}
+
+              {devHint && (
+                <p className="text-[11px] text-slate-400 mt-2">
+                  Development Code: {devHint}
+                </p>
+              )}
+            </div>
+
+            {/* Resend Cooldown Text */}
+            <div className="flex items-center justify-between text-xs text-slate-500 mb-6">
+              <span>Didn't receive the code?</span>
+              {countdown > 0 ? (
+                <span>Resend in {countdown}s</span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleSendOtp(email)}
+                  disabled={isSendingOtp}
+                  className="font-medium text-slate-900 hover:underline cursor-pointer"
+                >
+                  {isSendingOtp ? "Sending..." : "Resend Code"}
+                </button>
+              )}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsOtpModalOpen(false)}
+                className="h-9 px-4 text-xs font-medium text-slate-700 border-slate-300 hover:bg-slate-50 cursor-pointer"
+              >
+                Cancel
+              </Button>
+
+              <Button
+                type="button"
+                onClick={() => triggerVerifyWithDigits(otpDigits)}
+                disabled={isVerifyingOtp || otpDigits.some((d) => !d)}
+                className="h-9 px-5 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-400 text-white font-medium text-xs rounded-lg cursor-pointer transition-colors"
+                style={brandColor ? { backgroundColor: brandColor } : {}}
+              >
+                {isVerifyingOtp ? (
+                  <span className="flex items-center gap-1.5">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Verifying...
+                  </span>
+                ) : (
+                  <span>Verify & Continue</span>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
