@@ -215,12 +215,18 @@ export default function AdminCompanyDetailsPage({ params }) {
                 </h1>
                 <Badge
                   className={
-                    company.status === "ACTIVE"
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-300 font-extrabold text-xs"
-                      : "bg-rose-50 text-rose-700 border-rose-300 font-extrabold text-xs"
+                    company.status === "SUSPENDED"
+                      ? "bg-rose-50 text-rose-700 border-rose-300 font-extrabold text-xs"
+                      : !isOwnerActive
+                      ? "bg-amber-50 text-amber-700 border-amber-300 font-extrabold text-xs"
+                      : "bg-emerald-50 text-emerald-700 border-emerald-300 font-extrabold text-xs"
                   }
                 >
-                  {company.status || "ACTIVE"}
+                  {company.status === "SUSPENDED"
+                    ? "SUSPENDED"
+                    : !isOwnerActive
+                    ? "PENDING ACTIVATION"
+                    : "ACTIVE"}
                 </Badge>
               </div>
 

@@ -194,8 +194,15 @@ function AdminCompaniesContent() {
       c.email?.toLowerCase().includes(search.toLowerCase()) ||
       c.slug?.toLowerCase().includes(search.toLowerCase());
 
-    const matchesStatus =
-      statusFilter === "ALL" ? true : c.status === statusFilter;
+    const isPending = c.status !== "SUSPENDED" && c.owner && c.owner.status !== "ACTIVE";
+    let matchesStatus = true;
+    if (statusFilter === "ACTIVE") {
+      matchesStatus = c.status === "ACTIVE" && (!c.owner || c.owner.status === "ACTIVE");
+    } else if (statusFilter === "PENDING") {
+      matchesStatus = isPending;
+    } else if (statusFilter === "SUSPENDED") {
+      matchesStatus = c.status === "SUSPENDED";
+    }
 
     return matchesSearch && matchesStatus;
   });
@@ -212,26 +219,39 @@ function AdminCompaniesContent() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           {/* Status Filter Tabs */}
           <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-2xl border border-slate-200/80 w-fit">
-            {["ALL", "ACTIVE", "SUSPENDED"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setStatusFilter(tab)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  statusFilter === tab
-                    ? "bg-white text-slate-900 shadow-xs"
-                    : "text-slate-500 hover:text-slate-800"
-                }`}
-              >
-                {tab === "ALL" ? "All Organizations" : tab === "ACTIVE" ? "Active" : "Suspended"}
-                <span className="ml-1.5 text-[10px] opacity-60">
-                  (
+            {["ALL", "ACTIVE", "PENDING", "SUSPENDED"].map((tab) => {
+              const count =
+                tab === "ALL"
+                  ? companies.length
+                  : tab === "ACTIVE"
+                  ? companies.filter((c) => c.status === "ACTIVE" && (!c.owner || c.owner.status === "ACTIVE")).length
+                  : tab === "PENDING"
+                  ? companies.filter((c) => c.status !== "SUSPENDED" && c.owner && c.owner.status !== "ACTIVE").length
+                  : companies.filter((c) => c.status === "SUSPENDED").length;
+
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setStatusFilter(tab)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    statusFilter === tab
+                      ? "bg-white text-slate-900 shadow-xs"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
                   {tab === "ALL"
-                    ? companies.length
-                    : companies.filter((c) => c.status === tab).length}
-                  )
-                </span>
-              </button>
-            ))}
+                    ? "All Organizations"
+                    : tab === "ACTIVE"
+                    ? "Active"
+                    : tab === "PENDING"
+                    ? "Pending Setup"
+                    : "Suspended"}
+                  <span className="ml-1.5 text-[10px] opacity-60">
+                    ({count})
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           <div className="flex items-center gap-3">
@@ -332,12 +352,18 @@ function AdminCompaniesContent() {
                       <td className="py-4 px-4">
                         <Badge
                           className={
-                            company.status === "ACTIVE"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-300 font-extrabold text-[10.5px]"
-                              : "bg-rose-50 text-rose-700 border-rose-300 font-extrabold text-[10.5px]"
+                            company.status === "SUSPENDED"
+                              ? "bg-rose-50 text-rose-700 border-rose-300 font-extrabold text-[10.5px]"
+                              : company.owner && company.owner.status !== "ACTIVE"
+                              ? "bg-amber-50 text-amber-700 border-amber-300 font-extrabold text-[10.5px]"
+                              : "bg-emerald-50 text-emerald-700 border-emerald-300 font-extrabold text-[10.5px]"
                           }
                         >
-                          {company.status || "ACTIVE"}
+                          {company.status === "SUSPENDED"
+                            ? "SUSPENDED"
+                            : company.owner && company.owner.status !== "ACTIVE"
+                            ? "PENDING ACTIVATION"
+                            : "ACTIVE"}
                         </Badge>
                       </td>
 
