@@ -114,6 +114,19 @@ export default function AdminOverviewPage() {
   const pendingActivationsCount =
     metrics?.ownerActivations?.pending ?? metrics?.pendingActivations ?? 0;
 
+  const fullyActiveCount = companies.filter(
+    (c) => c.status === "ACTIVE" && (!c.owner || c.owner.status === "ACTIVE")
+  ).length;
+
+  const pendingActivationCompaniesCount = companies.filter(
+    (c) => c.status === "ACTIVE" && c.owner && c.owner.status !== "ACTIVE"
+  ).length;
+
+  const effectiveActiveCount =
+    companies.length > 0
+      ? fullyActiveCount
+      : Math.max(0, (metrics?.companies?.active ?? 0) - (metrics?.ownerActivations?.pending ?? 0));
+
   return (
     <>
       <AdminHeader
@@ -190,14 +203,16 @@ export default function AdminOverviewPage() {
             <div>
               <div className="flex items-center gap-2">
                 <p className="text-3xl font-black text-slate-900 tracking-tight">
-                  {loading ? "..." : activeCompaniesCount}
+                  {loading ? "..." : effectiveActiveCount}
                 </p>
                 <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-extrabold">
                   ACTIVE
                 </Badge>
               </div>
               <p className="text-xs text-slate-500 font-semibold flex items-center gap-1 mt-1">
-                {suspendedCompaniesCount} currently suspended
+                {pendingActivationCompaniesCount > 0
+                  ? `${pendingActivationCompaniesCount} awaiting owner activation`
+                  : `${suspendedCompaniesCount} currently suspended`}
               </p>
             </div>
           </div>
@@ -307,12 +322,18 @@ export default function AdminOverviewPage() {
                   <div className="flex items-center gap-3 shrink-0">
                     <Badge
                       className={
-                        company.status === "ACTIVE"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-300 font-extrabold text-[10.5px]"
-                          : "bg-rose-50 text-rose-700 border-rose-300 font-extrabold text-[10.5px]"
+                        company.status === "SUSPENDED"
+                          ? "bg-rose-50 text-rose-700 border-rose-300 font-extrabold text-[10.5px]"
+                          : company.owner && company.owner.status !== "ACTIVE"
+                          ? "bg-amber-50 text-amber-700 border-amber-300 font-extrabold text-[10.5px]"
+                          : "bg-emerald-50 text-emerald-700 border-emerald-300 font-extrabold text-[10.5px]"
                       }
                     >
-                      {company.status || "ACTIVE"}
+                      {company.status === "SUSPENDED"
+                        ? "SUSPENDED"
+                        : company.owner && company.owner.status !== "ACTIVE"
+                        ? "PENDING ACTIVATION"
+                        : "ACTIVE"}
                     </Badge>
                     <Link href={`/admin/companies/${company.id}`}>
                       <Button
