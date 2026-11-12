@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Search,
@@ -48,6 +49,7 @@ import {
   useConnectGoogleMailbox,
   useSyncMailboxNow,
   useStopAutomaticSync,
+  MAILBOX_QUERY_KEY,
 } from "../hooks";
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -56,6 +58,8 @@ const CandidateList = () => {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const mailboxToastHandledRef = useRef(false);
 
   // Scroll & 3D Parallax Refs
   const scrollContainerRef = useRef(null);
@@ -95,6 +99,11 @@ const CandidateList = () => {
     refetch,
   } = useCandidatesQuery();
 
+  const { data: mailboxStatus, refetch: refetchMailboxStatus } = useMailboxStatus();
+  const connectGoogleMutation = useConnectGoogleMailbox();
+  const syncMailboxMutation = useSyncMailboxNow();
+  const stopAutomaticSyncMutation = useStopAutomaticSync();
+
   const { socket } = useSocketStore();
 
   useEffect(() => {
@@ -113,15 +122,21 @@ const CandidateList = () => {
 
   // Catch Google OAuth redirect parameters: ?mailbox=connected&email=...
   useEffect(() => {
-    if (searchParams?.get("mailbox") === "connected") {
+    const mailboxParam = searchParams?.get("mailbox");
+    if (mailboxParam === "connected" && !mailboxToastHandledRef.current) {
+      mailboxToastHandledRef.current = true;
       const email = searchParams.get("email") || "Google Account";
-      toast.success(`🟢 Google Mailbox (${email}) connected successfully! Auto-sync is active.`);
+      toast.success(`🟢 Google Mailbox (${email}) connected successfully! Auto-sync is active.`, {
+        id: "google-mailbox-connected",
+      });
       refetch();
+      refetchMailboxStatus?.();
+      queryClient.invalidateQueries({ queryKey: MAILBOX_QUERY_KEY });
       if (typeof window !== "undefined") {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     }
-  }, [searchParams, refetch]);
+  }, [searchParams, refetch, refetchMailboxStatus, queryClient]);
 
   // ── 3D Parallax Scroll Handler ──
   const handleScroll = () => {
@@ -323,11 +338,6 @@ const CandidateList = () => {
     setSingleAssignCandidate(candidate);
     setIsAssignDialogOpen(true);
   };
-
-  const { data: mailboxStatus, refetch: refetchMailboxStatus } = useMailboxStatus();
-  const connectGoogleMutation = useConnectGoogleMailbox();
-  const syncMailboxMutation = useSyncMailboxNow();
-  const stopAutomaticSyncMutation = useStopAutomaticSync();
 
   useEffect(() => {
     if (isSyncDialogOpen && mailboxStatus?.dateRangeSyncEnabled) {

@@ -19,4 +19,5 @@ export {
   useSyncMailboxNow,
   useDisconnectMailbox,
   useStopAutomaticSync,
+  MAILBOX_QUERY_KEY,
 } from "./useMailbox";
