@@ -21,9 +21,27 @@ const ROOT_DOMAINS = [
   "127.0.0.1",
 ];
 
+function isPlatformHostName(hostname) {
+  if (!hostname) return true;
+  if (ROOT_DOMAINS.includes(hostname)) return true;
+  if (hostname.endsWith(".vercel.app")) return true;
+  const configuredRoot = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || "hirequest.com").toLowerCase();
+  if (
+    hostname === configuredRoot ||
+    hostname === `www.${configuredRoot}` ||
+    hostname === `app.${configuredRoot}` ||
+    hostname === `admin.${configuredRoot}`
+  ) {
+    return true;
+  }
+  return false;
+}
+
 export function middleware(request) {
   const host = request.headers.get("host") || "";
   const hostname = host.replace(/:\d+$/, "").toLowerCase();
+  const configuredRoot = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || "hirequest.com").toLowerCase();
+  const isPlatformHost = isPlatformHostName(hostname);
 
   let subdomain = null;
   let customDomain = null;
@@ -37,9 +55,9 @@ export function middleware(request) {
       tenantIdentifier = parts[0];
     }
   }
-  // 2. Production: *.hirequest.com
-  else if (hostname.endsWith(".hirequest.com")) {
-    const parts = hostname.replace(/\.hirequest\.com$/, "").split(".");
+  // 2. Production dedicated wildcard subdomains: *.<rootDomain> (e.g. facebook.hirequest.com)
+  else if (configuredRoot && configuredRoot !== "vercel.app" && hostname.endsWith(`.${configuredRoot}`)) {
+    const parts = hostname.replace(new RegExp(`\\.${configuredRoot}$`), "").split(".");
     const candidateSubdomain = parts[parts.length - 1];
     if (
       candidateSubdomain &&
@@ -49,17 +67,33 @@ export function middleware(request) {
       tenantIdentifier = candidateSubdomain;
     }
   }
-  // 3. Custom Enterprise Domains (e.g. careers.acme.com or facebookcompany.com)
-  else if (!ROOT_DOMAINS.includes(hostname)) {
+  // 3. Custom Enterprise Domains (e.g. careers.acme.com) — only if NOT a known platform root host
+  else if (!isPlatformHost) {
     customDomain = hostname;
     tenantIdentifier = hostname;
   }
 
-  // Also check if fallback ?tenant= query parameter is provided (e.g. in dev testing)
+  // 4. Query parameter (?tenant=slug) takes explicit precedence on platform hosts (e.g. vercel.app or localhost)
   const urlTenant = request.nextUrl.searchParams.get("tenant");
-  if (!tenantIdentifier && urlTenant) {
+  if (urlTenant) {
     tenantIdentifier = urlTenant.toLowerCase().trim();
     subdomain = tenantIdentifier;
+    customDomain = null;
+  } else if (isPlatformHost && !tenantIdentifier) {
+    const pathname = request.nextUrl.pathname || "";
+    // On root login without ?tenant=, treat as Platform Root (Super Admin) - do not reuse company cookie
+    if (pathname === "/login" || pathname === "/") {
+      tenantIdentifier = null;
+      subdomain = null;
+      customDomain = null;
+    } else {
+      // On inside pages (e.g. /candidates, /dashboard), preserve active workspace cookie
+      const cookieTenant = request.cookies.get("hq_tenant_slug")?.value || request.cookies.get("hq_tenant_identifier")?.value;
+      if (cookieTenant && !isPlatformHostName(cookieTenant)) {
+        tenantIdentifier = cookieTenant.toLowerCase().trim();
+        subdomain = tenantIdentifier;
+      }
+    }
   }
 
   const requestHeaders = new Headers(request.headers);
