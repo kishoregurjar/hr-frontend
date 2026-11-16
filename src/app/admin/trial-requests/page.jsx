@@ -43,6 +43,7 @@ import {
   approveAdminTrialRequest,
   rejectAdminTrialRequest,
   resendAdminTrialApprovalEmail,
+  getAdminPlans,
 } from "@/lib/api/admin";
 
 export default function AdminTrialRequestsPage() {
@@ -60,6 +61,7 @@ export default function AdminTrialRequestsPage() {
   const [isApproveOpen, setIsApproveOpen] = useState(false);
   const [isRejectOpen, setIsRejectOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [demoPlan, setDemoPlan] = useState(null);
 
   // Form states for approval/rejection
   const [internalNotes, setInternalNotes] = useState("");
@@ -100,10 +102,17 @@ export default function AdminTrialRequestsPage() {
     }
   };
 
-  const handleOpenApprove = (reqItem) => {
+  const handleOpenApprove = async (reqItem) => {
     setSelectedRequest(reqItem);
     setInternalNotes("");
     setIsApproveOpen(true);
+    if (!demoPlan) {
+      try {
+        const plans = await getAdminPlans();
+        const demo = Array.isArray(plans) ? plans.find((p) => p.code === "DEMO") : null;
+        if (demo) setDemoPlan(demo);
+      } catch (_) {}
+    }
   };
 
   const handleOpenReject = (reqItem) => {
@@ -729,10 +738,10 @@ export default function AdminTrialRequestsPage() {
                 <div className="pt-2 border-t border-emerald-200/80 text-[11px] text-emerald-900 space-y-1">
                   <div className="font-bold uppercase tracking-wider text-[10px] text-emerald-700">Entitlements Provisioned:</div>
                   <ul className="list-disc pl-4 space-y-0.5">
-                    <li><strong>2 Active HR Seats</strong> (Owner always included)</li>
-                    <li><strong>20 Lifetime Candidates</strong> pool</li>
-                    <li><strong>10 Monthly Assessment Invites</strong></li>
-                    <li><strong>168 Hours (7 Days)</strong> duration from approval moment</li>
+                    <li><strong>{demoPlan?.seatLimit ?? 2} Active HR Seats</strong> (Owner always included)</li>
+                    <li><strong>{demoPlan?.candidateLimit ?? 20} Lifetime Candidates</strong> pool</li>
+                    <li><strong>{demoPlan?.inviteLimit ?? 10} Monthly Assessment Invites</strong></li>
+                    <li><strong>{demoPlan?.durationDays ? `${demoPlan.durationDays * 24} Hours (${demoPlan.durationDays} Days)` : "168 Hours (7 Days)"}</strong> duration from approval moment</li>
                   </ul>
                 </div>
               </div>
