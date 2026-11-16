@@ -651,12 +651,11 @@ function AdminPlansContent() {
             </Button>
             <Button
               type="button"
-              variant="destructive"
               onClick={handleDelete}
               disabled={deleting}
-              className="gap-2 bg-rose-600 hover:bg-rose-700"
+              className="gap-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold shadow-sm focus:ring-rose-500"
             >
-              {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {deleting && <Loader2 className="h-4 w-4 animate-spin text-white" />}
               Delete Plan
             </Button>
           </DialogFooter>
