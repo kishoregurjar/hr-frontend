@@ -20,6 +20,8 @@ import {
   Crown,
   ChevronUp,
   Ticket,
+  CreditCard,
+  Lock,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/context";
 import { toast } from "sonner";
@@ -89,9 +91,14 @@ const NAV_ITEMS = [
     icon: Building2,
     ownerOnly: true,
   },
+  {
+    title: "Plans & Pricing",
+    href: "/company/plans",
+    icon: CreditCard,
+  },
 ];
 
-export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
+export default function Sidebar({ isOpen, onClose, impersonatedCompany, isPlanExpired = false }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
@@ -219,10 +226,16 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
     if (item.exact) {
       return pathname === item.href;
     }
+    if (item.href === "/company") {
+      return pathname === "/company" || pathname.startsWith("/company/team");
+    }
+    if (item.href === "/company/plans") {
+      return pathname === "/company/plans" || pathname.startsWith("/company/plans/");
+    }
     if (item.href === "/support-tickets") {
       return pathname === "/support-tickets" || pathname.startsWith("/company/support");
     }
-    return pathname.startsWith(item.href);
+    return pathname === item.href || pathname.startsWith(item.href + "/");
   };
 
   return (
@@ -275,27 +288,56 @@ export default function Sidebar({ isOpen, onClose, impersonatedCompany }) {
           {visibleNavItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item);
+            const isPlanLink = item.href === "/company/plans";
+            const isLocked = isPlanExpired && !isPlanLink;
 
             return (
               <Link
                 key={item.title}
-                href={item.href}
+                href={isLocked ? "/company/plans" : item.href}
                 prefetch={false}
-                onClick={onClose}
-                className={`group flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-[15.5px] transition-all duration-150 ${
+                onClick={(e) => {
+                  if (isLocked) {
+                    toast.error("Subscription expired. Workspace features are locked until renewal.", {
+                      id: "plan-locked-toast",
+                    });
+                  }
+                  onClose();
+                }}
+                className={`group flex items-center justify-between px-3.5 py-3 rounded-2xl text-[15.5px] transition-all duration-150 ${
                   active
                     ? "bg-gradient-to-r from-[#4E35E8] to-[#6D38F0] text-white shadow-md shadow-indigo-600/30 font-black"
+                    : isLocked
+                    ? "text-slate-400 hover:text-slate-600 hover:bg-slate-100/60 font-semibold opacity-70"
+                    : isPlanExpired && isPlanLink
+                    ? "bg-rose-50 border border-rose-200 text-rose-700 font-black shadow-xs"
                     : "text-slate-800 hover:text-slate-950 hover:bg-slate-100/90 font-extrabold"
                 }`}
               >
-                <Icon
-                  className={`h-[22px] w-[22px] shrink-0 stroke-[2.25] transition-transform duration-150 group-hover:scale-105 ${
-                    active ? "text-white" : "text-slate-500 group-hover:text-indigo-600"
-                  }`}
-                />
-                <span className={`truncate tracking-tight ${active ? "font-black" : "font-extrabold"}`}>
-                  {item.title}
-                </span>
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <Icon
+                    className={`h-[22px] w-[22px] shrink-0 stroke-[2.25] transition-transform duration-150 group-hover:scale-105 ${
+                      active
+                        ? "text-white"
+                        : isLocked
+                        ? "text-slate-400"
+                        : isPlanExpired && isPlanLink
+                        ? "text-rose-600"
+                        : "text-slate-500 group-hover:text-indigo-600"
+                    }`}
+                  />
+                  <span className={`truncate tracking-tight ${active ? "font-black" : "font-extrabold"}`}>
+                    {item.title}
+                  </span>
+                </div>
+
+                {/* Status indicator badges */}
+                {isLocked && (
+                  <Lock className="h-4 w-4 text-slate-400 shrink-0 ml-1.5" />
+                )}
+                {isPlanExpired && isPlanLink && !active && (
+                  <span className="h-2 w-2 rounded-full bg-rose-500 animate-ping shrink-0 ml-1.5" />
+                )}
               </Link>
             );
           })}

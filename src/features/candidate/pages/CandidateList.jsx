@@ -42,6 +42,8 @@ import {
   CandidateTable,
   CandidateStatsCards,
   EmailExtractorDialog,
+  CandidateLimitModal,
+  InvitationLimitModal,
 } from "../components";
 import {
   useCandidatesQuery,
@@ -49,6 +51,7 @@ import {
   useConnectGoogleMailbox,
   useSyncMailboxNow,
   useStopAutomaticSync,
+  useSubscriptionUsage,
   MAILBOX_QUERY_KEY,
 } from "../hooks";
 
@@ -90,6 +93,16 @@ const CandidateList = () => {
   const [isSyncDialogOpen, setIsSyncDialogOpen] = useState(false);
   const [syncFromDate, setSyncFromDate] = useState("");
   const [syncToDate, setSyncToDate] = useState("");
+  const [isInvitationLimitModalOpen, setIsInvitationLimitModalOpen] = useState(false);
+
+  const {
+    inviteLimit,
+    inviteUsed,
+    remainingInvites,
+    isInviteLimitReached,
+    planName,
+    refetch: refetchSubscription,
+  } = useSubscriptionUsage();
 
   const {
     data: candidates = [],
@@ -283,12 +296,37 @@ const CandidateList = () => {
       if (isSelected) {
         return current.filter((id) => String(id) !== String(candidateId));
       }
+
+      // Check remaining invitation limit
+      if (remainingInvites !== null) {
+        if (remainingInvites <= 0) {
+          toast.error(
+            `Monthly invitation limit reached (${inviteUsed}/${inviteLimit}). Upgrade your plan to invite candidates.`
+          );
+          setIsInvitationLimitModalOpen(true);
+          return current;
+        }
+
+        if (current.length >= remainingInvites) {
+          toast.error(
+            `Limit reached! You can select at most ${remainingInvites} candidate(s) based on your plan's remaining monthly invitation quota.`
+          );
+          setIsInvitationLimitModalOpen(true);
+          return current;
+        }
+      }
+
       return [...current, candidateId];
     });
   };
 
   const handleToggleAll = () => {
-    if (isAllOnPageSelected) {
+    // If all on page are already selected or page has already reached max quota, deselect page
+    const isPageFullySelected =
+      isAllOnPageSelected ||
+      (remainingInvites !== null && selectedOnPageCount >= remainingInvites && selectedOnPageCount > 0);
+
+    if (isPageFullySelected) {
       setSelectedIds((current) =>
         current.filter(
           (selectedId) =>
@@ -296,9 +334,77 @@ const CandidateList = () => {
         )
       );
     } else {
+      if (remainingInvites !== null) {
+        if (remainingInvites <= 0) {
+          toast.error(
+            `Monthly invitation limit reached (${inviteUsed}/${inviteLimit}). Upgrade your plan to invite candidates.`
+          );
+          setIsInvitationLimitModalOpen(true);
+          return;
+        }
+
+        // Candidates on other pages currently selected
+        const currentOtherSelected = selectedIds.filter(
+          (selectedId) =>
+            !pageCandidateIds.some((pId) => String(pId) === String(selectedId))
+        );
+        const availableSlots = Math.max(0, remainingInvites - currentOtherSelected.length);
+
+        if (availableSlots <= 0) {
+          toast.error(
+            `Monthly invitation limit reached (${remainingInvites} remaining). Upgrade your plan to select more candidates.`
+          );
+          setIsInvitationLimitModalOpen(true);
+          return;
+        }
+
+        const candidatesToSelect = pageCandidateIds.slice(0, availableSlots);
+        setSelectedIds([...currentOtherSelected, ...candidatesToSelect]);
+
+        if (pageCandidateIds.length > availableSlots) {
+          toast.info(
+            `Selected ${candidatesToSelect.length} candidate(s) (Maximum allowed by your plan's remaining invitation limit of ${remainingInvites}). Upgrade to invite more.`
+          );
+          setIsInvitationLimitModalOpen(true);
+        }
+      } else {
+        setSelectedIds((current) => {
+          const next = [...current];
+          pageCandidateIds.forEach((cId) => {
+            if (!next.some((id) => String(id) === String(cId))) {
+              next.push(cId);
+            }
+          });
+          return next;
+        });
+      }
+    }
+  };
+
+  const handleSelectAllFiltered = () => {
+    if (remainingInvites !== null) {
+      if (remainingInvites <= 0) {
+        toast.error(
+          `Monthly invitation limit reached (${inviteUsed}/${inviteLimit}). Upgrade your plan to invite candidates.`
+        );
+        setIsInvitationLimitModalOpen(true);
+        return;
+      }
+
+      const availableSlots = remainingInvites;
+      const candidatesToSelect = filteredCandidateIds.slice(0, availableSlots);
+      setSelectedIds(candidatesToSelect);
+
+      if (filteredCandidateIds.length > availableSlots) {
+        toast.info(
+          `Selected first ${candidatesToSelect.length} candidates (matching your plan's remaining monthly limit). Upgrade your plan to invite all ${filteredCandidateIds.length} candidates.`
+        );
+        setIsInvitationLimitModalOpen(true);
+      }
+    } else {
       setSelectedIds((current) => {
         const next = [...current];
-        pageCandidateIds.forEach((cId) => {
+        filteredCandidateIds.forEach((cId) => {
           if (!next.some((id) => String(id) === String(cId))) {
             next.push(cId);
           }
@@ -306,18 +412,6 @@ const CandidateList = () => {
         return next;
       });
     }
-  };
-
-  const handleSelectAllFiltered = () => {
-    setSelectedIds((current) => {
-      const next = [...current];
-      filteredCandidateIds.forEach((cId) => {
-        if (!next.some((id) => String(id) === String(cId))) {
-          next.push(cId);
-        }
-      });
-      return next;
-    });
   };
 
   const handleDeselectAllFiltered = () => {
@@ -335,6 +429,13 @@ const CandidateList = () => {
   };
 
   const handleSingleAssign = (candidate) => {
+    if (remainingInvites !== null && remainingInvites <= 0) {
+      toast.error(
+        `Monthly invitation limit reached (${inviteUsed}/${inviteLimit}). Upgrade your plan to invite candidates.`
+      );
+      setIsInvitationLimitModalOpen(true);
+      return;
+    }
     setSingleAssignCandidate(candidate);
     setIsAssignDialogOpen(true);
   };
@@ -906,6 +1007,8 @@ const CandidateList = () => {
       {/* ── 5. Modals & Drawers ── */}
       <CandidateBulkActions
         selectedCount={selectedIds.length}
+        maxQuota={remainingInvites}
+        onUpgrade={() => setIsInvitationLimitModalOpen(true)}
         onAssignAssessment={() => setIsAssignDialogOpen(true)}
         onClearSelection={handleClearSelection}
       />
@@ -920,6 +1023,7 @@ const CandidateList = () => {
         onSuccess={() => {
           handleClearSelection();
           refetch();
+          refetchSubscription?.();
         }}
       />
 
@@ -933,6 +1037,17 @@ const CandidateList = () => {
           setDrawerCandidate(null);
           handleSingleAssign(cand);
         }}
+      />
+
+      <CandidateLimitModal />
+
+      <InvitationLimitModal
+        open={isInvitationLimitModalOpen}
+        onOpenChange={setIsInvitationLimitModalOpen}
+        allowedLimit={inviteLimit ?? 5}
+        currentUsage={inviteUsed ?? 5}
+        remaining={remainingInvites ?? 0}
+        currentPlan={planName}
       />
     </div>
   );

@@ -1,134 +1,109 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ShieldCheck, Mail, ArrowRight, Building2, Lock, CheckCircle2, UserPlus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ShieldCheck, Lock, CheckCircle2, CreditCard, Sparkles, ArrowRight, LayoutGrid } from "lucide-react";
 import RegisterForm from "../components/RegisterForm/RegisterForm";
+import CompanyOnboardingForm from "../components/CompanyOnboardingForm/CompanyOnboardingForm";
 
 function RegisterContent() {
   const searchParams = useSearchParams();
+  const planParam = searchParams.get("plan");
   const emailParam = searchParams.get("email") || "";
   const returnUrl = searchParams.get("returnUrl") || "";
   const companyParam = searchParams.get("company") || "";
 
-  const isInviteFlow = Boolean(emailParam || returnUrl || companyParam);
-  const [showForm, setShowForm] = useState(isInviteFlow);
-
-  useEffect(() => {
-    if (isInviteFlow) {
-      setShowForm(true);
-    }
-  }, [isInviteFlow]);
+  const isMemberInvite = Boolean(emailParam || returnUrl || companyParam);
+  const isCompanyOnboarding = Boolean(planParam) || !isMemberInvite;
 
   return (
-    <div className="w-full max-w-md space-y-6 relative z-10">
-      {/* Brand Header */}
-      <div className="text-center space-y-1.5">
-        <Link href="/" className="inline-flex items-center gap-2.5 mb-2">
-          <div className="h-10 w-10 rounded-2xl bg-blue-600 text-white font-black text-lg flex items-center justify-center shadow-md">
+    <div className={`w-full ${isCompanyOnboarding ? "max-w-6xl" : "max-w-md"} mx-auto space-y-4 relative z-10 transition-all`}>
+      {/* ── Top Navigation Bar ── */}
+      <header className="flex items-center justify-between py-1.5 border-b border-slate-200/60 pb-3">
+        <Link href="/" className="inline-flex items-center gap-2.5 group">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-blue-700 text-white font-black text-lg flex items-center justify-center shadow-md shadow-blue-500/25 group-hover:scale-105 transition transform">
             H
           </div>
-          <span className="text-2xl font-black tracking-tight text-slate-900">
-            HireQuest
-          </span>
-        </Link>
-        <div className="inline-block px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-[11px] font-bold uppercase tracking-wider">
-          {showForm ? "Recruiter Account Registration" : "Enterprise Onboarding Notice"}
-        </div>
-      </div>
-
-      {/* Elevated Card */}
-      <div className="rounded-3xl border border-slate-200/90 bg-white p-7 sm:p-8 shadow-xl shadow-slate-200/60 space-y-5">
-        {showForm ? (
           <div>
-            <div className="text-center space-y-1.5 mb-5">
-              <h1 className="text-xl font-extrabold text-slate-900">
-                Complete Your Recruiter Profile
-              </h1>
-              <p className="text-xs text-slate-500">
-                Set up your login credentials to access the candidate screening workspace.
-              </p>
+            <div className="flex items-center gap-2">
+              <span className="text-lg sm:text-xl font-black tracking-tight text-slate-900 group-hover:text-blue-600 transition">
+                HireQuest
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-[10px] font-black uppercase tracking-wider">
+                {isCompanyOnboarding ? "Workspace Onboarding" : "Member Invite"}
+              </span>
             </div>
-            <RegisterForm />
+            <p className="text-[10px] text-slate-500 font-medium hidden sm:block">
+              AI-Powered Cognitive & Skill Screening Platform
+            </p>
           </div>
-        ) : (
-          <div className="text-center space-y-5">
-            <div className="h-14 w-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto border border-blue-100">
-              <ShieldCheck className="h-7 w-7 text-blue-600" />
-            </div>
+        </Link>
 
-            <div className="space-y-2">
-              <h1 className="text-xl font-extrabold text-slate-900">
-                Invitation-Only Workspace Access
-              </h1>
-              <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
-                Client organization workspaces are created exclusively through HireQuest invitation links.
-              </p>
-            </div>
+        <div className="flex items-center gap-2 text-xs">
+          {isCompanyOnboarding && (
+            <Link
+              href="/plans"
+              className="hidden sm:inline-flex items-center gap-1 font-bold text-slate-600 hover:text-slate-900 px-2.5 py-1 rounded-lg hover:bg-slate-100 transition text-[11px]"
+            >
+              <LayoutGrid className="h-3 w-3" />
+              <span>Compare Plans</span>
+            </Link>
+          )}
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-1 font-bold text-blue-600 bg-blue-50/80 hover:bg-blue-100/80 border border-blue-200/80 px-3 py-1 rounded-lg transition text-[11px]"
+          >
+            <span>Sign In</span>
+            <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+      </header>
 
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-left space-y-2">
-              <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <Mail className="h-3.5 w-3.5 text-blue-600" />
-                Invited by your company?
-              </div>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
-                If you received a team invitation, check your work email for your direct link or register your invited account below.
-              </p>
-            </div>
-
-            <div className="pt-2 space-y-2">
-              <Button
-                onClick={() => setShowForm(true)}
-                className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <UserPlus className="h-4 w-4" />
-                <span>Create Recruiter Account</span>
-              </Button>
-
-              <Link href="/login" className="block w-full">
-                <Button
-                  variant="outline"
-                  className="w-full h-11 font-bold text-xs rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
-                >
-                  <span>Go to Universal Sign In</span>
-                  <ArrowRight className="h-4 w-4 ml-1.5" />
-                </Button>
-              </Link>
-            </div>
+      {/* ── Main Content Area ── */}
+      {isCompanyOnboarding ? (
+        <CompanyOnboardingForm />
+      ) : (
+        <div className="rounded-3xl border border-slate-200/90 bg-white p-7 sm:p-8 shadow-xl shadow-slate-200/60 space-y-5">
+          <div className="text-center space-y-1.5 mb-5">
+            <h1 className="text-xl font-extrabold text-slate-900">
+              Complete Your Recruiter Profile
+            </h1>
+            <p className="text-xs text-slate-500">
+              Set up your login credentials to access the candidate screening workspace.
+            </p>
           </div>
-        )}
-      </div>
+          <RegisterForm />
+        </div>
+      )}
 
-      {/* Trust Badges */}
-      <div className="flex items-center justify-center gap-4 text-[11px] font-semibold text-slate-500">
+      {/* ── Footer Trust Badges ── */}
+      <footer className="pt-2.5 border-t border-slate-200/60 flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-[10px] font-bold text-slate-400">
         <span className="flex items-center gap-1">
           <Lock className="h-3 w-3 text-emerald-600" />
-          256-Bit Encrypted
+          256-Bit SSL Encryption
         </span>
-        <span>•</span>
+        <span className="hidden sm:inline text-slate-300">•</span>
         <span className="flex items-center gap-1">
           <CheckCircle2 className="h-3 w-3 text-blue-600" />
-          Multi-Tenant Isolation
+          Isolated Multi-Tenant Subdomains
         </span>
-      </div>
+        <span className="hidden sm:inline text-slate-300">•</span>
+        <span className="flex items-center gap-1">
+          <CreditCard className="h-3 w-3 text-indigo-600" />
+          Razorpay Verified Gateway
+        </span>
+      </footer>
     </div>
   );
 }
 
-const RegisterPage = () => {
+export default function RegisterPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] text-slate-900 font-sans px-4 py-12 relative overflow-hidden">
-      {/* Subtle Ambient Glow Elements */}
-      <div className="absolute top-1/4 -left-20 h-72 w-72 rounded-full bg-blue-400/10 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 -right-20 h-80 w-80 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
-
-      <Suspense fallback={<div className="p-8 text-center text-xs text-slate-500 font-semibold">Loading registration...</div>}>
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans px-4 py-4 sm:py-6 relative overflow-x-hidden">
+      <Suspense fallback={<div className="p-12 text-center text-xs text-slate-500 font-semibold">Loading registration...</div>}>
         <RegisterContent />
       </Suspense>
     </div>
   );
-};
-
-export default RegisterPage;
+}

@@ -13,6 +13,9 @@ import {
   LifeBuoy,
   Inbox,
   FileText,
+  CreditCard,
+  CircleDollarSign,
+  UserCheck,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -26,6 +29,21 @@ const NAV_ITEMS = [
     label: "Companies & Tenants",
     href: "/admin/companies",
     icon: Building2,
+  },
+  {
+    label: "Trial Requests",
+    href: "/admin/trial-requests",
+    icon: UserCheck,
+  },
+  {
+    label: "SaaS Plans & Pricing",
+    href: "/admin/plans",
+    icon: CreditCard,
+  },
+  {
+    label: "Payments & Revenue",
+    href: "/admin/payments",
+    icon: CircleDollarSign,
   },
   {
     label: "Games Engine",

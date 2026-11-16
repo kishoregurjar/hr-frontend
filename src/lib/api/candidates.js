@@ -192,6 +192,26 @@ export const getCandidateById = async (id) => {
   }
 };
 
+export const isCandidateLimitError = (err) => {
+  const code =
+    err?.response?.data?.code ||
+    err?.response?.data?.error?.code ||
+    err?.code;
+  const status = err?.response?.status || err?.status;
+  const msg = String(
+    err?.response?.data?.message || err?.message || ""
+  ).toLowerCase();
+  return (
+    code === "CANDIDATE_LIMIT_REACHED" ||
+    code === "CANDIDATE_LIMIT_EXCEEDED" ||
+    code === "PLAN_LIMIT_EXCEEDED" ||
+    (status === 403 &&
+      (msg.includes("candidate limit") ||
+        msg.includes("unique candidate limit") ||
+        msg.includes("upgrade your plan")))
+  );
+};
+
 /**
  * 3. Create Candidate Manually — POST /api/v1/candidates (Only Creates DB Record, Status: NEW, No Email)
  */
@@ -248,6 +268,9 @@ export const createCandidate = async (payload) => {
     inMemoryCandidates = [created, ...inMemoryCandidates.filter((c) => c.email !== cleanEmail)];
     return created;
   } catch (err) {
+    if (isCandidateLimitError(err)) {
+      throw err;
+    }
     console.warn("POST /candidates attempt:", err?.message);
   }
 
@@ -273,6 +296,9 @@ export const createCandidate = async (payload) => {
     inMemoryCandidates = [created, ...inMemoryCandidates.filter((c) => c.email !== cleanEmail)];
     return created;
   } catch (err) {
+    if (isCandidateLimitError(err)) {
+      throw err;
+    }
     console.warn("POST /attempts/candidates attempt:", err?.message);
   }
 
@@ -489,6 +515,9 @@ export const inviteCandidateToAssessment = async (candidateId, assessmentId, can
     });
     return resData;
   } catch (err) {
+    if (isCandidateLimitError(err)) {
+      throw err;
+    }
     // 2. Try POST /attempts/assessments/:assessmentId/invitations
     try {
       const res = await axiosClient.post(`/attempts/assessments/${assessmentId}/invitations`, invitePayload);
@@ -500,7 +529,10 @@ export const inviteCandidateToAssessment = async (candidateId, assessmentId, can
         assessmentId,
       });
       return resData;
-    } catch {
+    } catch (innerErr) {
+      if (isCandidateLimitError(innerErr)) {
+        throw innerErr;
+      }
       return updateCandidate(candidateId, { status: "SENT", assessmentId });
     }
   }
@@ -539,7 +571,11 @@ export const importCandidates = async (importedCandidates) => {
   // Try bulk candidate creation on backend
   try {
     await axiosClient.post("/candidates/bulk", { candidates: createdCandidates });
-  } catch { }
+  } catch (err) {
+    if (isCandidateLimitError(err)) {
+      throw err;
+    }
+  }
 
   inMemoryCandidates = [...createdCandidates, ...inMemoryCandidates];
   return createdCandidates;
@@ -564,6 +600,9 @@ export const uploadResume = async ({ file, jobId }) => {
     });
     return res?.data?.data || res?.data || res;
   } catch (error) {
+    if (isCandidateLimitError(error)) {
+      throw error;
+    }
     // If backend endpoint is offline or processing simulated
     const simulatedCandidate = {
       id: `cand-${Date.now()}`,

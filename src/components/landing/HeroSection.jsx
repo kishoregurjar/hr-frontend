@@ -72,6 +72,18 @@ export default function HeroSection() {
               <ArrowRight className="h-4 w-4" />
             </Link>
           )}
+
+          <a
+            href="#pricing"
+            className={buttonVariants({
+              variant: "outline",
+              size: "lg",
+              className:
+                "w-full sm:w-auto bg-white/90 hover:bg-white text-slate-800 border-blue-200 hover:border-blue-400 font-bold tracking-wide text-xs sm:text-sm px-6 sm:px-8 py-5 sm:py-6 rounded-full shadow-sm hover:shadow transition-all justify-center gap-2 cursor-pointer",
+            })}
+          >
+            <span>VIEW PRICING & PLANS</span>
+          </a>
         </div>
       </div>
 

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   LandingHeader,
   HeroSection,
   ServicesSection,
+  PricingSection,
   AboutSection,
   FaqSection,
   ContactSection,
@@ -12,7 +14,29 @@ import {
 } from "@/components/landing";
 
 export default function Home() {
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isTenantDomain, setIsTenantDomain] = useState(false);
+
+  // Client-side defense-in-depth: If customer tenant domain mounts public home, redirect to workspace
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname.toLowerCase();
+      const isPlatformRoot = [
+        "localhost",
+        "127.0.0.1",
+        "hirequest.com",
+        "www.hirequest.com",
+        "app.hirequest.com",
+        "admin.hirequest.com",
+      ].includes(host);
+
+      if (!isPlatformRoot && !host.startsWith("admin.") && !host.startsWith("app.")) {
+        setIsTenantDomain(true);
+        router.replace("/login");
+      }
+    }
+  }, [router]);
 
   // Smooth scroll handler accounting for sticky header offset
   const handleScrollTo = (e, id) => {
@@ -32,6 +56,10 @@ export default function Home() {
     }
   };
 
+  if (isTenantDomain) {
+    return null;
+  }
+
   return (
     <div className="relative min-h-screen bg-[#e8f2fe] text-slate-800 overflow-x-hidden font-sans scroll-smooth">
       {/* Decorative background blobs */}
@@ -50,6 +78,7 @@ export default function Home() {
       </div>
 
       <ServicesSection />
+      <PricingSection handleScrollTo={handleScrollTo} />
       <AboutSection />
       <FaqSection />
       <ContactSection />

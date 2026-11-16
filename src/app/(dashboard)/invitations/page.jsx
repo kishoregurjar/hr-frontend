@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/context";
 import { useAssessmentsQuery } from "@/features/assessment/hooks";
 import { useCandidatesQuery, useAssignmentsQuery } from "@/features/candidate/hooks";
-import { AssignAssessmentDialog } from "@/features/candidate/components";
+import { AssignAssessmentDialog, InvitationLimitModal } from "@/features/candidate/components";
 
 export default function InvitationsPage() {
   const router = useRouter();
@@ -724,6 +724,8 @@ export default function InvitationsPage() {
           refetch();
         }}
       />
+
+      <InvitationLimitModal />
     </div>
   );
 }

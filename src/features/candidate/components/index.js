@@ -13,3 +13,5 @@ export { default as CandidateAssessments } from "./CandidateAssessments";
 export { default as EmailExtractorDialog } from "./EmailExtractorDialog";
 export { default as CandidateStatsCards } from "./CandidateStatsCards";
 export { default as CandidateExtractorDrawer } from "./CandidateExtractorDrawer";
+export { default as CandidateLimitModal } from "./CandidateLimitModal";
+export { default as InvitationLimitModal } from "./InvitationLimitModal";

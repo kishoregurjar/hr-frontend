@@ -192,6 +192,15 @@ export const toggleCompanyStatus = async (companyId, newStatus) => {
 };
 
 /**
+ * Update Company Subscription Plan (Super Admin Action)
+ * Endpoint: PATCH /api/v1/super-admin/companies/:companyId/plan
+ */
+export const updateCompanyPlan = async (companyId, payload) => {
+  const res = await axiosClient.patch(`/super-admin/companies/${companyId}/plan`, payload);
+  return res?.data?.data || res?.data || res;
+};
+
+/**
  * 7. Resend Owner Activation Email
  * Endpoint: POST /api/v1/super-admin/companies/:companyId/owner/resend-activation
  */
@@ -454,5 +463,63 @@ export const exportPlatformAnalyticsPdf = async (params = {}) => {
   return res?.data || res;
 };
 
+/**
+ * 22. Dynamic SaaS Plans Management (Super Admin)
+ */
+export const getAdminPlans = async () => {
+  const res = await axiosClient.get("/super-admin/plans");
+  return res?.data?.data?.plans || res?.data?.plans || [];
+};
+
+export const createAdminPlan = async (payload) => {
+  const res = await axiosClient.post("/super-admin/plans", payload);
+  return res?.data?.data?.plan || res?.data?.plan || res?.data;
+};
+
+export const updateAdminPlan = async (id, payload) => {
+  const res = await axiosClient.patch(`/super-admin/plans/${id}`, payload);
+  return res?.data?.data?.plan || res?.data?.plan || res?.data;
+};
+
+export const toggleAdminPlanStatus = async (id, isActive) => {
+  const res = await axiosClient.patch(`/super-admin/plans/${id}/status`, { isActive });
+  return res?.data?.data?.plan || res?.data?.plan || res?.data;
+};
+
+export const deleteAdminPlan = async (id) => {
+  const res = await axiosClient.delete(`/super-admin/plans/${id}`);
+  return res?.data?.data || res?.data;
+};
 
 
+
+
+
+
+/**
+ * 23. Demo Trial Requests Management (Super Admin)
+ */
+export const getAdminTrialRequests = async (params = {}) => {
+  const res = await axiosClient.get("/super-admin/trial-requests", { params });
+  return res?.data?.data || res?.data;
+};
+
+export const getAdminTrialRequestById = async (id) => {
+  const res = await axiosClient.get(`/super-admin/trial-requests/${id}`);
+  return res?.data?.data?.application || res?.data?.application || res?.data;
+};
+
+export const approveAdminTrialRequest = async (id, payload = {}) => {
+  const res = await axiosClient.post(`/super-admin/trial-requests/${id}/approve`, payload);
+  return res?.data?.data || res?.data;
+};
+
+export const rejectAdminTrialRequest = async (id, payload = {}) => {
+  const res = await axiosClient.post(`/super-admin/trial-requests/${id}/reject`, payload);
+  return res?.data?.data || res?.data;
+};
+
+export const resendAdminTrialApprovalEmail = async (id) => {
+  const res = await axiosClient.post(`/super-admin/trial-requests/${id}/resend-approval-email`);
+  return res?.data?.data || res?.data;
+};

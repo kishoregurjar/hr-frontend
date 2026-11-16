@@ -134,6 +134,9 @@ const LoginForm = () => {
       } else if (rawMsg.toLowerCase().includes("company suspended") || code === "COMPANY_SUSPENDED") {
         resolvedType = "COMPANY_SUSPENDED";
         resolvedMsg = "Your company account is currently suspended. Please contact Super Admin support.";
+      } else if (code === "PLAN_EXPIRED" || rawMsg.toLowerCase().includes("plan has expired") || rawMsg.toLowerCase().includes("plan expired")) {
+        resolvedType = "PLAN_EXPIRED";
+        resolvedMsg = "Your plan has expired. Please contact the platform administrator to purchase or renew your subscription.";
       } else if (rawMsg.toLowerCase().includes("activation") || rawMsg.toLowerCase().includes("invited") || code === "PENDING_ACTIVATION") {
         resolvedType = "PENDING_ACTIVATION";
         resolvedMsg = "Your account is pending activation. Please check your email for the activation link.";
@@ -237,6 +240,13 @@ const LoginForm = () => {
       )}
 
       {errorType === "COMPANY_SUSPENDED" && (
+        <div className="rounded-2xl border border-rose-300 bg-rose-50 p-3.5 text-xs text-rose-800 font-medium flex items-start gap-2.5">
+          <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
+      {errorType === "PLAN_EXPIRED" && (
         <div className="rounded-2xl border border-rose-300 bg-rose-50 p-3.5 text-xs text-rose-800 font-medium flex items-start gap-2.5">
           <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
           <span>{errorMessage}</span>

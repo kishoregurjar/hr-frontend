@@ -323,6 +323,90 @@ axiosClient.interceptors.response.use(
       return Promise.reject(new Error("Your company account has been suspended. Please contact the administrator."));
     }
 
+    const isPlanExpired =
+      status === 403 &&
+      (responseData?.error?.code === "PLAN_EXPIRED" ||
+       responseData?.code === "PLAN_EXPIRED" ||
+       (typeof message === "string" && (
+         message.toLowerCase().includes("plan has expired") ||
+         message.toLowerCase().includes("subscription has expired") ||
+         message.toLowerCase().includes("plan expired")
+       )));
+
+    if (isPlanExpired && typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("hirequest:plan-expired", {
+          detail: {
+            message:
+              typeof message === "string"
+                ? message
+                : "Your subscription has expired. Please purchase or renew a plan to continue using your HireQuest workspace.",
+          },
+        })
+      );
+    }
+
+    const isCandidateLimitReached =
+      status === 403 &&
+      (responseData?.code === "CANDIDATE_LIMIT_REACHED" ||
+        responseData?.error?.code === "CANDIDATE_LIMIT_REACHED" ||
+        responseData?.code === "CANDIDATE_LIMIT_EXCEEDED" ||
+        responseData?.error?.code === "CANDIDATE_LIMIT_EXCEEDED" ||
+        (typeof message === "string" &&
+          (message.toLowerCase().includes("maximum unique candidate limit") ||
+            message.toLowerCase().includes("candidate limit reached"))));
+
+    if (isCandidateLimitReached && typeof window !== "undefined") {
+      const details =
+        responseData?.details ||
+        responseData?.error?.details ||
+        {};
+      window.dispatchEvent(
+        new CustomEvent("hirequest:candidate-limit-reached", {
+          detail: {
+            currentUsage: details.currentUsage ?? details.current,
+            allowedLimit: details.allowedLimit ?? details.limit,
+            remaining: details.remaining ?? 0,
+            currentPlan: details.currentPlan || "Current Plan",
+            message:
+              typeof message === "string"
+                ? message
+                : "You have reached your plan's maximum unique candidate limit. Upgrade your plan to add more candidates.",
+          },
+        })
+      );
+    }
+
+    const isInvitationLimitReached =
+      status === 403 &&
+      (responseData?.code === "INVITATIONS_LIMIT_EXCEEDED" ||
+        responseData?.error?.code === "INVITATIONS_LIMIT_EXCEEDED" ||
+        (typeof message === "string" &&
+          (message.toLowerCase().includes("invitation limit reached") ||
+            message.toLowerCase().includes("monthly assessment invitation limit"))));
+
+    if (isInvitationLimitReached && typeof window !== "undefined") {
+      const details =
+        responseData?.details ||
+        responseData?.error?.details ||
+        {};
+      window.dispatchEvent(
+        new CustomEvent("hirequest:invitation-limit-reached", {
+          detail: {
+            currentUsage: details.current ?? details.currentUsage,
+            allowedLimit: details.limit ?? details.allowedLimit,
+            remaining: details.remaining ?? 0,
+            requested: details.requested,
+            currentPlan: details.currentPlan || "Current Plan",
+            message:
+              typeof message === "string"
+                ? message
+                : "You have reached your monthly assessment invitation limit. Upgrade your plan to send more invitations.",
+          },
+        })
+      );
+    }
+
     if (isTokenExpired) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {

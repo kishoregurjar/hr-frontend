@@ -13,6 +13,7 @@ export { default as useSyncEmails } from "./useSyncEmails";
 export { default as useExtractCandidate } from "./useExtractCandidate";
 export { default as useUpdateCandidateStatus } from "./useUpdateCandidateStatus";
 export { default as useUploadResume } from "./useUploadResume";
+export { default as useSubscriptionUsage } from "./useSubscriptionUsage";
 export {
   useMailboxStatus,
   useConnectGoogleMailbox,

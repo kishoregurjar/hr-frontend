@@ -32,6 +32,7 @@ import {
   toggleCompanyStatus,
   createAdminCompany,
   resendOwnerActivation,
+  getAdminPlans,
 } from "@/lib/api/admin";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -85,6 +86,7 @@ function AdminCompaniesContent() {
 
   // Register New Company Modal State
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(autoOpenNewModal);
+  const [plans, setPlans] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState(null);
 
@@ -96,7 +98,10 @@ function AdminCompaniesContent() {
     website: "",
     ownerName: "",
     ownerEmail: "",
-    plan: "Enterprise",
+    plan: "STARTER",
+    customSeatLimit: "",
+    customCandidateLimit: "",
+    customInviteLimit: "",
   });
 
   const slugPreview = companyForm.name
@@ -111,9 +116,15 @@ function AdminCompaniesContent() {
 
   const fetchCompanies = async () => {
     try {
-      const data = await getAdminCompanies();
+      const [data, pList] = await Promise.all([
+        getAdminCompanies(),
+        getAdminPlans().catch(() => []),
+      ]);
       const validData = Array.isArray(data) ? data : [];
       setCompanies(validData);
+      if (Array.isArray(pList) && pList.length > 0) {
+        setPlans(pList);
+      }
       adminCompaniesCache = {
         companies: validData,
         timestamp: Date.now(),
@@ -193,7 +204,10 @@ function AdminCompaniesContent() {
         website: companyForm.website?.trim() || undefined,
         ownerName: companyForm.ownerName.trim() || undefined,
         ownerEmail: companyForm.ownerEmail.trim(),
-        plan: companyForm.plan || "Enterprise",
+        plan: companyForm.plan || "STARTER",
+        customSeatLimit: companyForm.plan === "ENTERPRISE" && companyForm.customSeatLimit ? parseInt(companyForm.customSeatLimit, 10) : undefined,
+        customCandidateLimit: companyForm.plan === "ENTERPRISE" && companyForm.customCandidateLimit ? parseInt(companyForm.customCandidateLimit, 10) : undefined,
+        customInviteLimit: companyForm.plan === "ENTERPRISE" && companyForm.customInviteLimit ? parseInt(companyForm.customInviteLimit, 10) : undefined,
       });
 
       toast.success("Organization created successfully! Welcome & activation email dispatched.");
@@ -206,7 +220,10 @@ function AdminCompaniesContent() {
         website: "",
         ownerName: "",
         ownerEmail: "",
-        plan: "Enterprise",
+        plan: "STARTER",
+        customSeatLimit: "",
+        customCandidateLimit: "",
+        customInviteLimit: "",
       });
       fetchCompanies();
     } catch (err) {
@@ -426,23 +443,31 @@ function AdminCompaniesContent() {
                         </div>
                       </td>
 
-                      {/* Status */}
+                      {/* Status & Plan */}
                       <td className="py-4 px-4">
-                        <Badge
-                          className={
-                            company.status === "SUSPENDED"
-                              ? "bg-rose-50 text-rose-700 border-rose-300 font-extrabold text-[10.5px]"
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Badge
+                            className={
+                              company.status === "SUSPENDED"
+                                ? "bg-rose-50 text-rose-700 border-rose-300 font-extrabold text-[10.5px]"
+                                : company.owner && company.owner.status !== "ACTIVE"
+                                ? "bg-amber-50 text-amber-700 border-amber-300 font-extrabold text-[10.5px]"
+                                : "bg-emerald-50 text-emerald-700 border-emerald-300 font-extrabold text-[10.5px]"
+                            }
+                          >
+                            {company.status === "SUSPENDED"
+                              ? "SUSPENDED"
                               : company.owner && company.owner.status !== "ACTIVE"
-                              ? "bg-amber-50 text-amber-700 border-amber-300 font-extrabold text-[10.5px]"
-                              : "bg-emerald-50 text-emerald-700 border-emerald-300 font-extrabold text-[10.5px]"
-                          }
-                        >
-                          {company.status === "SUSPENDED"
-                            ? "SUSPENDED"
-                            : company.owner && company.owner.status !== "ACTIVE"
-                            ? "PENDING ACTIVATION"
-                            : "ACTIVE"}
-                        </Badge>
+                              ? "PENDING ACTIVATION"
+                              : "ACTIVE"}
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] font-bold border-slate-200 text-slate-700 bg-slate-50"
+                          >
+                            {company.plan || "STARTER"}
+                          </Badge>
+                        </div>
                       </td>
 
                       {/* Created Date */}
@@ -714,6 +739,81 @@ function AdminCompaniesContent() {
                     />
                   </div>
                 </div>
+
+                {/* Subscription Plan Tier */}
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1">
+                    Subscription Plan Tier <span className="text-rose-500 font-black">*</span>
+                  </Label>
+                  <select
+                    value={companyForm.plan}
+                    onChange={(e) => setCompanyForm({ ...companyForm, plan: e.target.value })}
+                    className="w-full h-11 px-3.5 rounded-xl text-xs sm:text-sm font-semibold border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-2xs"
+                  >
+                    {plans && plans.length > 0 ? (
+                      plans.map((p) => {
+                        const isEnterprise = p.code === "ENTERPRISE" || p.isCustom;
+                        const isDemo = p.code === "DEMO" || p.isTrial;
+                        let label = p.name;
+
+                        if (isEnterprise) {
+                          label = `${p.name} (Custom Quotas configured below)`;
+                        } else if (isDemo) {
+                          const trialDays = p.durationDays || 7;
+                          label = `${p.name} (${trialDays}-day trial: ${p.seatLimit ?? 2} HR seats, ${p.candidateLimit ?? 20} candidates, ${p.inviteLimit ?? 10} invites/mo)`;
+                        } else {
+                          const seatPart = p.seatLimit !== null ? `${p.seatLimit} HR seats` : "Unlimited seats";
+                          const candPart = p.candidateLimit !== null ? `${p.candidateLimit.toLocaleString("en-IN")} candidates` : "Unlimited candidates";
+                          const invitePart = p.inviteLimit !== null ? `${p.inviteLimit.toLocaleString("en-IN")} invites/mo` : "Unlimited invites";
+                          label = `${p.name} (${seatPart}, ${candPart}, ${invitePart})`;
+                        }
+
+                        return (
+                          <option key={p.id || p.code} value={p.code}>
+                            {label}
+                          </option>
+                        );
+                      })
+                    ) : (
+                      <>
+                        <option value="DEMO">Demo (7-day trial: 2 HR seats, 20 candidates, 10 invites/mo)</option>
+                        <option value="STARTER">Starter (2 HR seats, 200 candidates, 50 invites/mo)</option>
+                        <option value="GROWTH">Growth (5 HR seats, 1,000 candidates, 300 invites/mo)</option>
+                        <option value="BUSINESS">Business (15 HR seats, 5,000 candidates, 1,000 invites/mo)</option>
+                        <option value="ENTERPRISE">Enterprise (Custom Quotas)</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+
+                {companyForm.plan === "ENTERPRISE" && (
+                  <div className="sm:col-span-2 p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-100 space-y-3">
+                    <span className="text-xs font-bold text-indigo-900 block">Configure Enterprise Custom Limits (Optional)</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      <Input
+                        type="number"
+                        placeholder="HR Seats"
+                        value={companyForm.customSeatLimit}
+                        onChange={(e) => setCompanyForm({ ...companyForm, customSeatLimit: e.target.value })}
+                        className="h-10 text-xs bg-white rounded-xl"
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Total Candidates"
+                        value={companyForm.customCandidateLimit}
+                        onChange={(e) => setCompanyForm({ ...companyForm, customCandidateLimit: e.target.value })}
+                        className="h-10 text-xs bg-white rounded-xl"
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Monthly Invites"
+                        value={companyForm.customInviteLimit}
+                        onChange={(e) => setCompanyForm({ ...companyForm, customInviteLimit: e.target.value })}
+                        className="h-10 text-xs bg-white rounded-xl"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Informative Callout Banner */}

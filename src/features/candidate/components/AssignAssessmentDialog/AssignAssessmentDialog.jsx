@@ -12,6 +12,9 @@ import {
   FileQuestion,
   PlusCircle,
   ArrowRight,
+  Crown,
+  AlertTriangle,
+  Info,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,7 +29,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useAssessmentsQuery } from "@/features/assessment/hooks";
-import { useAssignAssessment } from "../../hooks";
+import { useAssignAssessment, useSubscriptionUsage } from "../../hooks";
+import InvitationLimitModal from "../InvitationLimitModal";
 
 const AssignAssessmentDialog = ({
   open,
@@ -48,11 +52,38 @@ const AssignAssessmentDialog = ({
 
   const assignAssessment = useAssignAssessment();
 
-  const [activeCandidates, setActiveCandidates] = useState(candidates);
+  const {
+    inviteLimit,
+    inviteUsed,
+    remainingInvites,
+    isInviteLimitReached,
+    planName,
+  } = useSubscriptionUsage({ enabled: Boolean(open) });
+
+  const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
+  const [activeCandidates, setActiveCandidates] = useState([]);
+  const [wasClamped, setWasClamped] = useState(false);
 
   useEffect(() => {
-    setActiveCandidates(candidates);
-  }, [candidates, open]);
+    if (!open) return;
+
+    const list = Array.isArray(candidates) ? candidates : [];
+    if (remainingInvites !== null && remainingInvites !== undefined) {
+      if (remainingInvites <= 0) {
+        setActiveCandidates([]);
+        setWasClamped(list.length > 0);
+      } else if (list.length > remainingInvites) {
+        setActiveCandidates(list.slice(0, remainingInvites));
+        setWasClamped(true);
+      } else {
+        setActiveCandidates(list);
+        setWasClamped(false);
+      }
+    } else {
+      setActiveCandidates(list);
+      setWasClamped(false);
+    }
+  }, [candidates, open, remainingInvites]);
 
   const handleRemoveCandidate = (candidateId) => {
     setActiveCandidates((prev) => prev.filter((c) => String(c.id) !== String(candidateId)));
@@ -94,6 +125,19 @@ const AssignAssessmentDialog = ({
   const handleAssign = () => {
     if (!assessmentId || activeCandidates.length === 0) {
       return;
+    }
+
+    if (remainingInvites !== null && remainingInvites !== undefined) {
+      if (remainingInvites <= 0) {
+        toast.error("Monthly invitation limit reached. Please upgrade your plan to send test invites.");
+        setIsLimitModalOpen(true);
+        return;
+      }
+      if (activeCandidates.length > remainingInvites) {
+        toast.error(`You can only invite up to ${remainingInvites} candidate(s) with your remaining monthly quota.`);
+        setIsLimitModalOpen(true);
+        return;
+      }
     }
 
     const firstCandidate = activeCandidates[0] || {};
@@ -165,234 +209,315 @@ const AssignAssessmentDialog = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-[92vw] sm:max-w-lg p-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-white/90 shadow-2xl font-sans bg-white max-h-[92vh] flex flex-col">
-        {/* ── 1. SIGNATURE EXECUTIVE HEADER ── */}
-        <div className="bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-4 sm:p-6 text-white relative overflow-hidden shrink-0 select-none">
-          <div className="absolute right-0 top-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent className="w-[92vw] sm:max-w-lg p-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-white/90 shadow-2xl font-sans bg-white max-h-[92vh] flex flex-col">
+          {/* ── 1. SIGNATURE EXECUTIVE HEADER ── */}
+          <div className="bg-gradient-to-r from-[#4E35E8] via-[#6D38F0] to-[#CF2E9F] p-4 sm:p-6 text-white relative overflow-hidden shrink-0 select-none">
+            <div className="absolute right-0 top-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="relative z-10 flex items-start gap-3.5">
-            <div className="h-10 w-10 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center font-bold text-white shadow-inner shrink-0">
-              <ClipboardList className="h-5 w-5 text-white" />
-            </div>
-
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <DialogTitle className="text-lg font-black tracking-tight text-white">
-                  Assign Assessment
-                </DialogTitle>
-                <span className="text-[10px] font-extrabold uppercase bg-white/20 text-white border border-white/30 px-2.5 py-0.5 rounded-full">
-                  Dispatch
-                </span>
+            <div className="relative z-10 flex items-start gap-3.5">
+              <div className="h-10 w-10 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center font-bold text-white shadow-inner shrink-0">
+                <ClipboardList className="h-5 w-5 text-white" />
               </div>
-              <DialogDescription className="text-xs text-white/85 font-medium leading-relaxed">
-                Select a screening test to generate unique assessment tokens for candidates.
-              </DialogDescription>
+
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <DialogTitle className="text-lg font-black tracking-tight text-white">
+                    Assign Assessment
+                  </DialogTitle>
+                  <span className="text-[10px] font-extrabold uppercase bg-white/20 text-white border border-white/30 px-2.5 py-0.5 rounded-full">
+                    Dispatch
+                  </span>
+                </div>
+                <DialogDescription className="text-xs text-white/85 font-medium leading-relaxed">
+                  Select a screening test to generate unique assessment tokens for candidates.
+                </DialogDescription>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* ── 2. BODY CONTENT ── */}
-        <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1 min-h-0">
-          {/* Candidates Summary Pill */}
-          <div className="rounded-xl border border-slate-200/90 bg-slate-50/80 p-3.5 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-              <Users className="h-4 w-4 text-blue-600" />
-              <span>Target Recipients:</span>
+          {/* ── 2. BODY CONTENT ── */}
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1 min-h-0">
+            {/* Quota & Candidates Summary Pill */}
+            <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-r from-slate-50 to-indigo-50/40 p-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                  <Users className="h-4 w-4 text-indigo-600" />
+                  <span>Target Recipients:</span>
+                </div>
+                <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 text-xs font-extrabold px-2.5 py-0.5">
+                  {activeCandidates.length} {activeCandidates.length === 1 ? "Candidate" : "Candidates"} Selected
+                </Badge>
+              </div>
+
+              {/* Quota info row */}
+              <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-[11px]">
+                <span className="font-semibold text-slate-500">
+                  Monthly Invitation Limit:
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`font-bold ${isInviteLimitReached ? "text-rose-600 font-extrabold" : "text-indigo-900 font-extrabold"}`}>
+                    {remainingInvites !== null && remainingInvites !== undefined
+                      ? `${remainingInvites} remaining (of ${inviteLimit})`
+                      : "Unlimited"}
+                  </span>
+                  {inviteLimit !== null && (
+                    <button
+                      type="button"
+                      onClick={() => setIsLimitModalOpen(true)}
+                      className="text-[10px] font-extrabold text-indigo-600 hover:text-indigo-800 underline cursor-pointer flex items-center gap-0.5"
+                    >
+                      <Crown className="h-2.5 w-2.5 text-amber-500" />
+                      <span>Upgrade</span>
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
-            <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-xs font-extrabold px-2.5 py-0.5">
-              {activeCandidates.length} {activeCandidates.length === 1 ? "Candidate" : "Candidates"} Selected
-            </Badge>
-          </div>
 
-          {/* Assessment Dropdown or Empty State CTA */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                Select Assessment Module <span className="text-rose-500">*</span>
-              </Label>
-              {availableAssessments.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleOpenChange(false);
-                    router.push("/assessments/create");
-                  }}
-                  className="text-[11px] font-bold text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1 cursor-pointer transition-colors"
+            {wasClamped && (
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+                <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="font-bold">Selection automatically adjusted to {remainingInvites} candidate(s)</p>
+                  <p className="text-[11px] text-amber-800 font-medium leading-relaxed">
+                    Adjusted to match your plan's remaining monthly invitation quota. Upgrade your plan to invite all candidates simultaneously.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {isInviteLimitReached && (
+              <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs">
+                <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-extrabold">Monthly Invitation Limit Reached</p>
+                  <p className="text-[11px] text-rose-700 font-medium leading-relaxed">
+                    You have 0 assessment invitations remaining this month on {planName}. Upgrade your plan to send invitations immediately.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Assessment Dropdown or Empty State CTA */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                  Select Assessment Module <span className="text-rose-500">*</span>
+                </Label>
+                {availableAssessments.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleOpenChange(false);
+                      router.push("/assessments/create");
+                    }}
+                    className="text-[11px] font-bold text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <PlusCircle className="h-3 w-3" />
+                    <span>Build New</span>
+                  </button>
+                )}
+              </div>
+
+              {isLoading ? (
+                <div className="flex items-center gap-2 p-3.5 text-xs text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-600 shrink-0" />
+                  <span className="font-medium">Loading configured assessments...</span>
+                </div>
+              ) : availableAssessments.length === 0 ? (
+                <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50/80 via-indigo-50/40 to-slate-50/80 p-4 space-y-3.5 shadow-2xs">
+                  <div className="flex items-start gap-3">
+                    <div className="h-9 w-9 rounded-xl bg-blue-100/90 border border-blue-200/80 text-blue-600 flex items-center justify-center shrink-0 shadow-2xs">
+                      <FileQuestion className="h-4.5 w-4.5 text-blue-600" />
+                    </div>
+                    <div className="space-y-0.5 min-w-0">
+                      <h4 className="text-xs font-extrabold text-slate-900">
+                        No Assessments Created Yet
+                      </h4>
+                      <p className="text-[11.5px] text-slate-600 leading-relaxed font-medium">
+                        You must create at least one assessment test before you can dispatch invites to candidates.
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      handleOpenChange(false);
+                      router.push("/assessments/create");
+                    }}
+                    className="w-full h-9 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
+                  >
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    <span>Create Assessment Now</span>
+                    <ArrowRight className="h-3.5 w-3.5 ml-0.5" />
+                  </Button>
+                </div>
+              ) : (
+                <select
+                  value={assessmentId}
+                  onChange={(e) => setAssessmentId(e.target.value)}
+                  disabled={assignAssessment.isPending}
+                  className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 shadow-2xs transition cursor-pointer"
                 >
-                  <PlusCircle className="h-3 w-3" />
-                  <span>Build New</span>
-                </button>
+                  {availableAssessments.map((assessment) => {
+                    const isPub =
+                      String(assessment?.status || "").toUpperCase() === "PUBLISHED" ||
+                      String(assessment?.status || "").toUpperCase() === "ACTIVE";
+                    return (
+                      <option
+                        key={assessment.id}
+                        value={String(assessment.id)}
+                        className="font-medium text-slate-800 py-1"
+                      >
+                        {assessment.title} {assessment.durationMinutes ? `(${assessment.durationMinutes}m)` : ""} {isPub ? "• [Published]" : "• [Draft]"}
+                      </option>
+                    );
+                  })}
+                </select>
               )}
             </div>
 
-            {isLoading ? (
-              <div className="flex items-center gap-2 p-3.5 text-xs text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
-                <Loader2 className="h-4 w-4 animate-spin text-blue-600 shrink-0" />
-                <span className="font-medium">Loading configured assessments...</span>
-              </div>
-            ) : availableAssessments.length === 0 ? (
-              <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50/80 via-indigo-50/40 to-slate-50/80 p-4 space-y-3.5 shadow-2xs">
-                <div className="flex items-start gap-3">
-                  <div className="h-9 w-9 rounded-xl bg-blue-100/90 border border-blue-200/80 text-blue-600 flex items-center justify-center shrink-0 shadow-2xs">
-                    <FileQuestion className="h-4.5 w-4.5 text-blue-600" />
-                  </div>
-                  <div className="space-y-0.5 min-w-0">
-                    <h4 className="text-xs font-extrabold text-slate-900">
-                      No Assessments Created Yet
-                    </h4>
-                    <p className="text-[11.5px] text-slate-600 leading-relaxed font-medium">
-                      You must create at least one assessment test before you can dispatch invites to candidates.
-                    </p>
-                  </div>
-                </div>
+            {/* Recipients List Preview */}
+            <div className="space-y-1.5">
+              <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                Recipients Breakdown
+              </Label>
 
+              <div className="max-h-36 space-y-1.5 overflow-y-auto rounded-xl border border-slate-200/90 bg-slate-50/50 p-2.5 divide-y divide-slate-100">
+                {activeCandidates.length === 0 ? (
+                  <p className="text-xs text-slate-400 py-3 text-center font-medium">
+                    No recipients selected.
+                  </p>
+                ) : (
+                  activeCandidates.map((candidate) => (
+                    <div
+                      key={candidate.id}
+                      className="flex items-center justify-between gap-4 py-1.5 first:pt-0 last:pb-0"
+                    >
+                      <div>
+                        <p className="text-xs font-bold text-slate-900 leading-tight">
+                          {candidate.name}
+                        </p>
+                        <p className="text-[11px] text-slate-500 font-medium">
+                          {candidate.email}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                          Ready
+                        </span>
+                        {activeCandidates.length > 1 && (
+                          <button
+                            type="button"
+                            title="Remove candidate"
+                            onClick={() => handleRemoveCandidate(candidate.id)}
+                            className="text-xs font-bold text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-1.5 py-0.5 rounded transition cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {assignAssessment.error && (
+              <div className="rounded-xl border border-rose-200 bg-rose-50 p-3">
+                <p className="text-xs text-rose-700 font-semibold">
+                  {(() => {
+                    const rawMessage =
+                      assignAssessment.error?.response?.data?.message ||
+                      assignAssessment.error?.message ||
+                      "";
+                    const isDuplicate =
+                      assignAssessment.error?.response?.status === 409 ||
+                      assignAssessment.error?.status === 409 ||
+                      assignAssessment.error?.response?.data?.code === "CONFLICT" ||
+                      assignAssessment.error?.response?.data?.code === "INVITATION_ALREADY_EXISTS" ||
+                      assignAssessment.error?.code === "CONFLICT" ||
+                      rawMessage.toLowerCase().includes("already has an active invitation") ||
+                      rawMessage.toLowerCase().includes("active invitation already exists");
+
+                    if (isDuplicate) {
+                      return "This candidate already has an active invitation for this assessment.";
+                    }
+                    if (rawMessage.toLowerCase().includes("database request validation") || rawMessage.toLowerCase().includes("invalid_query_argument")) {
+                      return "Unable to process invitation for one or more selected candidates. Please verify candidate details.";
+                    }
+                    return rawMessage || "Unable to assign assessment.";
+                  })()}
+                </p>
+              </div>
+            )}
+
+            {/* Footer Actions */}
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleOpenChange(false)}
+                disabled={assignAssessment.isPending}
+                className="h-9 px-4 rounded-xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+              >
+                Cancel
+              </Button>
+
+              {isInviteLimitReached ? (
                 <Button
                   type="button"
                   onClick={() => {
                     handleOpenChange(false);
-                    router.push("/assessments/create");
+                    router.push("/company/plans");
                   }}
-                  className="w-full h-9 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
+                  className="h-9 px-5 rounded-xl bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-indigo-500/25 cursor-pointer"
                 >
-                  <PlusCircle className="h-3.5 w-3.5" />
-                  <span>Create Assessment Now</span>
-                  <ArrowRight className="h-3.5 w-3.5 ml-0.5" />
+                  <Crown className="h-3.5 w-3.5 text-amber-300" />
+                  <span>Upgrade Plan to Invite</span>
                 </Button>
-              </div>
-            ) : (
-              <select
-                value={assessmentId}
-                onChange={(e) => setAssessmentId(e.target.value)}
-                disabled={assignAssessment.isPending}
-                className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 shadow-2xs transition cursor-pointer"
-              >
-                {availableAssessments.map((assessment) => {
-                  const isPub =
-                    String(assessment?.status || "").toUpperCase() === "PUBLISHED" ||
-                    String(assessment?.status || "").toUpperCase() === "ACTIVE";
-                  return (
-                    <option
-                      key={assessment.id}
-                      value={String(assessment.id)}
-                      className="font-medium text-slate-800 py-1"
-                    >
-                      {assessment.title} {assessment.durationMinutes ? `(${assessment.durationMinutes}m)` : ""} {isPub ? "• [Published]" : "• [Draft]"}
-                    </option>
-                  );
-                })}
-              </select>
-            )}
-          </div>
-
-          {/* Recipients List Preview */}
-          <div className="space-y-1.5">
-            <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
-              Recipients Breakdown
-            </Label>
-
-            <div className="max-h-36 space-y-1.5 overflow-y-auto rounded-xl border border-slate-200/90 bg-slate-50/50 p-2.5 divide-y divide-slate-100">
-              {activeCandidates.map((candidate) => (
-                <div
-                  key={candidate.id}
-                  className="flex items-center justify-between gap-4 py-1.5 first:pt-0 last:pb-0"
-                >
-                  <div>
-                    <p className="text-xs font-bold text-slate-900 leading-tight">
-                      {candidate.name}
-                    </p>
-                    <p className="text-[11px] text-slate-500 font-medium">
-                      {candidate.email}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
-                      Ready
-                    </span>
-                    {activeCandidates.length > 1 && (
-                      <button
-                        type="button"
-                        title="Remove candidate"
-                        onClick={() => handleRemoveCandidate(candidate.id)}
-                        className="text-xs font-bold text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-1.5 py-0.5 rounded transition cursor-pointer"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {assignAssessment.error && (
-            <div className="rounded-xl border border-rose-200 bg-rose-50 p-3">
-              <p className="text-xs text-rose-700 font-semibold">
-                {(() => {
-                  const rawMessage =
-                    assignAssessment.error?.response?.data?.message ||
-                    assignAssessment.error?.message ||
-                    "";
-                  const isDuplicate =
-                    assignAssessment.error?.response?.status === 409 ||
-                    assignAssessment.error?.status === 409 ||
-                    assignAssessment.error?.response?.data?.code === "CONFLICT" ||
-                    assignAssessment.error?.response?.data?.code === "INVITATION_ALREADY_EXISTS" ||
-                    assignAssessment.error?.code === "CONFLICT" ||
-                    rawMessage.toLowerCase().includes("already has an active invitation") ||
-                    rawMessage.toLowerCase().includes("active invitation already exists");
-
-                  if (isDuplicate) {
-                    return "This candidate already has an active invitation for this assessment.";
-                  }
-                  if (rawMessage.toLowerCase().includes("database request validation") || rawMessage.toLowerCase().includes("invalid_query_argument")) {
-                    return "Unable to process invitation for one or more selected candidates. Please verify candidate details.";
-                  }
-                  return rawMessage || "Unable to assign assessment.";
-                })()}
-              </p>
-            </div>
-          )}
-
-          {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 shrink-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleOpenChange(false)}
-              disabled={assignAssessment.isPending}
-              className="h-9 px-4 rounded-xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
-            >
-              Cancel
-            </Button>
-
-            <Button
-              type="button"
-              onClick={handleAssign}
-              disabled={
-                !assessmentId ||
-                candidates.length === 0 ||
-                availableAssessments.length === 0 ||
-                assignAssessment.isPending
-              }
-              className="h-9 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-blue-500/25 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {assignAssessment.isPending ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Assigning...
-                </>
               ) : (
-                <>
-                  <Send className="h-3.5 w-3.5" />
-                  Assign Assessment
-                </>
+                <Button
+                  type="button"
+                  onClick={handleAssign}
+                  disabled={
+                    !assessmentId ||
+                    activeCandidates.length === 0 ||
+                    availableAssessments.length === 0 ||
+                    assignAssessment.isPending
+                  }
+                  className="h-9 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-blue-500/25 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {assignAssessment.isPending ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Assigning...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-3.5 w-3.5" />
+                      Assign Assessment
+                    </>
+                  )}
+                </Button>
               )}
-            </Button>
+            </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      <InvitationLimitModal
+        open={isLimitModalOpen}
+        onOpenChange={setIsLimitModalOpen}
+        allowedLimit={inviteLimit ?? 5}
+        currentUsage={inviteUsed ?? 5}
+        remaining={remainingInvites ?? 0}
+        currentPlan={planName}
+      />
+    </>
   );
 };
 

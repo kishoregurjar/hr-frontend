@@ -51,6 +51,13 @@ export default function LandingHeader({
             SERVICES
           </a>
           <a
+            href="#pricing"
+            onClick={(e) => handleScrollTo(e, "pricing")}
+            className="hover:text-blue-600 transition-colors"
+          >
+            PRICING
+          </a>
+          <a
             href="#faq"
             onClick={(e) => handleScrollTo(e, "faq")}
             className="hover:text-blue-600 transition-colors"
@@ -130,6 +137,13 @@ export default function LandingHeader({
             className="block font-semibold text-sm text-slate-700 hover:text-blue-600 py-1.5 px-2 rounded-lg hover:bg-blue-50"
           >
             SERVICES
+          </a>
+          <a
+            href="#pricing"
+            onClick={(e) => handleScrollTo(e, "pricing")}
+            className="block font-semibold text-sm text-slate-700 hover:text-blue-600 py-1.5 px-2 rounded-lg hover:bg-blue-50"
+          >
+            PRICING
           </a>
           <a
             href="#faq"

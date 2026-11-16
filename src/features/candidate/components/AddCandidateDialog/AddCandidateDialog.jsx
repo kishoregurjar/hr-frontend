@@ -38,6 +38,19 @@ const AddCandidateDialog = ({ trigger, className }) => {
           setOpen(false);
         },
         onError: (err) => {
+          const code = err?.response?.data?.code || err?.response?.data?.error?.code || err?.code;
+          const status = err?.response?.status || err?.status;
+          const msg = String(err?.response?.data?.message || err?.message || "").toLowerCase();
+          const isLimit =
+            code === "CANDIDATE_LIMIT_REACHED" ||
+            code === "CANDIDATE_LIMIT_EXCEEDED" ||
+            (status === 403 && (msg.includes("candidate limit") || msg.includes("unique candidate limit")));
+
+          if (isLimit) {
+            setOpen(false);
+            return;
+          }
+
           toast.error(
             err?.response?.data?.message ||
               err?.message ||

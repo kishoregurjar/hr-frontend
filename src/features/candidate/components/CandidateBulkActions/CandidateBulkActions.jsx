@@ -1,10 +1,12 @@
 "use client";
 
-import { ClipboardList, X, CheckCircle2 } from "lucide-react";
+import { ClipboardList, X, CheckCircle2, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const CandidateBulkActions = ({
   selectedCount = 0,
+  maxQuota = null,
+  onUpgrade,
   onClear,
   onAssignAssessment,
   onClearSelection,
@@ -14,6 +16,7 @@ const CandidateBulkActions = ({
   }
 
   const handleClear = onClear || onClearSelection;
+  const isAtLimit = maxQuota !== null && maxQuota !== undefined && selectedCount >= maxQuota;
 
   return (
     <div className="fixed bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 z-40 flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-start gap-2.5 sm:gap-4 bg-slate-900/95 text-white border border-slate-700/80 shadow-2xl backdrop-blur-md px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl animate-in fade-in slide-in-from-bottom-4 duration-200 font-sans max-w-[calc(100vw-32px)] w-max">
@@ -25,8 +28,24 @@ const CandidateBulkActions = ({
           <p className="font-bold text-slate-100">
             {selectedCount === 1 ? "1 Candidate" : `${selectedCount} Candidates`} Selected
           </p>
+          {maxQuota !== null && maxQuota !== undefined && (
+            <p className={`text-[10px] font-semibold ${isAtLimit ? "text-amber-400" : "text-slate-400"}`}>
+              {selectedCount} of {maxQuota} allowed {isAtLimit ? "• Limit reached" : ""}
+            </p>
+          )}
         </div>
       </div>
+
+      {isAtLimit && onUpgrade && (
+        <button
+          type="button"
+          onClick={onUpgrade}
+          className="text-[11px] font-bold text-amber-300 hover:text-amber-200 underline decoration-amber-400/60 underline-offset-2 flex items-center gap-1 cursor-pointer transition ml-1"
+        >
+          <Crown className="h-3 w-3" />
+          <span>Upgrade for More</span>
+        </button>
+      )}
 
       <div className="h-4 w-px bg-slate-700 mx-1" />
 

@@ -27,6 +27,13 @@ export default function LandingFooter({ handleScrollTo }) {
             Services
           </a>
           <a
+            href="#pricing"
+            onClick={(e) => handleScrollTo(e, "pricing")}
+            className="hover:text-white transition-colors"
+          >
+            Pricing
+          </a>
+          <a
             href="#faq"
             onClick={(e) => handleScrollTo(e, "faq")}
             className="hover:text-white transition-colors"
