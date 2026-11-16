@@ -119,7 +119,10 @@ export function middleware(request) {
   }
 
   // 4. Query parameter (?tenant=slug) takes explicit precedence on platform hosts (e.g. vercel.app or localhost)
-  const urlTenant = request.nextUrl.searchParams.get("tenant");
+  const urlTenant =
+    request.nextUrl.searchParams.get("tenant") ||
+    request.nextUrl.searchParams.get("tenant_slug") ||
+    request.nextUrl.searchParams.get("slug");
   if (urlTenant) {
     tenantIdentifier = urlTenant.toLowerCase().trim();
     subdomain = tenantIdentifier;

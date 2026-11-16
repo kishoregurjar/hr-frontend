@@ -66,15 +66,58 @@ const LoginPage = () => {
           else if (slugCookie) slug = decodeURIComponent(slugCookie);
         }
       } else {
-        const queryTenant = searchParams.get("tenant");
+        const queryTenant =
+          searchParams.get("tenant") ||
+          searchParams.get("tenant_slug") ||
+          searchParams.get("slug") ||
+          searchParams.get("company");
         if (queryTenant) {
-          slug = queryTenant;
+          slug = queryTenant.toLowerCase().trim();
+          try {
+            sessionStorage.setItem("hq_tenant_slug", slug);
+          } catch {}
+        } else {
+          try {
+            const savedTenant = sessionStorage.getItem("hq_tenant_slug");
+            if (savedTenant) {
+              slug = savedTenant.toLowerCase().trim();
+            } else {
+              const cookies = document.cookie.split("; ");
+              const slugCookie = cookies
+                .find((row) => row.startsWith("hq_tenant_slug="))
+                ?.split("=")[1];
+              const idCookie = cookies
+                .find((row) => row.startsWith("hq_tenant_identifier="))
+                ?.split("=")[1];
+              const cTenant = slugCookie || idCookie;
+              if (cTenant) {
+                const decoded = decodeURIComponent(cTenant).toLowerCase().trim();
+                if (!decoded.includes(".vercel.app") && !["www", "admin", "api", "app"].includes(decoded)) {
+                  slug = decoded;
+                }
+              }
+            }
+          } catch {}
         }
       }
     }
 
     if (slug) {
-      getPublicCompanyBranding(slug)
+      const cleanSlug = slug.toLowerCase().trim();
+      const formattedSlug = cleanSlug.charAt(0).toUpperCase() + cleanSlug.slice(1);
+
+      // Set immediate optimistic branding so page displays company name instantly without flashing HireQuest
+      setTenantBranding((prev) =>
+        prev && prev.companyName
+          ? prev
+          : {
+              companyName: formattedSlug,
+              brandColor: "#2563eb",
+              logoUrl: null,
+            }
+      );
+
+      getPublicCompanyBranding(cleanSlug)
         .then((res) => {
           const data = res?.data || res;
           if (data && data.companyName) {
@@ -82,7 +125,7 @@ const LoginPage = () => {
           }
         })
         .catch(() => {
-          setTenantBranding(null);
+          // Keep optimistic branding if query param exists
         });
     } else {
       setTenantBranding(null);

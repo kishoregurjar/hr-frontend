@@ -17,7 +17,8 @@ const ProtectedRoute = ({ children }) => {
   useEffect(() => {
     if (!mounted || isLoading) return;
     if (!isAuthenticated) {
-      router.push("/login");
+      const search = typeof window !== "undefined" ? window.location.search : "";
+      router.push(`/login${search}`);
     }
   }, [mounted, isLoading, isAuthenticated, router]);
 
