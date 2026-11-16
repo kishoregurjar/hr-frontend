@@ -81,14 +81,20 @@ axiosClient.interceptors.request.use(
       try {
         let tenantIdentifier = null;
         const host = window.location.hostname.toLowerCase();
-        const isRootHost = [
-          "localhost",
-          "127.0.0.1",
-          "hirequest.com",
-          "www.hirequest.com",
-          "app.hirequest.com",
-          "admin.hirequest.com",
-        ].includes(host);
+        const configuredRoot = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || "hirequest.com").toLowerCase();
+        const isRootHost =
+          [
+            "localhost",
+            "127.0.0.1",
+            "hirequest.com",
+            "www.hirequest.com",
+            "app.hirequest.com",
+            "admin.hirequest.com",
+            configuredRoot,
+            `www.${configuredRoot}`,
+            `app.${configuredRoot}`,
+            `admin.${configuredRoot}`,
+          ].includes(host) || host.endsWith(".vercel.app");
 
         if (!isRootHost) {
           if (host.endsWith(".localhost")) {
@@ -96,8 +102,8 @@ axiosClient.interceptors.request.use(
             if (parts.length >= 2 && parts[0] && parts[0] !== "www") {
               tenantIdentifier = parts[0];
             }
-          } else if (host.endsWith(".hirequest.com")) {
-            const parts = host.replace(/\.hirequest\.com$/, "").split(".");
+          } else if (configuredRoot && configuredRoot !== "vercel.app" && host.endsWith(`.${configuredRoot}`)) {
+            const parts = host.replace(new RegExp(`\\.${configuredRoot}$`), "").split(".");
             const sub = parts[parts.length - 1];
             if (sub && !["www", "admin", "api", "app"].includes(sub)) {
               tenantIdentifier = sub;
@@ -105,10 +111,25 @@ axiosClient.interceptors.request.use(
           } else {
             tenantIdentifier = host;
           }
+        }
 
-          if (!tenantIdentifier) {
-            const idMatch = document.cookie.match(/(?:^|;\s*)hq_tenant_identifier=([^;]+)/);
-            if (idMatch) tenantIdentifier = decodeURIComponent(idMatch[1]);
+        // On platform hosts (localhost, vercel.app), check query param or cookie
+        if (!tenantIdentifier) {
+          const urlParams = new URLSearchParams(window.location.search);
+          const qTenant = urlParams.get("tenant");
+          if (qTenant) {
+            tenantIdentifier = qTenant.toLowerCase().trim();
+          } else {
+            const currentPath = window.location.pathname || "";
+            // Only use cookies if NOT on the root /login or /
+            if (currentPath !== "/login" && currentPath !== "/") {
+              const idMatch =
+                document.cookie.match(/(?:^|;\s*)hq_tenant_slug=([^;]+)/) ||
+                document.cookie.match(/(?:^|;\s*)hq_tenant_identifier=([^;]+)/);
+              if (idMatch && idMatch[1] && !idMatch[1].includes(".vercel.app")) {
+                tenantIdentifier = decodeURIComponent(idMatch[1]).toLowerCase().trim();
+              }
+            }
           }
         }
 

@@ -13,7 +13,7 @@ import { NextResponse } from "next/server";
  *    - Public pricing `/plans` -> redirects to tenant's private `/company/plans`
  *    - Public registration `/register` -> redirects to platform domain `/register`
  *    - Platform Super Admin `/admin/*` -> redirects to `/dashboard` or `/login` (blocked on tenant domains)
- * 4. Main Platform Domain (hirequest.com, localhost:3000):
+ * 4. Main Platform Domain (hirequest.com, localhost:3000, vercel platform):
  *    - Serves public landing page, public plans, demo registration, and super-admin login.
  * 5. Inject x-tenant-identifier, x-tenant-slug and x-tenant-domain headers into downstream server components.
  * 6. Set hq_tenant_identifier and hq_tenant_slug cookies for client components.
@@ -31,6 +31,22 @@ const ROOT_DOMAINS = [
 
 const PLATFORM_SUBDOMAINS = ["www", "app", "admin", "api", "staging"];
 
+function isPlatformHostName(hostname) {
+  if (!hostname) return true;
+  if (ROOT_DOMAINS.includes(hostname)) return true;
+  if (hostname.endsWith(".vercel.app")) return true;
+  const configuredRoot = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || "hirequest.com").toLowerCase();
+  if (
+    hostname === configuredRoot ||
+    hostname === `www.${configuredRoot}` ||
+    hostname === `app.${configuredRoot}` ||
+    hostname === `admin.${configuredRoot}`
+  ) {
+    return true;
+  }
+  return false;
+}
+
 function getPlatformRootUrl(request) {
   const host = request.headers.get("host") || "";
   const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
@@ -39,7 +55,8 @@ function getPlatformRootUrl(request) {
     const port = host.split(":")[1] || "3000";
     return `${protocol}//localhost:${port}`;
   }
-  return `${protocol}//hirequest.com`;
+  const configuredRoot = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || "hirequest.com").toLowerCase();
+  return `${protocol}//${configuredRoot}`;
 }
 
 function applyTenantCookies(response, tenantIdentifier, subdomain, customDomain) {
@@ -71,6 +88,8 @@ export function middleware(request) {
   const host = request.headers.get("host") || "";
   const hostname = host.replace(/:\d+$/, "").toLowerCase();
   const pathname = request.nextUrl.pathname;
+  const configuredRoot = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || "hirequest.com").toLowerCase();
+  const isPlatformHost = isPlatformHostName(hostname);
 
   let subdomain = null;
   let customDomain = null;
@@ -84,26 +103,43 @@ export function middleware(request) {
       tenantIdentifier = parts[0];
     }
   }
-  // 2. Production: *.hirequest.com (e.g. bestpeer.hirequest.com)
-  else if (hostname.endsWith(".hirequest.com")) {
-    const parts = hostname.replace(/\.hirequest\.com$/, "").split(".");
+  // 2. Production dedicated wildcard subdomains: *.<rootDomain> (e.g. bestpeer.hirequest.com)
+  else if (configuredRoot && configuredRoot !== "vercel.app" && hostname.endsWith(`.${configuredRoot}`)) {
+    const parts = hostname.replace(new RegExp(`\\.${configuredRoot}$`), "").split(".");
     const candidateSubdomain = parts[parts.length - 1];
     if (candidateSubdomain && !PLATFORM_SUBDOMAINS.includes(candidateSubdomain)) {
       subdomain = candidateSubdomain;
       tenantIdentifier = candidateSubdomain;
     }
   }
-  // 3. Custom Enterprise Domains (e.g. careers.bestpeer.com)
-  else if (!ROOT_DOMAINS.includes(hostname)) {
+  // 3. Custom Enterprise Domains (e.g. careers.bestpeer.com) — only if NOT a known platform root host
+  else if (!isPlatformHost) {
     customDomain = hostname;
     tenantIdentifier = hostname;
   }
 
-  // Also check if fallback ?tenant= query parameter is provided (e.g. in dev testing)
+  // 4. Query parameter (?tenant=slug) takes explicit precedence on platform hosts (e.g. vercel.app or localhost)
   const urlTenant = request.nextUrl.searchParams.get("tenant");
-  if (!tenantIdentifier && urlTenant) {
+  if (urlTenant) {
     tenantIdentifier = urlTenant.toLowerCase().trim();
     subdomain = tenantIdentifier;
+    customDomain = null;
+  } else if (isPlatformHost && !tenantIdentifier) {
+    // On root login without ?tenant=, treat as Platform Root (Super Admin) - do not reuse company cookie
+    if (pathname === "/login" || pathname === "/") {
+      tenantIdentifier = null;
+      subdomain = null;
+      customDomain = null;
+    } else {
+      // On inside pages (e.g. /candidates, /dashboard), preserve active workspace cookie
+      const cookieTenant =
+        request.cookies.get("hq_tenant_slug")?.value ||
+        request.cookies.get("hq_tenant_identifier")?.value;
+      if (cookieTenant && !isPlatformHostName(cookieTenant)) {
+        tenantIdentifier = cookieTenant.toLowerCase().trim();
+        subdomain = tenantIdentifier;
+      }
+    }
   }
 
   const isCustomerTenant = Boolean(tenantIdentifier);
@@ -132,7 +168,7 @@ export function middleware(request) {
   // Customer Tenant Domain Isolation Rules
   // (e.g. bestpeer.localhost:3000, bestpeer.hirequest.com)
   // ──────────────────────────────────────────────────────────
-  if (isCustomerTenant) {
+  if (isCustomerTenant && (!isPlatformHost || urlTenant)) {
     const hasAuthSession = Boolean(
       request.cookies.get("refreshToken")?.value ||
       request.cookies.get("accessToken")?.value

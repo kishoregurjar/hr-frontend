@@ -133,24 +133,6 @@ const LoginPage = () => {
         user?.isSuperAdmin;
 
       const host = typeof window !== "undefined" ? window.location.hostname.toLowerCase() : "";
-      const isPlatformRoot = [
-        "localhost",
-        "127.0.0.1",
-        "hirequest.com",
-        "www.hirequest.com",
-        "app.hirequest.com",
-        "admin.hirequest.com",
-      ].includes(host);
-
-      if (isPlatformRoot && !isSuperAdmin) {
-        // Company users on platform root should not stay logged into platform root
-        clearAllAuthStorage();
-        try {
-          logout();
-        } catch {}
-        return;
-      }
-
       if (isSuperAdmin) {
         router.push("/admin");
       } else if (role === "CANDIDATE") {
