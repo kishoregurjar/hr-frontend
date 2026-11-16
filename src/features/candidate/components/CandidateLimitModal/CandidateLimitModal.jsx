@@ -56,19 +56,22 @@ export default function CandidateLimitModal({
   useEffect(() => {
     const handleLimitReached = (event) => {
       const detail = event?.detail || {};
-      setModalData({
-        allowedLimit: detail.allowedLimit ?? 5,
-        currentUsage: detail.currentUsage ?? 5,
-        currentPlan: detail.currentPlan || "Current Plan",
-      });
-      setOpen(true);
+      setModalData((prev) => ({
+        allowedLimit: detail.allowedLimit ?? propAllowedLimit ?? prev.allowedLimit ?? 5,
+        currentUsage: detail.currentUsage ?? propCurrentUsage ?? prev.currentUsage ?? 5,
+        currentPlan: detail.currentPlan || propCurrentPlan || prev.currentPlan || "Current Plan",
+      }));
+      if (controlledOnOpenChange) {
+        controlledOnOpenChange(true);
+      }
+      setInternalOpen(true);
     };
 
     window.addEventListener("hirequest:candidate-limit-reached", handleLimitReached);
     return () => {
       window.removeEventListener("hirequest:candidate-limit-reached", handleLimitReached);
     };
-  }, []);
+  }, [controlledOnOpenChange, propAllowedLimit, propCurrentUsage, propCurrentPlan]);
 
   const handleUpgradeClick = () => {
     setOpen(false);

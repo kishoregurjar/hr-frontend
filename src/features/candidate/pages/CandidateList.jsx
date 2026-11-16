@@ -93,6 +93,7 @@ const CandidateList = () => {
   const [isSyncDialogOpen, setIsSyncDialogOpen] = useState(false);
   const [syncFromDate, setSyncFromDate] = useState("");
   const [syncToDate, setSyncToDate] = useState("");
+  const [isCandidateLimitModalOpen, setIsCandidateLimitModalOpen] = useState(false);
   const [isInvitationLimitModalOpen, setIsInvitationLimitModalOpen] = useState(false);
 
   const {
@@ -100,6 +101,10 @@ const CandidateList = () => {
     inviteUsed,
     remainingInvites,
     isInviteLimitReached,
+    candidateLimit,
+    candidateUsed,
+    remainingCandidates,
+    isCandidateLimitReached,
     planName,
     refetch: refetchSubscription,
   } = useSubscriptionUsage();
@@ -714,25 +719,57 @@ const CandidateList = () => {
 
               {/* Extract from Emails */}
               <div className="flex-1 sm:flex-initial min-w-0">
-                <EmailExtractorDialog
-                  triggerText="Extract from Emails"
-                  className="w-full sm:w-auto justify-center relative gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 font-semibold text-xs h-9 px-3 sm:px-4 rounded-xl shadow-2xs transition-all cursor-pointer whitespace-nowrap"
-                />
+                {isCandidateLimitReached ? (
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      toast.error(
+                        `Candidate limit reached (${candidateUsed}/${candidateLimit}). Upgrade your plan to extract more candidates.`
+                      );
+                      setIsCandidateLimitModalOpen(true);
+                    }}
+                    className="w-full sm:w-auto justify-center relative gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 font-semibold text-xs h-9 px-3 sm:px-4 rounded-xl shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+                  >
+                    Extract from Emails
+                  </Button>
+                ) : (
+                  <EmailExtractorDialog
+                    triggerText="Extract from Emails"
+                    className="w-full sm:w-auto justify-center relative gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 font-semibold text-xs h-9 px-3 sm:px-4 rounded-xl shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+                  />
+                )}
               </div>
 
               {/* Add Candidate (Primary Action) */}
               <div className="w-full sm:w-auto min-w-0">
-                <AddCandidateDialog
-                  trigger={
-                    <Button
-                      type="button"
-                      className="w-full sm:w-auto justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs h-9 px-4 rounded-xl shadow-xs shadow-indigo-500/20 cursor-pointer"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      <span>Add Candidate</span>
-                    </Button>
-                  }
-                />
+                {isCandidateLimitReached ? (
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      toast.error(
+                        `Candidate limit reached (${candidateUsed}/${candidateLimit}). Upgrade your plan to add more candidates.`
+                      );
+                      setIsCandidateLimitModalOpen(true);
+                    }}
+                    className="w-full sm:w-auto justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs h-9 px-4 rounded-xl shadow-xs shadow-indigo-500/20 cursor-pointer"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Add Candidate</span>
+                  </Button>
+                ) : (
+                  <AddCandidateDialog
+                    onOpenUpgradeModal={() => setIsCandidateLimitModalOpen(true)}
+                    trigger={
+                      <Button
+                        type="button"
+                        className="w-full sm:w-auto justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs h-9 px-4 rounded-xl shadow-xs shadow-indigo-500/20 cursor-pointer"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        <span>Add Candidate</span>
+                      </Button>
+                    }
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -1039,7 +1076,13 @@ const CandidateList = () => {
         }}
       />
 
-      <CandidateLimitModal />
+      <CandidateLimitModal
+        open={isCandidateLimitModalOpen}
+        onOpenChange={setIsCandidateLimitModalOpen}
+        allowedLimit={candidateLimit ?? 5}
+        currentUsage={candidateUsed ?? 5}
+        currentPlan={planName || "Demo Plan"}
+      />
 
       <InvitationLimitModal
         open={isInvitationLimitModalOpen}

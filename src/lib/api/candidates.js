@@ -159,19 +159,7 @@ export const getCandidates = async (params = {}) => {
     };
   });
 
-  // Merge live backend items with active inMemory candidates (deduplicated by email)
-  const combined = [];
-  const seenEmails = new Set();
-
-  [...inMemoryCandidates, ...mappedBackend].forEach((c) => {
-    const key = String(c.email || "").toLowerCase().trim();
-    if (key && !seenEmails.has(key)) {
-      seenEmails.add(key);
-      combined.push(c);
-    }
-  });
-
-  return combined;
+  return mappedBackend;
 };
 
 /**
@@ -194,12 +182,12 @@ export const getCandidateById = async (id) => {
 
 export const isCandidateLimitError = (err) => {
   const code =
+    err?.code ||
     err?.response?.data?.code ||
-    err?.response?.data?.error?.code ||
-    err?.code;
-  const status = err?.response?.status || err?.status;
+    err?.response?.data?.error?.code;
+  const status = err?.status || err?.response?.status;
   const msg = String(
-    err?.response?.data?.message || err?.message || ""
+    err?.message || err?.response?.data?.message || ""
   ).toLowerCase();
   return (
     code === "CANDIDATE_LIMIT_REACHED" ||
@@ -208,6 +196,7 @@ export const isCandidateLimitError = (err) => {
     (status === 403 &&
       (msg.includes("candidate limit") ||
         msg.includes("unique candidate limit") ||
+        msg.includes("maximum unique candidate") ||
         msg.includes("upgrade your plan")))
   );
 };
@@ -246,11 +235,11 @@ export const createCandidate = async (payload) => {
     source: candidateSource,
   };
 
-  // 1. Direct POST /candidates endpoint (Only creates DB candidate record)
+  // Direct POST /candidates endpoint (Strict database record creation — no fake in-memory fallback)
   try {
     const res = await axiosClient.post("/candidates", creationBody);
     const saved = res?.data?.data || res?.data || res;
-    const created = {
+    return {
       id: saved?.id || saved?.candidateId || `cand-${Date.now()}`,
       name: cleanName,
       email: cleanEmail,
@@ -265,60 +254,9 @@ export const createCandidate = async (payload) => {
       updatedAt: new Date().toISOString(),
       ...saved,
     };
-    inMemoryCandidates = [created, ...inMemoryCandidates.filter((c) => c.email !== cleanEmail)];
-    return created;
   } catch (err) {
-    if (isCandidateLimitError(err)) {
-      throw err;
-    }
-    console.warn("POST /candidates attempt:", err?.message);
+    throw err;
   }
-
-  // 2. Try POST /attempts/candidates
-  try {
-    const res = await axiosClient.post("/attempts/candidates", creationBody);
-    const saved = res?.data?.data || res?.data || res;
-    const created = {
-      id: saved?.id || saved?.candidateId || `cand-${Date.now()}`,
-      name: cleanName,
-      email: cleanEmail,
-      phone,
-      role: payload?.role || "Applicant",
-      skills: Array.isArray(payload?.skills) ? payload.skills : ["General"],
-      experience: payload?.experience || null,
-      source: candidateSource,
-      status: "NEW",
-      appliedAt: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      ...saved,
-    };
-    inMemoryCandidates = [created, ...inMemoryCandidates.filter((c) => c.email !== cleanEmail)];
-    return created;
-  } catch (err) {
-    if (isCandidateLimitError(err)) {
-      throw err;
-    }
-    console.warn("POST /attempts/candidates attempt:", err?.message);
-  }
-
-  // 3. Fallback in-memory persistence
-  const fallbackCand = {
-    id: `cand-${Date.now()}`,
-    name: cleanName,
-    email: cleanEmail,
-    phone,
-    role: payload?.role || "Applicant",
-    skills: Array.isArray(payload?.skills) ? payload.skills : ["General"],
-    experience: payload?.experience || null,
-    source: "Manual Add",
-    status: "NEW",
-    appliedAt: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-  inMemoryCandidates = [fallbackCand, ...inMemoryCandidates.filter((c) => c.email !== cleanEmail)];
-  return fallbackCand;
 };
 
 /**

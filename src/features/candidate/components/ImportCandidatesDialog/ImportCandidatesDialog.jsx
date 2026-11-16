@@ -109,16 +109,36 @@ const ImportCandidatesDialog = ({ existingCandidates = [] }) => {
         setOpen(false);
       },
       onError: (err) => {
-        const code = err?.response?.data?.code || err?.response?.data?.error?.code || err?.code;
-        const status = err?.response?.status || err?.status;
-        const msg = String(err?.response?.data?.message || err?.message || "").toLowerCase();
+        const code = err?.code || err?.response?.data?.code || err?.response?.data?.error?.code;
+        const status = err?.status || err?.response?.status;
+        const msg = String(err?.message || err?.response?.data?.message || "").toLowerCase();
         const isLimit =
           code === "CANDIDATE_LIMIT_REACHED" ||
           code === "CANDIDATE_LIMIT_EXCEEDED" ||
-          (status === 403 && (msg.includes("candidate limit") || msg.includes("unique candidate limit")));
+          code === "PLAN_LIMIT_EXCEEDED" ||
+          (status === 403 &&
+            (msg.includes("candidate limit") ||
+              msg.includes("unique candidate limit") ||
+              msg.includes("maximum unique candidate") ||
+              msg.includes("upgrade your plan")));
 
         if (isLimit) {
           setOpen(false);
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(
+              new CustomEvent("hirequest:candidate-limit-reached", {
+                detail: {
+                  allowedLimit: err?.details?.allowedLimit || err?.response?.data?.details?.allowedLimit,
+                  currentUsage: err?.details?.currentUsage || err?.response?.data?.details?.currentUsage,
+                  currentPlan: err?.details?.currentPlan || err?.response?.data?.details?.currentPlan,
+                  message: err?.message || err?.response?.data?.message || "Candidate limit reached. Upgrade your plan to import more candidates.",
+                },
+              })
+            );
+          }
+          toast.error("Candidate limit reached! Upgrade your plan to import more candidates.", {
+            description: "You have reached your plan's maximum unique candidate limit.",
+          });
           return;
         }
 

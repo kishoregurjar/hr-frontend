@@ -325,8 +325,27 @@ export default function CompanySettingsPage() {
       toast.success(`Invitation sent to ${inviteEmail} (${inviteRole})`);
       setInviteEmail("");
     } catch (err) {
+      const code = err?.code || err?.response?.data?.code || err?.response?.data?.error?.code;
+      const status = err?.status || err?.response?.status;
       const msg = err?.response?.data?.message || err?.message || "Failed to send invitation.";
-      toast.error(msg);
+      const isSeatLimit =
+        code === "HR_SEATS_LIMIT_EXCEEDED" ||
+        code === "SEAT_LIMIT_REACHED" ||
+        (status === 403 &&
+          (msg.toLowerCase().includes("seat limit") ||
+            msg.toLowerCase().includes("active hr seats") ||
+            msg.toLowerCase().includes("team seat limit")));
+
+      if (isSeatLimit) {
+        toast.error("HR Seat Limit Reached! Upgrade your plan to invite more team members.", {
+          action: {
+            label: "Upgrade Plan",
+            onClick: () => router.push("/company/plans"),
+          },
+        });
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setSendingInvite(false);
     }

@@ -428,6 +428,37 @@ axiosClient.interceptors.response.use(
       );
     }
 
+    const isSeatLimitReached =
+      status === 403 &&
+      (responseData?.code === "HR_SEATS_LIMIT_EXCEEDED" ||
+        responseData?.error?.code === "HR_SEATS_LIMIT_EXCEEDED" ||
+        (typeof message === "string" &&
+          (message.toLowerCase().includes("team seat limit") ||
+            message.toLowerCase().includes("hr seat limit") ||
+            message.toLowerCase().includes("seat limit reached") ||
+            message.toLowerCase().includes("maximum active hr seats"))));
+
+    if (isSeatLimitReached && typeof window !== "undefined") {
+      const details =
+        responseData?.details ||
+        responseData?.error?.details ||
+        {};
+      window.dispatchEvent(
+        new CustomEvent("hirequest:seat-limit-reached", {
+          detail: {
+            currentUsage: details.currentUsage ?? details.current,
+            allowedLimit: details.allowedLimit ?? details.limit,
+            remaining: details.remaining ?? 0,
+            currentPlan: details.currentPlan || "Current Plan",
+            message:
+              typeof message === "string"
+                ? message
+                : "You have reached your HR team seat limit. Upgrade your plan to invite more team members.",
+          },
+        })
+      );
+    }
+
     if (isTokenExpired) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
