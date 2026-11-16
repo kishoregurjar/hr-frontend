@@ -145,18 +145,14 @@ export default function AdminCompanyDetailsPage({ params }) {
 
   const fetchCompanyData = async () => {
     try {
-      const [c, s, o, pList] = await Promise.all([
+      const [c, s, o] = await Promise.all([
         getAdminCompanyDetails(companyId),
         getAdminCompanyStatistics(companyId),
         getAdminCompanyOwner(companyId),
-        getAdminPlans().catch(() => []),
       ]);
       setCompany(c);
       setStats(s);
       setOwner(o);
-      if (Array.isArray(pList) && pList.length > 0) {
-        setPlans(pList);
-      }
     } catch {
       toast.error("Failed to load company details.");
     } finally {
