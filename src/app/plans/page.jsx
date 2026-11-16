@@ -113,14 +113,20 @@ export default function PublicPlansPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const host = window.location.hostname.toLowerCase();
-      const isPlatformRoot = [
-        "localhost",
-        "127.0.0.1",
-        "hirequest.com",
-        "www.hirequest.com",
-        "app.hirequest.com",
-        "admin.hirequest.com",
-      ].includes(host);
+      const configuredRoot = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || "hirequest.com").toLowerCase();
+      const isPlatformRoot =
+        [
+          "localhost",
+          "127.0.0.1",
+          "hirequest.com",
+          "www.hirequest.com",
+          "app.hirequest.com",
+          "admin.hirequest.com",
+          configuredRoot,
+          `www.${configuredRoot}`,
+          `app.${configuredRoot}`,
+          `admin.${configuredRoot}`,
+        ].includes(host) || host.endsWith(".vercel.app");
 
       if (!isPlatformRoot && !host.startsWith("admin.") && !host.startsWith("app.")) {
         setIsTenantDomain(true);
