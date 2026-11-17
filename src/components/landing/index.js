@@ -1,5 +1,8 @@
 export { default as LandingHeader } from "./LandingHeader";
 export { default as HeroSection } from "./HeroSection";
+export { default as HeroConsoleCard } from "./HeroConsoleCard";
+export { default as CyberWaveGrid } from "./CyberWaveGrid";
+export { default as TiltGlowCard } from "./TiltGlowCard";
 export { default as ServicesSection } from "./ServicesSection";
 export { default as PricingSection } from "./PricingSection";
 export { default as AboutSection } from "./AboutSection";

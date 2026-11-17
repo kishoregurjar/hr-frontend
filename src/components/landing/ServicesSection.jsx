@@ -1,4 +1,5 @@
 import { Brain, Gamepad2, ShieldAlert, Zap } from "lucide-react";
+import TiltGlowCard from "./TiltGlowCard";
 
 const services = [
   {
@@ -51,28 +52,36 @@ export default function ServicesSection() {
           {services.map((item, idx) => {
             const Icon = item.icon;
             return (
-              <div
+              <TiltGlowCard
                 key={idx}
-                className="rounded-2xl border bg-card p-5 sm:p-6 shadow-sm hover:shadow-md transition-shadow space-y-4 flex flex-col justify-between"
+                className="min-h-[310px]"
               >
                 <div className="space-y-4">
-                  <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
-                    <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 shadow-sm">
+                    <Icon className="h-6 w-6 transition-transform duration-300 group-hover:scale-110" />
                   </div>
 
                   <div>
-                    <span className="text-[10px] sm:text-[11px] font-semibold text-blue-600 uppercase tracking-wider">
+                    <span className="text-[10px] sm:text-[11px] font-semibold text-blue-600 uppercase tracking-wider group-hover:text-blue-700 transition-colors">
                       {item.tag}
                     </span>
-                    <h3 className="text-base sm:text-lg font-bold text-slate-900 mt-1">
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900 mt-1.5 group-hover:text-blue-600 transition-colors">
                       {item.title}
                     </h3>
-                    <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+                    <p className="mt-2 text-xs text-slate-600 leading-relaxed font-light">
                       {item.description}
                     </p>
                   </div>
                 </div>
-              </div>
+
+                {/* TechTantra Style Learn More + Expanding Dash */}
+                <div className="pt-5 border-t border-slate-100 flex items-center justify-between mt-4">
+                  <span className="text-xs font-semibold text-slate-400 group-hover:text-blue-600 transition-colors">
+                    Learn More
+                  </span>
+                  <span className="w-6 h-0.5 bg-slate-200 group-hover:w-10 group-hover:bg-blue-600 transition-all duration-300 rounded-full" />
+                </div>
+              </TiltGlowCard>
             );
           })}
         </div>

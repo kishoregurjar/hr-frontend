@@ -1,12 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, LayoutDashboard, ShieldCheck } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { ROUTES } from "@/constants";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import hiringHero from "@/assets/illustrations/hiring_hero.png";
+import HeroConsoleCard from "./HeroConsoleCard";
 
 export default function HeroSection() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -17,9 +16,9 @@ export default function HeroSection() {
     user?.email?.toLowerCase()?.includes("admin");
 
   return (
-    <main className="grid gap-8 lg:gap-12 lg:grid-cols-2 items-center min-h-[calc(100vh-140px)] py-8">
+    <main className="relative grid gap-8 lg:gap-12 lg:grid-cols-2 items-center min-h-[calc(100vh-140px)] py-8">
       {/* Left Column */}
-      <div className="space-y-4 sm:space-y-6 max-w-xl">
+      <div className="relative z-10 space-y-4 sm:space-y-6 max-w-xl">
         <h2 className="text-blue-600 text-base sm:text-lg md:text-xl font-bold tracking-wide uppercase">
           Hiring Automation
         </h2>
@@ -87,17 +86,9 @@ export default function HeroSection() {
         </div>
       </div>
 
-      {/* Right Column */}
-      <div className="relative flex justify-center items-center py-4">
-        <div className="relative w-full max-w-md h-[260px] sm:h-[380px] md:h-[400px] drop-shadow-xl hover:scale-102 transition-transform duration-500">
-          <Image
-            src={hiringHero}
-            alt="HR hiring automation team illustration"
-            fill
-            priority
-            className="object-contain"
-          />
-        </div>
+      {/* Right Column: Interactive AI Candidate Telemetry Console (TechTantra Benchmark) */}
+      <div className="relative z-10 flex justify-center items-center py-4 lg:py-6">
+        <HeroConsoleCard />
       </div>
     </main>
   );
