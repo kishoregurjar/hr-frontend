@@ -23,7 +23,7 @@ export default function LandingHeader({
 
   return (
     <>
-      <header className="sticky top-0 z-50 flex items-center justify-between py-2.5 sm:py-3.5 backdrop-blur-md bg-[#e8f2fe]/90 rounded-2xl px-3 sm:px-6 border border-blue-100/60 shadow-sm gap-2">
+      <header className="sticky top-0 z-50 flex items-center justify-between py-2.5 sm:py-3.5 backdrop-blur-md bg-white/85 rounded-2xl px-3 sm:px-6 border border-slate-200/70 shadow-sm gap-2">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-blue-600 text-white font-extrabold text-base sm:text-xl shadow-md">

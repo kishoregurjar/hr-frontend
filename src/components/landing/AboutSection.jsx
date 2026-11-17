@@ -2,7 +2,7 @@ import { CheckCircle2 } from "lucide-react";
 
 export default function AboutSection() {
   return (
-    <section id="about" className="py-14 sm:py-20 bg-[#e8f2fe]/60 border-t border-blue-100">
+    <section id="about" className="py-14 sm:py-20 bg-[#f8fafc] border-t border-slate-200/80">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
         <div className="rounded-3xl border bg-white p-6 sm:p-8 md:p-12 shadow-sm grid gap-8 lg:grid-cols-2 items-center">
           <div className="space-y-4">

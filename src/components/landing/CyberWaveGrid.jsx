@@ -187,7 +187,7 @@ export default function CyberWaveGrid() {
         className="w-full h-full block"
       />
       {/* Smooth bottom transition into page background */}
-      <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-b from-transparent via-[#e8f2fe]/50 to-[#e8f2fe] pointer-events-none" />
+      <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-b from-transparent via-[#f8fafc]/50 to-[#f8fafc] pointer-events-none" />
     </div>
   );
 }
