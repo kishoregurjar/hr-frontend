@@ -92,7 +92,8 @@ export default function ContactSection() {
               </div>
               <div>
                 <h4 className="font-bold text-slate-900 text-xs sm:text-sm">Location</h4>
-                <p className="text-[11px] sm:text-xs text-slate-600 mt-0.5">HireQuest Technologies, Tech Park</p>
+                <p className="text-[11px] sm:text-xs text-slate-600 mt-0.5">2, Annapurna Rd, near Luv kush bakery, Prabhu Nagar, Indore, Madhya Pradesh 452009</p>
+                <p className="text-[11px] text-blue-600 font-semibold mt-1">📞 070009 61866</p>
               </div>
             </div>
           </div>
