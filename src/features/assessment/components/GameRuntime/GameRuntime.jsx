@@ -3,6 +3,16 @@
 import { useState, useEffect, useRef } from "react";
 import { CheckCircle2, Gamepad2, Lock, SkipForward, Clock, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
 import GameReady from "./GameReady";
@@ -135,6 +145,7 @@ const GameRuntime = ({
 
   const existingResult = getGameResult(currentGame, activeGameIndex);
 
+  const [isSkipDialogOpen, setIsSkipDialogOpen] = useState(false);
   const [completedResult, setCompletedResult] = useState(existingResult ?? null);
 
   useEffect(() => {
@@ -451,10 +462,11 @@ const GameRuntime = ({
   };
 
   const handleSkipGame = () => {
-    const isConfirmed = window.confirm(
-      "Are you sure you want to skip this challenge? You will receive 0 marks for this game and proceed to the next challenge."
-    );
-    if (!isConfirmed) return;
+    setIsSkipDialogOpen(true);
+  };
+
+  const confirmSkipGame = () => {
+    setIsSkipDialogOpen(false);
 
     const skippedResult = {
       score: 0,
@@ -625,6 +637,45 @@ const GameRuntime = ({
           onContinue={onComplete}
         />
       )}
+
+      {/* In-DOM Skip Challenge Confirmation Dialog (Never breaks HTML5 Fullscreen API) */}
+      <AlertDialog open={isSkipDialogOpen} onOpenChange={setIsSkipDialogOpen}>
+        <AlertDialogContent className="max-w-md rounded-2xl p-6 border border-slate-200/90 shadow-2xl bg-white">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600 border border-amber-200 shrink-0">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <AlertDialogTitle className="text-base font-extrabold text-slate-900">
+                Skip This Challenge?
+              </AlertDialogTitle>
+            </div>
+
+            <AlertDialogDescription className="text-xs text-slate-600 pt-2.5 leading-relaxed">
+              Are you sure you want to skip <strong className="text-slate-900">{currentGame?.title || "this challenge"}</strong>? You will receive <strong className="text-amber-700">0 marks</strong> for this game and immediately proceed to the next challenge.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter className="pt-4 gap-2">
+            <AlertDialogCancel
+              onClick={() => setIsSkipDialogOpen(false)}
+              className="h-10 px-4 rounded-xl border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 cursor-pointer"
+            >
+              Keep Playing
+            </AlertDialogCancel>
+
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmSkipGame();
+              }}
+              className="h-10 px-5 rounded-xl bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-semibold text-xs shadow-md shadow-amber-500/20 transition-all cursor-pointer"
+            >
+              Yes, Skip Challenge
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
