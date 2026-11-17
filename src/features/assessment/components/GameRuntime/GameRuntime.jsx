@@ -368,10 +368,7 @@ const GameRuntime = ({
       return next;
     });
 
-    // 1. Instant Optimistic UI: Immediately show the completed screen without network lag
-    setCompletedResult(finalResult);
-
-    // 2. Client-side Real-Time Session Storage (Fail-safe persistence)
+    // 1. Client-side Real-Time Session Storage (Fail-safe persistence)
     if (typeof window !== "undefined") {
       try {
         const attemptId = attempt?.id;
@@ -402,7 +399,7 @@ const GameRuntime = ({
       }
     }
 
-    // 3. Background Auto-Save: Silently synchronize result with backend database
+    // 2. Background Auto-Save: Silently synchronize result with backend database
     saveGameResult.mutate(
       {
         attemptId: attempt?.id,
@@ -410,26 +407,47 @@ const GameRuntime = ({
         result: finalResult,
       },
       {
-        onSuccess: (updatedAttempt) => {
-          const res =
-            updatedAttempt?.gameResults?.[saveKey] ||
-            updatedAttempt?.gameResults?.[canonicalKey] ||
-            updatedAttempt?.gameResults?.[targetGame.slug] ||
-            finalResult;
-
-          // Crucial fix: Only set completedResult if candidate is still viewing this completed game
-          setActiveGameIndex((currentIdx) => {
-            if (currentIdx === completedGameIdx) {
-              setCompletedResult(res);
-            }
-            return currentIdx;
-          });
-        },
         onError: (err) => {
           console.warn("[GameRuntime] Background sync warning:", err?.message);
         },
       }
     );
+
+    // 3. Real Assessment Flow (Solution 1: Clean Rules Brief with Zero Score Leakage)
+    const nextIncompleteIdx = games.findIndex((g, i) => i > completedGameIdx && !getGameResult(g, i));
+    const anyIncompleteIdx =
+      nextIncompleteIdx !== -1
+        ? nextIncompleteIdx
+        : games.findIndex((g, i) => i !== completedGameIdx && !getGameResult(g, i));
+
+    if (anyIncompleteIdx !== -1) {
+      const nextGame = games[anyIncompleteIdx];
+      const nextDuration = Math.round(
+        Number(nextGame.durationSeconds || (nextGame.durationMinutes || nextGame.duration || 3.5) * 60)
+      );
+
+      toast.success(`Challenge submitted! Opening rules for ${nextGame.title || "next challenge"}...`, {
+        duration: 2000,
+      });
+
+      // Switch active game index to next challenge
+      setActiveGameIndex(anyIncompleteIdx);
+      onActiveGameChange?.(anyIncompleteIdx);
+      setCompletedResult(null);
+      setGameTimeRemaining(nextDuration);
+
+      // Clean Rules Brief (GameReady): Game timer remains paused while candidate reads the rules.
+      // When candidate clicks "Start Game Challenge", handleStart will launch active gameplay.
+    } else {
+      // All cognitive challenges in this module are completed!
+      setCompletedResult(finalResult);
+      toast.success("Cognitive games module completed! Transitioning to next section...", {
+        duration: 2000,
+      });
+      setTimeout(() => {
+        onComplete?.();
+      }, 1500);
+    }
   };
 
   const handleSkipGame = () => {
@@ -454,40 +472,20 @@ const GameRuntime = ({
   };
 
   const handleNextGame = () => {
-    if (activeGameIndex < games.length - 1) {
-      const nextIdx = games.findIndex((g, i) => i > activeGameIndex && !getGameResult(g, i));
-      if (nextIdx !== -1) {
-        const nextGame = games[nextIdx];
-        const nextExisting = getGameResult(nextGame, nextIdx);
-        setActiveGameIndex(nextIdx);
-        setCompletedResult(nextExisting ?? null);
-        const nextDuration = (nextGame.durationMinutes || nextGame.duration || 10) * 60;
-        setGameTimeRemaining(nextDuration);
-      } else {
-        const anyIncompleteIdx = games.findIndex((g, i) => !getGameResult(g, i));
-        if (anyIncompleteIdx !== -1) {
-          const nextGame = games[anyIncompleteIdx];
-          const nextExisting = getGameResult(nextGame, anyIncompleteIdx);
-          setActiveGameIndex(anyIncompleteIdx);
-          setCompletedResult(nextExisting ?? null);
-          const nextDuration = (nextGame.durationMinutes || nextGame.duration || 10) * 60;
-          setGameTimeRemaining(nextDuration);
-        } else {
-          onComplete?.();
-        }
-      }
+    const nextIdx = games.findIndex((g, i) => i > activeGameIndex && !getGameResult(g, i));
+    const targetIdx = nextIdx !== -1 ? nextIdx : games.findIndex((g, i) => !getGameResult(g, i));
+
+    if (targetIdx !== -1) {
+      const nextGame = games[targetIdx];
+      const nextExisting = getGameResult(nextGame, targetIdx);
+      const nextDuration = (nextGame.durationMinutes || nextGame.duration || 10) * 60;
+
+      setActiveGameIndex(targetIdx);
+      onActiveGameChange?.(targetIdx);
+      setCompletedResult(nextExisting ?? null);
+      setGameTimeRemaining(nextDuration);
     } else {
-      const anyIncompleteIdx = games.findIndex((g, i) => !getGameResult(g, i));
-      if (anyIncompleteIdx !== -1) {
-        const nextGame = games[anyIncompleteIdx];
-        const nextExisting = getGameResult(nextGame, anyIncompleteIdx);
-        setActiveGameIndex(anyIncompleteIdx);
-        setCompletedResult(nextExisting ?? null);
-        const nextDuration = (nextGame.durationMinutes || nextGame.duration || 10) * 60;
-        setGameTimeRemaining(nextDuration);
-      } else {
-        onComplete?.();
-      }
+      onComplete?.();
     }
   };
 

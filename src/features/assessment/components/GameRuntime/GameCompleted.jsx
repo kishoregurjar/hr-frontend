@@ -1,4 +1,4 @@
-import { CheckCircle2, Trophy, Target, ArrowRight, Gamepad2, Sparkles, SkipForward } from "lucide-react";
+import { CheckCircle2, Trophy, Target, ArrowRight, Gamepad2, Sparkles, SkipForward, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const GameCompleted = ({
@@ -71,26 +71,14 @@ const GameCompleted = ({
       </div>
 
       {result && (
-        <div className="mx-auto grid max-w-sm grid-cols-2 gap-4">
-          <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-4 space-y-1 text-center shadow-2xs">
-            <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              <Trophy className="h-3.5 w-3.5 text-amber-500" />
-              <span>Score</span>
-            </div>
-            <p className="text-2xl font-black text-slate-900">
-              {result.score != null ? result.score : 100}
-            </p>
+        <div className="mx-auto max-w-sm rounded-2xl border border-emerald-200/80 bg-emerald-50/50 p-4 space-y-1.5 text-center shadow-2xs">
+          <div className="flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700">
+            <ShieldCheck className="h-4 w-4 text-emerald-600" />
+            <span>Response Recorded</span>
           </div>
-
-          <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-4 space-y-1 text-center shadow-2xs">
-            <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              <Target className="h-3.5 w-3.5 text-indigo-600" />
-              <span>Accuracy</span>
-            </div>
-            <p className="text-2xl font-black text-slate-900">
-              {result.accuracy != null ? `${result.accuracy}%` : "100%"}
-            </p>
-          </div>
+          <p className="text-xs text-slate-500 font-medium leading-relaxed">
+            Evaluation telemetry has been secured and sent directly to the HR evaluation dashboard.
+          </p>
         </div>
       )}
 

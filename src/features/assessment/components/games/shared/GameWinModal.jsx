@@ -16,7 +16,15 @@ export default function GameWinModal({
   isSandbox = false,
   children,
 }) {
-  if (!isOpen) return null;
+  // In live candidate assessment: immediately auto-continue without showing modal or leaking scores!
+  React.useEffect(() => {
+    if (isOpen && !isSandbox && typeof onContinue === "function") {
+      onContinue();
+    }
+  }, [isOpen, isSandbox, onContinue]);
+
+  // Only render modal in sandbox / builder preview mode
+  if (!isOpen || !isSandbox) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in-0 duration-200">
