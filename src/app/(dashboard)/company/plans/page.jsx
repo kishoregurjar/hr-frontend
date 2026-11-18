@@ -756,27 +756,48 @@ export default function CompanyPlansPage() {
                       {/* Quota Limits (Strictly 3 limits only) */}
                       <div className="space-y-2 mb-4">
                         <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">
-                          Included Quotas
+                          {isDemo ? "Trial Privileges" : "Included Quotas"}
                         </span>
 
                         <div className="flex items-center gap-2 text-[11px] text-slate-700">
                           <UserCheck className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
                           <span>
-                            <strong>{plan.seatLimit !== null && plan.seatLimit !== undefined ? `${plan.seatLimit} Active` : "Tailored"}</strong> HR Seats <span className="text-slate-400 text-[10px]">(Owner free)</span>
+                            <strong>
+                              {isDemo
+                                ? "Unlimited"
+                                : plan.seatLimit !== null && plan.seatLimit !== undefined
+                                ? `${plan.seatLimit} Active`
+                                : "Tailored"}
+                            </strong>{" "}
+                            HR Seats <span className="text-slate-400 text-[10px]">(Owner free)</span>
                           </span>
                         </div>
 
                         <div className="flex items-center gap-2 text-[11px] text-slate-700">
                           <Users className="h-3.5 w-3.5 text-blue-600 shrink-0" />
                           <span>
-                            <strong>{plan.candidateLimit !== null && plan.candidateLimit !== undefined ? Number(plan.candidateLimit).toLocaleString() : "Tailored"}</strong> Lifetime Candidates
+                            <strong>
+                              {isDemo
+                                ? "Unlimited"
+                                : plan.candidateLimit !== null && plan.candidateLimit !== undefined
+                                ? Number(plan.candidateLimit).toLocaleString()
+                                : "Tailored"}
+                            </strong>{" "}
+                            Lifetime Candidates
                           </span>
                         </div>
 
                         <div className="flex items-center gap-2 text-[11px] text-slate-700">
                           <Send className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
                           <span>
-                            <strong>{plan.inviteLimit !== null && plan.inviteLimit !== undefined ? Number(plan.inviteLimit).toLocaleString() : "Custom"}</strong> Assessment Invites/mo
+                            <strong>
+                              {isDemo
+                                ? "Unlimited"
+                                : plan.inviteLimit !== null && plan.inviteLimit !== undefined
+                                ? Number(plan.inviteLimit).toLocaleString()
+                                : "Custom"}
+                            </strong>{" "}
+                            Assessment Invites/mo
                           </span>
                         </div>
 

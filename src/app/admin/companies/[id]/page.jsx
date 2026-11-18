@@ -996,8 +996,11 @@ export default function AdminCompanyDetailsPage({ params }) {
                       if (isEnterprise) {
                         label = `${p.name} (Custom Quotas configured below)`;
                       } else if (isDemo) {
-                        const trialDays = p.durationDays || 7;
-                        label = `${p.name} (${trialDays}-day trial: ${p.seatLimit ?? 2} HR seats, ${p.candidateLimit ?? 20} candidates, ${p.inviteLimit ?? 10} invites/mo)`;
+                        const trialDays = p.durationDays || 30;
+                        const seatPart = p.seatLimit ? `${p.seatLimit} HR seats` : "Unlimited HR seats";
+                        const candPart = p.candidateLimit ? `${p.candidateLimit} candidates` : "Unlimited candidates";
+                        const invitePart = p.inviteLimit ? `${p.inviteLimit} invites/mo` : "Unlimited invites/mo";
+                        label = `${p.name} (${trialDays}-day trial: ${seatPart}, ${candPart}, ${invitePart})`;
                       } else {
                         const seatPart = p.seatLimit !== null ? `${p.seatLimit} HR seats` : "Unlimited seats";
                         const candPart = p.candidateLimit !== null ? `${p.candidateLimit.toLocaleString("en-IN")} candidates` : "Unlimited candidates";
@@ -1013,7 +1016,7 @@ export default function AdminCompanyDetailsPage({ params }) {
                     })
                   ) : (
                     <>
-                      <option value="DEMO">Demo (30-day trial: 2 HR seats, 20 candidates, 10 invites/mo)</option>
+                      <option value="DEMO">Demo (30-day trial: Unlimited HR seats, Unlimited candidates, Unlimited invites/mo)</option>
                       <option value="STARTER">Starter (2 HR seats, 200 candidates, 50 invites/mo)</option>
                       <option value="GROWTH">Growth (5 HR seats, 1,000 candidates, 300 invites/mo)</option>
                       <option value="BUSINESS">Business (15 HR seats, 5,000 candidates, 1,000 invites/mo)</option>

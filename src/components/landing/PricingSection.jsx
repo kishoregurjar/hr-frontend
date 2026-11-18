@@ -25,12 +25,12 @@ const DEFAULT_PLANS = [
     id: "demo",
     code: "DEMO",
     name: "Demo Plan",
-    description: "30-day free trial with standard feature access for evaluation.",
+    description: "30-day free trial with unlimited feature access for evaluation.",
     monthlyPrice: 0,
     yearlyPrice: 0,
-    seatLimit: 1,
-    candidateLimit: 5,
-    inviteLimit: 5,
+    seatLimit: null,
+    candidateLimit: null,
+    inviteLimit: null,
     durationDays: 30,
     isTrial: true,
     isCustom: false,
@@ -364,13 +364,20 @@ export default function PricingSection({ handleScrollTo }) {
                     {/* Exact Compact Quotas Display Matching User Screenshot */}
                     <div className="space-y-2 mb-4">
                       <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">
-                        Enforced Limits
+                        {isDemo ? "Trial Privileges" : "Enforced Limits"}
                       </span>
 
                       <div className="flex items-center gap-2 text-[11px] text-slate-700">
                         <UserCheck className="h-3.5 w-3.5 text-blue-600 shrink-0" />
                         <span>
-                          <strong>{plan.seatLimit !== null && plan.seatLimit !== undefined ? `${plan.seatLimit} Active` : "Tailored"}</strong> HR Seats{" "}
+                          <strong>
+                            {isDemo
+                              ? "Unlimited"
+                              : plan.seatLimit !== null && plan.seatLimit !== undefined
+                              ? `${plan.seatLimit} Active`
+                              : "Tailored"}
+                          </strong>{" "}
+                          HR Seats{" "}
                           <span className="text-slate-400 text-[10px]">(Owner free)</span>
                         </span>
                       </div>
@@ -378,21 +385,35 @@ export default function PricingSection({ handleScrollTo }) {
                       <div className="flex items-center gap-2 text-[11px] text-slate-700">
                         <Users className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
                         <span>
-                          <strong>{plan.candidateLimit !== null && plan.candidateLimit !== undefined ? Number(plan.candidateLimit).toLocaleString() : "Tailored"}</strong> Lifetime Candidates
+                          <strong>
+                            {isDemo
+                              ? "Unlimited"
+                              : plan.candidateLimit !== null && plan.candidateLimit !== undefined
+                              ? Number(plan.candidateLimit).toLocaleString()
+                              : "Tailored"}
+                          </strong>{" "}
+                          Lifetime Candidates
                         </span>
                       </div>
 
                       <div className="flex items-center gap-2 text-[11px] text-slate-700">
                         <Send className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
                         <span>
-                          <strong>{plan.inviteLimit !== null && plan.inviteLimit !== undefined ? Number(plan.inviteLimit).toLocaleString() : "Custom"}</strong> Assessment Invites/mo
+                          <strong>
+                            {isDemo
+                              ? "Unlimited"
+                              : plan.inviteLimit !== null && plan.inviteLimit !== undefined
+                              ? Number(plan.inviteLimit).toLocaleString()
+                              : "Custom"}
+                          </strong>{" "}
+                          Assessment Invites/mo
                         </span>
                       </div>
 
                       <div className="flex items-center gap-2 text-[11px] text-slate-700 pt-0.5">
                         <Zap className="h-3.5 w-3.5 text-amber-500 shrink-0" />
                         <span className="text-slate-600 font-medium truncate">
-                          5 Cognitive Games included
+                          {isDemo ? "All Cognitive Games included" : "5 Cognitive Games included"}
                         </span>
                       </div>
                     </div>

@@ -352,20 +352,20 @@ function AdminPlansContent() {
                       <td className="py-4 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-1.5 font-medium text-slate-800">
                           <UserCheck className="h-4 w-4 text-slate-400" />
-                          <span>{plan.seatLimit} seats</span>
+                          <span>{plan.seatLimit !== null && plan.seatLimit !== undefined ? `${plan.seatLimit} seats` : "Unlimited"}</span>
                         </div>
                         <span className="text-[11px] text-slate-400">(Owner free)</span>
                       </td>
                       <td className="py-4 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-1.5 font-medium text-slate-800">
                           <Users className="h-4 w-4 text-slate-400" />
-                          <span>{Number(plan.candidateLimit).toLocaleString()} lifetime</span>
+                          <span>{plan.candidateLimit !== null && plan.candidateLimit !== undefined ? `${Number(plan.candidateLimit).toLocaleString()} lifetime` : "Unlimited"}</span>
                         </div>
                       </td>
                       <td className="py-4 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-1.5 font-medium text-slate-800">
                           <Send className="h-4 w-4 text-slate-400" />
-                          <span>{Number(plan.inviteLimit).toLocaleString()} / month</span>
+                          <span>{plan.inviteLimit !== null && plan.inviteLimit !== undefined ? `${Number(plan.inviteLimit).toLocaleString()} / month` : "Unlimited"}</span>
                         </div>
                       </td>
                       <td className="py-4 px-4 whitespace-nowrap font-medium text-slate-700">

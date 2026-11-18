@@ -738,9 +738,9 @@ export default function AdminTrialRequestsPage() {
                 <div className="pt-2 border-t border-emerald-200/80 text-[11px] text-emerald-900 space-y-1">
                   <div className="font-bold uppercase tracking-wider text-[10px] text-emerald-700">Entitlements Provisioned:</div>
                   <ul className="list-disc pl-4 space-y-0.5">
-                    <li><strong>{demoPlan?.seatLimit ?? 2} Active HR Seats</strong> (Owner always included)</li>
-                    <li><strong>{demoPlan?.candidateLimit ?? 20} Lifetime Candidates</strong> pool</li>
-                    <li><strong>{demoPlan?.inviteLimit ?? 10} Monthly Assessment Invites</strong></li>
+                    <li><strong>{demoPlan?.seatLimit ? `${demoPlan.seatLimit} Active HR Seats` : "Unlimited HR Seats"}</strong> (Owner always included)</li>
+                    <li><strong>{demoPlan?.candidateLimit ? `${demoPlan.candidateLimit} Lifetime Candidates` : "Unlimited Lifetime Candidates"}</strong> pool</li>
+                    <li><strong>{demoPlan?.inviteLimit ? `${demoPlan.inviteLimit} Monthly Assessment Invites` : "Unlimited Monthly Assessment Invites"}</strong></li>
                     <li><strong>{demoPlan?.durationDays ? `${demoPlan.durationDays * 24} Hours (${demoPlan.durationDays} Days)` : "720 Hours (30 Days)"}</strong> duration from approval moment</li>
                   </ul>
                 </div>

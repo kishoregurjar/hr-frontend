@@ -31,12 +31,12 @@ const DEFAULT_PLANS = [
     id: "demo",
     code: "DEMO",
     name: "Demo Plan",
-    description: "30-day free trial with standard feature access for evaluation.",
+    description: "30-day free trial with unlimited feature access for evaluation.",
     monthlyPrice: 0,
     yearlyPrice: 0,
-    seatLimit: 2,
-    candidateLimit: 20,
-    inviteLimit: 10,
+    seatLimit: null,
+    candidateLimit: null,
+    inviteLimit: null,
     durationDays: 30,
     isTrial: true,
     isCustom: false,
@@ -348,13 +348,20 @@ export default function PublicPlansPage() {
                     {/* Strict 3 Quotas Display */}
                     <div className="space-y-3.5 mb-6">
                       <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
-                        Included Quotas
+                        {isDemo ? "Trial Privileges" : "Included Quotas"}
                       </span>
 
                       <div className="flex items-start gap-2.5 text-xs text-slate-700">
                         <UserCheck className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
                         <span>
-                          <strong>{plan.seatLimit !== null && plan.seatLimit !== undefined ? `${plan.seatLimit} Active` : "Tailored"}</strong> HR Seats
+                          <strong>
+                            {isDemo
+                              ? "Unlimited"
+                              : plan.seatLimit !== null && plan.seatLimit !== undefined
+                              ? `${plan.seatLimit} Active`
+                              : "Tailored"}
+                          </strong>{" "}
+                          HR Seats
                           <span className="text-slate-400 block text-[11px] font-medium">
                             (Owner seat is always free)
                           </span>
@@ -364,7 +371,14 @@ export default function PublicPlansPage() {
                       <div className="flex items-start gap-2.5 text-xs text-slate-700">
                         <Users className="h-4 w-4 text-indigo-600 shrink-0 mt-0.5" />
                         <span>
-                          <strong>{plan.candidateLimit !== null && plan.candidateLimit !== undefined ? Number(plan.candidateLimit).toLocaleString() : "Tailored"}</strong> Lifetime Candidates
+                          <strong>
+                            {isDemo
+                              ? "Unlimited"
+                              : plan.candidateLimit !== null && plan.candidateLimit !== undefined
+                              ? Number(plan.candidateLimit).toLocaleString()
+                              : "Tailored"}
+                          </strong>{" "}
+                          Lifetime Candidates
                           <span className="text-slate-400 block text-[11px]">in unified talent pool</span>
                         </span>
                       </div>
@@ -372,7 +386,14 @@ export default function PublicPlansPage() {
                       <div className="flex items-start gap-2.5 text-xs text-slate-700">
                         <Send className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
                         <span>
-                          <strong>{plan.inviteLimit !== null && plan.inviteLimit !== undefined ? Number(plan.inviteLimit).toLocaleString() : "Custom"}</strong> Assessment Invites
+                          <strong>
+                            {isDemo
+                              ? "Unlimited"
+                              : plan.inviteLimit !== null && plan.inviteLimit !== undefined
+                              ? Number(plan.inviteLimit).toLocaleString()
+                              : "Custom"}
+                          </strong>{" "}
+                          Assessment Invites
                           <span className="text-slate-400 block text-[11px]">dispatched per month</span>
                         </span>
                       </div>
@@ -380,7 +401,7 @@ export default function PublicPlansPage() {
                       <div className="flex items-start gap-2.5 text-xs text-slate-700 pt-1">
                         <Zap className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                         <span className="text-slate-600 font-medium">
-                          All 5 cognitive games & full feature access
+                          {isDemo ? "All 5 cognitive games & full unlimited access" : "All 5 cognitive games & full feature access"}
                         </span>
                       </div>
                     </div>

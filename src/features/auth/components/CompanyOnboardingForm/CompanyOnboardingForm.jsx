@@ -162,9 +162,9 @@ export default function CompanyOnboardingForm() {
       code: selectedPlanCode,
       monthlyPrice: selectedPlanCode === "DEMO" ? 0 : selectedPlanCode === "GROWTH" ? 999 : selectedPlanCode === "BUSINESS" ? 2499 : 499,
       yearlyPrice: selectedPlanCode === "DEMO" ? 0 : selectedPlanCode === "GROWTH" ? 9990 : selectedPlanCode === "BUSINESS" ? 24990 : 4990,
-      seatLimit: selectedPlanCode === "DEMO" ? 2 : selectedPlanCode === "GROWTH" ? 5 : selectedPlanCode === "BUSINESS" ? 15 : 2,
-      candidateLimit: selectedPlanCode === "DEMO" ? 20 : selectedPlanCode === "GROWTH" ? 1000 : selectedPlanCode === "BUSINESS" ? 5000 : 200,
-      inviteLimit: selectedPlanCode === "DEMO" ? 10 : selectedPlanCode === "GROWTH" ? 300 : selectedPlanCode === "BUSINESS" ? 1000 : 50,
+      seatLimit: selectedPlanCode === "DEMO" ? null : selectedPlanCode === "GROWTH" ? 5 : selectedPlanCode === "BUSINESS" ? 15 : 2,
+      candidateLimit: selectedPlanCode === "DEMO" ? null : selectedPlanCode === "GROWTH" ? 1000 : selectedPlanCode === "BUSINESS" ? 5000 : 200,
+      inviteLimit: selectedPlanCode === "DEMO" ? null : selectedPlanCode === "GROWTH" ? 300 : selectedPlanCode === "BUSINESS" ? 1000 : 50,
       isTrial: selectedPlanCode === "DEMO",
     };
 
@@ -698,7 +698,14 @@ export default function CompanyOnboardingForm() {
                   <UserCheck className="h-3 w-3" />
                 </div>
                 <span className="text-[11px]">
-                  <strong className="text-slate-900 font-bold">{activePlan.seatLimit} Active HR Seats</strong>
+                  <strong className="text-slate-900 font-bold">
+                    {isDemo
+                      ? "Unlimited"
+                      : activePlan.seatLimit !== null && activePlan.seatLimit !== undefined
+                      ? `${activePlan.seatLimit} Active`
+                      : "Tailored"}{" "}
+                    HR Seats
+                  </strong>
                   <span className="text-slate-400 text-[10px] ml-1">(Owner free)</span>
                 </span>
               </div>
@@ -708,7 +715,14 @@ export default function CompanyOnboardingForm() {
                   <Users className="h-3 w-3" />
                 </div>
                 <span className="text-[11px]">
-                  <strong className="text-slate-900 font-bold">{Number(activePlan.candidateLimit).toLocaleString()}</strong> Lifetime Candidates Pool
+                  <strong className="text-slate-900 font-bold">
+                    {isDemo
+                      ? "Unlimited"
+                      : activePlan.candidateLimit !== null && activePlan.candidateLimit !== undefined
+                      ? Number(activePlan.candidateLimit).toLocaleString()
+                      : "Tailored"}
+                  </strong>{" "}
+                  Lifetime Candidates Pool
                 </span>
               </div>
 
@@ -717,7 +731,14 @@ export default function CompanyOnboardingForm() {
                   <Send className="h-3 w-3" />
                 </div>
                 <span className="text-[11px]">
-                  <strong className="text-slate-900 font-bold">{Number(activePlan.inviteLimit).toLocaleString()}</strong> Assessment Invites / month
+                  <strong className="text-slate-900 font-bold">
+                    {isDemo
+                      ? "Unlimited"
+                      : activePlan.inviteLimit !== null && activePlan.inviteLimit !== undefined
+                      ? Number(activePlan.inviteLimit).toLocaleString()
+                      : "Custom"}
+                  </strong>{" "}
+                  Assessment Invites / month
                 </span>
               </div>
 
