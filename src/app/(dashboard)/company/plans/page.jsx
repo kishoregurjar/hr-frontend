@@ -158,7 +158,7 @@ export default function CompanyPlansPage() {
     setStartingTrial(true);
     try {
       await startDemoTrial();
-      toast.success("🚀 7-Day Demo Trial started! Enjoy full platform capabilities.");
+      toast.success("🚀 30-Day Demo Trial started! Enjoy full platform capabilities.");
       await loadData();
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to activate trial.");
@@ -474,7 +474,7 @@ export default function CompanyPlansPage() {
                 </Badge>
                 {activeSub?.isTrial && (
                   <Badge className="bg-amber-50 text-amber-700 border-amber-200 font-bold">
-                    7-Day Demo Trial
+                    {activeSub?.durationDays ? `${activeSub.durationDays}-Day Demo Trial` : "30-Day Demo Trial"}
                   </Badge>
                 )}
               </div>
@@ -540,7 +540,7 @@ export default function CompanyPlansPage() {
                 Billing Cycle
               </span>
               <span className="font-semibold text-slate-800 text-sm block capitalize">
-                {billingCycleDisplay || (currentPlanCode === "DEMO" ? "7-Day Trial" : "Monthly")}
+                {billingCycleDisplay || (currentPlanCode === "DEMO" ? (activeSub?.durationDays ? `${activeSub.durationDays}-Day Trial` : "30-Day Trial") : "Monthly")}
               </span>
             </div>
           </div>
@@ -734,7 +734,7 @@ export default function CompanyPlansPage() {
                         {isDemo ? (
                           <div>
                             <span className="text-2xl sm:text-3xl font-black text-slate-900">₹0</span>
-                            <span className="text-[11px] text-slate-500 ml-1 font-medium">/ 7 days</span>
+                            <span className="text-[11px] text-slate-500 ml-1 font-medium">/ {plan.durationDays ? `${plan.durationDays} days` : "30 days"}</span>
                           </div>
                         ) : isEnterprise ? (
                           <div>
@@ -804,7 +804,7 @@ export default function CompanyPlansPage() {
                           ) : !isOwner ? (
                             "Owner Only"
                           ) : (
-                            "Start 7-Day Free Trial"
+                            "Start 30-Day Free Trial"
                           )}
                         </Button>
                       ) : isEnterprise ? (

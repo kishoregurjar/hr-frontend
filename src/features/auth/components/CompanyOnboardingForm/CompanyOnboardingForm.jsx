@@ -494,7 +494,7 @@ export default function CompanyOnboardingForm() {
             <span className="font-semibold">Evaluation Tier</span>
             <span className="inline-flex items-center gap-1 font-bold text-amber-700">
               <Sparkles className="h-3.5 w-3.5" />
-              Demo Plan (7-Day Free Trial)
+              Demo Plan (30-Day Free Trial)
             </span>
           </div>
           <div className="flex justify-between items-center text-slate-600 pb-2 border-b border-slate-200/60">
@@ -610,7 +610,7 @@ export default function CompanyOnboardingForm() {
                 {activePlan.name}
               </span>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                7-Day Trial
+                30-Day Trial
               </span>
             </div>
 
@@ -632,7 +632,7 @@ export default function CompanyOnboardingForm() {
                     <div className="flex items-baseline gap-2">
                       <span className="text-3xl font-black text-slate-900 tracking-tight">₹0</span>
                       <span className="text-[11px] font-extrabold text-amber-700 uppercase tracking-wide bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-                        7-Day Free Trial
+                        30-Day Free Trial
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-500 mt-1">
@@ -1171,7 +1171,7 @@ export default function CompanyOnboardingForm() {
               {/* Supporting text directly below button */}
               <p className="text-[11px] text-slate-500 text-center leading-relaxed">
                 {isDemo
-                  ? "Your application will be reviewed by the HireQuest team. Your 7-day trial starts after approval."
+                  ? "Your application will be reviewed by the HireQuest team. Your 30-day trial starts after approval."
                   : "Your isolated recruiter workspace is provisioned immediately upon verified payment."}
               </p>
 

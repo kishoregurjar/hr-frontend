@@ -25,12 +25,13 @@ const DEFAULT_PLANS = [
     id: "demo",
     code: "DEMO",
     name: "Demo Plan",
-    description: "7-day free trial with standard feature access for evaluation.",
+    description: "30-day free trial with standard feature access for evaluation.",
     monthlyPrice: 0,
     yearlyPrice: 0,
     seatLimit: 1,
     candidateLimit: 5,
     inviteLimit: 5,
+    durationDays: 30,
     isTrial: true,
     isCustom: false,
     tag: "Free Trial",
@@ -306,7 +307,7 @@ export default function PricingSection({ handleScrollTo }) {
                       <h3 className="text-base font-extrabold text-slate-900 truncate">{plan.name}</h3>
                       {isDemo && (
                         <Badge className="bg-amber-100 text-amber-800 border-none text-[9px] font-bold px-1.5 py-0">
-                          7-Day Trial
+                          {plan.durationDays ? `${plan.durationDays}-Day Trial` : "30-Day Trial"}
                         </Badge>
                       )}
                       {isEnterprise && (
@@ -326,7 +327,7 @@ export default function PricingSection({ handleScrollTo }) {
                         <div>
                           <div className="flex items-baseline gap-1">
                             <span className="text-2xl sm:text-3xl font-black text-slate-900">₹0</span>
-                            <span className="text-[11px] text-slate-500 font-medium">/ 7 days</span>
+                            <span className="text-[11px] text-slate-500 font-medium">/ {plan.durationDays ? `${plan.durationDays} days` : "30 days"}</span>
                           </div>
                           <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">
                             No credit card required

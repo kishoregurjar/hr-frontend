@@ -19,7 +19,7 @@ export const getCurrentSubscription = async () => {
 };
 
 /**
- * 3. Start Free 7-Day Demo Trial (Company Owner only, single-use per lifetime)
+ * 3. Start Free 30-Day Demo Trial (Company Owner only, single-use per lifetime)
  * POST /api/v1/subscriptions/demo/start
  */
 export const startDemoTrial = async () => {
@@ -57,7 +57,7 @@ export const getPaymentHistory = async () => {
 };
 
 /**
- * 7. Public Visitor Demo Onboarding: Create company & owner with 7-Day Free Trial
+ * 7. Public Visitor Demo Onboarding: Create company & owner with 30-Day Free Trial
  * POST /api/v1/plans/register-demo
  */
 export const registerDemoOnboarding = async (payload) => {

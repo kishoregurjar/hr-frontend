@@ -217,7 +217,7 @@ export default function AdminTrialRequestsPage() {
                 Demo Trial Requests
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                Review visitor trial applications, evaluate domain authenticity, and authorize 7-day workspaces.
+                Review visitor trial applications, evaluate domain authenticity, and authorize 30-day workspaces.
               </p>
             </div>
           </div>
@@ -721,7 +721,7 @@ export default function AdminTrialRequestsPage() {
               <span>Approve Demo Trial Application</span>
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
-              This action will provision the company workspace, create the owner account, and start the 7-day timer.
+              This action will provision the company workspace, create the owner account, and start the 30-day timer.
             </DialogDescription>
           </DialogHeader>
 
@@ -741,7 +741,7 @@ export default function AdminTrialRequestsPage() {
                     <li><strong>{demoPlan?.seatLimit ?? 2} Active HR Seats</strong> (Owner always included)</li>
                     <li><strong>{demoPlan?.candidateLimit ?? 20} Lifetime Candidates</strong> pool</li>
                     <li><strong>{demoPlan?.inviteLimit ?? 10} Monthly Assessment Invites</strong></li>
-                    <li><strong>{demoPlan?.durationDays ? `${demoPlan.durationDays * 24} Hours (${demoPlan.durationDays} Days)` : "168 Hours (7 Days)"}</strong> duration from approval moment</li>
+                    <li><strong>{demoPlan?.durationDays ? `${demoPlan.durationDays * 24} Hours (${demoPlan.durationDays} Days)` : "720 Hours (30 Days)"}</strong> duration from approval moment</li>
                   </ul>
                 </div>
               </div>

@@ -776,7 +776,7 @@ function AdminCompaniesContent() {
                       })
                     ) : (
                       <>
-                        <option value="DEMO">Demo (7-day trial: 2 HR seats, 20 candidates, 10 invites/mo)</option>
+                        <option value="DEMO">Demo (30-day trial: 2 HR seats, 20 candidates, 10 invites/mo)</option>
                         <option value="STARTER">Starter (2 HR seats, 200 candidates, 50 invites/mo)</option>
                         <option value="GROWTH">Growth (5 HR seats, 1,000 candidates, 300 invites/mo)</option>
                         <option value="BUSINESS">Business (15 HR seats, 5,000 candidates, 1,000 invites/mo)</option>

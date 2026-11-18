@@ -509,7 +509,7 @@ export default function AdminCompanyDetailsPage({ params }) {
                 {company.activeSubscription?.billingCycle
                   ? `${company.activeSubscription.billingCycle.toLowerCase()}`
                   : company.plan === "DEMO"
-                  ? "7-Day Trial"
+                  ? "30-Day Trial"
                   : "Standard"}
               </p>
               <p className="text-[10.5px] text-slate-400">
@@ -556,10 +556,10 @@ export default function AdminCompanyDetailsPage({ params }) {
                 <Clock className="h-5 w-5 text-purple-600 shrink-0" />
                 <div>
                   <p className="text-xs font-bold text-purple-900">
-                    7-Day Fixed Duration Demo Trial
+                    30-Day Fixed Duration Demo Trial
                   </p>
                   <p className="text-[11px] text-purple-700">
-                    {company.demoRemaining?.formatted || "7-day trial active from initial plan assignment."}
+                    {company.demoRemaining?.formatted || "30-day trial active from initial plan assignment."}
                   </p>
                 </div>
               </div>
@@ -1013,7 +1013,7 @@ export default function AdminCompanyDetailsPage({ params }) {
                     })
                   ) : (
                     <>
-                      <option value="DEMO">Demo (7-day trial: 2 HR seats, 20 candidates, 10 invites/mo)</option>
+                      <option value="DEMO">Demo (30-day trial: 2 HR seats, 20 candidates, 10 invites/mo)</option>
                       <option value="STARTER">Starter (2 HR seats, 200 candidates, 50 invites/mo)</option>
                       <option value="GROWTH">Growth (5 HR seats, 1,000 candidates, 300 invites/mo)</option>
                       <option value="BUSINESS">Business (15 HR seats, 5,000 candidates, 1,000 invites/mo)</option>
@@ -1097,7 +1097,7 @@ export default function AdminCompanyDetailsPage({ params }) {
                 <div className="p-3.5 rounded-xl bg-purple-50 border border-purple-200 text-purple-900 text-xs flex items-start gap-2.5">
                   <Clock className="h-4 w-4 text-purple-600 shrink-0 mt-0.5" />
                   <span>
-                    Assigning the Demo plan will automatically set a fixed 7-day expiration countdown (168 hours from now). When expired, company access will be automatically blocked.
+                    Assigning the Demo plan will automatically set a fixed 30-day expiration countdown (720 hours from now). When expired, company access will be automatically blocked.
                   </span>
                 </div>
               )}
