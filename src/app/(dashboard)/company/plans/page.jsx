@@ -298,26 +298,62 @@ export default function CompanyPlansPage() {
     : null;
 
   // Actual quota limits from snapshot or current plan
+  // If current plan is Demo Trial or Enterprise without custom limits, quotas are completely unlimited (null)
+  const isCurrentPlanDemo = currentPlanCode === "DEMO" || Boolean(activeSub?.isTrial);
+
+  const rawSeatLimit =
+    activeSub?.seatLimit !== undefined
+      ? activeSub.seatLimit
+      : subscriptionData?.usage?.hrSeats?.limit !== undefined
+      ? subscriptionData.usage.hrSeats.limit
+      : subscriptionData?.effectiveLimits?.seatLimit !== undefined
+      ? subscriptionData.effectiveLimits.seatLimit
+      : subscriptionData?.limits?.hrSeats !== undefined
+      ? subscriptionData.limits.hrSeats
+      : undefined;
+
   const seatLimit =
-    activeSub?.seatLimit ??
-    subscriptionData?.usage?.hrSeats?.limit ??
-    subscriptionData?.effectiveLimits?.seatLimit ??
-    subscriptionData?.limits?.hrSeats ??
-    2;
+    isCurrentPlanDemo
+      ? null
+      : rawSeatLimit !== undefined
+      ? rawSeatLimit
+      : (currentPlanCode === "ENTERPRISE" ? null : 2);
+
+  const rawCandidateLimit =
+    activeSub?.candidateLimit !== undefined
+      ? activeSub.candidateLimit
+      : subscriptionData?.usage?.candidates?.limit !== undefined
+      ? subscriptionData.usage.candidates.limit
+      : subscriptionData?.effectiveLimits?.candidateLimit !== undefined
+      ? subscriptionData.effectiveLimits.candidateLimit
+      : subscriptionData?.limits?.totalCandidates !== undefined
+      ? subscriptionData.limits.totalCandidates
+      : undefined;
 
   const candidateLimit =
-    activeSub?.candidateLimit ??
-    subscriptionData?.usage?.candidates?.limit ??
-    subscriptionData?.effectiveLimits?.candidateLimit ??
-    subscriptionData?.limits?.totalCandidates ??
-    200;
+    isCurrentPlanDemo
+      ? null
+      : rawCandidateLimit !== undefined
+      ? rawCandidateLimit
+      : (currentPlanCode === "ENTERPRISE" ? null : 200);
+
+  const rawInviteLimit =
+    activeSub?.inviteLimit !== undefined
+      ? activeSub.inviteLimit
+      : subscriptionData?.usage?.invitations?.limit !== undefined
+      ? subscriptionData.usage.invitations.limit
+      : subscriptionData?.effectiveLimits?.inviteLimit !== undefined
+      ? subscriptionData.effectiveLimits.inviteLimit
+      : subscriptionData?.limits?.monthlyInvitations !== undefined
+      ? subscriptionData.limits.monthlyInvitations
+      : undefined;
 
   const inviteLimit =
-    activeSub?.inviteLimit ??
-    subscriptionData?.usage?.invitations?.limit ??
-    subscriptionData?.effectiveLimits?.inviteLimit ??
-    subscriptionData?.limits?.monthlyInvitations ??
-    50;
+    isCurrentPlanDemo
+      ? null
+      : rawInviteLimit !== undefined
+      ? rawInviteLimit
+      : (currentPlanCode === "ENTERPRISE" ? null : 50);
 
   // Actual usage counts
   const seatsUsed =
