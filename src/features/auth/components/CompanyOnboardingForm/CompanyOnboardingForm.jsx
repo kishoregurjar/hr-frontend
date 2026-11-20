@@ -116,13 +116,16 @@ export default function CompanyOnboardingForm() {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [validatingCoupon, setValidatingCoupon] = useState(false);
   const [couponError, setCouponError] = useState("");
+  const [couponRemoved, setCouponRemoved] = useState(false);
 
-  // Automatically validate coupon carried from pricing page offers
+  // Automatically validate coupon carried from pricing page offers or manual entry
+  const activePromoCode = !couponRemoved ? (appliedCoupon?.coupon?.code || couponCode || initialCouponCode) : "";
+
   useEffect(() => {
-    if (initialCouponCode && selectedPlanCode && selectedPlanCode !== "DEMO") {
+    if (activePromoCode && selectedPlanCode && selectedPlanCode !== "DEMO") {
       setValidatingCoupon(true);
       validateCouponCode({
-        code: initialCouponCode.trim().toUpperCase(),
+        code: activePromoCode.trim().toUpperCase(),
         planCode: selectedPlanCode,
         billingCycle,
         isRenewal: false,
@@ -131,7 +134,7 @@ export default function CompanyOnboardingForm() {
           if (res?.valid && res?.coupon) {
             setAppliedCoupon(res);
             setCouponError("");
-            toast.success(`Promo code "${res.coupon.code}" applied! You save ₹${res.discountAmount}.`);
+            setCouponRemoved(false);
           } else {
             setCouponError(res?.message || "Invalid promo code.");
             setAppliedCoupon(null);
@@ -146,7 +149,7 @@ export default function CompanyOnboardingForm() {
           setValidatingCoupon(false);
         });
     }
-  }, [initialCouponCode, selectedPlanCode, billingCycle]);
+  }, [activePromoCode, selectedPlanCode, billingCycle]);
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) {
@@ -155,6 +158,7 @@ export default function CompanyOnboardingForm() {
     }
     setValidatingCoupon(true);
     setCouponError("");
+    setCouponRemoved(false);
     try {
       const res = await validateCouponCode({
         code: couponCode.trim().toUpperCase(),
@@ -182,6 +186,7 @@ export default function CompanyOnboardingForm() {
   };
 
   const handleRemoveCoupon = () => {
+    setCouponRemoved(true);
     setAppliedCoupon(null);
     setCouponCode("");
     setCouponError("");
@@ -248,8 +253,19 @@ export default function CompanyOnboardingForm() {
       isTrial: selectedPlanCode === "DEMO",
     };
 
+  const formatCurrency = (val) =>
+    Number(val || 0).toLocaleString("en-IN", {
+      minimumFractionDigits: Number(val) % 1 === 0 ? 0 : 2,
+      maximumFractionDigits: 2,
+    });
+
   const isDemo = activePlan.isTrial || selectedPlanCode === "DEMO";
   const planPrice = billingCycle === "YEARLY" ? activePlan.yearlyPrice : activePlan.monthlyPrice;
+  const basePrice = Number(planPrice) || 0;
+  const discountAmount = appliedCoupon ? Number(appliedCoupon.discountAmount || 0) : 0;
+  const finalPayable = appliedCoupon?.finalAmount !== undefined
+    ? Number(appliedCoupon.finalAmount)
+    : Math.max(0, basePrice - discountAmount);
   const otpCode = otpDigits.join("");
   const isOtpComplete = otpCode.length === 6;
 
@@ -472,7 +488,9 @@ export default function CompanyOnboardingForm() {
         amount,
         currency,
         name: "HireQuest Assessment Platform",
-        description: `${activePlan.name} (${billingCycle}) Workspace Subscription`,
+        description: appliedCoupon
+          ? `${activePlan.name} (${billingCycle}) [${appliedCoupon.coupon.code} applied]`
+          : `${activePlan.name} (${billingCycle}) Workspace Subscription`,
         order_id: orderId,
         handler: async function (paymentResponse) {
           try {
@@ -724,11 +742,11 @@ export default function CompanyOnboardingForm() {
                   <div>
                     <div className="flex items-baseline gap-1.5">
                       <span className="text-3xl font-black text-slate-900 tracking-tight">
-                        ₹{(appliedCoupon ? appliedCoupon.finalAmount : Number(planPrice)).toLocaleString("en-IN")}
+                        ₹{formatCurrency(appliedCoupon ? finalPayable : basePrice)}
                       </span>
-                      {appliedCoupon && (
+                      {appliedCoupon && discountAmount > 0 && (
                         <span className="text-xs font-semibold text-slate-400 line-through">
-                          ₹{Number(planPrice).toLocaleString("en-IN")}
+                          ₹{formatCurrency(basePrice)}
                         </span>
                       )}
                       <span className="text-xs font-semibold text-slate-500">
@@ -820,9 +838,9 @@ export default function CompanyOnboardingForm() {
                 {appliedCoupon && (
                   <div className="mt-1.5 p-1.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] flex items-center justify-between">
                     <span>
-                      <strong>{appliedCoupon.coupon.code}</strong> applied (-₹{appliedCoupon.discountAmount})
+                      <strong>{appliedCoupon.coupon.code}</strong> applied (-₹{formatCurrency(discountAmount)})
                     </span>
-                    <span className="font-bold">Save ₹{appliedCoupon.discountAmount}</span>
+                    <span className="font-bold">Save ₹{formatCurrency(discountAmount)}</span>
                   </div>
                 )}
               </div>
@@ -1303,6 +1321,38 @@ export default function CompanyOnboardingForm() {
 
             {/* ── Submit Action CTA Button ── */}
             <div className="pt-3 space-y-2">
+              {/* Promotional Discount Savings Banner above primary CTA */}
+              {!isDemo && appliedCoupon && discountAmount > 0 && (
+                <div className="p-2.5 rounded-xl bg-emerald-50/90 border border-emerald-200 text-xs flex items-center justify-between text-emerald-950 animate-in fade-in">
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                      <Percent className="h-3.5 w-3.5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-slate-900">
+                          Coupon {appliedCoupon.coupon?.code} Applied
+                        </span>
+                        <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-bold border border-emerald-300">
+                          -₹{formatCurrency(discountAmount)} OFF
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-emerald-700 block">
+                        Final payment calculated with discount applied.
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-slate-400 line-through mr-1.5 block sm:inline">
+                      ₹{formatCurrency(basePrice)}
+                    </span>
+                    <span className="font-black text-sm text-emerald-700">
+                      ₹{formatCurrency(finalPayable)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <Button
                 type="submit"
                 disabled={isSubmitting || (isDemo && !isOtpComplete)}
@@ -1326,7 +1376,15 @@ export default function CompanyOnboardingForm() {
                 ) : (
                   <div className="flex items-center gap-2">
                     <CreditCard className="h-4 w-4" />
-                    <span>Proceed to Razorpay Checkout (₹{Number(planPrice).toLocaleString("en-IN")})</span>
+                    <span className="flex items-center gap-1.5">
+                      <span>Proceed to Razorpay Checkout</span>
+                      <span className="font-mono font-bold">(₹{formatCurrency(finalPayable)})</span>
+                      {appliedCoupon && discountAmount > 0 && (
+                        <span className="line-through text-blue-200 text-xs font-normal">
+                          ₹{formatCurrency(basePrice)}
+                        </span>
+                      )}
+                    </span>
                     <ArrowRight className="h-4 w-4" />
                   </div>
                 )}
