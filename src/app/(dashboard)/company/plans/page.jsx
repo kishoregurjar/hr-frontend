@@ -1102,15 +1102,12 @@ function CompanyPlansContent() {
                           )}
                         </Button>
                       ) : isEnterprise ? (
-                        <Button
-                          variant="outline"
-                          className="w-full text-xs font-bold rounded-xl h-9 border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer shadow-xs"
-                          asChild
+                        <a
+                          href="mailto:support@hirequest.com?subject=Enterprise%20Plan%20Inquiry"
+                          className="w-full text-xs font-bold rounded-xl h-9 border border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer shadow-xs flex items-center justify-center transition-all"
                         >
-                          <a href="mailto:support@hirequest.com?subject=Enterprise%20Plan%20Inquiry">
-                            Contact Sales
-                          </a>
-                        </Button>
+                          Contact Sales
+                        </a>
                       ) : (
                         <Button
                           onClick={() => openCheckoutModal(plan, selectedPricingOffer?.code || applicableOffer?.code)}
