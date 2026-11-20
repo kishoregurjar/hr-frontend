@@ -517,8 +517,9 @@ export default function PublicPlansPage() {
                     </Button>
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            );
+          })}
           </div>
         )}
 
