@@ -285,6 +285,24 @@ function CompanyPlansContent() {
     loadData();
   }, []);
 
+  // Handle Free 30-Day Demo Trial activation
+  const handleStartTrial = async () => {
+    if (!isOwner) {
+      toast.error("Only the Company Owner can start a free trial.");
+      return;
+    }
+    setStartingTrial(true);
+    try {
+      await startDemoTrial();
+      toast.success("🚀 30-Day Demo Trial started! Enjoy full platform capabilities.");
+      await loadData();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to start demo trial.");
+    } finally {
+      setStartingTrial(false);
+    }
+  };
+
   const handleApplyPromoCode = async () => {
     if (!promoCodeInput.trim()) {
       setPromoError("Please enter a promo code.");
@@ -919,11 +937,7 @@ function CompanyPlansContent() {
 
                 const isProcessing = processingPlanId === plan.id;
 
-                const isCandidateLimitExceeded = candidateLimit !== null && candidatesUsed > candidateLimit;
-  const isSeatsLimitExceeded = seatLimit !== null && seatsUsed > seatLimit;
-  const isInvitesLimitExceeded = inviteLimit !== null && invitesUsed > inviteLimit;
-
-  return (
+                return (
                   <div
                     key={plan.id}
                     className={`group rounded-2xl border bg-white/95 backdrop-blur-md p-4 sm:p-5 shadow-[0_8px_20px_rgba(79,70,229,0.06),0_2px_6px_rgba(0,0,0,0.02)] ring-1 transition-all duration-300 flex flex-col justify-between h-full hover:-translate-y-1 hover:shadow-lg ${
