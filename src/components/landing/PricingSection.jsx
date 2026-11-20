@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getActivePlans } from "@/lib/api/plans";
+import { getActivePlans, getPublicOffers } from "@/lib/api/plans";
 import { useAuth } from "@/features/auth/context/AuthContext";
 
 // Fallback plans if API is loading or network is slow
@@ -140,7 +140,7 @@ function PricingTiltCard({ children, isPopular = false, className = "", ...props
         transformStyle: "preserve-3d",
         transform: isPopular ? "translateY(-4px)" : "translateY(0px)",
       }}
-      className={`group relative rounded-2xl flex flex-col justify-between transition-all duration-300 ease-out select-none ${
+      className={`group relative rounded-2xl flex flex-col justify-between h-full w-full transition-all duration-300 ease-out select-none ${
         isPopular
           ? "bg-gradient-to-b from-blue-50/70 to-white border-2 border-blue-600 shadow-lg shadow-blue-500/10 z-20"
           : "bg-white border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-slate-300 z-10"
@@ -158,7 +158,7 @@ function PricingTiltCard({ children, isPopular = false, className = "", ...props
       />
 
       {/* Content wrapper with exact compact padding */}
-      <div className="relative z-10 flex flex-col justify-between h-full p-4 sm:p-4.5">
+      <div className="relative z-10 flex flex-col justify-between h-full w-full p-4 sm:p-4.5 flex-1">
         {children}
       </div>
     </div>
@@ -171,6 +171,8 @@ export default function PricingSection({ handleScrollTo }) {
   const [plans, setPlans] = useState(DEFAULT_PLANS);
   const [billingCycle, setBillingCycle] = useState("MONTHLY"); // "MONTHLY" | "YEARLY"
   const [loading, setLoading] = useState(true);
+  const [selectedOffer, setSelectedOffer] = useState(null);
+  const [publicOffers, setPublicOffers] = useState([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -192,6 +194,36 @@ export default function PricingSection({ handleScrollTo }) {
     };
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchOffers() {
+      try {
+        const list = await getPublicOffers({ billingCycle });
+        if (isMounted) setPublicOffers(Array.isArray(list) ? list : []);
+      } catch (_) {
+        if (isMounted) setPublicOffers([]);
+      }
+    }
+    fetchOffers();
+    return () => {
+      isMounted = false;
+    };
+  }, [billingCycle]);
+
+  const getApplicableOfferForPlan = (planCode) => {
+    if (selectedOffer) {
+      const isEligible =
+        (!selectedOffer.applicablePlans?.length || selectedOffer.applicablePlans.includes(planCode)) &&
+        (!selectedOffer.applicableCycles?.length || selectedOffer.applicableCycles.includes(billingCycle));
+      if (isEligible) return selectedOffer;
+    }
+    return publicOffers.find(
+      (o) =>
+        (!o.applicablePlans?.length || o.applicablePlans.includes(planCode)) &&
+        (!o.applicableCycles?.length || o.applicableCycles.includes(billingCycle))
+    );
+  };
+
   const handlePlanAction = (e, plan) => {
     if (plan.isCustom || plan.code === "ENTERPRISE") {
       if (handleScrollTo) {
@@ -208,14 +240,18 @@ export default function PricingSection({ handleScrollTo }) {
       return;
     }
 
+    const applicableOffer = getApplicableOfferForPlan(plan.code);
+    const couponToPass = selectedOffer?.code || applicableOffer?.code || null;
+    const couponQuery = couponToPass ? `&coupon=${encodeURIComponent(couponToPass)}` : "";
+
     // If an existing company Owner is logged in, take them to their company billing page
     if (isAuthenticated && user?.role === "OWNER") {
-      router.push("/company/plans");
+      router.push(`/company/plans?plan=${encodeURIComponent(plan.code)}&billingCycle=${billingCycle}${couponQuery}`);
       return;
     }
 
-    // For public visitors: proceed to company registration with preserved plan & cycle
-    router.push(`/register?plan=${encodeURIComponent(plan.code)}&billingCycle=${billingCycle}`);
+    // For public visitors: proceed to company registration with preserved plan, cycle & coupon
+    router.push(`/register?plan=${encodeURIComponent(plan.code)}&billingCycle=${billingCycle}${couponQuery}`);
   };
 
   return (
@@ -277,7 +313,27 @@ export default function PricingSection({ handleScrollTo }) {
             const isEnterprise = Boolean(plan.isCustom) || plan.code === "ENTERPRISE";
             const isPopular = Boolean(plan.popular) || plan.code === "GROWTH";
 
-            const price = billingCycle === "YEARLY" ? plan.yearlyPrice : plan.monthlyPrice;
+            const rawPrice = Number(billingCycle === "YEARLY" ? plan.yearlyPrice : plan.monthlyPrice);
+            const price = rawPrice;
+            const applicableOffer = (!isDemo && !isEnterprise) ? getApplicableOfferForPlan(plan.code) : null;
+            let discountAmt = 0;
+            let discountedPrice = rawPrice;
+            let discountBadgeText = "";
+
+            if (applicableOffer && rawPrice > 0) {
+              if (applicableOffer.discountType === "PERCENTAGE") {
+                const rawDiscount = (rawPrice * applicableOffer.discountValue) / 100;
+                discountAmt = applicableOffer.maxDiscountAmount
+                  ? Math.min(rawDiscount, applicableOffer.maxDiscountAmount)
+                  : rawDiscount;
+                const pct = Math.round(applicableOffer.discountValue);
+                discountBadgeText = `${pct}% OFF`;
+              } else {
+                discountAmt = Math.min(applicableOffer.discountValue, rawPrice);
+                discountBadgeText = `₹${applicableOffer.discountValue} OFF`;
+              }
+              discountedPrice = Math.max(0, Math.round(rawPrice - discountAmt));
+            }
 
             return (
               <motion.div
@@ -292,158 +348,185 @@ export default function PricingSection({ handleScrollTo }) {
                 }}
                 className="h-full flex flex-col"
               >
-                <PricingTiltCard isPopular={isPopular}>
+                <PricingTiltCard isPopular={isPopular} className="h-full flex-1 w-full">
                   {/* Popular Pill Badge */}
                   {isPopular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-extrabold uppercase tracking-wider px-3 py-0.5 rounded-full shadow-md flex items-center gap-1 whitespace-nowrap">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-extrabold uppercase tracking-wider px-3 py-0.5 rounded-full shadow-md flex items-center gap-1.5 whitespace-nowrap">
                       <Sparkles className="h-2.5 w-2.5" />
-                      <span>Most Popular</span>
+                      <span>
+                        {applicableOffer && discountAmt > 0
+                          ? `Most Popular • ${applicableOffer.code} • ${discountBadgeText}`
+                          : "Most Popular"}
+                      </span>
                     </div>
                   )}
 
-                  <div>
-                    {/* Plan Title & Micro Badges */}
-                    <div className="flex items-center justify-between gap-1 mb-1">
-                      <h3 className="text-base font-extrabold text-slate-900 truncate">{plan.name}</h3>
-                      {isDemo && (
-                        <Badge className="bg-amber-100 text-amber-800 border-none text-[9px] font-bold px-1.5 py-0">
-                          {plan.durationDays ? `${plan.durationDays}-Day Trial` : "30-Day Trial"}
-                        </Badge>
-                      )}
-                      {isEnterprise && (
-                        <Badge className="bg-purple-100 text-purple-800 border-none text-[9px] font-bold px-1.5 py-0">
-                          Tailored
-                        </Badge>
-                      )}
-                    </div>
+                  <div className="flex flex-col flex-1 justify-between h-full">
+                    <div>
+                      {/* Plan Title & Micro Badges */}
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <h3 className="text-base font-extrabold text-slate-900 truncate">{plan.name}</h3>
+                        {isDemo && (
+                          <Badge className="bg-amber-100 text-amber-800 border-none text-[9px] font-bold px-1.5 py-0">
+                            {plan.durationDays ? `${plan.durationDays}-Day Trial` : "30-Day Trial"}
+                          </Badge>
+                        )}
+                        {isEnterprise && (
+                          <Badge className="bg-purple-100 text-purple-800 border-none text-[9px] font-bold px-1.5 py-0">
+                            Tailored
+                          </Badge>
+                        )}
+                      </div>
 
-                    <p className="text-[11px] text-slate-500 min-h-[28px] line-clamp-2 leading-tight mb-2.5">
-                      {plan.description}
-                    </p>
+                      <p className="text-[11px] text-slate-500 min-h-[28px] h-[28px] line-clamp-2 leading-tight mb-2.5">
+                        {plan.description}
+                      </p>
 
-                    {/* Price Tag */}
-                    <div className="mb-3 pb-3 border-b border-slate-100">
-                      {isDemo ? (
-                        <div>
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-2xl sm:text-3xl font-black text-slate-900">₹0</span>
-                            <span className="text-[11px] text-slate-500 font-medium">/ {plan.durationDays ? `${plan.durationDays} days` : "30 days"}</span>
+                      {/* Price Tag with Inside-the-Box Coupon Discounts Matching Reference (Equal Min Height Across Cards) */}
+                      <div className="mb-3 pb-3 border-b border-slate-100 min-h-[96px] flex flex-col justify-center">
+                        {isDemo ? (
+                          <div>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-2xl sm:text-3xl font-black text-slate-900">₹0</span>
+                              <span className="text-[11px] text-slate-500 font-medium">/ {plan.durationDays ? `${plan.durationDays} days` : "30 days"}</span>
+                            </div>
+                            <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">
+                              No credit card required
+                            </span>
                           </div>
-                          <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">
-                            No credit card required
+                        ) : isEnterprise ? (
+                          <div>
+                            <span className="text-2xl font-black text-slate-900">Custom</span>
+                            <span className="text-[10px] text-slate-500 block mt-0.5">Tailored for large teams</span>
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="flex items-baseline flex-wrap gap-x-1.5 gap-y-1">
+                              {applicableOffer && discountAmt > 0 && (
+                                <span className="line-through text-slate-400 font-bold text-sm sm:text-base select-none">
+                                  ₹{Number(rawPrice).toLocaleString("en-IN")}
+                                </span>
+                              )}
+                              <span className="text-2xl sm:text-3xl font-black text-slate-900">
+                                ₹{Number(discountedPrice).toLocaleString("en-IN")}
+                              </span>
+                              <span className="text-[11px] text-slate-500 font-medium">
+                                {billingCycle === "YEARLY" ? "/ yr" : "/ mo"}
+                              </span>
+                              {applicableOffer && discountAmt > 0 && (
+                                <span className="bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-2xs inline-flex items-center">
+                                  {applicableOffer.code} • {discountBadgeText}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Promo sub-pill directly below price matching user's reference */}
+                            {applicableOffer && discountAmt > 0 && (
+                              <div className="mt-1.5 flex items-center">
+                                <div className="bg-rose-50 border border-rose-200/90 text-rose-700 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5 shadow-2xs">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse shrink-0" />
+                                  <span>{applicableOffer.code} • {discountBadgeText}</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {billingCycle === "YEARLY" && plan.monthlyPrice > 0 ? (
+                              <span className="text-[10px] text-emerald-600 font-semibold block mt-1">
+                                Billed annually (~₹{Math.round(discountedPrice / 12)}/mo)
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-slate-400 block mt-1">
+                                Flexible monthly billing
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Exact Compact Quotas Display Matching User Screenshot */}
+                      <div className="space-y-2 mb-4">
+                        <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">
+                          {isDemo ? "Trial Privileges" : "Enforced Limits"}
+                        </span>
+
+                        <div className="flex items-center gap-2 text-[11px] text-slate-700">
+                          <UserCheck className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                          <span>
+                            <strong>
+                              {isDemo
+                                ? "Unlimited"
+                                : plan.seatLimit !== null && plan.seatLimit !== undefined
+                                ? `${plan.seatLimit} Active`
+                                : "Tailored"}
+                            </strong>{" "}
+                            HR Seats{" "}
+                            <span className="text-slate-400 text-[10px]">(Owner free)</span>
                           </span>
                         </div>
-                      ) : isEnterprise ? (
-                        <div>
-                          <span className="text-2xl font-black text-slate-900">Custom</span>
-                          <span className="text-[10px] text-slate-500 block mt-0.5">Tailored for large teams</span>
+
+                        <div className="flex items-center gap-2 text-[11px] text-slate-700">
+                          <Users className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+                          <span>
+                            <strong>
+                              {isDemo
+                                ? "Unlimited"
+                                : plan.candidateLimit !== null && plan.candidateLimit !== undefined
+                                ? Number(plan.candidateLimit).toLocaleString()
+                                : "Tailored"}
+                            </strong>{" "}
+                            Lifetime Candidates
+                          </span>
                         </div>
-                      ) : (
-                        <div>
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-2xl sm:text-3xl font-black text-slate-900">
-                              ₹{Number(price).toLocaleString("en-IN")}
-                            </span>
-                            <span className="text-[11px] text-slate-500 font-medium">
-                              {billingCycle === "YEARLY" ? "/ yr" : "/ mo"}
-                            </span>
-                          </div>
-                          {billingCycle === "YEARLY" && plan.monthlyPrice > 0 ? (
-                            <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">
-                              Billed annually (~₹{Math.round(price / 12)}/mo)
-                            </span>
-                          ) : (
-                            <span className="text-[10px] text-slate-400 block mt-0.5">
-                              Flexible monthly billing
-                            </span>
-                          )}
+
+                        <div className="flex items-center gap-2 text-[11px] text-slate-700">
+                          <Send className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                          <span>
+                            <strong>
+                              {isDemo
+                                ? "Unlimited"
+                                : plan.inviteLimit !== null && plan.inviteLimit !== undefined
+                                ? Number(plan.inviteLimit).toLocaleString()
+                                : "Custom"}
+                            </strong>{" "}
+                            Assessment Invites/mo
+                          </span>
                         </div>
-                      )}
+
+                        <div className="flex items-center gap-2 text-[11px] text-slate-700 pt-0.5">
+                          <Zap className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                          <span className="text-slate-600 font-medium truncate">
+                            {isDemo ? "All Cognitive Games included" : "5 Cognitive Games included"}
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Exact Compact Quotas Display Matching User Screenshot */}
-                    <div className="space-y-2 mb-4">
-                      <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">
-                        {isDemo ? "Trial Privileges" : "Enforced Limits"}
-                      </span>
-
-                      <div className="flex items-center gap-2 text-[11px] text-slate-700">
-                        <UserCheck className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-                        <span>
-                          <strong>
-                            {isDemo
-                              ? "Unlimited"
-                              : plan.seatLimit !== null && plan.seatLimit !== undefined
-                              ? `${plan.seatLimit} Active`
-                              : "Tailored"}
-                          </strong>{" "}
-                          HR Seats{" "}
-                          <span className="text-slate-400 text-[10px]">(Owner free)</span>
+                    {/* Call to Action Button with Hover Shimmer Sweep (Pinned to Bottom) */}
+                    <div className="pt-2 mt-auto">
+                      <Button
+                        onClick={(e) => handlePlanAction(e, plan)}
+                        className={`group/btn relative overflow-hidden w-full h-9 sm:h-9.5 text-xs font-bold rounded-xl shadow-xs cursor-pointer flex items-center justify-center gap-1.5 transition-all duration-300 ${
+                          isPopular
+                            ? "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20"
+                            : isDemo
+                            ? "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20"
+                            : "bg-slate-900 hover:bg-slate-800 text-white shadow-slate-900/10"
+                        }`}
+                      >
+                        {/* Shimmer Light Sweep on Hover */}
+                        <span className="absolute inset-0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+                        <span className="relative z-10">
+                          {isEnterprise
+                            ? "Contact Sales"
+                            : isDemo
+                            ? "Request Free Trial"
+                            : isAuthenticated
+                            ? "Buy / Upgrade Plan"
+                            : "Get Started"}
                         </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-[11px] text-slate-700">
-                        <Users className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
-                        <span>
-                          <strong>
-                            {isDemo
-                              ? "Unlimited"
-                              : plan.candidateLimit !== null && plan.candidateLimit !== undefined
-                              ? Number(plan.candidateLimit).toLocaleString()
-                              : "Tailored"}
-                          </strong>{" "}
-                          Lifetime Candidates
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-[11px] text-slate-700">
-                        <Send className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                        <span>
-                          <strong>
-                            {isDemo
-                              ? "Unlimited"
-                              : plan.inviteLimit !== null && plan.inviteLimit !== undefined
-                              ? Number(plan.inviteLimit).toLocaleString()
-                              : "Custom"}
-                          </strong>{" "}
-                          Assessment Invites/mo
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-[11px] text-slate-700 pt-0.5">
-                        <Zap className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                        <span className="text-slate-600 font-medium truncate">
-                          {isDemo ? "All Cognitive Games included" : "5 Cognitive Games included"}
-                        </span>
-                      </div>
+                        <ArrowRight className="h-3.5 w-3.5 relative z-10 transition-transform duration-300 group-hover/btn:translate-x-1" />
+                      </Button>
                     </div>
-                  </div>
-
-                  {/* Call to Action Button with Hover Shimmer Sweep */}
-                  <div className="pt-1">
-                    <Button
-                      onClick={(e) => handlePlanAction(e, plan)}
-                      className={`group/btn relative overflow-hidden w-full h-9 sm:h-9.5 text-xs font-bold rounded-xl shadow-xs cursor-pointer flex items-center justify-center gap-1.5 transition-all duration-300 ${
-                        isPopular
-                          ? "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20"
-                          : isDemo
-                          ? "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20"
-                          : "bg-slate-900 hover:bg-slate-800 text-white shadow-slate-900/10"
-                      }`}
-                    >
-                      {/* Shimmer Light Sweep on Hover */}
-                      <span className="absolute inset-0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
-                      <span className="relative z-10">
-                        {isEnterprise
-                          ? "Contact Sales"
-                          : isDemo
-                          ? "Request Free Trial"
-                          : isAuthenticated
-                          ? "Buy / Upgrade Plan"
-                          : "Get Started"}
-                      </span>
-                      <ArrowRight className="h-3.5 w-3.5 relative z-10 transition-transform duration-300 group-hover/btn:translate-x-1" />
-                    </Button>
                   </div>
                 </PricingTiltCard>
               </motion.div>

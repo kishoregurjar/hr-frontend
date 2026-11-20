@@ -30,10 +30,10 @@ export const startDemoTrial = async () => {
 /**
  * 4. Create Razorpay Payment Order for Subscription Purchase or Renewal
  * POST /api/v1/payments/order
- * Body: { planId, billingCycle: "MONTHLY" | "YEARLY" }
+ * Body: { planId, billingCycle: "MONTHLY" | "YEARLY", couponCode?: string }
  */
-export const createPaymentOrder = async ({ planId, billingCycle }) => {
-  const res = await axiosClient.post("/payments/order", { planId, billingCycle });
+export const createPaymentOrder = async ({ planId, billingCycle, couponCode }) => {
+  const res = await axiosClient.post("/payments/order", { planId, billingCycle, couponCode });
   return res?.data?.data || res?.data;
 };
 
@@ -102,4 +102,32 @@ export const sendTrialOtp = async (email) => {
 export const submitTrialApplication = async (payload) => {
   const res = await axiosClient.post("/trial-applications/apply", payload);
   return res?.data?.data || res?.data;
+};
+
+/**
+ * 12. Validate Coupon Code
+ * POST /api/v1/coupons/validate
+ */
+export const validateCouponCode = async (payload) => {
+  const res = await axiosClient.post("/coupons/validate", payload);
+  return res?.data?.data || res?.data;
+};
+
+/**
+ * 13. Get Recurring Renewal Coupon for Authenticated Company
+ * GET /api/v1/coupons/recurring-renewal
+ */
+export const getRecurringRenewalCoupon = async (params = {}) => {
+  const res = await axiosClient.get("/coupons/recurring-renewal", { params });
+  return res?.data?.data || res?.data;
+};
+
+/**
+ * 14. Fetch Eligible Public Coupons for Pricing Page
+ * GET /api/v1/coupons/public
+ * Params: { planCode?: string, billingCycle?: "MONTHLY" | "YEARLY" }
+ */
+export const getPublicOffers = async (params = {}) => {
+  const res = await axiosClient.get("/coupons/public", { params });
+  return res?.data?.data?.coupons || res?.data?.coupons || [];
 };

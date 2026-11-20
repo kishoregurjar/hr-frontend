@@ -22,7 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LandingHeader, LandingFooter } from "@/components/landing";
-import { getActivePlans } from "@/lib/api/plans";
+import { getActivePlans, getPublicOffers } from "@/lib/api/plans";
 import { useAuth } from "@/features/auth/context/AuthContext";
 
 // Fallback plans if API is loading or network is slow
@@ -107,6 +107,8 @@ export default function PublicPlansPage() {
   const [plans, setPlans] = useState(DEFAULT_PLANS);
   const [loading, setLoading] = useState(false);
   const [billingCycle, setBillingCycle] = useState("MONTHLY"); // "MONTHLY" | "YEARLY"
+  const [selectedOffer, setSelectedOffer] = useState(null);
+  const [publicOffers, setPublicOffers] = useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isTenantDomain, setIsTenantDomain] = useState(false);
 
@@ -156,6 +158,36 @@ export default function PublicPlansPage() {
     };
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchOffers() {
+      try {
+        const list = await getPublicOffers({ billingCycle });
+        if (isMounted) setPublicOffers(Array.isArray(list) ? list : []);
+      } catch (_) {
+        if (isMounted) setPublicOffers([]);
+      }
+    }
+    fetchOffers();
+    return () => {
+      isMounted = false;
+    };
+  }, [billingCycle]);
+
+  const getApplicableOfferForPlan = (planCode) => {
+    if (selectedOffer) {
+      const isEligible =
+        (!selectedOffer.applicablePlans?.length || selectedOffer.applicablePlans.includes(planCode)) &&
+        (!selectedOffer.applicableCycles?.length || selectedOffer.applicableCycles.includes(billingCycle));
+      if (isEligible) return selectedOffer;
+    }
+    return publicOffers.find(
+      (o) =>
+        (!o.applicablePlans?.length || o.applicablePlans.includes(planCode)) &&
+        (!o.applicableCycles?.length || o.applicableCycles.includes(billingCycle))
+    );
+  };
+
   const handleScrollTo = (e, id) => {
     e.preventDefault();
     router.push(`/#${id}`);
@@ -172,7 +204,16 @@ export default function PublicPlansPage() {
       return;
     }
 
-    router.push(`/register?plan=${encodeURIComponent(plan.code)}&billingCycle=${billingCycle}`);
+    const applicableOffer = getApplicableOfferForPlan(plan.code);
+    const couponToPass = selectedOffer?.code || applicableOffer?.code || null;
+    const couponQuery = couponToPass ? `&coupon=${encodeURIComponent(couponToPass)}` : "";
+
+    if (isAuthenticated && isOwner) {
+      router.push(`/company/plans?plan=${encodeURIComponent(plan.code)}&billingCycle=${billingCycle}${couponQuery}`);
+      return;
+    }
+
+    router.push(`/register?plan=${encodeURIComponent(plan.code)}&billingCycle=${billingCycle}${couponQuery}`);
   };
 
   if (isTenantDomain) {
@@ -272,45 +313,70 @@ export default function PublicPlansPage() {
               const isEnterprise = Boolean(plan.isCustom) || plan.code === "ENTERPRISE";
               const isPopular = Boolean(plan.popular) || plan.code === "GROWTH";
 
-              const price = billingCycle === "YEARLY" ? plan.yearlyPrice : plan.monthlyPrice;
+              const rawPrice = Number(billingCycle === "YEARLY" ? plan.yearlyPrice : plan.monthlyPrice);
+              const price = rawPrice;
+              const applicableOffer = (!isDemo && !isEnterprise) ? getApplicableOfferForPlan(plan.code) : null;
+              let discountAmt = 0;
+              let discountedPrice = rawPrice;
+              let discountBadgeText = "";
+
+              if (applicableOffer && rawPrice > 0) {
+                if (applicableOffer.discountType === "PERCENTAGE") {
+                  const rawDiscount = (rawPrice * applicableOffer.discountValue) / 100;
+                  discountAmt = applicableOffer.maxDiscountAmount
+                    ? Math.min(rawDiscount, applicableOffer.maxDiscountAmount)
+                    : rawDiscount;
+                  const pct = Math.round(applicableOffer.discountValue);
+                  discountBadgeText = `${pct}% OFF`;
+                } else {
+                  discountAmt = Math.min(applicableOffer.discountValue, rawPrice);
+                  discountBadgeText = `₹${applicableOffer.discountValue} OFF`;
+                }
+                discountedPrice = Math.max(0, Math.round(rawPrice - discountAmt));
+              }
 
               return (
                 <div
                   key={plan.id}
-                  className={`rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 relative ${
+                  className={`rounded-3xl p-6 sm:p-7 flex flex-col justify-between h-full transition-all duration-300 relative ${
                     isPopular
                       ? "bg-gradient-to-b from-blue-50/90 to-white border-2 border-blue-600 shadow-xl shadow-blue-500/10 scale-100 lg:-translate-y-2"
                       : "bg-white border border-slate-200/90 shadow-sm hover:shadow-lg hover:border-slate-300"
                   }`}
                 >
                   {isPopular && (
-                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[11px] font-extrabold uppercase tracking-wider px-3.5 py-1 rounded-full shadow-md flex items-center gap-1">
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[11px] font-extrabold uppercase tracking-wider px-3.5 py-1 rounded-full shadow-md flex items-center gap-1.5 whitespace-nowrap">
                       <Sparkles className="h-3 w-3" />
-                      <span>Most Popular</span>
+                      <span>
+                        {applicableOffer && discountAmt > 0
+                          ? `Most Popular • ${applicableOffer.code} • ${discountBadgeText}`
+                          : "Most Popular"}
+                      </span>
                     </div>
                   )}
 
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-xl font-black text-slate-900">{plan.name}</h3>
-                      {isDemo && (
-                        <Badge className="bg-amber-100 text-amber-800 border-none text-[10px] font-bold">
-                          {plan.durationDays ? `${plan.durationDays}-Day Trial` : "30-Day Trial"}
-                        </Badge>
-                      )}
-                      {isEnterprise && (
-                        <Badge className="bg-purple-100 text-purple-800 border-none text-[10px] font-bold">
-                          Tailored
-                        </Badge>
-                      )}
-                    </div>
+                  <div className="flex flex-col flex-1 justify-between h-full">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-xl font-black text-slate-900">{plan.name}</h3>
+                        {isDemo && (
+                          <Badge className="bg-amber-100 text-amber-800 border-none text-[10px] font-bold">
+                            {plan.durationDays ? `${plan.durationDays}-Day Trial` : "30-Day Trial"}
+                          </Badge>
+                        )}
+                        {isEnterprise && (
+                          <Badge className="bg-purple-100 text-purple-800 border-none text-[10px] font-bold">
+                            Tailored
+                          </Badge>
+                        )}
+                      </div>
 
-                    <p className="text-xs text-slate-500 min-h-[36px] line-clamp-2 leading-relaxed mb-5">
-                      {plan.description || "Unified hiring pipeline & candidate screening platform."}
-                    </p>
+                      <p className="text-xs text-slate-500 min-h-[36px] h-[36px] line-clamp-2 leading-relaxed mb-5">
+                        {plan.description || "Unified hiring pipeline & candidate screening platform."}
+                      </p>
 
-                    {/* Price Tag */}
-                    <div className="mb-6 pb-6 border-b border-slate-100">
+                      {/* Price Tag with Inside-the-Box Coupon Discounts Matching Reference (Equal Min Height Across Cards) */}
+                      <div className="mb-6 pb-6 border-b border-slate-100 min-h-[110px] flex flex-col justify-center">
                       {isDemo ? (
                         <div>
                           <div className="flex items-baseline gap-1">
@@ -328,17 +394,38 @@ export default function PublicPlansPage() {
                         </div>
                       ) : (
                         <div>
-                          <div className="flex items-baseline gap-1">
+                          <div className="flex items-baseline flex-wrap gap-x-2 gap-y-1">
+                            {applicableOffer && discountAmt > 0 && (
+                              <span className="line-through text-slate-400 font-bold text-base sm:text-lg select-none">
+                                ₹{Number(rawPrice).toLocaleString("en-IN")}
+                              </span>
+                            )}
                             <span className="text-3xl sm:text-4xl font-extrabold text-slate-900">
-                              ₹{Number(price).toLocaleString("en-IN")}
+                              ₹{Number(discountedPrice).toLocaleString("en-IN")}
                             </span>
                             <span className="text-xs text-slate-500 font-medium">
                               {billingCycle === "YEARLY" ? "/ yr" : "/ mo"}
                             </span>
+                            {applicableOffer && discountAmt > 0 && (
+                              <span className="bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-2xs inline-flex items-center">
+                                {applicableOffer.code} • {discountBadgeText}
+                              </span>
+                            )}
                           </div>
+
+                          {/* Promo sub-pill directly below price matching user's reference */}
+                          {applicableOffer && discountAmt > 0 && (
+                            <div className="mt-2 flex items-center">
+                              <div className="bg-rose-50 border border-rose-200/90 text-rose-700 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5 shadow-2xs">
+                                <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse shrink-0" />
+                                <span>{applicableOffer.code} • {discountBadgeText}</span>
+                              </div>
+                            </div>
+                          )}
+
                           {billingCycle === "YEARLY" && plan.monthlyPrice > 0 && (
-                            <span className="text-[11px] text-emerald-600 font-semibold block mt-1">
-                              Billed annually (~₹{Math.round(price / 12)}/mo)
+                            <span className="text-[11px] text-emerald-600 font-semibold block mt-1.5">
+                              Billed annually (~₹{Math.round(discountedPrice / 12)}/mo)
                             </span>
                           )}
                         </div>
@@ -407,8 +494,8 @@ export default function PublicPlansPage() {
                     </div>
                   </div>
 
-                  {/* Call to Action Button */}
-                  <div className="pt-2">
+                  {/* Call to Action Button (Pinned to Bottom) */}
+                  <div className="pt-2 mt-auto">
                     <Button
                       onClick={() => handlePlanSelect(plan)}
                       className={`w-full h-11 text-xs font-bold rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-2 transition ${

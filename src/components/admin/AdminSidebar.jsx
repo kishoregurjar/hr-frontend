@@ -16,6 +16,7 @@ import {
   CreditCard,
   CircleDollarSign,
   UserCheck,
+  Tag,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -39,6 +40,11 @@ const NAV_ITEMS = [
     label: "SaaS Plans & Pricing",
     href: "/admin/plans",
     icon: CreditCard,
+  },
+  {
+    label: "Discount Coupons",
+    href: "/admin/coupons",
+    icon: Tag,
   },
   {
     label: "Payments & Revenue",

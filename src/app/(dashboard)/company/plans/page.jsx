@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   CreditCard,
   CheckCircle2,
@@ -19,6 +20,12 @@ import {
   Zap,
   Calendar,
   Crown,
+  Tag,
+  Percent,
+  Repeat,
+  ShieldCheck,
+  Check,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/features/auth/context";
@@ -29,6 +36,9 @@ import {
   createPaymentOrder,
   verifyPayment,
   getPaymentHistory,
+  validateCouponCode,
+  getRecurringRenewalCoupon,
+  getPublicOffers,
 } from "@/lib/api/plans";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -74,8 +84,13 @@ const formatSubscriptionDate = (dateString) => {
   return formatted.replace(/([ap]m)$/i, (m) => m.toUpperCase());
 };
 
-export default function CompanyPlansPage() {
+function CompanyPlansContent() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const queryPlan = searchParams?.get("plan");
+  const queryCycle = searchParams?.get("billingCycle");
+  const queryCoupon = searchParams?.get("coupon") || searchParams?.get("promo");
+
   const isOwner =
     user?.isOwner === true ||
     user?.role === "Company Owner" ||
@@ -127,6 +142,116 @@ export default function CompanyPlansPage() {
   const [startingTrial, setStartingTrial] = useState(false);
   const [activeTab, setActiveTab] = useState("plans"); // "plans" | "history"
 
+  // Checkout & Coupon Review Modal States
+  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
+  const [selectedPlanForCheckout, setSelectedPlanForCheckout] = useState(null);
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [validatingPromo, setValidatingPromo] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [promoError, setPromoError] = useState("");
+  const [recurringInfo, setRecurringInfo] = useState(null);
+  const [checkingRecurring, setCheckingRecurring] = useState(false);
+  const [selectedPricingOffer, setSelectedPricingOffer] = useState(null);
+  const [publicOffers, setPublicOffers] = useState([]);
+
+  // Fetch active public coupons eligible for current billing cycle
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchOffers() {
+      try {
+        const list = await getPublicOffers({ billingCycle });
+        if (isMounted) setPublicOffers(Array.isArray(list) ? list : []);
+      } catch (_) {
+        if (isMounted) setPublicOffers([]);
+      }
+    }
+    fetchOffers();
+    return () => {
+      isMounted = false;
+    };
+  }, [billingCycle]);
+
+  const getApplicableOfferForPlan = (planCode) => {
+    if (selectedPricingOffer) {
+      const isEligible =
+        (!selectedPricingOffer.applicablePlans?.length || selectedPricingOffer.applicablePlans.includes(planCode)) &&
+        (!selectedPricingOffer.applicableCycles?.length || selectedPricingOffer.applicableCycles.includes(billingCycle));
+      if (isEligible) return selectedPricingOffer;
+    }
+    return publicOffers.find(
+      (o) =>
+        (!o.applicablePlans?.length || o.applicablePlans.includes(planCode)) &&
+        (!o.applicableCycles?.length || o.applicableCycles.includes(billingCycle))
+    );
+  };
+
+  // Sync billing cycle from URL query if provided
+  useEffect(() => {
+    if (queryCycle && (queryCycle.toUpperCase() === "MONTHLY" || queryCycle.toUpperCase() === "YEARLY")) {
+      setBillingCycle(queryCycle.toUpperCase());
+    }
+  }, [queryCycle]);
+
+  // Open Checkout & Discount Review Modal
+  const openCheckoutModal = async (plan, initialCoupon = null) => {
+    if (!isOwner) {
+      toast.error("Only the Company Owner has permission to purchase or renew subscriptions.");
+      return;
+    }
+    const couponToUse = initialCoupon || selectedPricingOffer?.code || null;
+    setSelectedPlanForCheckout(plan);
+    setPromoCodeInput(couponToUse ? couponToUse.trim().toUpperCase() : "");
+    setAppliedCoupon(null);
+    setPromoError("");
+    setRecurringInfo(null);
+    setCheckoutModalOpen(true);
+    setCheckingRecurring(true);
+
+    try {
+      if (couponToUse) {
+        const isRenewal = Boolean(
+          subscriptionData?.subscription &&
+          subscriptionData?.subscription?.status !== "NONE" &&
+          !subscriptionData?.subscription?.isTrial
+        );
+        const res = await validateCouponCode({
+          code: couponToUse.trim().toUpperCase(),
+          planCode: plan.code,
+          billingCycle,
+          isRenewal,
+        });
+        if (res?.valid && res?.coupon) {
+          setAppliedCoupon(res);
+          setPromoCodeInput(res.coupon.code);
+          toast.success(`Promo code "${res.coupon.code}" applied! You save ₹${res.discountAmount}.`);
+        } else {
+          setPromoError(res?.message || "Invalid coupon code.");
+        }
+      } else {
+        const rec = await getRecurringRenewalCoupon({
+          planCode: plan.code,
+          billingCycle,
+        });
+        if (rec?.hasRecurringCoupon && rec?.coupon) {
+          setRecurringInfo(rec);
+          setAppliedCoupon({
+            coupon: rec.coupon,
+            originalAmount: rec.originalAmount,
+            discountAmount: rec.discountAmount,
+            finalAmount: rec.finalAmount,
+            isRecurringRenewal: true,
+          });
+          setPromoCodeInput(rec.coupon.code);
+        } else if (rec?.fallbackToNormalPrice && rec?.reason) {
+          setRecurringInfo({ fallbackToNormalPrice: true, reason: rec.reason });
+        }
+      }
+    } catch (_) {
+    } finally {
+      setCheckingRecurring(false);
+    }
+  };
+
   const loadData = async () => {
     try {
       const [plansData, subData, histData] = await Promise.all([
@@ -135,9 +260,20 @@ export default function CompanyPlansPage() {
         getPaymentHistory().catch(() => []),
       ]);
 
-      setPlans(Array.isArray(plansData) ? plansData : []);
+      const fetchedPlans = Array.isArray(plansData) ? plansData : [];
+      setPlans(fetchedPlans);
       setSubscriptionData(subData);
       setHistory(Array.isArray(histData) ? histData : []);
+
+      // If arrived via link with query parameters, auto-launch checkout modal for the plan
+      if (queryPlan && isOwner) {
+        const targetPlan = fetchedPlans.find((p) => p.code?.toUpperCase() === queryPlan.toUpperCase());
+        if (targetPlan) {
+          setTimeout(() => {
+            openCheckoutModal(targetPlan, queryCoupon);
+          }, 100);
+        }
+      }
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to load subscription details.");
     } finally {
@@ -149,26 +285,53 @@ export default function CompanyPlansPage() {
     loadData();
   }, []);
 
-  // Handle Free 7-Day Demo Trial activation
-  const handleStartTrial = async () => {
-    if (!isOwner) {
-      toast.error("Only the Company Owner can start a free trial.");
+  const handleApplyPromoCode = async () => {
+    if (!promoCodeInput.trim()) {
+      setPromoError("Please enter a promo code.");
       return;
     }
-    setStartingTrial(true);
+    setValidatingPromo(true);
+    setPromoError("");
     try {
-      await startDemoTrial();
-      toast.success("🚀 30-Day Demo Trial started! Enjoy full platform capabilities.");
-      await loadData();
+      const isRenewal = Boolean(
+        subscriptionData?.subscription &&
+        subscriptionData?.subscription?.status !== "NONE" &&
+        !subscriptionData?.subscription?.isTrial
+      );
+      const res = await validateCouponCode({
+        code: promoCodeInput.trim().toUpperCase(),
+        planCode: selectedPlanForCheckout?.code,
+        billingCycle,
+        isRenewal,
+      });
+
+      if (res?.valid && res?.coupon) {
+        setAppliedCoupon(res);
+        setPromoError("");
+        toast.success(`Coupon "${res.coupon.code}" applied! You save ₹${res.discountAmount}.`);
+      } else {
+        setPromoError(res?.message || "Invalid coupon code.");
+        setAppliedCoupon(null);
+      }
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to activate trial.");
+      const msg = err?.response?.data?.message || err?.message || "Invalid coupon code.";
+      setPromoError(msg);
+      setAppliedCoupon(null);
+      toast.error(msg);
     } finally {
-      setStartingTrial(false);
+      setValidatingPromo(false);
     }
   };
 
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setPromoCodeInput("");
+    setPromoError("");
+    setRecurringInfo(null);
+  };
+
   // Handle Paid Plan Purchase / Renewal via Official Razorpay Standard Checkout
-  const handlePurchase = async (plan) => {
+  const handlePurchase = async (plan, couponCode = null) => {
     if (!isOwner) {
       toast.error("Only the Company Owner has permission to purchase or renew subscriptions.");
       return;
@@ -189,6 +352,7 @@ export default function CompanyPlansPage() {
       const orderRes = await createPaymentOrder({
         planId: plan.id,
         billingCycle,
+        couponCode: couponCode || undefined,
       });
 
       const orderData = orderRes?.data || orderRes;
@@ -200,6 +364,9 @@ export default function CompanyPlansPage() {
       if (!orderId || !keyId) {
         throw new Error("Invalid order response received from payment server.");
       }
+
+      // Close checkout review modal once Razorpay launches
+      setCheckoutModalOpen(false);
 
       // 3. Launch Official Razorpay Standard Checkout
       const options = {
@@ -513,6 +680,12 @@ export default function CompanyPlansPage() {
                     {activeSub?.durationDays ? `${activeSub.durationDays}-Day Demo Trial` : "30-Day Demo Trial"}
                   </Badge>
                 )}
+                {activeSub?.couponCode && (
+                  <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 font-bold flex items-center gap-1">
+                    <Repeat className="h-3 w-3" />
+                    Renewal Discount: {activeSub.couponCode}
+                  </Badge>
+                )}
               </div>
               <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 mt-1">
                 {currentPlanName}
@@ -722,7 +895,28 @@ export default function CompanyPlansPage() {
                 const isDemo = Boolean(plan.isTrial) || plan.code === "DEMO";
                 const isEnterprise = Boolean(plan.isCustom) || plan.code === "ENTERPRISE";
 
-                const price = billingCycle === "YEARLY" ? plan.yearlyPrice : plan.monthlyPrice;
+                const rawPrice = Number(billingCycle === "YEARLY" ? plan.yearlyPrice : plan.monthlyPrice);
+                const price = rawPrice;
+                const applicableOffer = (!isDemo && !isEnterprise) ? getApplicableOfferForPlan(plan.code) : null;
+                let discountAmt = 0;
+                let discountedPrice = rawPrice;
+                let discountBadgeText = "";
+
+                if (applicableOffer && rawPrice > 0) {
+                  if (applicableOffer.discountType === "PERCENTAGE") {
+                    const rawDiscount = (rawPrice * applicableOffer.discountValue) / 100;
+                    discountAmt = applicableOffer.maxDiscountAmount
+                      ? Math.min(rawDiscount, applicableOffer.maxDiscountAmount)
+                      : rawDiscount;
+                    const pct = Math.round(applicableOffer.discountValue);
+                    discountBadgeText = `${pct}% OFF`;
+                  } else {
+                    discountAmt = Math.min(applicableOffer.discountValue, rawPrice);
+                    discountBadgeText = `₹${applicableOffer.discountValue} OFF`;
+                  }
+                  discountedPrice = Math.max(0, Math.round(rawPrice - discountAmt));
+                }
+
                 const isProcessing = processingPlanId === plan.id;
 
                 const isCandidateLimitExceeded = candidateLimit !== null && candidatesUsed > candidateLimit;
@@ -732,7 +926,7 @@ export default function CompanyPlansPage() {
   return (
                   <div
                     key={plan.id}
-                    className={`group rounded-2xl border bg-white/95 backdrop-blur-md p-4 sm:p-5 shadow-[0_8px_20px_rgba(79,70,229,0.06),0_2px_6px_rgba(0,0,0,0.02)] ring-1 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1 hover:shadow-lg ${
+                    className={`group rounded-2xl border bg-white/95 backdrop-blur-md p-4 sm:p-5 shadow-[0_8px_20px_rgba(79,70,229,0.06),0_2px_6px_rgba(0,0,0,0.02)] ring-1 transition-all duration-300 flex flex-col justify-between h-full hover:-translate-y-1 hover:shadow-lg ${
                       isCurrent
                         ? isCurrentPlanExpired
                           ? "border-rose-400 ring-rose-400/20 shadow-md relative bg-gradient-to-b from-rose-50/30 to-white"
@@ -750,23 +944,24 @@ export default function CompanyPlansPage() {
                       </div>
                     )}
 
-                    <div>
-                      {/* Header */}
-                      <div className="flex items-center justify-between gap-1 mb-1.5">
-                        <h3 className="text-base font-extrabold text-slate-900 truncate">{plan.name}</h3>
-                        {isDemo && (
-                          <Badge className="bg-amber-100 text-amber-800 border-none text-[9px] font-bold px-1.5 py-0">
-                            Free Trial
-                          </Badge>
-                        )}
-                      </div>
+                    <div className="flex flex-col flex-1 justify-between h-full">
+                      <div>
+                        {/* Header */}
+                        <div className="flex items-center justify-between gap-1 mb-1.5">
+                          <h3 className="text-base font-extrabold text-slate-900 truncate">{plan.name}</h3>
+                          {isDemo && (
+                            <Badge className="bg-amber-100 text-amber-800 border-none text-[9px] font-bold px-1.5 py-0">
+                              Free Trial
+                            </Badge>
+                          )}
+                        </div>
 
-                      <p className="text-[11px] text-slate-500 min-h-[28px] line-clamp-2 mb-2.5 leading-snug">
-                        {plan.description || "Comprehensive talent screening & assessment access."}
-                      </p>
+                        <p className="text-[11px] text-slate-500 min-h-[28px] h-[28px] line-clamp-2 mb-2.5 leading-snug">
+                          {plan.description || "Comprehensive talent screening & assessment access."}
+                        </p>
 
-                      {/* Price display */}
-                      <div className="mb-3.5 pb-3.5 border-b border-slate-100">
+                        {/* Price display with Inside-the-Box Coupon Discounts Matching Reference (Equal Min Height Across Cards) */}
+                        <div className="mb-3.5 pb-3.5 border-b border-slate-100 min-h-[96px] flex flex-col justify-center">
                         {isDemo ? (
                           <div>
                             <span className="text-2xl sm:text-3xl font-black text-slate-900">₹0</span>
@@ -779,12 +974,40 @@ export default function CompanyPlansPage() {
                           </div>
                         ) : (
                           <div>
-                            <span className="text-2xl sm:text-3xl font-black text-slate-900">
-                              ₹{Number(price).toLocaleString("en-IN")}
-                            </span>
-                            <span className="text-[11px] text-slate-500 ml-1 font-medium">
-                              {billingCycle === "YEARLY" ? "/ year" : "/ month"}
-                            </span>
+                            <div className="flex items-baseline flex-wrap gap-x-1.5 gap-y-1">
+                              {applicableOffer && discountAmt > 0 && (
+                                <span className="line-through text-slate-400 font-bold text-sm select-none">
+                                  ₹{Number(rawPrice).toLocaleString("en-IN")}
+                                </span>
+                              )}
+                              <span className="text-2xl sm:text-3xl font-black text-slate-900">
+                                ₹{Number(discountedPrice).toLocaleString("en-IN")}
+                              </span>
+                              <span className="text-[11px] text-slate-500 ml-1 font-medium">
+                                {billingCycle === "YEARLY" ? "/ year" : "/ month"}
+                              </span>
+                              {applicableOffer && discountAmt > 0 && (
+                                <span className="bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-2xs inline-flex items-center">
+                                  {applicableOffer.code} • {discountBadgeText}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Promo sub-pill directly below price matching user's reference */}
+                            {applicableOffer && discountAmt > 0 && (
+                              <div className="mt-1.5 flex items-center">
+                                <div className="bg-rose-50 border border-rose-200/90 text-rose-700 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5 shadow-2xs">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse shrink-0" />
+                                  <span>{applicableOffer.code} • {discountBadgeText}</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {billingCycle === "YEARLY" && plan.monthlyPrice > 0 && (
+                              <span className="text-[10px] text-emerald-600 font-semibold block mt-1">
+                                Billed annually (~₹{Math.round(discountedPrice / 12)}/mo)
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>
@@ -844,8 +1067,8 @@ export default function CompanyPlansPage() {
                       </div>
                     </div>
 
-                    {/* Action Button */}
-                    <div className="pt-1">
+                    {/* Action Button (Pinned to Bottom) */}
+                    <div className="pt-2 mt-auto">
                       {isDemo ? (
                         <Button
                           onClick={handleStartTrial}
@@ -876,7 +1099,7 @@ export default function CompanyPlansPage() {
                         </Button>
                       ) : (
                         <Button
-                          onClick={() => handlePurchase(plan)}
+                          onClick={() => openCheckoutModal(plan, selectedPricingOffer?.code || applicableOffer?.code)}
                           disabled={isProcessing || !isOwner || (isCurrent && !isCurrentPlanExpired)}
                           className={`w-full text-xs font-bold rounded-xl h-9 transition-all ${
                             isCurrent
@@ -901,7 +1124,8 @@ export default function CompanyPlansPage() {
                       )}
                     </div>
                   </div>
-                );
+                </div>
+              );
               })}
             </div>
           </div>
@@ -968,7 +1192,12 @@ export default function CompanyPlansPage() {
                           </td>
                           <td className="py-3.5 px-4 capitalize text-xs">{tx.billingCycle?.toLowerCase()}</td>
                           <td className="py-3.5 px-4 font-bold text-slate-900">
-                            ₹{displayAmount.toLocaleString("en-IN")}
+                            <div>₹{displayAmount.toLocaleString("en-IN")}</div>
+                            {tx.couponCode && (
+                              <span className="text-[10px] text-purple-600 font-medium block">
+                                Coupon: {tx.couponCode} (-₹{Number(tx.discountAmount || 0).toLocaleString("en-IN")})
+                              </span>
+                            )}
                           </td>
                           <td className="py-3.5 px-4 font-mono text-xs text-slate-500">
                             {tx.razorpayOrderId}
@@ -996,7 +1225,200 @@ export default function CompanyPlansPage() {
           </div>
         )}
       </div>
+
+      {/* ── Subscription Checkout & Discount Review Modal ── */}
+      <Dialog open={checkoutModalOpen} onOpenChange={setCheckoutModalOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-indigo-600" />
+              Checkout: {selectedPlanForCheckout?.name}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Review subscription price, billing cycle, and apply promo codes before launching payment.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedPlanForCheckout && (() => {
+            const basePrice =
+              billingCycle === "YEARLY"
+                ? Number(selectedPlanForCheckout.yearlyPrice)
+                : Number(selectedPlanForCheckout.monthlyPrice);
+
+            const discount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+            const finalPayable = appliedCoupon ? appliedCoupon.finalAmount : basePrice;
+
+            return (
+              <div className="space-y-4 pt-2">
+                {/* Plan & Cycle Summary */}
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-sm">{selectedPlanForCheckout.name}</h4>
+                    <span className="text-xs text-slate-500">
+                      {billingCycle === "YEARLY" ? "Billed Annually (365 Days)" : "Billed Monthly (30 Days)"}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-bold text-slate-900 text-base">₹{basePrice.toLocaleString("en-IN")}</span>
+                    <span className="text-[11px] text-slate-400 block">Catalog Price</span>
+                  </div>
+                </div>
+
+                {/* Recurring Renewal Notification */}
+                {checkingRecurring ? (
+                  <div className="flex items-center gap-2 text-xs text-slate-500 p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-600" />
+                    <span>Checking for recurring subscription discounts...</span>
+                  </div>
+                ) : recurringInfo?.hasRecurringCoupon ? (
+                  <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-800 text-xs flex items-start gap-2.5">
+                    <Repeat className="h-4 w-4 text-indigo-600 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold">Recurring Renewal Discount Applied!</span>
+                      <p className="text-[11px] text-indigo-600 mt-0.5">
+                        Your subscription has recurring coupon <strong>{recurringInfo.coupon?.code}</strong> attached.
+                        Discount of ₹{recurringInfo.discountAmount} automatically applied to this renewal.
+                      </p>
+                    </div>
+                  </div>
+                ) : recurringInfo?.fallbackToNormalPrice ? (
+                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2.5">
+                    <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold">Renewal at Standard Price</span>
+                      <p className="text-[11px] text-amber-700 mt-0.5">
+                        Your previous recurring coupon has expired or reached limits. Renewing at regular catalog price.
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Promo Code Input & Apply */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
+                    <span>Have a Promo Code?</span>
+                    {appliedCoupon && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveCoupon}
+                        className="text-[11px] text-rose-600 hover:underline font-medium cursor-pointer"
+                      >
+                        Remove Coupon
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="ENTER PROMO CODE"
+                        value={promoCodeInput}
+                        disabled={validatingPromo || !!appliedCoupon}
+                        onChange={(e) => {
+                          setPromoCodeInput(e.target.value.toUpperCase());
+                          setPromoError("");
+                        }}
+                        className="w-full pl-9 pr-3 py-2 text-xs font-mono uppercase bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:ring-1 focus:ring-indigo-500 disabled:bg-slate-100"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleApplyPromoCode}
+                      disabled={validatingPromo || !promoCodeInput.trim() || !!appliedCoupon}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 font-semibold h-auto"
+                    >
+                      {validatingPromo ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Apply"}
+                    </Button>
+                  </div>
+
+                  {promoError && (
+                    <p className="text-xs text-rose-600 font-medium flex items-center gap-1 mt-1">
+                      <AlertCircle className="h-3 w-3 shrink-0" />
+                      {promoError}
+                    </p>
+                  )}
+
+                  {appliedCoupon && (
+                    <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between mt-1">
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        <span>
+                          <strong>{appliedCoupon.coupon.code}</strong> applied ({appliedCoupon.coupon.applicability === "EVERY_RENEWAL" ? "Applies to Every Renewal" : "First Purchase Only"})
+                        </span>
+                      </div>
+                      <span className="font-bold text-emerald-700">-₹{appliedCoupon.discountAmount}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Itemized Breakdown */}
+                <div className="border-t border-slate-200 pt-3 space-y-1.5 text-xs">
+                  <div className="flex justify-between text-slate-600">
+                    <span>Base Subscription Price</span>
+                    <span>₹{basePrice.toLocaleString("en-IN")}</span>
+                  </div>
+
+                  {discount > 0 && (
+                    <div className="flex justify-between text-emerald-600 font-medium">
+                      <span>Promotional Discount</span>
+                      <span>-₹{discount.toLocaleString("en-IN")}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center text-sm font-bold text-slate-900 border-t border-slate-100 pt-2">
+                    <span>Final Amount Payable</span>
+                    <span className="text-base text-indigo-600">₹{finalPayable.toLocaleString("en-IN")}</span>
+                  </div>
+                </div>
+
+                <DialogFooter className="pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCheckoutModalOpen(false)}
+                    disabled={processingPlanId === selectedPlanForCheckout.id}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => handlePurchase(selectedPlanForCheckout, appliedCoupon?.coupon?.code)}
+                    disabled={processingPlanId === selectedPlanForCheckout.id}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold gap-2"
+                  >
+                    {processingPlanId === selectedPlanForCheckout.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <ShieldCheck className="h-4 w-4" />
+                    )}
+                    Pay ₹{finalPayable.toLocaleString("en-IN")} via Razorpay
+                  </Button>
+                </DialogFooter>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+export default function CompanyPlansPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+        </div>
+      }
+    >
+      <CompanyPlansContent />
+    </Suspense>
   );
 }
 

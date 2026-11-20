@@ -28,6 +28,8 @@ import {
   Check,
   Clock,
   Info,
+  Tag,
+  Percent,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -40,6 +42,7 @@ import {
   verifyOnboardingPayment,
   sendTrialOtp,
   submitTrialApplication,
+  validateCouponCode,
 } from "@/lib/api/plans";
 
 // Load Razorpay checkout script on demand
@@ -63,6 +66,7 @@ export default function CompanyOnboardingForm() {
 
   const initialPlanCode = (searchParams.get("plan") || "DEMO").toUpperCase();
   const initialBillingCycle = (searchParams.get("billingCycle") || "MONTHLY").toUpperCase();
+  const initialCouponCode = (searchParams.get("coupon") || searchParams.get("promo") || "").toUpperCase();
 
   const [plans, setPlans] = useState([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
@@ -106,6 +110,82 @@ export default function CompanyOnboardingForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activationSuccess, setActivationSuccess] = useState(null);
   const [trialSubmitted, setTrialSubmitted] = useState(null);
+
+  // Coupon / Promo Code State for Paid Plans
+  const [couponCode, setCouponCode] = useState(initialCouponCode);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState("");
+
+  // Automatically validate coupon carried from pricing page offers
+  useEffect(() => {
+    if (initialCouponCode && selectedPlanCode && selectedPlanCode !== "DEMO") {
+      setValidatingCoupon(true);
+      validateCouponCode({
+        code: initialCouponCode.trim().toUpperCase(),
+        planCode: selectedPlanCode,
+        billingCycle,
+        isRenewal: false,
+      })
+        .then((res) => {
+          if (res?.valid && res?.coupon) {
+            setAppliedCoupon(res);
+            setCouponError("");
+            toast.success(`Promo code "${res.coupon.code}" applied! You save ₹${res.discountAmount}.`);
+          } else {
+            setCouponError(res?.message || "Invalid promo code.");
+            setAppliedCoupon(null);
+          }
+        })
+        .catch((err) => {
+          const msg = err?.response?.data?.message || err?.message || "Invalid promo code.";
+          setCouponError(msg);
+          setAppliedCoupon(null);
+        })
+        .finally(() => {
+          setValidatingCoupon(false);
+        });
+    }
+  }, [initialCouponCode, selectedPlanCode, billingCycle]);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError("Please enter a promo code.");
+      return;
+    }
+    setValidatingCoupon(true);
+    setCouponError("");
+    try {
+      const res = await validateCouponCode({
+        code: couponCode.trim().toUpperCase(),
+        planCode: selectedPlanCode,
+        billingCycle,
+        isRenewal: false,
+      });
+
+      if (res?.valid && res?.coupon) {
+        setAppliedCoupon(res);
+        setCouponError("");
+        toast.success(`Promo code "${res.coupon.code}" applied! You save ₹${res.discountAmount}.`);
+      } else {
+        setCouponError(res?.message || "Invalid promo code.");
+        setAppliedCoupon(null);
+      }
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || "Invalid promo code.";
+      setCouponError(msg);
+      setAppliedCoupon(null);
+      toast.error(msg);
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+    setCouponError("");
+  };
 
   // Auto-generate slug from company name unless user explicitly edited it
   const autoSlug = companyName
@@ -332,6 +412,7 @@ export default function CompanyOnboardingForm() {
       phone: phone.trim() || undefined,
       planCode: selectedPlanCode,
       billingCycle,
+      couponCode: appliedCoupon ? appliedCoupon.coupon.code : undefined,
     };
 
     try {
@@ -643,8 +724,13 @@ export default function CompanyOnboardingForm() {
                   <div>
                     <div className="flex items-baseline gap-1.5">
                       <span className="text-3xl font-black text-slate-900 tracking-tight">
-                        ₹{Number(planPrice).toLocaleString("en-IN")}
+                        ₹{(appliedCoupon ? appliedCoupon.finalAmount : Number(planPrice)).toLocaleString("en-IN")}
                       </span>
+                      {appliedCoupon && (
+                        <span className="text-xs font-semibold text-slate-400 line-through">
+                          ₹{Number(planPrice).toLocaleString("en-IN")}
+                        </span>
+                      )}
                       <span className="text-xs font-semibold text-slate-500">
                         {billingCycle === "YEARLY" ? "/ year" : "/ month"}
                       </span>
@@ -684,6 +770,63 @@ export default function CompanyOnboardingForm() {
                 </div>
               )}
             </div>
+
+            {/* Promo Code Box for Paid Plans */}
+            {!isDemo && (
+              <div className="mt-3 pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between text-[11px] font-semibold text-slate-600 mb-1">
+                  <span className="flex items-center gap-1">
+                    <Tag className="h-3 w-3 text-slate-400" />
+                    Promo Code
+                  </span>
+                  {appliedCoupon && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      className="text-[10px] text-rose-600 hover:underline cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex gap-1.5">
+                  <input
+                    type="text"
+                    placeholder="ENTER CODE"
+                    value={couponCode}
+                    disabled={validatingCoupon || !!appliedCoupon}
+                    onChange={(e) => {
+                      setCouponCode(e.target.value.toUpperCase());
+                      setCouponError("");
+                    }}
+                    className="flex-1 px-2.5 py-1 text-xs font-mono uppercase bg-white border border-slate-200 rounded-md focus:outline-hidden focus:ring-1 focus:ring-blue-500 disabled:bg-slate-100"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleApplyCoupon}
+                    disabled={validatingCoupon || !couponCode.trim() || !!appliedCoupon}
+                    className="h-auto py-1 px-2.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {validatingCoupon ? <Loader2 className="h-3 w-3 animate-spin" /> : "Apply"}
+                  </Button>
+                </div>
+
+                {couponError && (
+                  <p className="text-[10px] text-rose-600 mt-1 font-medium">{couponError}</p>
+                )}
+
+                {appliedCoupon && (
+                  <div className="mt-1.5 p-1.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] flex items-center justify-between">
+                    <span>
+                      <strong>{appliedCoupon.coupon.code}</strong> applied (-₹{appliedCoupon.discountAmount})
+                    </span>
+                    <span className="font-bold">Save ₹{appliedCoupon.discountAmount}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Included Tier Entitlements */}

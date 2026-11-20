@@ -523,3 +523,41 @@ export const resendAdminTrialApprovalEmail = async (id) => {
   const res = await axiosClient.post(`/super-admin/trial-requests/${id}/resend-approval-email`);
   return res?.data?.data || res?.data;
 };
+
+/**
+ * 24. Super Admin Coupon Management API
+ */
+export const getAdminCoupons = async (params = {}) => {
+  const res = await axiosClient.get("/super-admin/coupons", { params });
+  return res?.data?.data || res?.data;
+};
+
+export const getAdminCouponById = async (id) => {
+  const res = await axiosClient.get(`/super-admin/coupons/${id}`);
+  return res?.data?.data?.coupon || res?.data?.data || res?.data;
+};
+
+export const createAdminCoupon = async (payload) => {
+  const res = await axiosClient.post("/super-admin/coupons", payload);
+  return res?.data?.data?.coupon || res?.data?.data || res?.data;
+};
+
+export const updateAdminCoupon = async (id, payload) => {
+  const res = await axiosClient.patch(`/super-admin/coupons/${id}`, payload);
+  return res?.data?.data?.coupon || res?.data?.data || res?.data;
+};
+
+export const toggleAdminCouponStatus = async (id, isActive) => {
+  const res = await axiosClient.patch(`/super-admin/coupons/${id}/status`, { isActive });
+  return res?.data?.data?.coupon || res?.data?.data || res?.data;
+};
+
+export const deleteAdminCoupon = async (id) => {
+  const res = await axiosClient.delete(`/super-admin/coupons/${id}`);
+  return res?.data?.data || res?.data;
+};
+
+export const getAdminCouponReports = async () => {
+  const res = await axiosClient.get("/super-admin/coupons/reports/summary");
+  return res?.data?.data?.summary || res?.data?.data || res?.data;
+};
