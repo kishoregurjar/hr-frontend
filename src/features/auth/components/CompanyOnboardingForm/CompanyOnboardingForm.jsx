@@ -118,7 +118,6 @@ export default function CompanyOnboardingForm() {
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activationSuccess, setActivationSuccess] = useState(null);
-  const [trialSubmitted, setTrialSubmitted] = useState(null);
 
   // Coupon / Promo Code State for Paid Plans
   const [couponCode, setCouponCode] = useState(initialCouponCode);
@@ -525,23 +524,14 @@ export default function CompanyOnboardingForm() {
           industry: industry.trim() || undefined,
         });
 
-        toast.success("🎉 30-Day Free Trial activated! Workspace is live.");
-        setActivationSuccess(res);
+        toast.success("Account created successfully with 30-Day Free Trial! Redirecting to login...");
 
-        if (res?.accessToken && typeof window !== "undefined") {
-          localStorage.setItem("accessToken", res.accessToken);
-          if (res.refreshToken) localStorage.setItem("refreshToken", res.refreshToken);
-        }
+        // Direct access to login page with prefilled email and registration confirmation
+        const targetUrl =
+          res?.tenantUrl ||
+          `/login?registered=true&email=${encodeURIComponent(ownerEmail.trim().toLowerCase())}&tenant=${encodeURIComponent(res?.company?.slug || companySlug || "")}`;
 
-        setTimeout(() => {
-          if (res?.tenantUrl) {
-            window.location.href = res.tenantUrl;
-          } else {
-            router.push("/dashboard");
-          }
-        }, 2000);
-
-        setIsSubmitting(false);
+        window.location.href = targetUrl;
         return;
       }
 
@@ -639,81 +629,7 @@ export default function CompanyOnboardingForm() {
     }
   };
 
-  // ── Pending Review Screen for Demo Applications ──
-  if (trialSubmitted) {
-    return (
-      <div className="max-w-xl mx-auto text-center space-y-5 py-10 px-6 rounded-2xl bg-white border border-slate-200/90 shadow-xl shadow-slate-200/40 animate-in fade-in zoom-in-95 duration-300 font-sans">
-        <div className="relative inline-flex">
-          <div className="h-16 w-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center mx-auto shadow-lg shadow-amber-500/25">
-            <Clock className="h-8 w-8 text-white stroke-[2.5]" />
-          </div>
-          <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500"></span>
-          </span>
-        </div>
 
-        <div className="space-y-1.5">
-          <Badge className="bg-amber-50 text-amber-800 border border-amber-200 font-bold text-[11px] uppercase px-2.5 py-0.5">
-            Application Pending Review
-          </Badge>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-            Trial Application Submitted!
-          </h2>
-          <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
-            Thank you, <strong className="text-slate-900 font-bold">{trialSubmitted.ownerName || ownerName}</strong>. Your Demo Trial application for <strong className="text-slate-900 font-bold">{trialSubmitted.companyName || companyName}</strong> has been received and queued for Super Admin review.
-          </p>
-        </div>
-
-        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-left space-y-2.5 text-xs">
-          <div className="flex justify-between items-center text-slate-600 pb-2 border-b border-slate-200/60">
-            <span className="font-semibold">Registered Email</span>
-            <span className="font-mono font-bold text-slate-900">{trialSubmitted.businessEmail || ownerEmail}</span>
-          </div>
-          <div className="flex justify-between items-center text-slate-600 pb-2 border-b border-slate-200/60">
-            <span className="font-semibold">Evaluation Tier</span>
-            <span className="inline-flex items-center gap-1 font-bold text-amber-700">
-              <Sparkles className="h-3.5 w-3.5" />
-              Demo Plan (30-Day Free Trial)
-            </span>
-          </div>
-          <div className="flex justify-between items-center text-slate-600 pb-2 border-b border-slate-200/60">
-            <span className="font-semibold">Allocated Quotas</span>
-            <span className="font-bold text-slate-800">2 Seats • 20 Candidates • 10 Invites</span>
-          </div>
-          <div className="flex justify-between items-center text-slate-600">
-            <span className="font-semibold">Trial Timer Status</span>
-            <span className="font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-[11px]">
-              Paused (Starts strictly upon Admin approval)
-            </span>
-          </div>
-        </div>
-
-        <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200/80 text-left text-xs text-blue-900 space-y-1">
-          <div className="font-bold flex items-center gap-1.5 text-blue-950 text-xs">
-            <Info className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-            What happens next?
-          </div>
-          <p className="text-blue-800 leading-relaxed text-[11px]">
-            Our Super Admin team will review your organization details. Once authorized, an approval email will be delivered to <strong>{trialSubmitted.businessEmail || ownerEmail}</strong> containing your company workspace URL and login instructions.
-          </p>
-        </div>
-
-        <div className="pt-1 flex flex-col sm:flex-row items-center justify-center gap-2.5">
-          <Link href="/">
-            <Button variant="outline" className="rounded-xl text-xs font-bold border-slate-200 h-9">
-              Return to Home
-            </Button>
-          </Link>
-          <Link href="/plans">
-            <Button className="rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white h-9">
-              Explore Paid Plans
-            </Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   // ── Success State Screen for Paid Activation ──
   if (activationSuccess) {
@@ -785,8 +701,8 @@ export default function CompanyOnboardingForm() {
           {/* Header Row: Badge & Change Link */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200">
-                <Sparkles className="h-3 w-3 text-amber-600" />
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200">
+                <Sparkles className="h-3 w-3 text-blue-600" />
                 {activePlan.name}
               </span>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -811,7 +727,7 @@ export default function CompanyOnboardingForm() {
                   <div>
                     <div className="flex items-baseline gap-2">
                       <span className="text-3xl font-black text-slate-900 tracking-tight">₹0</span>
-                      <span className="text-[11px] font-extrabold text-amber-700 uppercase tracking-wide bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                      <span className="text-[11px] font-extrabold text-blue-700 uppercase tracking-wide bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
                         30-Day Free Trial
                       </span>
                     </div>
@@ -992,7 +908,7 @@ export default function CompanyOnboardingForm() {
               </div>
 
               <div className="flex items-center gap-2">
-                <div className="h-5 w-5 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                <div className="h-5 w-5 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                   <ShieldCheck className="h-3 w-3" />
                 </div>
                 <span className="text-[11px]">Anti-Cheat AI Proctoring & Fraud Detection</span>
@@ -1263,16 +1179,16 @@ export default function CompanyOnboardingForm() {
                           size="sm"
                           onClick={() => handleSendOtp({ openModal: true })}
                           disabled={otpSending || !ownerEmail.includes("@")}
-                          className="h-10 px-3.5 text-xs font-bold rounded-xl border-amber-300 text-amber-900 bg-amber-50 hover:bg-amber-100 hover:border-amber-400 shrink-0 cursor-pointer shadow-xs transition"
+                          className="h-10 px-3.5 text-xs font-bold rounded-xl border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 hover:border-blue-300 shrink-0 cursor-pointer shadow-xs transition"
                         >
                           {otpSending ? (
                             <div className="flex items-center gap-1.5">
-                              <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-700" />
+                              <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
                               <span>Sending...</span>
                             </div>
                           ) : (
                             <div className="flex items-center gap-1.5">
-                              <ShieldCheck className="h-3.5 w-3.5 text-amber-600" />
+                              <ShieldCheck className="h-3.5 w-3.5 text-blue-600" />
                               <span>Verify Email</span>
                             </div>
                           )}
@@ -1398,11 +1314,7 @@ export default function CompanyOnboardingForm() {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className={`w-full h-11 text-white font-black text-sm rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer transition transform active:scale-[0.99] ${
-                  isDemo
-                    ? "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-amber-500/20"
-                    : "bg-blue-600 hover:bg-blue-700 shadow-blue-500/20"
-                }`}
+                className="w-full h-11 text-white font-black text-sm rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer transition transform active:scale-[0.99] bg-blue-600 hover:bg-blue-700 shadow-blue-500/20"
               >
                 {isSubmitting ? (
                   <div className="flex items-center gap-2">
@@ -1491,8 +1403,8 @@ export default function CompanyOnboardingForm() {
 
             {/* Icon Header */}
             <div className="text-center space-y-2 pt-1">
-              <div className="mx-auto w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-600 flex items-center justify-center shadow-inner">
-                <Mail className="h-7 w-7 text-amber-600" />
+              <div className="mx-auto w-14 h-14 rounded-2xl bg-blue-50 border border-blue-200/80 text-blue-600 flex items-center justify-center shadow-inner">
+                <Mail className="h-7 w-7 text-blue-600" />
               </div>
               <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
                 Verify Your Email Address
@@ -1538,8 +1450,8 @@ export default function CompanyOnboardingForm() {
                     onPaste={handleOtpPaste}
                     className={`w-11 sm:w-12 h-12 sm:h-13 text-center font-mono font-black text-xl rounded-xl border transition outline-none shadow-xs ${
                       digit
-                        ? "border-amber-500 ring-2 ring-amber-500/20 bg-white text-slate-900"
-                        : "border-slate-300 bg-slate-50/50 focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 text-slate-700"
+                        ? "border-blue-600 ring-2 ring-blue-500/20 bg-white text-slate-900"
+                        : "border-slate-300 bg-slate-50/50 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 text-slate-700"
                     }`}
                   />
                 ))}
@@ -1555,7 +1467,7 @@ export default function CompanyOnboardingForm() {
                 type="button"
                 onClick={() => handleVerifyOtp()}
                 disabled={otpVerifying || !isOtpComplete}
-                className="w-full h-11 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-sm rounded-xl shadow-md shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer transition"
+                className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-black text-sm rounded-xl shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer transition"
               >
                 {otpVerifying ? (
                   <div className="flex items-center gap-2">
@@ -1584,7 +1496,7 @@ export default function CompanyOnboardingForm() {
                       type="button"
                       onClick={() => handleSendOtp({ openModal: false })}
                       disabled={otpSending}
-                      className="font-bold text-amber-700 hover:text-amber-800 hover:underline cursor-pointer"
+                      className="font-bold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
                     >
                       Resend OTP
                     </button>
