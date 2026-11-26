@@ -214,10 +214,10 @@ export default function AdminTrialRequestsPage() {
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                Demo Trial Requests
+                Demo Trial Registrations
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                Review visitor trial applications, evaluate domain authenticity, and authorize 30-day workspaces.
+                View visitor trial registrations, company details, active 30-day workspaces, and audit logs.
               </p>
             </div>
           </div>

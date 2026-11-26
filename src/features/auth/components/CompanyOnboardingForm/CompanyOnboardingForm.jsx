@@ -432,7 +432,7 @@ export default function CompanyOnboardingForm() {
     };
 
     try {
-      // ── Path 1: Request-Based Free 7-Day Demo Trial ──
+      // ── Path 1: Instant Free 30-Day Demo Trial ──
       if (isDemo) {
         if (!isOtpComplete) {
           setError("Please enter the complete 6-digit email verification code.");
@@ -452,14 +452,22 @@ export default function CompanyOnboardingForm() {
           industry: industry.trim() || undefined,
         });
 
-        toast.success("Trial application submitted for administrative review!");
-        setTrialSubmitted(
-          res?.application || {
-            companyName: companyName.trim(),
-            ownerName: ownerName.trim(),
-            businessEmail: ownerEmail.trim().toLowerCase(),
+        toast.success("🎉 30-Day Free Trial activated! Workspace is live.");
+        setActivationSuccess(res);
+
+        if (res?.accessToken && typeof window !== "undefined") {
+          localStorage.setItem("accessToken", res.accessToken);
+          if (res.refreshToken) localStorage.setItem("refreshToken", res.refreshToken);
+        }
+
+        setTimeout(() => {
+          if (res?.tenantUrl) {
+            window.location.href = res.tenantUrl;
+          } else {
+            router.push("/dashboard");
           }
-        );
+        }, 2000);
+
         setIsSubmitting(false);
         return;
       }
@@ -735,7 +743,7 @@ export default function CompanyOnboardingForm() {
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-500 mt-1">
-                      No card required. Starts upon Admin approval.
+                      No card required. Instant workspace access.
                     </p>
                   </div>
                 ) : (
@@ -1133,11 +1141,6 @@ export default function CompanyOnboardingForm() {
                 <div className="space-y-1">
                   <Label htmlFor="ownerEmail" className="text-[11px] font-bold text-slate-700 flex items-center justify-between">
                     <span>Work Email Address <span className="text-rose-500">*</span></span>
-                    {isDemo && ownerEmail && (ownerEmail.includes("@gmail.") || ownerEmail.includes("@yahoo.") || ownerEmail.includes("@outlook.")) && (
-                      <span className="text-[9px] text-amber-700 font-semibold bg-amber-50 px-1 py-0.2 rounded border border-amber-200">
-                        Manual Review
-                      </span>
-                    )}
                   </Label>
                   <div className="flex gap-1.5">
                     <div className="relative flex-1">
@@ -1365,12 +1368,12 @@ export default function CompanyOnboardingForm() {
                 {isSubmitting ? (
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>{isDemo ? "Submitting Application for Review..." : "Provisioning Workspace..."}</span>
+                    <span>{isDemo ? "Activating 30-Day Free Workspace..." : "Provisioning Workspace..."}</span>
                   </div>
                 ) : isDemo ? (
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4" />
-                    <span>Request Free Trial</span>
+                    <span>Start 30-Day Free Trial</span>
                     <ArrowRight className="h-4 w-4" />
                   </div>
                 ) : (
@@ -1393,7 +1396,7 @@ export default function CompanyOnboardingForm() {
               {/* Supporting text directly below button */}
               <p className="text-[11px] text-slate-500 text-center leading-relaxed">
                 {isDemo
-                  ? "Your application will be reviewed by the HireQuest team. Your 30-day trial starts after approval."
+                  ? "Instant access to all features for 30 days. No credit card required."
                   : "Your isolated recruiter workspace is provisioned immediately upon verified payment."}
               </p>
 
