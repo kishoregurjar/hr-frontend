@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "dev:fresh": "npx kill-port 3000 3001 && next dev",
+    "dev": "next dev --turbopack",
+    "dev:webpack": "next dev",
+    "dev:fresh": "npx kill-port 3000 3001 && next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -38,6 +39,7 @@
   "devDependencies": {
     "@alloc/quick-lru": "^5.2.0",
     "@tailwindcss/postcss": "^4",
+    "babel-plugin-react-compiler": "^1.0.0",
     "eslint": "^9",
     "eslint-config-next": "^15.2.1",
     "tailwindcss": "^4"

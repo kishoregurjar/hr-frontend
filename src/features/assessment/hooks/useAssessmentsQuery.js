@@ -8,7 +8,7 @@ const useAssessmentsQuery = (params, options = {}) => {
   return useQuery({
     queryKey: ASSESSMENT_QUERY_KEYS.lists(params),
     queryFn: () => assessmentService.getAll(params),
-    staleTime: 0,
+    staleTime: 5 * 60 * 1000, // 5 minutes cache (aligns with global queryClient default)
     refetchOnWindowFocus: false,
     ...options,
   });

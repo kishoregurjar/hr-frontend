@@ -96,6 +96,15 @@ export const sendTrialOtp = async (email) => {
 };
 
 /**
+ * 10b. Verify Trial Application Email OTP
+ * POST /api/v1/trial-applications/verify-otp
+ */
+export const verifyTrialOtp = async ({ email, otp }) => {
+  const res = await axiosClient.post("/trial-applications/verify-otp", { email, otp });
+  return res?.data?.data || res?.data;
+};
+
+/**
  * 11. Submit Demo Trial Application for Super Admin Approval
  * POST /api/v1/trial-applications/apply
  */

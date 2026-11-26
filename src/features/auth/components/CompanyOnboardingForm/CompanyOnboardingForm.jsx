@@ -30,6 +30,7 @@ import {
   Info,
   Tag,
   Percent,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ import {
   createOnboardingOrder,
   verifyOnboardingPayment,
   sendTrialOtp,
+  verifyTrialOtp,
   submitTrialApplication,
   validateCouponCode,
 } from "@/lib/api/plans";
@@ -103,6 +105,13 @@ export default function CompanyOnboardingForm() {
   const [otpSent, setOtpSent] = useState(false);
   const [otpSending, setOtpSending] = useState(false);
   const [otpCooldown, setOtpCooldown] = useState(0);
+
+  // Center OTP Verification Modal & Email Verification State
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpModalError, setOtpModalError] = useState("");
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [verifiedOtpCode, setVerifiedOtpCode] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -273,10 +282,13 @@ export default function CompanyOnboardingForm() {
   const handleEmailChange = (e) => {
     const val = e.target.value;
     setOwnerEmail(val);
-    if (otpSent) {
+    if (isEmailVerified || otpSent) {
+      setIsEmailVerified(false);
+      setVerifiedOtpCode("");
       setOtpSent(false);
       setOtpDigits(["", "", "", "", "", ""]);
       setError(null);
+      setOtpModalError("");
     }
   };
 
@@ -291,7 +303,7 @@ export default function CompanyOnboardingForm() {
   };
 
   // Handle Send / Resend OTP Action
-  const handleSendOtp = async () => {
+  const handleSendOtp = async ({ openModal = true } = {}) => {
     if (!ownerEmail.trim()) {
       setError("Please enter your work email to receive the 6-digit verification code.");
       return;
@@ -315,15 +327,18 @@ export default function CompanyOnboardingForm() {
 
     setOtpSending(true);
     setError(null);
+    setOtpModalError("");
     try {
       const res = await sendTrialOtp(cleanEmail);
       setOtpSent(true);
       setOtpCooldown(res?.cooldownSeconds || 60);
       toast.success(res?.message || "Verification code dispatched to your email!");
-      // Auto-focus first OTP box
-      setTimeout(() => {
-        otpRefs[0].current?.focus();
-      }, 150);
+      if (openModal) {
+        setIsOtpModalOpen(true);
+        setTimeout(() => {
+          otpRefs[0].current?.focus();
+        }, 150);
+      }
     } catch (err) {
       const msg = err?.response?.data?.message || err?.message || "Failed to dispatch verification code.";
       const code = err?.response?.data?.code;
@@ -332,11 +347,47 @@ export default function CompanyOnboardingForm() {
         if (match && match[1]) {
           setOtpCooldown(parseInt(match[1], 10));
         }
+        if (openModal) {
+          setIsOtpModalOpen(true);
+        }
       }
       setError(msg);
+      setOtpModalError(msg);
       toast.error(msg);
     } finally {
       setOtpSending(false);
+    }
+  };
+
+  // Verify OTP inside modal
+  const handleVerifyOtp = async (codeOverride) => {
+    const code = typeof codeOverride === "string" ? codeOverride : otpDigits.join("");
+    if (code.length !== 6) {
+      setOtpModalError("Please enter the complete 6-digit verification code.");
+      return;
+    }
+
+    setOtpVerifying(true);
+    setOtpModalError("");
+
+    try {
+      const res = await verifyTrialOtp({
+        email: ownerEmail.trim().toLowerCase(),
+        otp: code.trim(),
+      });
+      setIsEmailVerified(true);
+      setVerifiedOtpCode(code.trim());
+      toast.success(res?.message || "Email verified successfully!");
+      setTimeout(() => {
+        setIsOtpModalOpen(false);
+      }, 400);
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message || err?.message || "Invalid verification code. Please check and try again.";
+      setOtpModalError(msg);
+      toast.error(msg);
+    } finally {
+      setOtpVerifying(false);
     }
   };
 
@@ -348,16 +399,24 @@ export default function CompanyOnboardingForm() {
     if (!numeric) {
       updated[index] = "";
       setOtpDigits(updated);
+      setOtpModalError("");
       return;
     }
 
     // Take the last typed digit
     updated[index] = numeric[numeric.length - 1];
     setOtpDigits(updated);
+    setOtpModalError("");
 
     // Auto-advance to next box
     if (index < 5 && numeric.length > 0) {
       otpRefs[index + 1].current?.focus();
+    }
+
+    // Auto-verify when 6th digit entered
+    const fullCode = updated.join("");
+    if (fullCode.length === 6) {
+      handleVerifyOtp(fullCode);
     }
   };
 
@@ -386,9 +445,14 @@ export default function CompanyOnboardingForm() {
       updated[i] = pasted[i] || "";
     }
     setOtpDigits(updated);
+    setOtpModalError("");
 
     const focusTarget = Math.min(pasted.length, 5);
     otpRefs[focusTarget].current?.focus();
+
+    if (pasted.length === 6) {
+      handleVerifyOtp(pasted);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -434,9 +498,18 @@ export default function CompanyOnboardingForm() {
     try {
       // ── Path 1: Request-Based Free 7-Day Demo Trial ──
       if (isDemo) {
-        if (!isOtpComplete) {
+        if (!isEmailVerified) {
+          setError("Please verify your email address to submit your trial application.");
+          setIsSubmitting(false);
+          handleSendOtp({ openModal: true });
+          return;
+        }
+
+        const effectiveOtp = verifiedOtpCode || otpCode;
+        if (!effectiveOtp || effectiveOtp.length !== 6) {
           setError("Please enter the complete 6-digit email verification code.");
           setIsSubmitting(false);
+          setIsOtpModalOpen(true);
           return;
         }
 
@@ -444,7 +517,7 @@ export default function CompanyOnboardingForm() {
           companyName: companyName.trim(),
           ownerName: ownerName.trim(),
           businessEmail: ownerEmail.trim().toLowerCase(),
-          otp: otpCode.trim(),
+          otp: effectiveOtp.trim(),
           password,
           phone: phone.trim() || undefined,
           website: website.trim() || undefined,
@@ -1134,12 +1207,12 @@ export default function CompanyOnboardingForm() {
                   <Label htmlFor="ownerEmail" className="text-[11px] font-bold text-slate-700 flex items-center justify-between">
                     <span>Work Email Address <span className="text-rose-500">*</span></span>
                     {isDemo && ownerEmail && (ownerEmail.includes("@gmail.") || ownerEmail.includes("@yahoo.") || ownerEmail.includes("@outlook.")) && (
-                      <span className="text-[9px] text-amber-700 font-semibold bg-amber-50 px-1 py-0.2 rounded border border-amber-200">
+                      <span className="text-[9px] text-amber-700 font-semibold bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
                         Manual Review
                       </span>
                     )}
                   </Label>
-                  <div className="flex gap-1.5">
+                  <div className="flex gap-2">
                     <div className="relative flex-1">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                       <Input
@@ -1148,113 +1221,79 @@ export default function CompanyOnboardingForm() {
                         placeholder="owner@company.com"
                         value={ownerEmail}
                         onChange={handleEmailChange}
-                        className="pl-9 h-10 text-xs sm:text-sm rounded-xl border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/10 transition"
+                        readOnly={isEmailVerified}
+                        className={`pl-9 pr-9 h-10 text-xs sm:text-sm rounded-xl transition ${
+                          isEmailVerified
+                            ? "border-emerald-400 bg-emerald-50/20 text-emerald-950 font-medium"
+                            : "border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/10"
+                        }`}
                         required
                       />
-                    </div>
-                    {isDemo && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleSendOtp}
-                        disabled={otpSending || otpCooldown > 0 || !ownerEmail.includes("@")}
-                        className="h-10 px-3 text-xs font-bold rounded-xl border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100 shrink-0 cursor-pointer"
-                      >
-                        {otpSending ? (
-                          <div className="flex items-center gap-1.5">
-                            <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-700" />
-                            <span>Sending...</span>
-                          </div>
-                        ) : otpCooldown > 0 ? (
-                          `Resend (${otpCooldown}s)`
-                        ) : otpSent ? (
-                          "Resend Code"
-                        ) : (
-                          "Verify Email"
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Row 5 (Demo Only): Redesigned 6-Digit OTP Verification Component */}
-              {isDemo && (
-                <div className="p-3.5 rounded-xl bg-amber-50/50 border border-amber-200 space-y-2.5 animate-in fade-in">
-                  <div className="flex items-center justify-between text-xs">
-                    <Label htmlFor="otp-0" className="font-bold text-amber-950 flex items-center gap-1.5 text-[11px]">
-                      <ShieldCheck className="h-3.5 w-3.5 text-amber-600" />
-                      <span>Email Verification Code (6-Digit OTP) <span className="text-rose-500">*</span></span>
-                    </Label>
-                    {otpSent ? (
-                      <span className="text-[10px] font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-md">
-                        Code sent to {ownerEmail}
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-amber-700 font-medium">
-                        Click &apos;Verify Email&apos; to receive your code
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Six Compact Digit Boxes */}
-                  <div className="flex items-center justify-center gap-2 sm:gap-3 py-1">
-                    {otpDigits.map((digit, idx) => (
-                      <input
-                        key={idx}
-                        id={`otp-${idx}`}
-                        ref={otpRefs[idx]}
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        maxLength={1}
-                        value={digit}
-                        onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
-                        onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                        onPaste={handleOtpPaste}
-                        className={`w-10 sm:w-11 h-11 text-center font-mono font-bold text-lg rounded-xl border bg-white transition outline-none shadow-xs ${
-                          digit
-                            ? "border-amber-500 ring-2 ring-amber-500/20 text-slate-900"
-                            : "border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 text-slate-700"
-                        }`}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Status & Resend Helper Row */}
-                  <div className="flex items-center justify-between text-[11px] pt-0.5">
-                    <div>
-                      {isOtpComplete ? (
-                        <span className="text-emerald-700 font-bold flex items-center gap-1">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                          6-digit verification code ready
-                        </span>
-                      ) : (
-                        <span className="text-slate-500">
-                          Enter the 6-digit code sent to your work email.
-                        </span>
+                      {isEmailVerified && (
+                        <CheckCircle2 className="absolute right-3 top-3 h-4 w-4 text-emerald-600 animate-in zoom-in" />
                       )}
                     </div>
 
-                    <div>
-                      {otpCooldown > 0 ? (
-                        <span className="text-slate-400 font-medium">
-                          Resend in <strong className="text-slate-700 font-mono">{otpCooldown}s</strong>
-                        </span>
-                      ) : otpSent ? (
-                        <button
+                    {isDemo && (
+                      isEmailVerified ? (
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <div className="h-10 px-3 flex items-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold shadow-xs">
+                            <Check className="h-3.5 w-3.5 text-emerald-600 stroke-[3]" />
+                            <span>Verified</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsEmailVerified(false);
+                              setVerifiedOtpCode("");
+                              setOtpDigits(["", "", "", "", "", ""]);
+                            }}
+                            className="text-[11px] text-slate-400 hover:text-slate-600 underline font-medium px-1 cursor-pointer"
+                          >
+                            Change
+                          </button>
+                        </div>
+                      ) : (
+                        <Button
                           type="button"
-                          onClick={handleSendOtp}
-                          className="text-amber-800 hover:text-amber-900 font-bold underline cursor-pointer"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleSendOtp({ openModal: true })}
+                          disabled={otpSending || !ownerEmail.includes("@")}
+                          className="h-10 px-3.5 text-xs font-bold rounded-xl border-amber-300 text-amber-900 bg-amber-50 hover:bg-amber-100 hover:border-amber-400 shrink-0 cursor-pointer shadow-xs transition"
                         >
-                          Resend Code
-                        </button>
-                      ) : null}
-                    </div>
+                          {otpSending ? (
+                            <div className="flex items-center gap-1.5">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-700" />
+                              <span>Sending...</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <ShieldCheck className="h-3.5 w-3.5 text-amber-600" />
+                              <span>Verify Email</span>
+                            </div>
+                          )}
+                        </Button>
+                      )
+                    )}
                   </div>
+
+                  {/* Clean Helper Line below email */}
+                  {isDemo && (
+                    <div className="pt-0.5">
+                      {isEmailVerified ? (
+                        <p className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" /> Email confirmed. You are ready to submit your trial request.
+                        </p>
+                      ) : (
+                        <p className="text-[10px] text-slate-400">
+                          Click &apos;Verify Email&apos; to receive a 6-digit verification code in a popup.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
 
               {/* Row 6: Password + Confirm Password (2 cols) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1355,7 +1394,7 @@ export default function CompanyOnboardingForm() {
 
               <Button
                 type="submit"
-                disabled={isSubmitting || (isDemo && !isOtpComplete)}
+                disabled={isSubmitting}
                 className={`w-full h-11 text-white font-black text-sm rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer transition transform active:scale-[0.99] ${
                   isDemo
                     ? "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-amber-500/20"
@@ -1417,6 +1456,142 @@ export default function CompanyOnboardingForm() {
           </form>
         </div>
       </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          CENTER POPUP MODAL: 6-Digit Email OTP Verification
+      ───────────────────────────────────────────────────────────── */}
+      {isOtpModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !otpVerifying) {
+              setIsOtpModalOpen(false);
+            }
+          }}
+        >
+          <div
+            className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-6 sm:p-7 space-y-5 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setIsOtpModalOpen(false)}
+              disabled={otpVerifying}
+              aria-label="Close modal"
+              className="absolute top-4 right-4 p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            {/* Icon Header */}
+            <div className="text-center space-y-2 pt-1">
+              <div className="mx-auto w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-600 flex items-center justify-center shadow-inner">
+                <Mail className="h-7 w-7 text-amber-600" />
+              </div>
+              <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+                Verify Your Email Address
+              </h3>
+              <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+                We have dispatched a 6-digit verification code to{" "}
+                <span className="font-bold text-slate-900 break-all">{ownerEmail}</span>
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOtpModalOpen(false);
+                }}
+                className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+              >
+                Wrong email? Change address
+              </button>
+            </div>
+
+            {/* Modal Error Alert */}
+            {otpModalError && (
+              <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2 animate-in fade-in">
+                <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+                <span className="font-medium">{otpModalError}</span>
+              </div>
+            )}
+
+            {/* Six Compact Digit Boxes */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-2 sm:gap-2.5 py-1">
+                {otpDigits.map((digit, idx) => (
+                  <input
+                    key={idx}
+                    id={`modal-otp-${idx}`}
+                    ref={otpRefs[idx]}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                    onPaste={handleOtpPaste}
+                    className={`w-11 sm:w-12 h-12 sm:h-13 text-center font-mono font-black text-xl rounded-xl border transition outline-none shadow-xs ${
+                      digit
+                        ? "border-amber-500 ring-2 ring-amber-500/20 bg-white text-slate-900"
+                        : "border-slate-300 bg-slate-50/50 focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 text-slate-700"
+                    }`}
+                  />
+                ))}
+              </div>
+              <p className="text-[11px] text-slate-400 text-center">
+                Paste the 6-digit code or type directly.
+              </p>
+            </div>
+
+            {/* Action CTA & Resend Row */}
+            <div className="space-y-3 pt-1">
+              <Button
+                type="button"
+                onClick={() => handleVerifyOtp()}
+                disabled={otpVerifying || !isOtpComplete}
+                className="w-full h-11 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-sm rounded-xl shadow-md shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer transition"
+              >
+                {otpVerifying ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Verifying Code...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>Verify & Continue</span>
+                  </div>
+                )}
+              </Button>
+
+              {/* Resend Helper */}
+              <div className="text-center text-xs text-slate-500">
+                {otpCooldown > 0 ? (
+                  <span>
+                    Didn&apos;t receive code? Resend in{" "}
+                    <strong className="font-mono text-slate-800 font-bold">{otpCooldown}s</strong>
+                  </span>
+                ) : (
+                  <span>
+                    Didn&apos;t receive code?{" "}
+                    <button
+                      type="button"
+                      onClick={() => handleSendOtp({ openModal: false })}
+                      disabled={otpSending}
+                      className="font-bold text-amber-700 hover:text-amber-800 hover:underline cursor-pointer"
+                    >
+                      Resend OTP
+                    </button>
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

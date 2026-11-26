@@ -1,11 +1,48 @@
-import PatternMemoryGame from "../games/PatternMemoryGame";
-import MemoryMatchGame from "../games/MemoryMatchGame";
-import MazeEscapeGame from "../games/MazeEscapeGame";
-import ZipGame from "../games/ZipGame";
-import TangoGame from "../games/TangoGame";
-import SudokuGame from "../games/SudokuGame";
-import MahjongGame from "../games/MahjongGame";
-import NQueensGame from "../games/NQueensGame";
+import dynamic from "next/dynamic";
+import { Loader2 } from "lucide-react";
+
+const GameLoadingFallback = () => (
+  <div className="flex flex-col items-center justify-center min-h-[420px] w-full gap-3">
+    <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+    <span className="text-xs font-semibold text-slate-500 tracking-wide">
+      Loading cognitive challenge...
+    </span>
+  </div>
+);
+
+// Lazy load individual game components on demand (prevents loading all 8 games at once)
+const ZipGame = dynamic(() => import("../games/ZipGame"), {
+  ssr: false,
+  loading: () => <GameLoadingFallback />,
+});
+const TangoGame = dynamic(() => import("../games/TangoGame"), {
+  ssr: false,
+  loading: () => <GameLoadingFallback />,
+});
+const SudokuGame = dynamic(() => import("../games/SudokuGame"), {
+  ssr: false,
+  loading: () => <GameLoadingFallback />,
+});
+const MahjongGame = dynamic(() => import("../games/MahjongGame"), {
+  ssr: false,
+  loading: () => <GameLoadingFallback />,
+});
+const NQueensGame = dynamic(() => import("../games/NQueensGame"), {
+  ssr: false,
+  loading: () => <GameLoadingFallback />,
+});
+const MemoryMatchGame = dynamic(() => import("../games/MemoryMatchGame"), {
+  ssr: false,
+  loading: () => <GameLoadingFallback />,
+});
+const MazeEscapeGame = dynamic(() => import("../games/MazeEscapeGame"), {
+  ssr: false,
+  loading: () => <GameLoadingFallback />,
+});
+const PatternMemoryGame = dynamic(() => import("../games/PatternMemoryGame"), {
+  ssr: false,
+  loading: () => <GameLoadingFallback />,
+});
 
 const GameDispatcher = ({ section, onComplete }) => {
   const rawType = String(

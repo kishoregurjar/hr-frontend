@@ -79,8 +79,8 @@ export default function ResultsAndRankingPage() {
   const { data: dynamicResults = [], isLoading, refetch } = useQuery({
     queryKey: ["candidate-results"],
     queryFn: getAllResults,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
+    staleTime: 3 * 60 * 1000, // 3 minutes cache
+    refetchOnWindowFocus: false,
   });
 
   const dynamicResultsList = useMemo(() => {
