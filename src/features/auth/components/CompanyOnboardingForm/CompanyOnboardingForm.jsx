@@ -526,10 +526,15 @@ export default function CompanyOnboardingForm() {
 
         toast.success("Account created successfully with 30-Day Free Trial! Redirecting to login...");
 
-        // Direct access to login page with prefilled email and registration confirmation
+        if (res?.accessToken && typeof window !== "undefined") {
+          localStorage.setItem("accessToken", res.accessToken);
+          if (res.refreshToken) localStorage.setItem("refreshToken", res.refreshToken);
+        }
+
+        const fallbackSlug = res?.company?.slug || (typeof activeSlug === "string" ? activeSlug : "") || "";
         const targetUrl =
           res?.tenantUrl ||
-          `/login?registered=true&email=${encodeURIComponent(ownerEmail.trim().toLowerCase())}&tenant=${encodeURIComponent(res?.company?.slug || companySlug || "")}`;
+          `/login?registered=true&email=${encodeURIComponent(ownerEmail.trim().toLowerCase())}${fallbackSlug ? `&tenant=${encodeURIComponent(fallbackSlug)}` : ""}`;
 
         window.location.href = targetUrl;
         return;
