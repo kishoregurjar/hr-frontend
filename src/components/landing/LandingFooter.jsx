@@ -1,24 +1,120 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin, Mail, Phone, Clock, ShieldCheck } from "lucide-react";
+import {
+  MapPin,
+  Mail,
+  Phone,
+  Clock,
+  ShieldCheck,
+  ArrowRight,
+  Sparkles,
+  Lock,
+  CheckCircle2,
+} from "lucide-react";
 
 export default function LandingFooter({ handleScrollTo }) {
   return (
-    <footer className="bg-[#050b1d] text-slate-400 border-t border-slate-800/80">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
-        {/* Main 4-Column Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12 py-14 sm:py-16">
-          
+    <footer className="relative bg-[#030712] text-slate-400 overflow-hidden font-sans">
+      {/* ── 1. Top Edge Illuminated Laser Beam ── */}
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-blue-500/50 via-indigo-500/50 to-transparent pointer-events-none z-20" />
+
+      {/* ── 2. Background Subtle Grid Texture ── */}
+      <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-20 pointer-events-none z-0" />
+
+      {/* ── 3. Dual Aurora Glow Effect (Royal Blue + Deep Violet + Cyan Core) ── */}
+      {/* Left/Center Aura: Royal Blue */}
+      <div
+        aria-hidden="true"
+        className="absolute -top-32 sm:-top-44 left-1/2 -translate-x-[65%] w-[450px] sm:w-[700px] h-[300px] sm:h-[450px] rounded-full bg-blue-600/20 blur-[90px] sm:blur-[140px] pointer-events-none transform-gpu z-0"
+      />
+      {/* Right/Center Aura: Deep Violet / Indigo */}
+      <div
+        aria-hidden="true"
+        className="absolute -top-32 sm:-top-44 left-1/2 translate-x-[-15%] w-[420px] sm:w-[680px] h-[300px] sm:h-[450px] rounded-full bg-indigo-600/25 blur-[90px] sm:blur-[140px] pointer-events-none transform-gpu z-0"
+      />
+      {/* Center Ambient Core Highlight */}
+      <div
+        aria-hidden="true"
+        className="absolute -top-16 left-1/2 -translate-x-1/2 w-[240px] sm:w-[400px] h-[160px] sm:h-[240px] rounded-full bg-cyan-400/10 blur-[70px] sm:blur-[90px] pointer-events-none transform-gpu z-0"
+      />
+
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
+        {/* ── 4. Pre-Footer High-Impact CTA Block (Inspired by Talynce AI) ── */}
+        <div className="pt-16 sm:pt-24 pb-12 sm:pb-16 text-center max-w-3xl mx-auto">
+          {/* Glowing Badge */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/25 text-blue-400 text-xs font-semibold mb-5 shadow-inner">
+            <Sparkles className="h-3.5 w-3.5 text-blue-400 animate-pulse" />
+            <span>Supercharge Your Hiring Pipeline</span>
+          </div>
+
+          {/* Headline */}
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-[1.15]">
+            Ready to Experience{" "}
+            <span className="bg-gradient-to-r from-blue-400 via-indigo-300 to-violet-400 bg-clip-text text-transparent">
+              Game-Based Hiring?
+            </span>
+          </h2>
+
+          {/* Subtitle */}
+          <p className="mt-4 text-xs sm:text-sm lg:text-base text-slate-400 max-w-xl mx-auto leading-relaxed font-light">
+            Evaluate real cognitive ability and skills with AI-powered proctoring in minutes, not days. Set up your dedicated company workspace in under 2 minutes.
+          </p>
+
+          {/* Call-to-Action Buttons */}
+          <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+            <Link
+              href="/register?plan=DEMO"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3 rounded-full bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer"
+            >
+              <span>Start 30-Day Free Trial</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+
+            <a
+              href="#contact"
+              onClick={(e) => handleScrollTo?.(e, "contact")}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3 rounded-full bg-slate-900/80 hover:bg-slate-800 text-slate-200 hover:text-white font-bold text-xs sm:text-sm border border-slate-700/80 hover:border-slate-600 backdrop-blur-sm transition-all duration-200 cursor-pointer"
+            >
+              <span>Contact Our Team</span>
+            </a>
+          </div>
+
+          {/* Micro Trust Indicators */}
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-[11px] text-slate-500 font-medium">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+              No credit card required
+            </span>
+            <span className="hidden sm:inline text-slate-700">•</span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-blue-500" />
+              Instant workspace provisioning
+            </span>
+            <span className="hidden sm:inline text-slate-700">•</span>
+            <span className="flex items-center gap-1.5">
+              <Lock className="h-3.5 w-3.5 text-indigo-400" />
+              256-bit encrypted data
+            </span>
+          </div>
+        </div>
+
+        {/* ── 5. Elegant Luminous Divider ── */}
+        <div className="relative py-2">
+          <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
+        </div>
+
+        {/* ── 6. Main 4-Column Footer Navigation ── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12 py-12 sm:py-14">
           {/* Column 1: Brand Logo, Bio & Social Media (Span 4) */}
           <div className="lg:col-span-4 space-y-5">
-            {/* White Rounded Brand Badge (TechTantra Inspired) */}
-            <div className="inline-flex items-center gap-2.5 bg-white py-2 px-3.5 rounded-xl shadow-md border border-slate-100">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white font-extrabold text-base shadow-sm">
+            {/* Dark Sleek Brand Badge */}
+            <div className="inline-flex items-center gap-2.5 bg-slate-900/90 py-2 px-3.5 rounded-xl shadow-lg border border-slate-800/80 backdrop-blur-md">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-blue-600 via-indigo-600 to-blue-500 text-white font-black text-base shadow-sm">
                 H
               </div>
-              <span className="text-lg font-black tracking-tight text-slate-900">
-                Hire<span className="text-blue-600">Quest</span>
+              <span className="text-lg font-black tracking-tight text-white">
+                Hire<span className="text-blue-500">Quest</span>
               </span>
             </div>
 
@@ -33,7 +129,7 @@ export default function LandingFooter({ handleScrollTo }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="LinkedIn"
-                className="w-9 h-9 rounded-full bg-slate-800/90 text-slate-300 hover:text-white hover:bg-blue-600 transition-all duration-300 flex items-center justify-center border border-slate-700/60 hover:border-blue-500 shadow-sm hover:scale-110"
+                className="w-9 h-9 rounded-full bg-slate-900/90 text-slate-400 hover:text-white hover:bg-blue-600 transition-all duration-300 flex items-center justify-center border border-slate-800 hover:border-blue-500 shadow-sm hover:scale-110"
               >
                 <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
                   <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.25V10.9H6.46M7.86 6.3a1.64 1.64 0 0 0-1.66 1.64 1.66 1.66 0 0 0 1.66 1.65 1.64 1.64 0 0 0 1.64-1.65A1.64 1.64 0 0 0 7.86 6.3Z" />
@@ -44,7 +140,7 @@ export default function LandingFooter({ handleScrollTo }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Twitter"
-                className="w-9 h-9 rounded-full bg-slate-800/90 text-slate-300 hover:text-white hover:bg-blue-600 transition-all duration-300 flex items-center justify-center border border-slate-700/60 hover:border-blue-500 shadow-sm hover:scale-110"
+                className="w-9 h-9 rounded-full bg-slate-900/90 text-slate-400 hover:text-white hover:bg-blue-600 transition-all duration-300 flex items-center justify-center border border-slate-800 hover:border-blue-500 shadow-sm hover:scale-110"
               >
                 <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -55,7 +151,7 @@ export default function LandingFooter({ handleScrollTo }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="GitHub"
-                className="w-9 h-9 rounded-full bg-slate-800/90 text-slate-300 hover:text-white hover:bg-blue-600 transition-all duration-300 flex items-center justify-center border border-slate-700/60 hover:border-blue-500 shadow-sm hover:scale-110"
+                className="w-9 h-9 rounded-full bg-slate-900/90 text-slate-400 hover:text-white hover:bg-blue-600 transition-all duration-300 flex items-center justify-center border border-slate-800 hover:border-blue-500 shadow-sm hover:scale-110"
               >
                 <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
                   <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
@@ -66,7 +162,7 @@ export default function LandingFooter({ handleScrollTo }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="YouTube"
-                className="w-9 h-9 rounded-full bg-slate-800/90 text-slate-300 hover:text-white hover:bg-blue-600 transition-all duration-300 flex items-center justify-center border border-slate-700/60 hover:border-blue-500 shadow-sm hover:scale-110"
+                className="w-9 h-9 rounded-full bg-slate-900/90 text-slate-400 hover:text-white hover:bg-blue-600 transition-all duration-300 flex items-center justify-center border border-slate-800 hover:border-blue-500 shadow-sm hover:scale-110"
               >
                 <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
                   <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
@@ -77,8 +173,9 @@ export default function LandingFooter({ handleScrollTo }) {
 
           {/* Column 2: SITEMAP (Span 2) */}
           <div className="lg:col-span-2 space-y-4">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-white font-mono">
-              Sitemap
+            <h4 className="text-xs font-bold uppercase tracking-widest text-white font-mono flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              <span>Sitemap</span>
             </h4>
             <ul className="space-y-2.5 text-xs text-slate-400">
               <li>
@@ -88,7 +185,7 @@ export default function LandingFooter({ handleScrollTo }) {
                     e.preventDefault();
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
-                  className="hover:text-blue-400 transition-colors"
+                  className="hover:text-blue-400 hover:translate-x-1 inline-block transition-all"
                 >
                   Home
                 </a>
@@ -97,7 +194,7 @@ export default function LandingFooter({ handleScrollTo }) {
                 <a
                   href="#about"
                   onClick={(e) => handleScrollTo?.(e, "about")}
-                  className="hover:text-blue-400 transition-colors"
+                  className="hover:text-blue-400 hover:translate-x-1 inline-block transition-all"
                 >
                   About Platform
                 </a>
@@ -106,7 +203,7 @@ export default function LandingFooter({ handleScrollTo }) {
                 <a
                   href="#services"
                   onClick={(e) => handleScrollTo?.(e, "services")}
-                  className="hover:text-blue-400 transition-colors"
+                  className="hover:text-blue-400 hover:translate-x-1 inline-block transition-all"
                 >
                   Hiring Capabilities
                 </a>
@@ -115,7 +212,7 @@ export default function LandingFooter({ handleScrollTo }) {
                 <a
                   href="#pricing"
                   onClick={(e) => handleScrollTo?.(e, "pricing")}
-                  className="hover:text-blue-400 transition-colors"
+                  className="hover:text-blue-400 hover:translate-x-1 inline-block transition-all"
                 >
                   Pricing & Plans
                 </a>
@@ -124,7 +221,7 @@ export default function LandingFooter({ handleScrollTo }) {
                 <a
                   href="#faq"
                   onClick={(e) => handleScrollTo?.(e, "faq")}
-                  className="hover:text-blue-400 transition-colors"
+                  className="hover:text-blue-400 hover:translate-x-1 inline-block transition-all"
                 >
                   Questions & FAQ
                 </a>
@@ -133,7 +230,7 @@ export default function LandingFooter({ handleScrollTo }) {
                 <a
                   href="#contact"
                   onClick={(e) => handleScrollTo?.(e, "contact")}
-                  className="hover:text-blue-400 transition-colors"
+                  className="hover:text-blue-400 hover:translate-x-1 inline-block transition-all"
                 >
                   Contact Support
                 </a>
@@ -143,26 +240,33 @@ export default function LandingFooter({ handleScrollTo }) {
 
           {/* Column 3: OUR CAPABILITIES (Span 3) */}
           <div className="lg:col-span-3 space-y-4">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-white font-mono">
-              Our Capabilities
+            <h4 className="text-xs font-bold uppercase tracking-widest text-white font-mono flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+              <span>Our Capabilities</span>
             </h4>
             <ul className="space-y-2.5 text-xs text-slate-400">
-              <li className="hover:text-blue-400 transition-colors cursor-pointer">
+              <li className="hover:text-blue-400 transition-colors cursor-pointer flex items-center gap-2">
+                <span className="w-1 h-1 rounded-full bg-slate-600" />
                 Cognitive Game Suite (5 Games)
               </li>
-              <li className="hover:text-blue-400 transition-colors cursor-pointer">
+              <li className="hover:text-blue-400 transition-colors cursor-pointer flex items-center gap-2">
+                <span className="w-1 h-1 rounded-full bg-slate-600" />
                 Multi-Round Pipeline Automation
               </li>
-              <li className="hover:text-blue-400 transition-colors cursor-pointer">
+              <li className="hover:text-blue-400 transition-colors cursor-pointer flex items-center gap-2">
+                <span className="w-1 h-1 rounded-full bg-slate-600" />
                 Smart 40/60 AI Weighted Scoring
               </li>
-              <li className="hover:text-blue-400 transition-colors cursor-pointer">
+              <li className="hover:text-blue-400 transition-colors cursor-pointer flex items-center gap-2">
+                <span className="w-1 h-1 rounded-full bg-slate-600" />
                 Session Integrity & Anti-Cheat
               </li>
-              <li className="hover:text-blue-400 transition-colors cursor-pointer">
+              <li className="hover:text-blue-400 transition-colors cursor-pointer flex items-center gap-2">
+                <span className="w-1 h-1 rounded-full bg-slate-600" />
                 Real-Time Candidate Leaderboard
               </li>
-              <li className="hover:text-blue-400 transition-colors cursor-pointer">
+              <li className="hover:text-blue-400 transition-colors cursor-pointer flex items-center gap-2">
+                <span className="w-1 h-1 rounded-full bg-slate-600" />
                 Automated Token Invitation Links
               </li>
             </ul>
@@ -170,8 +274,9 @@ export default function LandingFooter({ handleScrollTo }) {
 
           {/* Column 4: CONTACT & OFFICE ADDRESS */}
           <div className="lg:col-span-3 space-y-4">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-white font-mono">
-              Contact & Office
+            <h4 className="text-xs font-bold uppercase tracking-widest text-white font-mono flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span>Contact & Office</span>
             </h4>
             <div className="space-y-3 text-xs text-slate-400">
               <div className="flex items-start gap-2.5">
@@ -221,10 +326,9 @@ export default function LandingFooter({ handleScrollTo }) {
               </div>
             </div>
           </div>
-
         </div>
 
-        {/* Bottom Legal & Copyright Bar */}
+        {/* ── 7. Bottom Legal & Copyright Bar ── */}
         <div className="border-t border-slate-800/80 py-6 sm:py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <p>© {new Date().getFullYear()} HireQuest Technologies. All rights reserved.</p>
 

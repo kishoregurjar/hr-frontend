@@ -474,7 +474,7 @@ export default function CompanyOnboardingForm() {
       setError("Password must be at least 6 characters long.");
       return;
     }
-    if (password !== confirmPassword) {
+    if (!isDemo && password !== confirmPassword) {
       setError("Passwords do not match. Please re-enter.");
       return;
     }
@@ -982,8 +982,8 @@ export default function CompanyOnboardingForm() {
                 </h2>
               </div>
 
-              {/* Row 1: Company Name + Industry Sector (2 cols) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {isDemo ? (
+                /* Ultra-streamlined single Company Name for 30-Day Demo */
                 <div className="space-y-1">
                   <Label htmlFor="companyName" className="text-[11px] font-bold text-slate-700">
                     Company / Organization Name <span className="text-rose-500">*</span>
@@ -999,48 +999,7 @@ export default function CompanyOnboardingForm() {
                       required
                     />
                   </div>
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="industry" className="text-[11px] font-bold text-slate-700">
-                    Industry Sector
-                  </Label>
-                  <div className="relative">
-                    <Briefcase className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                    <Input
-                      id="industry"
-                      placeholder="e.g. Technology, Healthcare, Finance"
-                      value={industry}
-                      onChange={(e) => setIndustry(e.target.value)}
-                      className="pl-9 h-10 text-xs sm:text-sm rounded-xl border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/10 transition"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Row 2: Workspace Slug + Official Website (2 cols) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label htmlFor="slug" className="text-[11px] font-bold text-slate-700 flex items-center justify-between">
-                    <span>Workspace Slug <span className="text-rose-500">*</span></span>
-                    {activeSlug && (
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                        Available
-                      </span>
-                    )}
-                  </Label>
-                  <div className="relative">
-                    <Globe className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                    <Input
-                      id="slug"
-                      placeholder="e.g. acme"
-                      value={activeSlug}
-                      onChange={handleSlugChange}
-                      className="pl-9 h-10 text-xs sm:text-sm rounded-xl border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/10 transition font-mono"
-                      required
-                    />
-                  </div>
-                  {/* Neatly displayed live URL preview */}
+                  {/* Clean live URL preview */}
                   <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500 pt-0.5 truncate">
                     <span className="text-slate-400">Workspace URL:</span>
                     <span className="truncate">
@@ -1048,58 +1007,110 @@ export default function CompanyOnboardingForm() {
                     </span>
                   </div>
                 </div>
+              ) : (
+                <>
+                  {/* Row 1: Company Name + Industry Sector (2 cols) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="companyName" className="text-[11px] font-bold text-slate-700">
+                        Company / Organization Name <span className="text-rose-500">*</span>
+                      </Label>
+                      <div className="relative">
+                        <Building2 className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                        <Input
+                          id="companyName"
+                          placeholder="e.g. Acme Corporation"
+                          value={companyName}
+                          onChange={(e) => setCompanyName(e.target.value)}
+                          className="pl-9 h-10 text-xs sm:text-sm rounded-xl border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/10 transition"
+                          required
+                        />
+                      </div>
+                    </div>
 
-                <div className="space-y-1">
-                  <Label htmlFor="website" className="text-[11px] font-bold text-slate-700">
-                    Official Website <span className="text-[10px] text-slate-400 font-normal">(Optional)</span>
-                  </Label>
-                  <div className="relative">
-                    <Globe className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                    <Input
-                      id="website"
-                      placeholder="https://company.com"
-                      value={website}
-                      onChange={(e) => setWebsite(e.target.value)}
-                      className="pl-9 h-10 text-xs sm:text-sm rounded-xl border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/10 transition"
-                    />
+                    <div className="space-y-1">
+                      <Label htmlFor="industry" className="text-[11px] font-bold text-slate-700">
+                        Industry Sector
+                      </Label>
+                      <div className="relative">
+                        <Briefcase className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                        <Input
+                          id="industry"
+                          placeholder="e.g. Technology, Healthcare, Finance"
+                          value={industry}
+                          onChange={(e) => setIndustry(e.target.value)}
+                          className="pl-9 h-10 text-xs sm:text-sm rounded-xl border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/10 transition"
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Row 3: Phone Number + Business Overview (2 cols) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label htmlFor="phone" className="text-[11px] font-bold text-slate-700">
-                    Phone Number <span className="text-[10px] text-slate-400 font-normal">(Optional)</span>
-                  </Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="+91 98765 43210"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="pl-9 h-10 text-xs sm:text-sm rounded-xl border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/10 transition"
-                    />
+                  {/* Row 2: Workspace Slug + Official Website (2 cols) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="slug" className="text-[11px] font-bold text-slate-700 flex items-center justify-between">
+                        <span>Workspace Slug <span className="text-rose-500">*</span></span>
+                        {activeSlug && (
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                            Available
+                          </span>
+                        )}
+                      </Label>
+                      <div className="relative">
+                        <Globe className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                        <Input
+                          id="slug"
+                          placeholder="e.g. acme"
+                          value={activeSlug}
+                          onChange={handleSlugChange}
+                          className="pl-9 h-10 text-xs sm:text-sm rounded-xl border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/10 transition font-mono"
+                          required
+                        />
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500 pt-0.5 truncate">
+                        <span className="text-slate-400">Workspace URL:</span>
+                        <span className="truncate">
+                          https://<strong className="text-blue-600 font-bold">{activeSlug || "your-company"}</strong>.{displayHost}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label htmlFor="website" className="text-[11px] font-bold text-slate-700">
+                        Official Website <span className="text-[10px] text-slate-400 font-normal">(Optional)</span>
+                      </Label>
+                      <div className="relative">
+                        <Globe className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                        <Input
+                          id="website"
+                          placeholder="https://company.com"
+                          value={website}
+                          onChange={(e) => setWebsite(e.target.value)}
+                          className="pl-9 h-10 text-xs sm:text-sm rounded-xl border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/10 transition"
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                {isDemo && (
+                  {/* Row 3: Phone Number */}
                   <div className="space-y-1">
-                    <Label htmlFor="businessDescription" className="text-[11px] font-bold text-slate-700">
-                      Business Overview <span className="text-[10px] text-slate-400 font-normal">(Alternative to website)</span>
+                    <Label htmlFor="phone" className="text-[11px] font-bold text-slate-700">
+                      Phone Number <span className="text-[10px] text-slate-400 font-normal">(Optional)</span>
                     </Label>
-                    <Input
-                      id="businessDescription"
-                      placeholder="e.g. 25-person team evaluating technical candidates"
-                      value={businessDescription}
-                      onChange={(e) => setBusinessDescription(e.target.value)}
-                      className="h-10 text-xs sm:text-sm rounded-xl border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/10 transition"
-                    />
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="+91 98765 43210"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="pl-9 h-10 text-xs sm:text-sm rounded-xl border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/10 transition"
+                      />
+                    </div>
                   </div>
-                )}
-              </div>
+                </>
+              )}
             </div>
 
             {/* ── Section 2: Owner Credentials ── */}
@@ -1219,8 +1230,8 @@ export default function CompanyOnboardingForm() {
                 </div>
               </div>
 
-              {/* Row 6: Password + Confirm Password (2 cols) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Row 6: Password (+ Confirm Password for Paid Plans) */}
+              {isDemo ? (
                 <div className="space-y-1">
                   <Label htmlFor="password" className="text-[11px] font-bold text-slate-700">
                     Password <span className="text-rose-500">*</span>
@@ -1246,40 +1257,68 @@ export default function CompanyOnboardingForm() {
                   </div>
                   <p className="text-[10px] text-slate-400">Min. 6 alphanumeric characters</p>
                 </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="confirmPassword" className="text-[11px] font-bold text-slate-700">
-                    Confirm Password <span className="text-rose-500">*</span>
-                  </Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      placeholder="••••••••"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="pl-9 pr-9 h-10 text-xs sm:text-sm rounded-xl border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/10 transition"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 transition"
-                    >
-                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="password" className="text-[11px] font-bold text-slate-700">
+                      Password <span className="text-rose-500">*</span>
+                    </Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-9 pr-9 h-10 text-xs sm:text-sm rounded-xl border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/10 transition"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 transition"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-slate-400">Min. 6 alphanumeric characters</p>
                   </div>
-                  {confirmPassword && password === confirmPassword && (
-                    <p className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
-                      <Check className="h-3 w-3" /> Passwords match
-                    </p>
-                  )}
-                  {confirmPassword && password !== confirmPassword && (
-                    <p className="text-[10px] text-rose-500 font-semibold">Passwords do not match</p>
-                  )}
+
+                  <div className="space-y-1">
+                    <Label htmlFor="confirmPassword" className="text-[11px] font-bold text-slate-700">
+                      Confirm Password <span className="text-rose-500">*</span>
+                    </Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="pl-9 pr-9 h-10 text-xs sm:text-sm rounded-xl border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/10 transition"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 transition"
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    {confirmPassword && password === confirmPassword && (
+                      <p className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                        <Check className="h-3 w-3" /> Passwords match
+                      </p>
+                    )}
+                    {confirmPassword && password !== confirmPassword && (
+                      <p className="text-[10px] text-rose-500 font-semibold">Passwords do not match</p>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* ── Submit Action CTA Button ── */}
